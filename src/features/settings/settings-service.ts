@@ -63,9 +63,9 @@ export async function loadUserSettings(
     .from("profiles")
     .select("settings")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  return isSettings(data.settings) ? data.settings : DEFAULT_SETTINGS;
+  return data && isSettings(data.settings) ? data.settings : DEFAULT_SETTINGS;
 }
 
 export async function saveUserSettings(

@@ -148,6 +148,14 @@ export default function Home() {
   const settingsHydratedRef = useRef(false);
   const settingsOwnerRef = useRef<string | null>(null);
 
+  function getOperationError(error: unknown, fallback: string) {
+    if (error instanceof Error) return error.message;
+    if (typeof error === "object" && error !== null && "message" in error && typeof error.message === "string") {
+      return error.message;
+    }
+    return fallback;
+  }
+
   useEffect(() => {
     const title = mode === "pomodoro" ? "Time to focus!" : "Time for a break!";
     document.title = `${formatTime(seconds)} - ${title}`;
@@ -306,7 +314,10 @@ export default function Home() {
         settingsOwnerRef.current = user.id;
       })
       .catch((error: unknown) => {
-        if (!cancelled) setAppError(error instanceof Error ? `Gagal memuat pengaturan: ${error.message}` : "Gagal memuat pengaturan.");
+        if (!cancelled) {
+          const message = getOperationError(error, "Gagal memuat pengaturan.");
+          setAppError(message.includes("settings") || message.includes("column") ? "Kolom settings belum tersedia di database production. Jalankan migration 20261016220000_add_profile_settings.sql di Supabase SQL Editor." : `Gagal memuat pengaturan: ${message}`);
+        }
       });
     return () => { cancelled = true; };
   }, [user]);
