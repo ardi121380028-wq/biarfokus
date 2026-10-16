@@ -82,9 +82,18 @@ function playCompletionSound() {
   gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.45);
   oscillator.connect(gain);
   gain.connect(context.destination);
+  void context.resume();
   oscillator.start();
   oscillator.stop(context.currentTime + 0.45);
   window.setTimeout(() => void context.close(), 600);
+}
+
+function playCompletionAlarm(repeat: boolean) {
+  playCompletionSound();
+  if (repeat) {
+    window.setTimeout(() => playCompletionSound(), 700);
+    window.setTimeout(() => playCompletionSound(), 1400);
+  }
 }
 
 function playClickSound() {
@@ -254,7 +263,7 @@ export default function Home() {
       setSeconds((value) => {
         if (value <= 1) {
           setRunning(false);
-          if (soundEnabled) playCompletionSound();
+          if (soundEnabled) playCompletionAlarm(repeatAlarm);
           if (typeof Notification !== "undefined" && Notification.permission === "granted") {
             new Notification("BiarFokus", { body: `${modeLabels[mode]} selesai. Waktunya ganti sesi.` });
           }
@@ -269,7 +278,7 @@ export default function Home() {
       });
     }, 1000);
     return () => window.clearInterval(interval);
-  }, [autoStart, mode, running, soundEnabled, timerDurations]);
+  }, [autoStart, mode, repeatAlarm, running, soundEnabled, timerDurations]);
 
   const completedTasks = useMemo(() => tasks.filter((task) => task.done).length, [tasks]);
   const userName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? user?.email?.split("@")[0] ?? "Account";
