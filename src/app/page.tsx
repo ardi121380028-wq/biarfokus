@@ -199,13 +199,15 @@ export default function Home() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const isTyping = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName ?? "");
       if (event.key === "Escape") {
         setShowSettings(false);
         setLoginOpen(false);
         setShortcutsOpen(false);
       }
+      if (isTyping) return;
       if (event.key === "?" || (event.shiftKey && event.key === "/")) setShortcutsOpen(true);
-      if (event.code === "Space" && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName ?? "")) {
+      if (event.code === "Space") {
         event.preventDefault();
         setRunning((current) => !current);
       }
@@ -332,6 +334,24 @@ export default function Home() {
     setTasks((current) => current.filter((item) => item.id !== task.id));
   }
 
+  async function deleteCompletedTasks() {
+    const completedTaskIds = tasks.filter((task) => task.done).map((task) => task.id);
+    if (!completedTaskIds.length) return;
+    if (user) {
+      const { error } = await getSupabaseBrowserClient().from("tasks").delete().eq("user_id", user.id).in("id", completedTaskIds);
+      if (error) throw new Error(error.message);
+    }
+    setTasks((current) => current.filter((task) => !task.done));
+  }
+
+  async function deleteAllTasks() {
+    if (user) {
+      const { error } = await getSupabaseBrowserClient().from("tasks").delete().eq("user_id", user.id);
+      if (error) throw new Error(error.message);
+    }
+    setTasks([]);
+  }
+
   return (
     <main
       className={dark ? "app dark" : "app"}
@@ -409,7 +429,8 @@ export default function Home() {
             onAdd={addTask}
             onToggle={toggleTask}
             onDelete={deleteTask}
-            onViewProductivity={() => setActiveView("stats")}
+            onDeleteCompleted={deleteCompletedTasks}
+            onDeleteAll={deleteAllTasks}
           />
         </div>
       )}
