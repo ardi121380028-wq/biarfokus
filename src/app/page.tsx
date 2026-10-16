@@ -11,6 +11,14 @@ import { AuthModal as AuthModalComponent } from "@/app/components/auth-modal";
 import { SettingsModal as SettingsModalComponent } from "@/app/components/settings-modal";
 import { ShortcutsModal as ShortcutsModalComponent } from "@/app/components/shortcuts-modal";
 import { StatsView } from "@/app/components/stats-view";
+import {
+  DEFAULT_SETTINGS,
+  loadLocalSettings,
+  loadUserSettings,
+  saveLocalSettings,
+  saveUserSettings,
+  type UserSettings,
+} from "@/features/settings/settings-service";
 import type { Task, TimerDurations, TimerMode } from "@/types/domain";
 import {
   createTask,
@@ -124,18 +132,20 @@ export default function Home() {
   const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState("#e8e8e8");
-  const [autoStart, setAutoStart] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [timerDurations, setTimerDurations] = useState<TimerDurations>(durations);
-  const [repeatAlarm, setRepeatAlarm] = useState(false);
+  const [selectedColor, setSelectedColor] = useState(DEFAULT_SETTINGS.selectedColor);
+  const [autoStart, setAutoStart] = useState(DEFAULT_SETTINGS.autoStart);
+  const [soundEnabled, setSoundEnabled] = useState(DEFAULT_SETTINGS.soundEnabled);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(DEFAULT_SETTINGS.notificationsEnabled);
+  const [timerDurations, setTimerDurations] = useState<TimerDurations>(DEFAULT_SETTINGS.timerDurations);
+  const [repeatAlarm, setRepeatAlarm] = useState(DEFAULT_SETTINGS.repeatAlarm);
   const [user, setUser] = useState<User | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [appError, setAppError] = useState<string | null>(null);
   const timerEndAtRef = useRef<number | null>(null);
+  const settingsHydratedRef = useRef(false);
+  const settingsOwnerRef = useRef<string | null>(null);
 
   useEffect(() => {
     const title = mode === "pomodoro" ? "Time to focus!" : "Time for a break!";
@@ -237,7 +247,14 @@ export default function Home() {
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       setTasks(loadLocalTasks());
-      setSoundEnabled(window.localStorage.getItem("biarfokus.sound") !== "false");
+      const localSettings = loadLocalSettings();
+      setSelectedColor(localSettings.selectedColor);
+      setAutoStart(localSettings.autoStart);
+      setSoundEnabled(localSettings.soundEnabled);
+      setNotificationsEnabled(localSettings.notificationsEnabled);
+      setTimerDurations(localSettings.timerDurations);
+      setRepeatAlarm(localSettings.repeatAlarm);
+      settingsHydratedRef.current = true;
       setTasksHydrated(true);
     });
     return () => window.cancelAnimationFrame(frame);
@@ -249,8 +266,45 @@ export default function Home() {
   }, [tasks, tasksHydrated, user]);
 
   useEffect(() => {
-    window.localStorage.setItem("biarfokus.sound", String(soundEnabled));
-  }, [soundEnabled]);
+    if (!settingsHydratedRef.current) return;
+    const settings: UserSettings = {
+      selectedColor,
+      autoStart,
+      soundEnabled,
+      notificationsEnabled,
+      timerDurations,
+      repeatAlarm,
+    };
+    saveLocalSettings(settings);
+    if (user && settingsOwnerRef.current !== user.id) return;
+    if (user) {
+      void saveUserSettings(getSupabaseBrowserClient(), user.id, settings)
+        .catch((error: unknown) => setAppError(error instanceof Error ? `Pengaturan gagal disimpan: ${error.message}` : "Pengaturan gagal disimpan."));
+    }
+  }, [autoStart, notificationsEnabled, repeatAlarm, selectedColor, soundEnabled, timerDurations, user]);
+
+  useEffect(() => {
+    if (!user) {
+      settingsOwnerRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    void loadUserSettings(getSupabaseBrowserClient(), user.id)
+      .then((settings) => {
+        if (cancelled) return;
+        setSelectedColor(settings.selectedColor);
+        setAutoStart(settings.autoStart);
+        setSoundEnabled(settings.soundEnabled);
+        setNotificationsEnabled(settings.notificationsEnabled);
+        setTimerDurations(settings.timerDurations);
+        setRepeatAlarm(settings.repeatAlarm);
+        settingsOwnerRef.current = user.id;
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setAppError(error instanceof Error ? `Gagal memuat pengaturan: ${error.message}` : "Gagal memuat pengaturan.");
+      });
+    return () => { cancelled = true; };
+  }, [user]);
 
   useEffect(() => {
     if (!running) return;
@@ -386,7 +440,7 @@ export default function Home() {
       <header className="topbar">
         <button className="brand" onClick={() => setActiveView("timer")} aria-label="Kembali ke timer">
           <span className="brand-mark" aria-hidden="true" />
-          <span>BiarFokus</span>
+          <span>biarfokus</span>
         </button>
         <nav className="desktop-nav" aria-label="Navigasi utama">
           {(["timer", "stats", "pricing"] as View[]).map((view) => (

@@ -51,7 +51,7 @@ npm run build
 
 Copy `.env.example` to `.env.local` when backend integrations are added. Never commit `.env.local` or send secret values through chat.
 
-Apply the SQL migration in `supabase/migrations` from the Supabase SQL Editor before using authenticated cloud task persistence. Signed-in users can add, complete, and delete tasks; signed-out users retain local browser storage.
+Apply all SQL migrations in `supabase/migrations` from the Supabase SQL Editor before using authenticated cloud persistence. Signed-in users can add, complete, and delete tasks, save timer settings, and record Pomodoro sessions; signed-out users retain local browser storage.
 
 Public browser variables must use the `NEXT_PUBLIC_` prefix. Server-only secrets, including Stripe keys and webhook secrets, must not use that prefix.
 
