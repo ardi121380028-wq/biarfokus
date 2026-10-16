@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type TimerMode = "pomodoro" | "short" | "long";
 type View = "timer" | "stats" | "pricing" | "admin";
@@ -125,6 +127,19 @@ export default function Home() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [timerDurations, setTimerDurations] = useState<TimerDurations>(durations);
   const [repeatAlarm, setRepeatAlarm] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    async function loadUser() {
+      const result = await supabase.auth.getUser();
+      if (result.error) throw result.error;
+      setUser(result.data.user);
+    }
+    void loadUser();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => setUser(session?.user ?? null));
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const handleClick = () => {
@@ -248,7 +263,7 @@ export default function Home() {
           <button className="icon-button" onClick={() => setDark(!dark)} aria-label="Ganti tema">{dark ? "☀" : "☾"}</button>
           <button className="icon-button shortcut-button" onClick={() => setShortcutsOpen(true)} aria-label="Keyboard shortcuts">?</button>
           <button className="settings-button" onClick={() => setShowSettings(true)}>⚙ <span>Settings</span></button>
-          <button className="login-button" onClick={() => setLoginOpen(true)}>🔐 Sign In</button>
+          {user ? <button className="login-button" onClick={() => void getSupabaseBrowserClient().auth.signOut()}>Sign Out</button> : <button className="login-button" onClick={() => setLoginOpen(true)}>🔐 Sign In</button>}
           <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Buka menu" aria-expanded={menuOpen}>☰</button>
         </div>
       </header>
@@ -362,22 +377,79 @@ function AuthModal({
   onClose: () => void;
 }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const isSignUp = mode === "sign-up";
+
+  async function submitAuth() {
+    setLoading(true);
+    setError(null);
+    setStatus(null);
+    const supabase = getSupabaseBrowserClient();
+    const result = isSignUp
+      ? await supabase.auth.signUp({ email, password })
+      : await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (result.error) {
+      setError(result.error.message);
+      return;
+    }
+    if (isSignUp) {
+      setStatus("Akun dibuat. Cek email kamu untuk verifikasi sebelum login.");
+      return;
+    }
+    onClose();
+  }
+
+  async function signInWithGoogle() {
+    setLoading(true);
+    setError(null);
+    const { error: authError } = await getSupabaseBrowserClient().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (authError) {
+      setLoading(false);
+      setError(authError.message);
+    }
+  }
+
+  async function resetPassword() {
+    if (!email) {
+      setError("Masukkan email terlebih dahulu.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const { error: authError } = await getSupabaseBrowserClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    });
+    setLoading(false);
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+    setStatus("Link reset password sudah dikirim ke email kamu.");
+  }
+
   return <div className="modal-backdrop" role="presentation" onClick={onClose}>
     <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" onClick={(event) => event.stopPropagation()}>
       <button className="modal-close" onClick={onClose} aria-label="Tutup login">×</button>
       <div className="auth-heading"><h2 id="auth-title">{isSignUp ? "Create Account" : "Welcome Back"}</h2><p>Focus better. Finish more.</p></div>
-      <button className="google-button" onClick={() => setSubmitted(true)}>G <span>Sign in With Google SSO</span></button>
+      <button className="google-button" onClick={() => void signInWithGoogle()} disabled={loading}>G <span>Sign in With Google SSO</span></button>
       <div className="auth-divider"><span>OR</span></div>
       {isSignUp && <label className="auth-field">Username<input required placeholder="e.g ardikharisma_" /></label>}
-      <label className="auth-field">Email<input required type="email" placeholder="e.g hello@example.com" /></label>
-      <label className="auth-field">Password<div className="password-field"><input required type={showPassword ? "text" : "password"} placeholder="***********" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Tampilkan password">{showPassword ? "◉" : "◌"}</button></div></label>
-      {!isSignUp && <button className="forgot-button" onClick={() => setSubmitted(true)}>Forgot Password?</button>}
-      <button className="auth-submit" onClick={() => setSubmitted(true)}>{isSignUp ? "Sign Up" : "Sign In"}</button>
+      <label className="auth-field">Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="e.g hello@example.com" /></label>
+      <label className="auth-field">Password<div className="password-field"><input required type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="***********" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Tampilkan password">{showPassword ? "◉" : "◌"}</button></div></label>
+      {!isSignUp && <button className="forgot-button" onClick={() => void resetPassword()}>Forgot Password?</button>}
+      <button className="auth-submit" onClick={() => void submitAuth()} disabled={loading}>{loading ? "Please wait..." : isSignUp ? "Sign Up" : "Sign In"}</button>
       <small>By continuing, I agree to the <a href="#terms">Terms of service</a> and <a href="#privacy">Privacy policy</a>.</small>
-      {submitted && <p className="auth-status">Auth UI siap. Supabase akan menghubungkan form ini ke akun sungguhan.</p>}
-      <p className="auth-switch">{isSignUp ? "Already Have Account?" : "Do not have an account?"} <button onClick={() => { setMode(isSignUp ? "sign-in" : "sign-up"); setSubmitted(false); }}>{isSignUp ? "Sign In" : "Create Account"}</button></p>
+      {error && <p className="auth-status auth-error">{error}</p>}
+      {status && <p className="auth-status">{status}</p>}
+      <p className="auth-switch">{isSignUp ? "Already Have Account?" : "Do not have an account?"} <button onClick={() => { setMode(isSignUp ? "sign-in" : "sign-up"); setError(null); setStatus(null); }}>{isSignUp ? "Sign In" : "Create Account"}</button></p>
     </section>
   </div>;
 }
