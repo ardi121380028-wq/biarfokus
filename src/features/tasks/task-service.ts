@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DbTask, Task } from "@/types/domain";
+import type { DbTask, Task } from "../../types/domain";
 
 export const LOCAL_TASKS_KEY = "biarfokus.tasks";
 
