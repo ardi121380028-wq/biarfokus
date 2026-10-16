@@ -7,6 +7,9 @@ import { TaskManagement } from "@/app/components/task-management";
 import { TimerPanel } from "@/app/components/timer-panel";
 import { AccountModal } from "@/app/components/account-modal";
 import { ProfileMenu } from "@/app/components/profile-menu";
+import { AuthModal as AuthModalComponent } from "@/app/components/auth-modal";
+import { SettingsModal as SettingsModalComponent } from "@/app/components/settings-modal";
+import { ShortcutsModal as ShortcutsModalComponent } from "@/app/components/shortcuts-modal";
 import type { Task, TimerDurations, TimerMode } from "@/types/domain";
 import {
   createTask,
@@ -25,12 +28,6 @@ const durations: Record<TimerMode, number> = {
   pomodoro: 25 * 60,
   short: 5 * 60,
   long: 15 * 60,
-};
-
-const deepWorkDurations: TimerDurations = {
-  pomodoro: 50 * 60,
-  short: 10 * 60,
-  long: 30 * 60,
 };
 
 const modeLabels: Record<TimerMode, string> = {
@@ -431,7 +428,7 @@ export default function Home() {
         <small>© 2025 biarfokus - All rights reserved</small>
       </footer>
       <button className="settings-fab" onClick={() => setShowSettings(true)} aria-label="Pengaturan">⚙</button>
-      {showSettings && <SettingsModal
+      {showSettings && <SettingsModalComponent
         selectedColor={selectedColor}
         setSelectedColor={setSelectedColor}
         soundEnabled={soundEnabled}
@@ -452,12 +449,12 @@ export default function Home() {
         }}
         onClose={() => setShowSettings(false)}
       />}
-      {loginOpen && <AuthModal mode={authMode} setMode={setAuthMode} onClose={() => setLoginOpen(false)} />}
+      {loginOpen && <AuthModalComponent mode={authMode} setMode={setAuthMode} onClose={() => setLoginOpen(false)} />}
       {accountOpen && <AccountModal user={user} userName={userName} onClose={() => setAccountOpen(false)} />}
       {authError && <div className="modal-backdrop" role="presentation" onClick={() => setAuthError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAuthError(null)} aria-label="Tutup error">×</button><h2>Login gagal</h2><p className="modal-copy">{authError}</p><button className="secondary-button" onClick={() => setAuthError(null)}>Tutup</button></section></div>}
       {appError && <div className="modal-backdrop" role="presentation" onClick={() => setAppError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAppError(null)} aria-label="Tutup error">×</button><h2>Terjadi kesalahan</h2><p className="modal-copy">{appError}</p><button className="secondary-button" onClick={() => setAppError(null)}>Tutup</button></section></div>}
       {infoOpen && <div className="modal-backdrop" role="presentation" onClick={() => setInfoOpen(null)}><section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setInfoOpen(null)} aria-label="Tutup">×</button><h2>Fokus dengan ritme yang tepat</h2><p className="modal-copy">{infoOpen}</p><button className="secondary-button" onClick={() => setInfoOpen(null)}>Mengerti</button></section></div>}
-      {shortcutsOpen && <ShortcutsModal onClose={() => setShortcutsOpen(false)} />}
+      {shortcutsOpen && <ShortcutsModalComponent onClose={() => setShortcutsOpen(false)} />}
     </main>
   );
 }
@@ -472,222 +469,4 @@ function Pricing({ onUpgrade }: { onUpgrade: () => void }) {
 
 function Admin() {
   return <div className="inner-page"><p className="eyebrow">Workspace admin</p><h1>Overview</h1><div className="admin-table"><div><span>Total pengguna</span><strong>1,248</strong><em>↑ 12.4%</em></div><div><span>Pengguna aktif hari ini</span><strong>386</strong><em>↑ 8.1%</em></div><div><span>Pendapatan berulang</span><strong>Rp8.7jt</strong><em>↑ 21.3%</em></div></div><p className="admin-note">Dashboard admin lengkap akan terhubung ke Supabase setelah project production dikonfigurasi.</p></div>;
-}
-
-function AuthModal({
-  mode,
-  setMode,
-  onClose,
-}: {
-  mode: "sign-in" | "sign-up";
-  setMode: (mode: "sign-in" | "sign-up") => void;
-  onClose: () => void;
-}) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const isSignUp = mode === "sign-up";
-
-  async function submitAuth() {
-    setLoading(true);
-    setError(null);
-    setStatus(null);
-    try {
-      const supabase = getSupabaseBrowserClient();
-      const result = isSignUp
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-      if (result.error) {
-        setError(result.error.message);
-        return;
-      }
-      if (isSignUp) {
-        setStatus("Akun dibuat. Cek email kamu untuk verifikasi sebelum login.");
-        return;
-      }
-      onClose();
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Gagal memproses autentikasi.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function signInWithGoogle() {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error: authError } = await getSupabaseBrowserClient().auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (authError) setError(authError.message);
-    } catch (oauthError) {
-      setError(oauthError instanceof Error ? oauthError.message : "Gagal memulai Google login.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function resetPassword() {
-    if (!email) {
-      setError("Masukkan email terlebih dahulu.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const { error: authError } = await getSupabaseBrowserClient().auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      });
-      if (authError) {
-        setError(authError.message);
-        return;
-      }
-      setStatus("Link reset password sudah dikirim ke email kamu.");
-    } catch (resetError) {
-      setError(resetError instanceof Error ? resetError.message : "Gagal mengirim link reset password.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return <div className="modal-backdrop" role="presentation" onClick={onClose}>
-    <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" onClick={(event) => event.stopPropagation()}>
-      <button className="modal-close" onClick={onClose} aria-label="Tutup login">×</button>
-      <div className="auth-heading"><h2 id="auth-title">{isSignUp ? "Create Account" : "Welcome Back"}</h2><p>Focus better. Finish more.</p></div>
-      <button className="google-button" onClick={() => void signInWithGoogle()} disabled={loading}>G <span>Sign in With Google SSO</span></button>
-      <div className="auth-divider"><span>OR</span></div>
-      {isSignUp && <label className="auth-field">Username<input required placeholder="e.g ardikharisma_" /></label>}
-      <label className="auth-field">Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="e.g hello@example.com" /></label>
-      <label className="auth-field">Password<div className="password-field"><input required type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="***********" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Tampilkan password">{showPassword ? "◉" : "◌"}</button></div></label>
-      {!isSignUp && <button className="forgot-button" onClick={() => void resetPassword()}>Forgot Password?</button>}
-      <button className="auth-submit" onClick={() => void submitAuth()} disabled={loading}>{loading ? "Please wait..." : isSignUp ? "Sign Up" : "Sign In"}</button>
-      <small>By continuing, I agree to the <a href="#terms">Terms of service</a> and <a href="#privacy">Privacy policy</a>.</small>
-      {error && <p className="auth-status auth-error">{error}</p>}
-      {status && <p className="auth-status">{status}</p>}
-      <p className="auth-switch">{isSignUp ? "Already Have Account?" : "Do not have an account?"} <button onClick={() => { setMode(isSignUp ? "sign-in" : "sign-up"); setError(null); setStatus(null); }}>{isSignUp ? "Sign In" : "Create Account"}</button></p>
-    </section>
-  </div>;
-}
-
-function ShortcutsModal({ onClose }: { onClose: () => void }) {
-  const shortcuts = [
-    ["Start/Pause", "Space"],
-    ["Reset Timer", "R"],
-    ["Skip Session", "S"],
-    ["Open Settings", "Ctrl + S"],
-    ["Open Tasks", "Ctrl + T"],
-    ["Close Modal", "Esc"],
-    ["Toggle Shortcuts", "?"],
-  ];
-  return <div className="modal-backdrop" role="presentation" onClick={onClose}>
-    <section className="shortcuts-modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" onClick={(event) => event.stopPropagation()}>
-      <button className="modal-close" onClick={onClose} aria-label="Tutup shortcuts">×</button>
-      <h2 id="shortcuts-title">Keyboard Shortcuts</h2>
-      <p className="shortcut-group">TIMER CONTROLS</p>
-      {shortcuts.slice(0, 3).map(([label, key]) => <div className="shortcut-row" key={label}><span>{label}</span><kbd>{key}</kbd></div>)}
-      <p className="shortcut-group">NAVIGATION</p>
-      {shortcuts.slice(3, 5).map(([label, key]) => <div className="shortcut-row" key={label}><span>{label}</span><kbd>{key}</kbd></div>)}
-      <p className="shortcut-group">GENERAL</p>
-      {shortcuts.slice(5).map(([label, key]) => <div className="shortcut-row" key={label}><span>{label}</span><kbd>{key}</kbd></div>)}
-      <small>Press <kbd>Esc</kbd> or click outside to close</small>
-    </section>
-  </div>;
-}
-
-function SettingsModal({
-  selectedColor,
-  setSelectedColor,
-  soundEnabled,
-  setSoundEnabled,
-  autoStart,
-  setAutoStart,
-  dark,
-  setDark,
-  notificationsEnabled,
-  setNotificationsEnabled,
-  repeatAlarm,
-  setRepeatAlarm,
-  timerDurations,
-  setTimerDurations,
-  onClose,
-}: {
-  selectedColor: string;
-  setSelectedColor: (color: string) => void;
-  soundEnabled: boolean;
-  setSoundEnabled: (enabled: boolean) => void;
-  autoStart: boolean;
-  setAutoStart: (enabled: boolean) => void;
-  dark: boolean;
-  setDark: (enabled: boolean) => void;
-  notificationsEnabled: boolean;
-  setNotificationsEnabled: (enabled: boolean) => void;
-  repeatAlarm: boolean;
-  setRepeatAlarm: (enabled: boolean) => void;
-  timerDurations: TimerDurations;
-  setTimerDurations: (durations: TimerDurations) => void;
-  onClose: () => void;
-}) {
-  const [activeTab, setActiveTab] = useState<"concentration" | "sound" | "auto" | "notification">("concentration");
-  const isFocusTemplate = (Object.keys(durations) as TimerMode[]).every((mode) => timerDurations[mode] === durations[mode]);
-
-  return <div className="modal-backdrop" role="presentation" onClick={onClose}>
-    <section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(event) => event.stopPropagation()}>
-      <button className="modal-close" onClick={onClose} aria-label="Tutup pengaturan">×</button>
-      <aside className="settings-sidebar">
-        <span className="settings-kicker">BiarFokus</span>
-        <h2 id="settings-title">Settings</h2>
-        <button className={activeTab === "concentration" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("concentration")}>◷ <span>Concentration time</span></button>
-        <button className={activeTab === "sound" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("sound")}>♧ <span>Sound & alarm</span></button>
-        <button className={activeTab === "auto" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("auto")}>▷ <span>Auto start</span></button>
-        <button className={activeTab === "notification" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("notification")}>♧ <span>Notification</span></button>
-      </aside>
-      <div className="settings-content">
-        {activeTab === "concentration" && <div className="settings-section">
-          <p className="settings-section-title">TIMER TEMPLATE</p>
-          <button className={isFocusTemplate ? "template-card active" : "template-card"} onClick={() => setTimerDurations(durations)}>
-            <strong>{isFocusTemplate ? "✓" : "○"} Template fokus</strong>
-            <span>25 min pomodoro · 5 min short break · 15 min long break</span>
-          </button>
-          <button className={!isFocusTemplate ? "template-card active" : "template-card"} onClick={() => setTimerDurations(deepWorkDurations)}>
-            <strong>{!isFocusTemplate ? "✓" : "○"} Deep work</strong>
-            <span>50 min pomodoro · 10 min short break · 30 min long break</span>
-          </button>
-        </div>}
-        {activeTab === "concentration" && <div className="settings-section">
-          <p className="settings-section-title">PREFERENCES</p>
-          <div className="setting-row"><span>Color theme</span><div className="theme-options">{colorThemes.map(({ color, name }) => <button key={color} title={name} aria-label={name} className={selectedColor === color ? "theme-swatch selected" : "theme-swatch"} style={{ backgroundColor: color }} onClick={() => setSelectedColor(color)} />)}</div></div>
-          <button className="setting-row setting-action" onClick={() => setDark(!dark)}><span>Dark mode</span><b>{dark ? "On" : "Off"}</b></button>
-        </div>}
-        {activeTab === "sound" && <div className="settings-section">
-          <p className="settings-section-title">SOUND & ALARM</p>
-          <button className="setting-row setting-action" onClick={() => setSoundEnabled(!soundEnabled)}><span>Focus sound</span><b>{soundEnabled ? "On" : "Off"}</b></button>
-          <button className="setting-row setting-action" onClick={() => setRepeatAlarm(!repeatAlarm)}><span>Repeat alarm</span><b>{repeatAlarm ? "On" : "Off"}</b></button>
-          <p className="settings-help">Sound plays when a focus or break session ends.</p>
-        </div>}
-        {activeTab === "auto" && <div className="settings-section">
-          <p className="settings-section-title">AUTO START</p>
-          <button className="setting-row setting-action" onClick={() => setAutoStart(!autoStart)}><span>Auto start next session</span><b>{autoStart ? "On" : "Off"}</b></button>
-          <p className="settings-help">Automatically start the next focus or break session.</p>
-        </div>}
-        {activeTab === "notification" && <div className="settings-section">
-          <p className="settings-section-title">NOTIFICATION</p>
-          <button className="setting-row setting-action" onClick={async () => {
-            if (!notificationsEnabled && typeof Notification !== "undefined" && Notification.permission === "default") {
-              const permission = await Notification.requestPermission();
-              setNotificationsEnabled(permission === "granted");
-            } else {
-              setNotificationsEnabled(!notificationsEnabled);
-            }
-          }}><span>Browser notification</span><b>{notificationsEnabled ? "On" : "Off"}</b></button>
-          <p className="settings-help">Show a browser notification when a session ends.</p>
-        </div>}
-        <div className="settings-footer"><span>Changes are saved automatically</span><button className="apply-button" onClick={onClose}>Apply</button></div>
-      </div>
-    </section>
-  </div>;
 }
