@@ -316,7 +316,10 @@ export default function Home() {
       .catch((error: unknown) => {
         if (!cancelled) {
           const message = getOperationError(error, "Gagal memuat pengaturan.");
-          setAppError(message.includes("settings") || message.includes("column") ? "Kolom settings belum tersedia di database production. Jalankan migration 20261016220000_add_profile_settings.sql di Supabase SQL Editor." : `Gagal memuat pengaturan: ${message}`);
+          console.error("Gagal memuat pengaturan cloud; menggunakan settings lokal.", error);
+          if (message.includes("settings") || message.includes("column")) {
+            setAppError("Kolom settings belum tersedia di database production. Jalankan migration 20261016220000_add_profile_settings.sql di Supabase SQL Editor.");
+          }
         }
       });
     return () => { cancelled = true; };
@@ -499,6 +502,7 @@ export default function Home() {
             {view === "timer" ? "Timer" : view === "stats" ? "Statistik" : view === "pricing" ? "Pro" : "Admin"}
           </button>
         ))}
+        {!user && <button className="mobile-login-button" onClick={() => { setLoginOpen(true); setMenuOpen(false); }}>🔐 Sign In</button>}
       </nav>}
 
       {activeView === "timer" && (
