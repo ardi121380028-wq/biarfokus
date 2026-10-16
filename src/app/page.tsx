@@ -131,6 +131,14 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get("auth_error");
+    if (!error) return;
+    const frame = window.requestAnimationFrame(() => setAuthError(error));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -439,6 +447,7 @@ export default function Home() {
       />}
       {loginOpen && <AuthModal mode={authMode} setMode={setAuthMode} onClose={() => setLoginOpen(false)} />}
       {accountOpen && <AccountModal user={user} userName={userName} onClose={() => setAccountOpen(false)} />}
+      {authError && <div className="modal-backdrop" role="presentation" onClick={() => setAuthError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAuthError(null)} aria-label="Tutup error">×</button><h2>Login gagal</h2><p className="modal-copy">{authError}</p><button className="secondary-button" onClick={() => setAuthError(null)}>Tutup</button></section></div>}
       {infoOpen && <div className="modal-backdrop" role="presentation" onClick={() => setInfoOpen(null)}><section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setInfoOpen(null)} aria-label="Tutup">×</button><h2>Fokus dengan ritme yang tepat</h2><p className="modal-copy">{infoOpen}</p><button className="secondary-button" onClick={() => setInfoOpen(null)}>Mengerti</button></section></div>}
       {shortcutsOpen && <ShortcutsModal onClose={() => setShortcutsOpen(false)} />}
     </main>
