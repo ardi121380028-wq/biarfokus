@@ -141,6 +141,11 @@ export default function Home() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
+    const title = mode === "pomodoro" ? "Time to focus!" : "Time for a break!";
+    document.title = `${formatTime(seconds)} - ${title}`;
+  }, [mode, seconds]);
+
+  useEffect(() => {
     const error = new URLSearchParams(window.location.search).get("auth_error");
     if (!error) return;
     const frame = window.requestAnimationFrame(() => setAuthError(error));
