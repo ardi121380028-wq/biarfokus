@@ -365,7 +365,7 @@ export default function Home() {
     >
       <header className="topbar">
         <button className="brand" onClick={() => setActiveView("timer")} aria-label="Kembali ke timer">
-          <span className="brand-mark"><i /><i /><i /><i /></span>
+          <span className="brand-mark" aria-hidden="true" />
           <span>BiarFokus</span>
         </button>
         <nav className="desktop-nav" aria-label="Navigasi utama">
