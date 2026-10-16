@@ -298,17 +298,25 @@ export default function Home() {
   async function deleteCompletedTasks() {
     const completedTaskIds = tasks.filter((task) => task.done).map((task) => task.id);
     if (!completedTaskIds.length) return;
-    if (user) {
-      await deleteTasksByIds(getSupabaseBrowserClient(), user.id, completedTaskIds);
+    try {
+      if (user) {
+        await deleteTasksByIds(getSupabaseBrowserClient(), user.id, completedTaskIds);
+      }
+      setTasks((current) => current.filter((task) => !task.done));
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : "Gagal menghapus task selesai.");
     }
-    setTasks((current) => current.filter((task) => !task.done));
   }
 
   async function deleteAllTasks() {
-    if (user) {
-      await deleteAllCloudTasks(getSupabaseBrowserClient(), user.id);
+    try {
+      if (user) {
+        await deleteAllCloudTasks(getSupabaseBrowserClient(), user.id);
+      }
+      setTasks([]);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : "Gagal menghapus semua task.");
     }
-    setTasks([]);
   }
 
   return (
@@ -396,7 +404,7 @@ export default function Home() {
       )}
 
       {activeView === "stats" && <Stats completedTasks={completedTasks} />}
-      {activeView === "pricing" && <Pricing />}
+      {activeView === "pricing" && <Pricing onUpgrade={() => setInfoOpen("Checkout Stripe akan aktif setelah akun pembayaran dikonfigurasi.")} />}
       {activeView === "admin" && <Admin />}
 
       <footer className="footer">
@@ -440,8 +448,8 @@ function Stats({ completedTasks }: { completedTasks: number }) {
   return <div className="inner-page"><p className="eyebrow">Ringkasan mingguan</p><h1>Statistik produktivitas</h1><div className="stat-grid"><div className="stat-card"><span>Fokus minggu ini</span><strong>12j 45m</strong><small>↑ 18% dari minggu lalu</small></div><div className="stat-card"><span>Pomodoro selesai</span><strong>32</strong><small>Target mingguan: 40</small></div><div className="stat-card"><span>Tugas selesai</span><strong>{completedTasks}</strong><small>Terus pertahankan!</small></div></div><div className="chart-card"><div className="chart-labels"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div><div className="bars">{[55, 72, 42, 88, 64, 35, 20].map((height, index) => <div className="bar-wrap" key={index}><div className="bar" style={{ height: `${height}%` }} /><small>{height === 88 ? "4j" : `${Math.round(height / 22)}j`}</small></div>)}</div></div></div>;
 }
 
-function Pricing() {
-  return <div className="inner-page"><p className="eyebrow">Biar makin fokus</p><h1>Pilih ruang fokusmu</h1><div className="pricing-grid"><div className="price-card"><span>Free</span><strong>$0 <small>/ forever</small></strong><p>Pomodoro timer, task management, dan fokus tanpa batas.</p><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Mulai gratis</button></div><div className="price-card featured"><b className="popular">MOST POPULAR</b><span>Pro</span><strong>$2.99 <small>/ month</small></strong><p>Statistik lengkap, task tanpa batas, dan suara fokus.</p><button onClick={() => alert("Checkout Stripe akan aktif setelah akun pembayaran dikonfigurasi.")}>Upgrade ke Pro</button></div></div></div>;
+function Pricing({ onUpgrade }: { onUpgrade: () => void }) {
+  return <div className="inner-page"><p className="eyebrow">Biar makin fokus</p><h1>Pilih ruang fokusmu</h1><div className="pricing-grid"><div className="price-card"><span>Free</span><strong>$0 <small>/ forever</small></strong><p>Pomodoro timer, task management, dan fokus tanpa batas.</p><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Mulai gratis</button></div><div className="price-card featured"><b className="popular">MOST POPULAR</b><span>Pro</span><strong>$2.99 <small>/ month</small></strong><p>Statistik lengkap, task tanpa batas, dan suara fokus.</p><button onClick={onUpgrade}>Upgrade ke Pro</button></div></div></div>;
 }
 
 function Admin() {
