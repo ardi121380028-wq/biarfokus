@@ -3,12 +3,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { TaskManagement, type Task } from "@/app/components/task-management";
 
 type TimerMode = "pomodoro" | "short" | "long";
 type View = "timer" | "stats" | "pricing" | "admin";
 type TimerDurations = Record<TimerMode, number>;
-type Task = { id: string; title: string; done: boolean; pomodoros: number };
-
 const durations: Record<TimerMode, number> = {
   pomodoro: 25 * 60,
   short: 5 * 60,
@@ -115,7 +114,6 @@ export default function Home() {
   const [activeView, setActiveView] = useState<View>("timer");
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [tasksHydrated, setTasksHydrated] = useState(false);
-  const [newTask, setNewTask] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -281,28 +279,30 @@ export default function Home() {
     setRunning(false);
   }
 
-  async function addTask(event: React.FormEvent) {
-    event.preventDefault();
-    const title = newTask.trim();
-    if (!title) return;
+  async function addTask(title: string) {
     const task = { id: crypto.randomUUID(), title, done: false, pomodoros: 1 };
     if (user) {
       try {
-        const { error } = await getSupabaseBrowserClient().from("tasks").insert({
-          id: task.id,
+        const { data, error } = await getSupabaseBrowserClient().from("tasks").insert({
           user_id: user.id,
           title: task.title,
           completed: false,
           pomodoros: task.pomodoros,
-        });
+        }).select("id, title, completed, pomodoros").single();
         if (error) throw error;
-      } catch (error) {
-        window.alert(error instanceof Error ? `Gagal menyimpan task: ${error.message}` : "Gagal menyimpan task.");
+        setTasks((current) => [...current, {
+          id: data.id,
+          title: data.title,
+          done: data.completed,
+          pomodoros: data.pomodoros,
+        }]);
         return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Gagal menyimpan task.";
+        throw new Error(message);
       }
     }
     setTasks((current) => [...current, task]);
-    setNewTask("");
   }
 
   async function toggleTask(task: Task) {
@@ -312,11 +312,24 @@ export default function Home() {
         const { error } = await getSupabaseBrowserClient().from("tasks").update({ completed }).eq("id", task.id).eq("user_id", user.id);
         if (error) throw error;
       } catch (error) {
-        window.alert(error instanceof Error ? `Gagal memperbarui task: ${error.message}` : "Gagal memperbarui task.");
-        return;
+        const message = error instanceof Error ? error.message : "Gagal memperbarui task.";
+        throw new Error(message);
       }
     }
     setTasks((current) => current.map((item) => item.id === task.id ? { ...item, done: completed } : item));
+  }
+
+  async function deleteTask(task: Task) {
+    if (user) {
+      try {
+        const { error } = await getSupabaseBrowserClient().from("tasks").delete().eq("id", task.id).eq("user_id", user.id);
+        if (error) throw error;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Gagal menghapus task.";
+        throw new Error(message);
+      }
+    }
+    setTasks((current) => current.filter((item) => item.id !== task.id));
   }
 
   return (
@@ -391,27 +404,13 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="task-card card">
-            <div className="section-heading">
-              <div><p className="eyebrow">Fokus hari ini</p><h1>Task Management</h1></div>
-              <span className="progress-count">{completedTasks}/{tasks.length}</span>
-            </div>
-            <form className="task-form" onSubmit={addTask}>
-              <input value={newTask} onChange={(event) => setNewTask(event.target.value)} placeholder="Tambahkan tugas baru..." aria-label="Tugas baru" />
-              <button type="submit">Tambah</button>
-            </form>
-            <div className="task-list">
-              {tasks.map((task) => (
-                <label className={task.done ? "task done" : "task"} key={task.id}>
-                  <input type="checkbox" checked={task.done} onChange={() => void toggleTask(task)} />
-                  <span className="checkmark" />
-                  <span className="task-title">{task.title}</span>
-                  <span className="task-pomos">🍅 {task.pomodoros}</span>
-                </label>
-              ))}
-            </div>
-            <button className="view-all" onClick={() => setActiveView("stats")}>Lihat produktivitas →</button>
-          </section>
+          <TaskManagement
+            tasks={tasks}
+            onAdd={addTask}
+            onToggle={toggleTask}
+            onDelete={deleteTask}
+            onViewProductivity={() => setActiveView("stats")}
+          />
         </div>
       )}
 
