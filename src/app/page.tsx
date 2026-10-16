@@ -10,6 +10,7 @@ import { ProfileMenu } from "@/app/components/profile-menu";
 import { AuthModal as AuthModalComponent } from "@/app/components/auth-modal";
 import { SettingsModal as SettingsModalComponent } from "@/app/components/settings-modal";
 import { ShortcutsModal as ShortcutsModalComponent } from "@/app/components/shortcuts-modal";
+import { StatsView } from "@/app/components/stats-view";
 import type { Task, TimerDurations, TimerMode } from "@/types/domain";
 import {
   createTask,
@@ -455,7 +456,7 @@ export default function Home() {
         </div>
       )}
 
-      {activeView === "stats" && <Stats completedTasks={completedTasks} />}
+      {activeView === "stats" && <StatsView key={user?.id ?? "guest"} supabase={getSupabaseBrowserClient()} userId={user?.id ?? null} completedTasks={completedTasks} />}
       {activeView === "pricing" && <Pricing onUpgrade={() => setInfoOpen("Checkout Stripe akan aktif setelah akun pembayaran dikonfigurasi.")} />}
       {activeView === "admin" && <Admin />}
 
@@ -494,10 +495,6 @@ export default function Home() {
       {shortcutsOpen && <ShortcutsModalComponent onClose={() => setShortcutsOpen(false)} />}
     </main>
   );
-}
-
-function Stats({ completedTasks }: { completedTasks: number }) {
-  return <div className="inner-page"><p className="eyebrow">Ringkasan mingguan</p><h1>Statistik produktivitas</h1><div className="stat-grid"><div className="stat-card"><span>Fokus minggu ini</span><strong>12j 45m</strong><small>↑ 18% dari minggu lalu</small></div><div className="stat-card"><span>Pomodoro selesai</span><strong>32</strong><small>Target mingguan: 40</small></div><div className="stat-card"><span>Tugas selesai</span><strong>{completedTasks}</strong><small>Terus pertahankan!</small></div></div><div className="chart-card"><div className="chart-labels"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div><div className="bars">{[55, 72, 42, 88, 64, 35, 20].map((height, index) => <div className="bar-wrap" key={index}><div className="bar" style={{ height: `${height}%` }} /><small>{height === 88 ? "4j" : `${Math.round(height / 22)}j`}</small></div>)}</div></div></div>;
 }
 
 function Pricing({ onUpgrade }: { onUpgrade: () => void }) {

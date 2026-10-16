@@ -15,3 +15,15 @@ export type DbTask = {
   completed: boolean;
   pomodoros: number;
 };
+
+export type PomodoroSession = {
+  mode: TimerMode;
+  duration_seconds: number;
+  completed_at: string;
+};
+
+export type WeeklyStats = {
+  focusSeconds: number;
+  pomodoroCount: number;
+  dailyFocusSeconds: number[];
+};
