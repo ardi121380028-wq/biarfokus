@@ -4,12 +4,11 @@ BiarFokus is a Pomodoro-focused productivity app for planning tasks, running foc
 
 ## Current status
 
-The current release is a client-side frontend prototype. Timer behavior, theme controls, task management, settings, and responsive UI are implemented locally in the browser.
+The current release includes Supabase email/password and Google OAuth authentication. Timer behavior, theme controls, task management, settings, and responsive UI are implemented locally in the browser until the database migration is applied.
 
 The following production integrations are planned and are not connected yet:
 
-- Supabase Auth and database persistence
-- Google OAuth
+- Supabase database persistence (migration prepared in `supabase/migrations`)
 - Stripe subscriptions
 - Server-backed statistics and admin authorization
 
@@ -52,6 +51,8 @@ npm run build
 ## Environment variables
 
 Copy `.env.example` to `.env.local` when backend integrations are added. Never commit `.env.local` or send secret values through chat.
+
+Apply the SQL migration in `supabase/migrations` from the Supabase SQL Editor before enabling cloud task persistence.
 
 Public browser variables must use the `NEXT_PUBLIC_` prefix. Server-only secrets, including Stripe keys and webhook secrets, must not use that prefix.
 
