@@ -129,6 +129,8 @@ export default function Home() {
   const [timerDurations, setTimerDurations] = useState<TimerDurations>(durations);
   const [repeatAlarm, setRepeatAlarm] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -262,6 +264,8 @@ export default function Home() {
   }, [autoStart, mode, running, soundEnabled, timerDurations]);
 
   const completedTasks = useMemo(() => tasks.filter((task) => task.done).length, [tasks]);
+  const userName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? user?.email?.split("@")[0] ?? "Account";
+  const userAvatar = user?.user_metadata.avatar_url as string | undefined;
 
   function changeMode(nextMode: TimerMode) {
     setMode(nextMode);
@@ -334,7 +338,21 @@ export default function Home() {
           <button className="icon-button" onClick={() => setDark(!dark)} aria-label="Ganti tema">{dark ? "☀" : "☾"}</button>
           <button className="icon-button shortcut-button" onClick={() => setShortcutsOpen(true)} aria-label="Keyboard shortcuts">?</button>
           <button className="settings-button" onClick={() => setShowSettings(true)}>⚙ <span>Settings</span></button>
-          {user ? <button className="login-button" onClick={() => void getSupabaseBrowserClient().auth.signOut()}>Sign Out</button> : <button className="login-button" onClick={() => setLoginOpen(true)}>🔐 Sign In</button>}
+          {user ? (
+            <div className="profile-area">
+              <button className="profile-button" onClick={() => setProfileMenuOpen((open) => !open)} aria-label="Buka menu akun" aria-expanded={profileMenuOpen}>
+                {userAvatar ? <img src={userAvatar} alt="" /> : <span>{userName.charAt(0).toUpperCase()}</span>}
+              </button>
+              {profileMenuOpen && <ProfileMenu
+                userName={userName}
+                onAccount={() => { setAccountOpen(true); setProfileMenuOpen(false); }}
+                onPremium={() => { setActiveView("pricing"); setProfileMenuOpen(false); }}
+                onShortcuts={() => { setShortcutsOpen(true); setProfileMenuOpen(false); }}
+                onSignOut={() => { setProfileMenuOpen(false); void getSupabaseBrowserClient().auth.signOut(); }}
+                onDelete={() => { setProfileMenuOpen(false); setInfoOpen("Penghapusan akun akan tersedia setelah endpoint aman dan proses konfirmasi email disiapkan."); }}
+              />}
+            </div>
+          ) : <button className="login-button" onClick={() => setLoginOpen(true)}>🔐 Sign In</button>}
           <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Buka menu" aria-expanded={menuOpen}>☰</button>
         </div>
       </header>
@@ -420,6 +438,7 @@ export default function Home() {
         onClose={() => setShowSettings(false)}
       />}
       {loginOpen && <AuthModal mode={authMode} setMode={setAuthMode} onClose={() => setLoginOpen(false)} />}
+      {accountOpen && <AccountModal user={user} userName={userName} onClose={() => setAccountOpen(false)} />}
       {infoOpen && <div className="modal-backdrop" role="presentation" onClick={() => setInfoOpen(null)}><section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setInfoOpen(null)} aria-label="Tutup">×</button><h2>Fokus dengan ritme yang tepat</h2><p className="modal-copy">{infoOpen}</p><button className="secondary-button" onClick={() => setInfoOpen(null)}>Mengerti</button></section></div>}
       {shortcutsOpen && <ShortcutsModal onClose={() => setShortcutsOpen(false)} />}
     </main>
@@ -436,6 +455,46 @@ function Pricing() {
 
 function Admin() {
   return <div className="inner-page"><p className="eyebrow">Workspace admin</p><h1>Overview</h1><div className="admin-table"><div><span>Total pengguna</span><strong>1,248</strong><em>↑ 12.4%</em></div><div><span>Pengguna aktif hari ini</span><strong>386</strong><em>↑ 8.1%</em></div><div><span>Pendapatan berulang</span><strong>Rp8.7jt</strong><em>↑ 21.3%</em></div></div><p className="admin-note">Dashboard admin lengkap akan terhubung ke Supabase setelah project production dikonfigurasi.</p></div>;
+}
+
+function ProfileMenu({
+  userName,
+  onAccount,
+  onPremium,
+  onShortcuts,
+  onSignOut,
+  onDelete,
+}: {
+  userName: string;
+  onAccount: () => void;
+  onPremium: () => void;
+  onShortcuts: () => void;
+  onSignOut: () => void;
+  onDelete: () => void;
+}) {
+  return <div className="profile-menu" role="menu">
+    <strong>{userName}</strong>
+    <button onClick={onAccount} role="menuitem">♟ <span>Account</span></button>
+    <button onClick={onPremium} role="menuitem">♛ <span>Premium</span></button>
+    <button onClick={onSignOut} role="menuitem">↪ <span>Logout</span></button>
+    <button onClick={onShortcuts} role="menuitem">⌨ <span>Shortcuts</span></button>
+    <button onClick={onDelete} role="menuitem">♲ <span>Delete Account</span></button>
+  </div>;
+}
+
+function AccountModal({ user, userName, onClose }: { user: User | null; userName: string; onClose: () => void }) {
+  const avatar = user?.user_metadata.avatar_url as string | undefined;
+  return <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <section className="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" onClick={(event) => event.stopPropagation()}>
+      <button className="modal-close" onClick={onClose} aria-label="Tutup account">×</button>
+      <p className="account-kicker" id="account-title">ACCOUNT</p>
+      <div className="account-profile">
+        {avatar ? <img src={avatar} alt="" /> : <div className="account-avatar">{userName.charAt(0).toUpperCase()}</div>}
+        <div><h2>{userName}</h2><p>{user?.email}</p></div>
+      </div>
+      <div className="account-actions"><button className="secondary-button" onClick={onClose}>Close</button><button className="apply-button" onClick={onClose}>Save</button></div>
+    </section>
+  </div>;
 }
 
 function AuthModal({
