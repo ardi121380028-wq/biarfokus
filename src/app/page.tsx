@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TaskManagement } from "@/app/components/task-management";
@@ -19,9 +19,10 @@ import {
   initialTasks,
   loadLocalTasks,
   loadTasks,
+  recordCompletedSession,
   setTaskCompleted,
 } from "@/features/tasks/task-service";
-import { formatTime } from "@/features/timer/timer-utils";
+import { formatTime, getRemainingSeconds, getTimerEndTime } from "@/features/timer/timer-utils";
 
 type View = "timer" | "stats" | "pricing" | "admin";
 const durations: Record<TimerMode, number> = {
@@ -133,6 +134,7 @@ export default function Home() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [appError, setAppError] = useState<string | null>(null);
+  const timerEndAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     const title = mode === "pomodoro" ? "Time to focus!" : "Time for a break!";
@@ -199,15 +201,26 @@ export default function Home() {
       if (event.key === "?" || (event.shiftKey && event.key === "/")) setShortcutsOpen(true);
       if (event.code === "Space") {
         event.preventDefault();
-        setRunning((current) => !current);
+        if (running) {
+          if (timerEndAtRef.current !== null) {
+            setSeconds(getRemainingSeconds(timerEndAtRef.current));
+          }
+          timerEndAtRef.current = null;
+          setRunning(false);
+        } else {
+          timerEndAtRef.current = getTimerEndTime(seconds);
+          setRunning(true);
+        }
       }
       if (event.key.toLowerCase() === "r") {
+        timerEndAtRef.current = null;
         setRunning(false);
         setSeconds(timerDurations[mode]);
       }
       if (event.key.toLowerCase() === "s") {
         const nextMode: TimerMode = mode === "pomodoro" ? "short" : "pomodoro";
         setMode(nextMode);
+        timerEndAtRef.current = null;
         setSeconds(timerDurations[nextMode]);
         setRunning(false);
       }
@@ -218,7 +231,7 @@ export default function Home() {
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [mode, timerDurations]);
+  }, [mode, running, seconds, timerDurations]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -241,34 +254,58 @@ export default function Home() {
   useEffect(() => {
     if (!running) return;
     const interval = window.setInterval(() => {
-      setSeconds((value) => {
-        if (value <= 1) {
-          setRunning(false);
-          if (soundEnabled) playCompletionAlarm(repeatAlarm);
-          if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-            new Notification("BiarFokus", { body: `${modeLabels[mode]} selesai. Waktunya ganti sesi.` });
-          }
-          const nextMode: TimerMode = mode === "pomodoro" ? "short" : "pomodoro";
-          if (autoStart) {
-            setMode(nextMode);
-            return timerDurations[nextMode];
-          }
-          return timerDurations[mode];
-        }
-        return value - 1;
-      });
-    }, 1000);
+      const endAt = timerEndAtRef.current;
+      if (endAt === null) return;
+      const remaining = getRemainingSeconds(endAt);
+      if (remaining > 0) {
+        setSeconds(remaining);
+        return;
+      }
+
+      timerEndAtRef.current = null;
+      setRunning(false);
+      if (soundEnabled) playCompletionAlarm(repeatAlarm);
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        new Notification("BiarFokus", { body: `${modeLabels[mode]} selesai. Waktunya ganti sesi.` });
+      }
+      if (user) {
+        void recordCompletedSession(getSupabaseBrowserClient(), user.id, mode, timerDurations[mode])
+          .catch((error: unknown) => setAppError(error instanceof Error ? `Sesi selesai, tetapi gagal disimpan: ${error.message}` : "Sesi selesai, tetapi gagal disimpan."));
+      }
+      const nextMode: TimerMode = mode === "pomodoro" ? "short" : "pomodoro";
+      const nextSeconds = timerDurations[autoStart ? nextMode : mode];
+      setMode(autoStart ? nextMode : mode);
+      setSeconds(nextSeconds);
+      if (autoStart) {
+        timerEndAtRef.current = getTimerEndTime(nextSeconds);
+        setRunning(true);
+      }
+    }, 250);
     return () => window.clearInterval(interval);
-  }, [autoStart, mode, repeatAlarm, running, soundEnabled, timerDurations]);
+  }, [autoStart, mode, repeatAlarm, running, soundEnabled, timerDurations, user]);
 
   const completedTasks = useMemo(() => tasks.filter((task) => task.done).length, [tasks]);
   const userName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? user?.email?.split("@")[0] ?? "Account";
   const userAvatar = user?.user_metadata.avatar_url as string | undefined;
 
   function changeMode(nextMode: TimerMode) {
+    timerEndAtRef.current = null;
     setMode(nextMode);
     setSeconds(timerDurations[nextMode]);
     setRunning(false);
+  }
+
+  function toggleRunning() {
+    if (running) {
+      if (timerEndAtRef.current !== null) {
+        setSeconds(getRemainingSeconds(timerEndAtRef.current));
+      }
+      timerEndAtRef.current = null;
+      setRunning(false);
+      return;
+    }
+    timerEndAtRef.current = getTimerEndTime(seconds);
+    setRunning(true);
   }
 
   async function addTask(title: string) {
@@ -403,7 +440,7 @@ export default function Home() {
             colorThemes={colorThemes}
             modeLabels={modeLabels}
             onModeChange={changeMode}
-            onToggleRunning={() => setRunning((current) => !current)}
+            onToggleRunning={toggleRunning}
             onColorChange={setSelectedColor}
           />
 

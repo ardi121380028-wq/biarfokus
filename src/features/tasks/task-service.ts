@@ -137,3 +137,19 @@ export async function deleteAllTasks(
     .eq("user_id", userId);
   if (error) throw error;
 }
+
+export async function recordCompletedSession(
+  supabase: SupabaseClient,
+  userId: string,
+  mode: "pomodoro" | "short" | "long",
+  durationSeconds: number,
+) {
+  const { error } = await supabase
+    .from("pomodoro_sessions")
+    .insert({
+      user_id: userId,
+      mode,
+      duration_seconds: durationSeconds,
+    });
+  if (error) throw error;
+}
