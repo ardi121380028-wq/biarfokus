@@ -7,6 +7,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 type TimerMode = "pomodoro" | "short" | "long";
 type View = "timer" | "stats" | "pricing" | "admin";
 type TimerDurations = Record<TimerMode, number>;
+type Task = { id: string; title: string; done: boolean; pomodoros: number };
 
 const durations: Record<TimerMode, number> = {
   pomodoro: 25 * 60,
@@ -36,12 +37,12 @@ const colorThemes = [
 ];
 
 const initialTasks = [
-  { id: 1, title: "Rencanakan target hari ini", done: true, pomodoros: 2 },
-  { id: 2, title: "Kerjakan prioritas utama", done: false, pomodoros: 4 },
-  { id: 3, title: "Review pekerjaan dan catatan", done: false, pomodoros: 1 },
+  { id: "demo-1", title: "Rencanakan target hari ini", done: true, pomodoros: 2 },
+  { id: "demo-2", title: "Kerjakan prioritas utama", done: false, pomodoros: 4 },
+  { id: "demo-3", title: "Review pekerjaan dan catatan", done: false, pomodoros: 1 },
 ];
 
-function loadSavedTasks() {
+function loadSavedTasks(): Task[] {
   if (typeof window === "undefined") return initialTasks;
   const savedTasks = window.localStorage.getItem("biarfokus.tasks");
   if (!savedTasks) return initialTasks;
@@ -50,10 +51,10 @@ function loadSavedTasks() {
     if (Array.isArray(parsedTasks) && parsedTasks.every((task) => {
       if (typeof task !== "object" || task === null) return false;
       const value = task as Record<string, unknown>;
-      return typeof value.id === "number" && typeof value.title === "string" &&
+      return (typeof value.id === "string" || typeof value.id === "number") && typeof value.title === "string" &&
         typeof value.done === "boolean" && typeof value.pomodoros === "number";
     })) {
-      return parsedTasks as typeof initialTasks;
+      return parsedTasks as Task[];
     }
   } catch (error) {
     if (!(error instanceof SyntaxError)) throw error;
@@ -112,7 +113,7 @@ export default function Home() {
   const [running, setRunning] = useState(false);
   const [dark, setDark] = useState(false);
   const [activeView, setActiveView] = useState<View>("timer");
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [tasksHydrated, setTasksHydrated] = useState(false);
   const [newTask, setNewTask] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -140,6 +141,45 @@ export default function Home() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => setUser(session?.user ?? null));
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const userId = user.id;
+    let cancelled = false;
+    async function loadCloudTasks() {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const { data, error } = await supabase
+          .from("tasks")
+          .select("id, title, completed, pomodoros")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: true });
+        if (error) throw error;
+        if (data.length > 0) {
+          if (!cancelled)           setTasks(data.map((task: { id: string; title: string; completed: boolean; pomodoros: number }) => ({ id: task.id, title: task.title, done: task.completed, pomodoros: task.pomodoros })));
+          return;
+        }
+
+        const localTasks = loadSavedTasks();
+        const tasksToMigrate = localTasks.map((task) => ({
+          id: crypto.randomUUID(),
+          user_id: userId,
+          title: task.title,
+          completed: task.done,
+          pomodoros: task.pomodoros,
+        }));
+        if (tasksToMigrate.length > 0) {
+          const { error: migrationError } = await supabase.from("tasks").insert(tasksToMigrate);
+          if (migrationError) throw migrationError;
+          if (!cancelled) setTasks(tasksToMigrate.map((task) => ({ id: task.id, title: task.title, done: task.completed, pomodoros: task.pomodoros })));
+        }
+      } catch (error) {
+        if (!cancelled) window.alert(error instanceof Error ? `Gagal memuat task: ${error.message}` : "Gagal memuat task.");
+      }
+    }
+    void loadCloudTasks();
+    return () => { cancelled = true; };
+  }, [user]);
 
   useEffect(() => {
     const handleClick = () => {
@@ -190,8 +230,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (tasksHydrated) window.localStorage.setItem("biarfokus.tasks", JSON.stringify(tasks));
-  }, [tasks, tasksHydrated]);
+    if (!tasksHydrated || user) return;
+    window.localStorage.setItem("biarfokus.tasks", JSON.stringify(tasks));
+  }, [tasks, tasksHydrated, user]);
 
   useEffect(() => {
     window.localStorage.setItem("biarfokus.sound", String(soundEnabled));
@@ -228,12 +269,42 @@ export default function Home() {
     setRunning(false);
   }
 
-  function addTask(event: React.FormEvent) {
+  async function addTask(event: React.FormEvent) {
     event.preventDefault();
     const title = newTask.trim();
     if (!title) return;
-    setTasks((current) => [...current, { id: Date.now(), title, done: false, pomodoros: 1 }]);
+    const task = { id: crypto.randomUUID(), title, done: false, pomodoros: 1 };
+    if (user) {
+      try {
+        const { error } = await getSupabaseBrowserClient().from("tasks").insert({
+          id: task.id,
+          user_id: user.id,
+          title: task.title,
+          completed: false,
+          pomodoros: task.pomodoros,
+        });
+        if (error) throw error;
+      } catch (error) {
+        window.alert(error instanceof Error ? `Gagal menyimpan task: ${error.message}` : "Gagal menyimpan task.");
+        return;
+      }
+    }
+    setTasks((current) => [...current, task]);
     setNewTask("");
+  }
+
+  async function toggleTask(task: Task) {
+    const completed = !task.done;
+    if (user) {
+      try {
+        const { error } = await getSupabaseBrowserClient().from("tasks").update({ completed }).eq("id", task.id).eq("user_id", user.id);
+        if (error) throw error;
+      } catch (error) {
+        window.alert(error instanceof Error ? `Gagal memperbarui task: ${error.message}` : "Gagal memperbarui task.");
+        return;
+      }
+    }
+    setTasks((current) => current.map((item) => item.id === task.id ? { ...item, done: completed } : item));
   }
 
   return (
@@ -306,7 +377,7 @@ export default function Home() {
             <div className="task-list">
               {tasks.map((task) => (
                 <label className={task.done ? "task done" : "task"} key={task.id}>
-                  <input type="checkbox" checked={task.done} onChange={() => setTasks((current) => current.map((item) => item.id === task.id ? { ...item, done: !item.done } : item))} />
+                  <input type="checkbox" checked={task.done} onChange={() => void toggleTask(task)} />
                   <span className="checkmark" />
                   <span className="task-title">{task.title}</span>
                   <span className="task-pomos">🍅 {task.pomodoros}</span>
