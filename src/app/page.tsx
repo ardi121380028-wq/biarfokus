@@ -369,7 +369,7 @@ export default function Home() {
           <span>BiarFokus</span>
         </button>
         <nav className="desktop-nav" aria-label="Navigasi utama">
-          {(["timer", "stats", "pricing", "admin"] as View[]).map((view) => (
+          {(["timer", "stats", "pricing"] as View[]).map((view) => (
             <button key={view} className={activeView === view ? "nav-link active" : "nav-link"} onClick={() => setActiveView(view)}>
               {view === "timer" ? "Timer" : view === "stats" ? "Statistik" : view === "pricing" ? "Pro" : "Admin"}
             </button>
@@ -388,6 +388,7 @@ export default function Home() {
                 userName={userName}
                 onAccount={() => { setAccountOpen(true); setProfileMenuOpen(false); }}
                 onPremium={() => { setActiveView("pricing"); setProfileMenuOpen(false); }}
+                onAdmin={() => { setActiveView("admin"); setProfileMenuOpen(false); }}
                 onShortcuts={() => { setShortcutsOpen(true); setProfileMenuOpen(false); }}
                 onSignOut={() => { setProfileMenuOpen(false); void getSupabaseBrowserClient().auth.signOut(); }}
                 onDelete={() => { setProfileMenuOpen(false); setInfoOpen("Penghapusan akun akan tersedia setelah endpoint aman dan proses konfirmasi email disiapkan."); }}
@@ -398,7 +399,7 @@ export default function Home() {
         </div>
       </header>
       {menuOpen && <nav className="mobile-nav" aria-label="Navigasi mobile">
-        {(["timer", "stats", "pricing", "admin"] as View[]).map((view) => (
+        {(["timer", "stats", "pricing"] as View[]).map((view) => (
           <button key={view} className={activeView === view ? "nav-link active" : "nav-link"} onClick={() => { setActiveView(view); setMenuOpen(false); }}>
             {view === "timer" ? "Timer" : view === "stats" ? "Statistik" : view === "pricing" ? "Pro" : "Admin"}
           </button>
@@ -458,6 +459,7 @@ export default function Home() {
         setNotificationsEnabled={setNotificationsEnabled}
         repeatAlarm={repeatAlarm}
         setRepeatAlarm={setRepeatAlarm}
+        timerDurations={timerDurations}
         setTimerDurations={(nextDurations) => {
           setTimerDurations(nextDurations);
           setSeconds(nextDurations[mode]);
@@ -490,6 +492,7 @@ function ProfileMenu({
   userName,
   onAccount,
   onPremium,
+  onAdmin,
   onShortcuts,
   onSignOut,
   onDelete,
@@ -497,6 +500,7 @@ function ProfileMenu({
   userName: string;
   onAccount: () => void;
   onPremium: () => void;
+  onAdmin: () => void;
   onShortcuts: () => void;
   onSignOut: () => void;
   onDelete: () => void;
@@ -505,6 +509,7 @@ function ProfileMenu({
     <strong>{userName}</strong>
     <button onClick={onAccount} role="menuitem">♟ <span>Account</span></button>
     <button onClick={onPremium} role="menuitem">♛ <span>Premium</span></button>
+    <button onClick={onAdmin} role="menuitem">▦ <span>Admin</span></button>
     <button onClick={onSignOut} role="menuitem">↪ <span>Logout</span></button>
     <button onClick={onShortcuts} role="menuitem">⌨ <span>Shortcuts</span></button>
     <button onClick={onDelete} role="menuitem">♲ <span>Delete Account</span></button>
@@ -651,6 +656,7 @@ function SettingsModal({
   setNotificationsEnabled,
   repeatAlarm,
   setRepeatAlarm,
+  timerDurations,
   setTimerDurations,
   onClose,
 }: {
@@ -666,39 +672,54 @@ function SettingsModal({
   setNotificationsEnabled: (enabled: boolean) => void;
   repeatAlarm: boolean;
   setRepeatAlarm: (enabled: boolean) => void;
+  timerDurations: TimerDurations;
   setTimerDurations: (durations: TimerDurations) => void;
   onClose: () => void;
 }) {
+  const [activeTab, setActiveTab] = useState<"concentration" | "sound" | "auto" | "notification">("concentration");
+  const isFocusTemplate = (Object.keys(durations) as TimerMode[]).every((mode) => timerDurations[mode] === durations[mode]);
+
   return <div className="modal-backdrop" role="presentation" onClick={onClose}>
     <section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(event) => event.stopPropagation()}>
       <button className="modal-close" onClick={onClose} aria-label="Tutup pengaturan">×</button>
       <aside className="settings-sidebar">
         <span className="settings-kicker">BiarFokus</span>
         <h2 id="settings-title">Settings</h2>
-        <button className="settings-tab active">◷ <span>Concentration time</span></button>
-        <button className="settings-tab" onClick={() => setSoundEnabled(!soundEnabled)}>♧ <span>Sound & alarm</span></button>
-        <button className="settings-tab" onClick={() => setAutoStart(!autoStart)}>▷ <span>Auto start</span></button>
-        <button className="settings-tab" onClick={() => setNotificationsEnabled(!notificationsEnabled)}>♧ <span>Notification</span></button>
+        <button className={activeTab === "concentration" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("concentration")}>◷ <span>Concentration time</span></button>
+        <button className={activeTab === "sound" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("sound")}>♧ <span>Sound & alarm</span></button>
+        <button className={activeTab === "auto" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("auto")}>▷ <span>Auto start</span></button>
+        <button className={activeTab === "notification" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("notification")}>♧ <span>Notification</span></button>
       </aside>
       <div className="settings-content">
-        <div className="settings-section">
+        {activeTab === "concentration" && <div className="settings-section">
           <p className="settings-section-title">TIMER TEMPLATE</p>
-          <button className="template-card active" onClick={() => setTimerDurations(durations)}>
-            <strong>✓ Template fokus</strong>
+          <button className={isFocusTemplate ? "template-card active" : "template-card"} onClick={() => setTimerDurations(durations)}>
+            <strong>{isFocusTemplate ? "✓" : "○"} Template fokus</strong>
             <span>25 min pomodoro · 5 min short break · 15 min long break</span>
           </button>
-          <button className="template-card" onClick={() => setTimerDurations(deepWorkDurations)}>
-            <strong>□ Deep work</strong>
+          <button className={!isFocusTemplate ? "template-card active" : "template-card"} onClick={() => setTimerDurations(deepWorkDurations)}>
+            <strong>{!isFocusTemplate ? "✓" : "○"} Deep work</strong>
             <span>50 min pomodoro · 10 min short break · 30 min long break</span>
           </button>
-        </div>
-        <div className="settings-section">
+        </div>}
+        {activeTab === "concentration" && <div className="settings-section">
           <p className="settings-section-title">PREFERENCES</p>
           <div className="setting-row"><span>Color theme</span><div className="theme-options">{colorThemes.map(({ color, name }) => <button key={color} title={name} aria-label={name} className={selectedColor === color ? "theme-swatch selected" : "theme-swatch"} style={{ backgroundColor: color }} onClick={() => setSelectedColor(color)} />)}</div></div>
+          <button className="setting-row setting-action" onClick={() => setDark(!dark)}><span>Dark mode</span><b>{dark ? "On" : "Off"}</b></button>
+        </div>}
+        {activeTab === "sound" && <div className="settings-section">
+          <p className="settings-section-title">SOUND & ALARM</p>
           <button className="setting-row setting-action" onClick={() => setSoundEnabled(!soundEnabled)}><span>Focus sound</span><b>{soundEnabled ? "On" : "Off"}</b></button>
           <button className="setting-row setting-action" onClick={() => setRepeatAlarm(!repeatAlarm)}><span>Repeat alarm</span><b>{repeatAlarm ? "On" : "Off"}</b></button>
+          <p className="settings-help">Sound plays when a focus or break session ends.</p>
+        </div>}
+        {activeTab === "auto" && <div className="settings-section">
+          <p className="settings-section-title">AUTO START</p>
           <button className="setting-row setting-action" onClick={() => setAutoStart(!autoStart)}><span>Auto start next session</span><b>{autoStart ? "On" : "Off"}</b></button>
-          <button className="setting-row setting-action" onClick={() => setDark(!dark)}><span>Dark mode</span><b>{dark ? "On" : "Off"}</b></button>
+          <p className="settings-help">Automatically start the next focus or break session.</p>
+        </div>}
+        {activeTab === "notification" && <div className="settings-section">
+          <p className="settings-section-title">NOTIFICATION</p>
           <button className="setting-row setting-action" onClick={async () => {
             if (!notificationsEnabled && typeof Notification !== "undefined" && Notification.permission === "default") {
               const permission = await Notification.requestPermission();
@@ -707,7 +728,8 @@ function SettingsModal({
               setNotificationsEnabled(!notificationsEnabled);
             }
           }}><span>Browser notification</span><b>{notificationsEnabled ? "On" : "Off"}</b></button>
-        </div>
+          <p className="settings-help">Show a browser notification when a session ends.</p>
+        </div>}
         <div className="settings-footer"><span>Changes are saved automatically</span><button className="apply-button" onClick={onClose}>Apply</button></div>
       </div>
     </section>

@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BiarFokus — Bantu kamu fokus selesain setiap pekerjaan",
   description: "BiarFokus membantu kamu fokus dan menyelesaikan setiap pekerjaan dengan Pomodoro timer.",
+  icons: {
+    icon: "/biarfokus-logo.svg",
+    shortcut: "/biarfokus-logo.svg",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
