@@ -139,6 +139,7 @@ export default function Home() {
   const [timerDurations, setTimerDurations] = useState<TimerDurations>(DEFAULT_SETTINGS.timerDurations);
   const [repeatAlarm, setRepeatAlarm] = useState(DEFAULT_SETTINGS.repeatAlarm);
   const [user, setUser] = useState<User | null>(null);
+  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -166,12 +167,16 @@ export default function Home() {
         const result = await supabase.auth.getUser();
         if (result.error) throw result.error;
         setUser(result.data.user);
+        setProfileDisplayName(result.data.user?.user_metadata.display_name ?? null);
       } catch (error) {
         setAppError(error instanceof Error ? error.message : "Gagal memuat sesi akun.");
       }
     }
     void loadUser();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => setUser(session?.user ?? null));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+      setUser(session?.user ?? null);
+      setProfileDisplayName(session?.user?.user_metadata.display_name ?? null);
+    });
     return () => listener.subscription.unsubscribe();
   }, []);
 
@@ -340,7 +345,7 @@ export default function Home() {
   }, [autoStart, mode, repeatAlarm, running, soundEnabled, timerDurations, user]);
 
   const completedTasks = useMemo(() => tasks.filter((task) => task.done).length, [tasks]);
-  const userName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? user?.email?.split("@")[0] ?? "Account";
+  const userName = profileDisplayName ?? user?.user_metadata.full_name ?? user?.user_metadata.name ?? user?.email?.split("@")[0] ?? "Account";
   const userAvatar = user?.user_metadata.avatar_url as string | undefined;
 
   function changeMode(nextMode: TimerMode) {
@@ -542,7 +547,7 @@ export default function Home() {
         onClose={() => setShowSettings(false)}
       />}
       {loginOpen && <AuthModalComponent mode={authMode} setMode={setAuthMode} onClose={() => setLoginOpen(false)} />}
-      {accountOpen && <AccountModal user={user} userName={userName} onClose={() => setAccountOpen(false)} />}
+      {accountOpen && <AccountModal user={user} userName={userName} supabase={getSupabaseBrowserClient()} onSaved={setProfileDisplayName} onClose={() => setAccountOpen(false)} />}
       {authError && <div className="modal-backdrop" role="presentation" onClick={() => setAuthError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAuthError(null)} aria-label="Tutup error">×</button><h2>Login gagal</h2><p className="modal-copy">{authError}</p><button className="secondary-button" onClick={() => setAuthError(null)}>Tutup</button></section></div>}
       {appError && <div className="modal-backdrop" role="presentation" onClick={() => setAppError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAppError(null)} aria-label="Tutup error">×</button><h2>Terjadi kesalahan</h2><p className="modal-copy">{appError}</p><button className="secondary-button" onClick={() => setAppError(null)}>Tutup</button></section></div>}
       {infoOpen && <div className="modal-backdrop" role="presentation" onClick={() => setInfoOpen(null)}><section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setInfoOpen(null)} aria-label="Tutup">×</button><h2>Fokus dengan ritme yang tepat</h2><p className="modal-copy">{infoOpen}</p><button className="secondary-button" onClick={() => setInfoOpen(null)}>Mengerti</button></section></div>}
