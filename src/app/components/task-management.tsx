@@ -1,13 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-
-export type Task = {
-  id: string;
-  title: string;
-  done: boolean;
-  pomodoros: number;
-};
+import type { Task } from "@/types/domain";
 
 type TaskManagementProps = {
   tasks: Task[];

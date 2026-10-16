@@ -3,11 +3,22 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { TaskManagement, type Task } from "@/app/components/task-management";
+import { TaskManagement } from "@/app/components/task-management";
+import { TimerPanel } from "@/app/components/timer-panel";
+import type { Task, TimerDurations, TimerMode } from "@/types/domain";
+import {
+  createTask,
+  deleteAllTasks as deleteAllCloudTasks,
+  deleteTaskById,
+  deleteTasksByIds,
+  initialTasks,
+  loadLocalTasks,
+  loadTasks,
+  setTaskCompleted,
+} from "@/features/tasks/task-service";
+import { formatTime } from "@/features/timer/timer-utils";
 
-type TimerMode = "pomodoro" | "short" | "long";
 type View = "timer" | "stats" | "pricing" | "admin";
-type TimerDurations = Record<TimerMode, number>;
 const durations: Record<TimerMode, number> = {
   pomodoro: 25 * 60,
   short: 5 * 60,
@@ -34,39 +45,6 @@ const colorThemes = [
   { color: "#ffc247", name: "Sun" },
   { color: "#f7c928", name: "Focus" },
 ];
-
-const initialTasks = [
-  { id: "demo-1", title: "Rencanakan target hari ini", done: true, pomodoros: 2 },
-  { id: "demo-2", title: "Kerjakan prioritas utama", done: false, pomodoros: 4 },
-  { id: "demo-3", title: "Review pekerjaan dan catatan", done: false, pomodoros: 1 },
-];
-
-function loadSavedTasks(): Task[] {
-  if (typeof window === "undefined") return initialTasks;
-  const savedTasks = window.localStorage.getItem("biarfokus.tasks");
-  if (!savedTasks) return initialTasks;
-  try {
-    const parsedTasks: unknown = JSON.parse(savedTasks);
-    if (Array.isArray(parsedTasks) && parsedTasks.every((task) => {
-      if (typeof task !== "object" || task === null) return false;
-      const value = task as Record<string, unknown>;
-      return (typeof value.id === "string" || typeof value.id === "number") && typeof value.title === "string" &&
-        typeof value.done === "boolean" && typeof value.pomodoros === "number";
-    })) {
-      return parsedTasks as Task[];
-    }
-  } catch (error) {
-    if (!(error instanceof SyntaxError)) throw error;
-    window.localStorage.removeItem("biarfokus.tasks");
-  }
-  return initialTasks;
-}
-
-function formatTime(seconds: number) {
-  const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const remaining = (seconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${remaining}`;
-}
 
 function playCompletionSound() {
   const AudioContextClass = window.AudioContext ||
@@ -139,6 +117,7 @@ export default function Home() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [appError, setAppError] = useState<string | null>(null);
 
   useEffect(() => {
     const title = mode === "pomodoro" ? "Time to focus!" : "Time for a break!";
@@ -155,9 +134,13 @@ export default function Home() {
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
     async function loadUser() {
-      const result = await supabase.auth.getUser();
-      if (result.error) throw result.error;
-      setUser(result.data.user);
+      try {
+        const result = await supabase.auth.getUser();
+        if (result.error) throw result.error;
+        setUser(result.data.user);
+      } catch (error) {
+        setAppError(error instanceof Error ? error.message : "Gagal memuat sesi akun.");
+      }
     }
     void loadUser();
     const { data: listener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => setUser(session?.user ?? null));
@@ -171,32 +154,10 @@ export default function Home() {
     async function loadCloudTasks() {
       try {
         const supabase = getSupabaseBrowserClient();
-        const { data, error } = await supabase
-          .from("tasks")
-          .select("id, title, completed, pomodoros")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: true });
-        if (error) throw error;
-        if (data.length > 0) {
-          if (!cancelled)           setTasks(data.map((task: { id: string; title: string; completed: boolean; pomodoros: number }) => ({ id: task.id, title: task.title, done: task.completed, pomodoros: task.pomodoros })));
-          return;
-        }
-
-        const localTasks = loadSavedTasks();
-        const tasksToMigrate = localTasks.map((task) => ({
-          id: crypto.randomUUID(),
-          user_id: userId,
-          title: task.title,
-          completed: task.done,
-          pomodoros: task.pomodoros,
-        }));
-        if (tasksToMigrate.length > 0) {
-          const { error: migrationError } = await supabase.from("tasks").insert(tasksToMigrate);
-          if (migrationError) throw migrationError;
-          if (!cancelled) setTasks(tasksToMigrate.map((task) => ({ id: task.id, title: task.title, done: task.completed, pomodoros: task.pomodoros })));
-        }
+        const cloudTasks = await loadTasks(supabase, userId);
+        if (!cancelled) setTasks(cloudTasks);
       } catch (error) {
-        if (!cancelled) window.alert(error instanceof Error ? `Gagal memuat task: ${error.message}` : "Gagal memuat task.");
+        if (!cancelled) setAppError(error instanceof Error ? `Gagal memuat task: ${error.message}` : "Gagal memuat task.");
       }
     }
     void loadCloudTasks();
@@ -246,7 +207,7 @@ export default function Home() {
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      setTasks(loadSavedTasks());
+      setTasks(loadLocalTasks());
       setSoundEnabled(window.localStorage.getItem("biarfokus.sound") !== "false");
       setTasksHydrated(true);
     });
@@ -296,37 +257,24 @@ export default function Home() {
   }
 
   async function addTask(title: string) {
-    const task = { id: crypto.randomUUID(), title, done: false, pomodoros: 1 };
     if (user) {
       try {
-        const { data, error } = await getSupabaseBrowserClient().from("tasks").insert({
-          user_id: user.id,
-          title: task.title,
-          completed: false,
-          pomodoros: task.pomodoros,
-        }).select("id, title, completed, pomodoros").single();
-        if (error) throw error;
-        setTasks((current) => [...current, {
-          id: data.id,
-          title: data.title,
-          done: data.completed,
-          pomodoros: data.pomodoros,
-        }]);
+        const task = await createTask(getSupabaseBrowserClient(), user.id, title);
+        setTasks((current) => [...current, task]);
         return;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Gagal menyimpan task.";
         throw new Error(message);
       }
     }
-    setTasks((current) => [...current, task]);
+    setTasks((current) => [...current, { id: crypto.randomUUID(), title, done: false, pomodoros: 1 }]);
   }
 
   async function toggleTask(task: Task) {
     const completed = !task.done;
     if (user) {
       try {
-        const { error } = await getSupabaseBrowserClient().from("tasks").update({ completed }).eq("id", task.id).eq("user_id", user.id);
-        if (error) throw error;
+        await setTaskCompleted(getSupabaseBrowserClient(), user.id, task.id, completed);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Gagal memperbarui task.";
         throw new Error(message);
@@ -338,8 +286,7 @@ export default function Home() {
   async function deleteTask(task: Task) {
     if (user) {
       try {
-        const { error } = await getSupabaseBrowserClient().from("tasks").delete().eq("id", task.id).eq("user_id", user.id);
-        if (error) throw error;
+        await deleteTaskById(getSupabaseBrowserClient(), user.id, task.id);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Gagal menghapus task.";
         throw new Error(message);
@@ -352,16 +299,14 @@ export default function Home() {
     const completedTaskIds = tasks.filter((task) => task.done).map((task) => task.id);
     if (!completedTaskIds.length) return;
     if (user) {
-      const { error } = await getSupabaseBrowserClient().from("tasks").delete().eq("user_id", user.id).in("id", completedTaskIds);
-      if (error) throw new Error(error.message);
+      await deleteTasksByIds(getSupabaseBrowserClient(), user.id, completedTaskIds);
     }
     setTasks((current) => current.filter((task) => !task.done));
   }
 
   async function deleteAllTasks() {
     if (user) {
-      const { error } = await getSupabaseBrowserClient().from("tasks").delete().eq("user_id", user.id);
-      if (error) throw new Error(error.message);
+      await deleteAllCloudTasks(getSupabaseBrowserClient(), user.id);
     }
     setTasks([]);
   }
@@ -404,7 +349,12 @@ export default function Home() {
                 onPremium={() => { setActiveView("pricing"); setProfileMenuOpen(false); }}
                 onAdmin={() => { setActiveView("admin"); setProfileMenuOpen(false); }}
                 onShortcuts={() => { setShortcutsOpen(true); setProfileMenuOpen(false); }}
-                onSignOut={() => { setProfileMenuOpen(false); void getSupabaseBrowserClient().auth.signOut(); }}
+                onSignOut={() => {
+                  setProfileMenuOpen(false);
+                  void getSupabaseBrowserClient().auth.signOut().then((result: { error: { message: string } | null }) => {
+                    if (result.error) setAppError(result.error.message);
+                  });
+                }}
                 onDelete={() => { setProfileMenuOpen(false); setInfoOpen("Penghapusan akun akan tersedia setelah endpoint aman dan proses konfirmasi email disiapkan."); }}
               />}
             </div>
@@ -422,22 +372,17 @@ export default function Home() {
 
       {activeView === "timer" && (
         <div className="content-grid">
-          <section className="timer-card card">
-            <div className="mode-tabs">
-              {(Object.keys(modeLabels) as TimerMode[]).map((item) => (
-                <button key={item} className={mode === item ? "mode-tab selected" : "mode-tab"} onClick={() => changeMode(item)}>
-                  {modeLabels[item]}
-                </button>
-              ))}
-            </div>
-            <div className="timer-display" aria-live="polite">{formatTime(seconds)}</div>
-            <button className="start-button" onClick={() => setRunning(!running)}>{running ? "PAUSE" : "START"}</button>
-            <div className="color-picker" aria-label="Pilih warna">
-              {colorThemes.map(({ color, name }) => (
-                <button key={color} className={selectedColor === color ? "color-dot selected" : "color-dot"} style={{ backgroundColor: color }} onClick={() => setSelectedColor(color)} aria-label={`Pilih tema ${name}`} />
-              ))}
-            </div>
-          </section>
+          <TimerPanel
+            mode={mode}
+            seconds={seconds}
+            running={running}
+            selectedColor={selectedColor}
+            colorThemes={colorThemes}
+            modeLabels={modeLabels}
+            onModeChange={changeMode}
+            onToggleRunning={() => setRunning((current) => !current)}
+            onColorChange={setSelectedColor}
+          />
 
           <TaskManagement
             tasks={tasks}
@@ -484,6 +429,7 @@ export default function Home() {
       {loginOpen && <AuthModal mode={authMode} setMode={setAuthMode} onClose={() => setLoginOpen(false)} />}
       {accountOpen && <AccountModal user={user} userName={userName} onClose={() => setAccountOpen(false)} />}
       {authError && <div className="modal-backdrop" role="presentation" onClick={() => setAuthError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAuthError(null)} aria-label="Tutup error">×</button><h2>Login gagal</h2><p className="modal-copy">{authError}</p><button className="secondary-button" onClick={() => setAuthError(null)}>Tutup</button></section></div>}
+      {appError && <div className="modal-backdrop" role="presentation" onClick={() => setAppError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAppError(null)} aria-label="Tutup error">×</button><h2>Terjadi kesalahan</h2><p className="modal-copy">{appError}</p><button className="secondary-button" onClick={() => setAppError(null)}>Tutup</button></section></div>}
       {infoOpen && <div className="modal-backdrop" role="presentation" onClick={() => setInfoOpen(null)}><section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setInfoOpen(null)} aria-label="Tutup">×</button><h2>Fokus dengan ritme yang tepat</h2><p className="modal-copy">{infoOpen}</p><button className="secondary-button" onClick={() => setInfoOpen(null)}>Mengerti</button></section></div>}
       {shortcutsOpen && <ShortcutsModal onClose={() => setShortcutsOpen(false)} />}
     </main>
@@ -566,32 +512,40 @@ function AuthModal({
     setLoading(true);
     setError(null);
     setStatus(null);
-    const supabase = getSupabaseBrowserClient();
-    const result = isSignUp
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (result.error) {
-      setError(result.error.message);
-      return;
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const result = isSignUp
+        ? await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signInWithPassword({ email, password });
+      if (result.error) {
+        setError(result.error.message);
+        return;
+      }
+      if (isSignUp) {
+        setStatus("Akun dibuat. Cek email kamu untuk verifikasi sebelum login.");
+        return;
+      }
+      onClose();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Gagal memproses autentikasi.");
+    } finally {
+      setLoading(false);
     }
-    if (isSignUp) {
-      setStatus("Akun dibuat. Cek email kamu untuk verifikasi sebelum login.");
-      return;
-    }
-    onClose();
   }
 
   async function signInWithGoogle() {
     setLoading(true);
     setError(null);
-    const { error: authError } = await getSupabaseBrowserClient().auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (authError) {
+    try {
+      const { error: authError } = await getSupabaseBrowserClient().auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (authError) setError(authError.message);
+    } catch (oauthError) {
+      setError(oauthError instanceof Error ? oauthError.message : "Gagal memulai Google login.");
+    } finally {
       setLoading(false);
-      setError(authError.message);
     }
   }
 
@@ -602,15 +556,20 @@ function AuthModal({
     }
     setLoading(true);
     setError(null);
-    const { error: authError } = await getSupabaseBrowserClient().auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback`,
-    });
-    setLoading(false);
-    if (authError) {
-      setError(authError.message);
-      return;
+    try {
+      const { error: authError } = await getSupabaseBrowserClient().auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      });
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+      setStatus("Link reset password sudah dikirim ke email kamu.");
+    } catch (resetError) {
+      setError(resetError instanceof Error ? resetError.message : "Gagal mengirim link reset password.");
+    } finally {
+      setLoading(false);
     }
-    setStatus("Link reset password sudah dikirim ke email kamu.");
   }
 
   return <div className="modal-backdrop" role="presentation" onClick={onClose}>
