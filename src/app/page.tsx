@@ -5,6 +5,8 @@ import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TaskManagement } from "@/app/components/task-management";
 import { TimerPanel } from "@/app/components/timer-panel";
+import { AccountModal } from "@/app/components/account-modal";
+import { ProfileMenu } from "@/app/components/profile-menu";
 import type { Task, TimerDurations, TimerMode } from "@/types/domain";
 import {
   createTask,
@@ -46,32 +48,48 @@ const colorThemes = [
   { color: "#f7c928", name: "Focus" },
 ];
 
-function playCompletionSound() {
+function playCompletionSound(startAt = 0) {
   const AudioContextClass = window.AudioContext ||
     (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioContextClass) return;
   const context = new AudioContextClass();
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-  oscillator.frequency.value = 880;
-  oscillator.type = "sine";
-  gain.gain.setValueAtTime(0.001, context.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.45);
-  oscillator.connect(gain);
-  gain.connect(context.destination);
+  const startTime = context.currentTime + startAt;
+  const notes = [659.25, 783.99, 987.77, 1318.51];
+  notes.forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const noteStart = startTime + index * 0.16;
+    oscillator.frequency.value = frequency;
+    oscillator.type = index % 2 === 0 ? "sine" : "triangle";
+    gain.gain.setValueAtTime(0.001, noteStart);
+    gain.gain.exponentialRampToValueAtTime(0.2, noteStart + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.001, noteStart + 0.55);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(noteStart);
+    oscillator.stop(noteStart + 0.58);
+  });
+  const chordStart = startTime + 0.55;
+  [659.25, 783.99, 987.77].forEach((frequency) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.frequency.value = frequency;
+    oscillator.type = "sine";
+    gain.gain.setValueAtTime(0.001, chordStart);
+    gain.gain.exponentialRampToValueAtTime(0.12, chordStart + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, chordStart + 0.9);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(chordStart);
+    oscillator.stop(chordStart + 0.95);
+  });
   void context.resume();
-  oscillator.start();
-  oscillator.stop(context.currentTime + 0.45);
-  window.setTimeout(() => void context.close(), 600);
+  window.setTimeout(() => void context.close(), (startAt + 1.7) * 1000);
 }
 
 function playCompletionAlarm(repeat: boolean) {
   playCompletionSound();
-  if (repeat) {
-    window.setTimeout(() => playCompletionSound(), 700);
-    window.setTimeout(() => playCompletionSound(), 1400);
-  }
+  if (repeat) playCompletionSound(2.2);
 }
 
 function playClickSound() {
@@ -454,49 +472,6 @@ function Pricing({ onUpgrade }: { onUpgrade: () => void }) {
 
 function Admin() {
   return <div className="inner-page"><p className="eyebrow">Workspace admin</p><h1>Overview</h1><div className="admin-table"><div><span>Total pengguna</span><strong>1,248</strong><em>↑ 12.4%</em></div><div><span>Pengguna aktif hari ini</span><strong>386</strong><em>↑ 8.1%</em></div><div><span>Pendapatan berulang</span><strong>Rp8.7jt</strong><em>↑ 21.3%</em></div></div><p className="admin-note">Dashboard admin lengkap akan terhubung ke Supabase setelah project production dikonfigurasi.</p></div>;
-}
-
-function ProfileMenu({
-  userName,
-  onAccount,
-  onPremium,
-  onAdmin,
-  onShortcuts,
-  onSignOut,
-  onDelete,
-}: {
-  userName: string;
-  onAccount: () => void;
-  onPremium: () => void;
-  onAdmin: () => void;
-  onShortcuts: () => void;
-  onSignOut: () => void;
-  onDelete: () => void;
-}) {
-  return <div className="profile-menu" role="menu">
-    <strong>{userName}</strong>
-    <button onClick={onAccount} role="menuitem">♟ <span>Account</span></button>
-    <button onClick={onPremium} role="menuitem">♛ <span>Premium</span></button>
-    <button onClick={onAdmin} role="menuitem">▦ <span>Admin</span></button>
-    <button onClick={onSignOut} role="menuitem">↪ <span>Logout</span></button>
-    <button onClick={onShortcuts} role="menuitem">⌨ <span>Shortcuts</span></button>
-    <button onClick={onDelete} role="menuitem">♲ <span>Delete Account</span></button>
-  </div>;
-}
-
-function AccountModal({ user, userName, onClose }: { user: User | null; userName: string; onClose: () => void }) {
-  const avatar = user?.user_metadata.avatar_url as string | undefined;
-  return <div className="modal-backdrop" role="presentation" onClick={onClose}>
-    <section className="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" onClick={(event) => event.stopPropagation()}>
-      <button className="modal-close" onClick={onClose} aria-label="Tutup account">×</button>
-      <p className="account-kicker" id="account-title">ACCOUNT</p>
-      <div className="account-profile">
-        {avatar ? <img src={avatar} alt="" /> : <div className="account-avatar">{userName.charAt(0).toUpperCase()}</div>}
-        <div><h2>{userName}</h2><p>{user?.email}</p></div>
-      </div>
-      <div className="account-actions"><button className="secondary-button" onClick={onClose}>Close</button><button className="apply-button" onClick={onClose}>Save</button></div>
-    </section>
-  </div>;
 }
 
 function AuthModal({
