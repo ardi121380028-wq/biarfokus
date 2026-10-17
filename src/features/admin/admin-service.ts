@@ -186,3 +186,119 @@ export async function postAdminAuditLogToApi(
 
   return payload.data;
 }
+
+export async function loadAdminUsers(
+  supabase: SupabaseClient,
+  limit = 50,
+): Promise<import("@/types/domain").AdminUserItem[]> {
+  const [profilesRes, rolesRes, subsRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url, created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit),
+    supabase.from("user_roles").select("user_id, role"),
+    supabase.from("subscriptions").select("user_id, plan, status"),
+  ]);
+
+  if (profilesRes.error) throw profilesRes.error;
+  if (rolesRes.error) throw rolesRes.error;
+  if (subsRes.error) throw subsRes.error;
+
+  const roleMap = new Map((rolesRes.data ?? []).map((r) => [r.user_id, normalizeUserRole(r.role)]));
+  const subMap = new Map(
+    (subsRes.data ?? []).map((s) => [
+      s.user_id,
+      {
+        plan: s.plan === "pro" ? ("pro" as const) : ("free" as const),
+        status: (s.status as import("@/types/domain").SubscriptionStatus) ?? "inactive",
+      },
+    ]),
+  );
+
+  return (profilesRes.data ?? []).map((p) => {
+    const sub = subMap.get(p.id);
+    return {
+      id: p.id,
+      displayName: p.display_name ?? null,
+      avatarUrl: p.avatar_url ?? null,
+      role: roleMap.get(p.id) ?? "user",
+      plan: sub?.plan === "pro" ? "pro" : "free",
+      status: sub?.status ?? "inactive",
+      createdAt: p.created_at,
+    };
+  });
+}
+
+export async function updateUserPlanByAdmin(
+  supabase: SupabaseClient,
+  actorUserId: string,
+  targetUserId: string,
+  newPlan: "free" | "pro",
+): Promise<{ success: boolean; plan: import("@/types/domain").SubscriptionPlan }> {
+  const status: import("@/types/domain").SubscriptionStatus =
+    newPlan === "pro" ? "active" : "inactive";
+
+  const { error } = await supabase.from("subscriptions").upsert({
+    user_id: targetUserId,
+    plan: newPlan,
+    status,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+
+  await createAdminAuditLog(
+    supabase,
+    actorUserId,
+    newPlan === "pro" ? "grant_pro_subscription" : "revoke_pro_subscription",
+    "subscription",
+    targetUserId,
+    { plan: newPlan, status },
+  );
+
+  return { success: true, plan: newPlan };
+}
+
+export async function fetchAdminUsersFromApi(): Promise<import("@/types/domain").AdminUserItem[]> {
+  const response = await fetch("/api/admin/users", {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+
+  const payload = (await response.json()) as {
+    data?: import("@/types/domain").AdminUserItem[];
+    error?: string;
+    correlationId?: string;
+  };
+
+  if (!response.ok || !payload.data) {
+    throw new Error(formatApiError(payload, "Gagal memuat daftar pengguna."));
+  }
+
+  return payload.data;
+}
+
+export async function postUpdateUserPlanToApi(
+  targetUserId: string,
+  plan: "free" | "pro",
+): Promise<void> {
+  const response = await fetch("/api/admin/users", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ userId: targetUserId, plan }),
+  });
+
+  const payload = (await response.json()) as {
+    error?: string;
+    correlationId?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(formatApiError(payload, "Gagal memperbarui paket pengguna."));
+  }
+}
+

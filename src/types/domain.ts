@@ -50,6 +50,16 @@ export type AdminAuditLog = {
   created_at: string;
 };
 
+export type AdminUserItem = {
+  id: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  role: UserRole;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  createdAt: string;
+};
+
 export type AdminOverview = {
   totalUsers: number;
   activeUsersToday: number;

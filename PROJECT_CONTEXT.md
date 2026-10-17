@@ -74,7 +74,11 @@ This file serves as a single-source handoff for any developer or AI assistant co
     │       └── timer-utils.test.ts  # Unit tests for timer helpers
     └── app/
         ├── api/
-        │   ├── admin/overview/route.ts   # Server-verified admin overview & audit log API
+        │   ├── account/
+        │   │   └── delete/route.ts       # Secure user account and data deletion endpoint
+        │   ├── admin/
+        │   │   ├── overview/route.ts     # Server-verified admin overview & audit log API
+        │   │   └── users/route.ts        # Admin user listing & manual Pro/Free plan toggling
         │   └── billing/
         │       ├── checkout/route.ts     # Stripe Checkout Session creation (Pro subscription)
         │       ├── portal/route.ts       # Stripe Customer Portal session creation
@@ -82,7 +86,7 @@ This file serves as a single-source handoff for any developer or AI assistant co
         ├── auth/callback/route.ts  # OAuth code exchange route handler
         ├── components/
         │   ├── account-modal.tsx   # Profile editor (display name, avatar preview, email, sign-out)
-        │   ├── admin-view.tsx      # Admin dashboard (metrics + audit log table)
+        │   ├── admin-view.tsx      # Admin dashboard (metrics + user management + audit log table)
         │   ├── auth-modal.tsx      # Login / register / Google OAuth modal
         │   ├── pricing-view.tsx    # Free vs Pro plan status, upgrade & billing portal actions
         │   ├── profile-menu.tsx    # Header user dropdown (Account, Paket & Billing, Admin, Sign out)
@@ -92,8 +96,9 @@ This file serves as a single-source handoff for any developer or AI assistant co
         │   └── timer-panel.tsx     # Timer display, cycle dots, active focus banner, aux controls, ambient sound
         ├── globals.css             # Theme tokens and UI styles
         ├── icon.svg                # Brand SVG favicon
-        ├── layout.tsx              # Root layout (Indonesian locale, PWA metadata, Plus Jakarta Sans + JetBrains Mono)
+        ├── layout.tsx              # Root layout (Indonesian locale, PWA metadata, OpenGraph & Twitter tags)
         ├── manifest.ts             # PWA Web App Manifest (standalone install on Android/iOS/Desktop)
+        ├── opengraph-image.tsx     # Dynamic 1200x630 branded social share image (Next.js ImageResponse)
         └── page.tsx                # Main application coordinator (Timer, Tasks, Stats, Pricing, Admin)
 ```
 
@@ -160,6 +165,10 @@ All tables have Row Level Security (RLS) enabled.
   - Smart Pomodoro Cycle: Automatic transition to Long Break every 4 pomodoros with visual cycle indicator dots (`Siklus #N · 2/4`) plus direct `Reset (↺)` and `Skip (⏭)` touch/click controls.
   - Web Audio Ambient Sound: Procedural offline synthesizer for background focus audio (Rain, Waves, Brown noise) with zero external audio assets.
   - Installable PWA: Web App Manifest (`manifest.webmanifest`) and viewport/apple-web-app metadata for home screen installation on Android and iOS.
+- **MVP8 — Admin User Controls, Account Deletion & Social Share (Completed):**
+  - Admin User Management: `/api/admin/users` endpoint + `AdminView` user cards list with live status and manual "Jadikan Pro" / "Turunkan ke Free" toggles audited in `admin_audit_logs`.
+  - Secure Account Deletion: `/api/account/delete` endpoint cascading profile and domain data deletion + confirmation modal in `page.tsx`.
+  - SEO & Dynamic Social Share Preview: Automated 1200x630 OpenGraph image (`/opengraph-image`) with branding, metadata base, Twitter card tags, and official Instagram link (`https://www.instagram.com/biarfokus.id/`) in the footer.
 
 ---
 

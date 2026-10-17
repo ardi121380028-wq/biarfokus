@@ -19,8 +19,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://biarfokus.vercel.app"),
   title: "BiarFokus — Bantu kamu fokus selesain setiap pekerjaan",
-  description: "BiarFokus membantu kamu fokus dan menyelesaikan setiap pekerjaan dengan Pomodoro timer.",
+  description:
+    "Aplikasi Pomodoro timer akurat dan task management harian untuk membantumu fokus, konsisten, dan menyelesaikan setiap pekerjaan.",
+  keywords: [
+    "Pomodoro Timer",
+    "BiarFokus",
+    "Produktivitas",
+    "Focus Timer",
+    "Manajemen Tugas",
+    "Work Tracker",
+    "Deep Work",
+  ],
+  authors: [{ name: "BiarFokus Team" }],
+  creator: "BiarFokus",
+  publisher: "BiarFokus",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -34,6 +48,21 @@ export const metadata: Metadata = {
     ],
     shortcut: "/biarfokus-icon.png",
     apple: [{ url: "/biarfokus-icon.png", sizes: "192x192", type: "image/png" }],
+  },
+  openGraph: {
+    title: "BiarFokus — Bantu kamu fokus selesain setiap pekerjaan",
+    description:
+      "Aplikasi Pomodoro timer akurat, task management, focus streaks, dan suara latar penenang untuk produktivitas maksimal.",
+    url: "https://biarfokus.vercel.app",
+    siteName: "BiarFokus",
+    locale: "id_ID",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BiarFokus — Bantu kamu fokus selesain setiap pekerjaan",
+    description:
+      "Aplikasi Pomodoro timer akurat dan task management harian untuk membantumu fokus dan konsisten.",
   },
 };
 

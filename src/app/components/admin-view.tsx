@@ -1,10 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { AdminOverview } from "@/types/domain";
+import Image from "next/image";
+import type { AdminOverview, AdminUserItem } from "@/types/domain";
+import { getSafeAvatarUrl } from "@/features/profile/profile-service";
 import {
   fetchAdminOverviewFromApi,
+  fetchAdminUsersFromApi,
   postAdminAuditLogToApi,
+  postUpdateUserPlanToApi,
 } from "@/features/admin/admin-service";
 
 type AdminViewProps = {
@@ -26,16 +30,23 @@ function formatAuditTime(isoString: string) {
 
 export function AdminView({ userId, isAdmin }: AdminViewProps) {
   const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [recording, setRecording] = useState(false);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchAdminOverviewFromApi();
-      setOverview(result);
+      const [overviewResult, usersResult] = await Promise.all([
+        fetchAdminOverviewFromApi(),
+        fetchAdminUsersFromApi(),
+      ]);
+      setOverview(overviewResult);
+      setUsers(usersResult);
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -50,9 +61,12 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
   useEffect(() => {
     if (!userId || !isAdmin) return;
     let cancelled = false;
-    void fetchAdminOverviewFromApi()
-      .then((result) => {
-        if (!cancelled) setOverview(result);
+    void Promise.all([fetchAdminOverviewFromApi(), fetchAdminUsersFromApi()])
+      .then(([overviewResult, usersResult]) => {
+        if (!cancelled) {
+          setOverview(overviewResult);
+          setUsers(usersResult);
+        }
       })
       .catch((loadError: unknown) => {
         if (!cancelled) {
@@ -77,8 +91,7 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
     setError(null);
     try {
       await postAdminAuditLogToApi("refresh_overview", "admin_dashboard");
-      const refreshed = await fetchAdminOverviewFromApi();
-      setOverview(refreshed);
+      await loadData();
     } catch (actionError) {
       setError(
         actionError instanceof Error
@@ -87,6 +100,36 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
       );
     } finally {
       setRecording(false);
+    }
+  }
+
+  async function handleTogglePlan(targetUser: AdminUserItem) {
+    if (updatingUserId) return;
+    const nextPlan = targetUser.plan === "pro" ? "free" : "pro";
+    setUpdatingUserId(targetUser.id);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await postUpdateUserPlanToApi(targetUser.id, nextPlan);
+      setUsers((current) =>
+        current.map((u) =>
+          u.id === targetUser.id
+            ? { ...u, plan: nextPlan, status: nextPlan === "pro" ? "active" : "inactive" }
+            : u,
+        ),
+      );
+      setSuccessMessage(
+        `Berhasil mengubah status langganan ${targetUser.displayName || targetUser.id.slice(0, 8)} menjadi ${nextPlan.toUpperCase()}.`,
+      );
+    } catch (toggleError) {
+      setError(
+        toggleError instanceof Error
+          ? toggleError.message
+          : "Gagal memperbarui status paket pengguna.",
+      );
+    } finally {
+      setUpdatingUserId(null);
     }
   }
 
@@ -119,7 +162,7 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
       <div className="inner-page">
         <p className="eyebrow">Workspace admin</p>
         <h1>Overview</h1>
-        <p className="admin-note">Memuat metrik real-time dan audit log...</p>
+        <p className="admin-note">Memuat metrik real-time, daftar pengguna, dan audit log...</p>
       </div>
     );
   }
@@ -157,7 +200,7 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
       <div className="admin-header">
         <div>
           <p className="eyebrow">Workspace admin</p>
-          <h1>Overview</h1>
+          <h1>Overview & Manajemen Pengguna</h1>
         </div>
         <button
           type="button"
@@ -165,13 +208,19 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
           onClick={() => void handleAuditRefresh()}
           disabled={recording}
         >
-          {recording ? "Mencatat..." : "Catat Audit & Muat Ulang"}
+          {recording ? "Mencatat..." : "Catat Audit & Refresh"}
         </button>
       </div>
 
       {error && (
         <p className="task-error" role="alert">
           {error}
+        </p>
+      )}
+
+      {successMessage && (
+        <p className="admin-success-banner" role="status">
+          ✓ {successMessage}
         </p>
       )}
 
@@ -195,6 +244,67 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
         </div>
       </div>
 
+      <section className="admin-users-section" aria-label="Manajemen pengguna">
+        <div className="section-subheading">
+          <h2>Daftar Pengguna ({users.length})</h2>
+          <span>Kelola akses Pro / Free secara manual</span>
+        </div>
+        {users.length === 0 ? (
+          <p className="admin-note">Belum ada pengguna terdaftar.</p>
+        ) : (
+          <div className="admin-users-list">
+            {users.map((item) => {
+              const safeAvatar = getSafeAvatarUrl(item.avatarUrl);
+              const isCurrentUser = item.id === userId;
+              const isPro = item.plan === "pro";
+              return (
+                <div className="admin-user-card" key={item.id}>
+                  <div className="admin-user-info">
+                    <div className="admin-user-avatar">
+                      {safeAvatar ? (
+                        <Image src={safeAvatar} alt="" width={38} height={38} unoptimized />
+                      ) : (
+                        <span>{(item.displayName || "U").charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div>
+                      <div className="admin-user-title-row">
+                        <strong>{item.displayName || "Pengguna Tanpa Nama"}</strong>
+                        {isCurrentUser && <span className="admin-self-badge">Kamu</span>}
+                        <span className={item.role === "admin" ? "admin-role-badge is-admin" : "admin-role-badge"}>
+                          {item.role === "admin" ? "Admin" : "User"}
+                        </span>
+                      </div>
+                      <small className="admin-user-meta">
+                        ID: {item.id.slice(0, 13)}... · Terdaftar: {formatAuditTime(item.createdAt)}
+                      </small>
+                    </div>
+                  </div>
+                  <div className="admin-user-plan-action">
+                    <span className={isPro ? "admin-plan-badge pro" : "admin-plan-badge free"}>
+                      {isPro ? "PRO" : "FREE"}
+                    </span>
+                    <button
+                      type="button"
+                      className={isPro ? "secondary-button admin-plan-btn" : "primary-button admin-plan-btn"}
+                      onClick={() => void handleTogglePlan(item)}
+                      disabled={updatingUserId === item.id}
+                      title={isPro ? "Turunkan ke paket Free" : "Tingkatkan ke paket Pro"}
+                    >
+                      {updatingUserId === item.id
+                        ? "Menyimpan..."
+                        : isPro
+                          ? "Turunkan ke Free"
+                          : "Jadikan Pro"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       <section className="admin-audit-section" aria-label="Riwayat audit admin">
         <h2>Riwayat Audit Admin</h2>
         {data.auditLogs.length === 0 ? (
@@ -205,7 +315,7 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
               <div className="admin-audit-item" key={log.id}>
                 <div>
                   <strong>{log.action}</strong>
-                  <span>Target: {log.target_type}</span>
+                  <span>Target: {log.target_type} {log.target_id ? `(${log.target_id.slice(0, 8)})` : ""}</span>
                 </div>
                 <small>{formatAuditTime(log.created_at)}</small>
               </div>

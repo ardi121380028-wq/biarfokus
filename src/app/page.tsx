@@ -161,6 +161,8 @@ export default function Home() {
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [appError, setAppError] = useState<string | null>(null);
   const timerEndAtRef = useRef<number | null>(null);
@@ -565,6 +567,32 @@ export default function Home() {
     }
   }
 
+  async function handleDeleteAccount() {
+    if (deletingAccount || !user) return;
+    setDeletingAccount(true);
+    try {
+      const response = await fetch("/api/account/delete", {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menghapus akun.");
+      }
+      await getSupabaseBrowserClient().auth.signOut();
+      setUser(null);
+      setProfileDisplayName(null);
+      setDeleteConfirmOpen(false);
+      setTasks(initialTasks);
+      window.localStorage.removeItem("biarfokus.tasks");
+      setInfoOpen("Akun dan semua data kamu telah berhasil dihapus. Terima kasih telah menggunakan BiarFokus.");
+    } catch (error) {
+      setAppError(error instanceof Error ? error.message : "Gagal menghapus akun.");
+    } finally {
+      setDeletingAccount(false);
+    }
+  }
+
   return (
     <main
       className={dark ? "app dark" : "app"}
@@ -610,7 +638,7 @@ export default function Home() {
                     if (result.error) setAppError(result.error.message);
                   });
                 }}
-                onDelete={() => { setProfileMenuOpen(false); setInfoOpen("Penghapusan akun akan tersedia setelah endpoint aman dan proses konfirmasi email disiapkan."); }}
+                onDelete={() => { setProfileMenuOpen(false); setDeleteConfirmOpen(true); }}
               />}
             </div>
           ) : <button className="login-button" onClick={() => setLoginOpen(true)}>🔐 Sign In</button>}
@@ -677,7 +705,19 @@ export default function Home() {
 
       <footer className="footer">
         <div><strong>BiarFokus</strong><span>Bantu kamu fokus selesain setiap pekerjaan.</span></div>
-        <div className="footer-links"><button onClick={() => setActiveView("timer")}>Main App</button><button onClick={() => setInfoOpen("Pomodoro membagi waktu kerja menjadi interval fokus dan istirahat agar kamu bisa bekerja dengan ritme yang konsisten.")}>Apa itu Pomodoro?</button><button onClick={() => setInfoOpen("BiarFokus dibuat untuk membantu kamu menyelesaikan pekerjaan dengan lebih tenang dan terarah.")}>Tentang Kami</button></div>
+        <div className="footer-links">
+          <button onClick={() => setActiveView("timer")}>Main App</button>
+          <button onClick={() => setInfoOpen("Pomodoro membagi waktu kerja menjadi interval fokus dan istirahat agar kamu bisa bekerja dengan ritme yang konsisten.")}>Apa itu Pomodoro?</button>
+          <button onClick={() => setInfoOpen("BiarFokus dibuat untuk membantu kamu menyelesaikan pekerjaan dengan lebih tenang dan terarah.")}>Tentang Kami</button>
+          <a
+            href="https://www.instagram.com/biarfokus.id/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-social-link"
+          >
+            📸 Instagram @biarfokus.id
+          </a>
+        </div>
         <small>© 2025 biarfokus - All rights reserved</small>
       </footer>
       <button className="settings-fab" onClick={() => setShowSettings(true)} aria-label="Pengaturan">⚙</button>
@@ -704,6 +744,42 @@ export default function Home() {
       />}
       {loginOpen && <AuthModalComponent mode={authMode} setMode={setAuthMode} onClose={() => setLoginOpen(false)} />}
       {accountOpen && <AccountModal user={user} userName={userName} supabase={getSupabaseBrowserClient()} onSaved={setProfileDisplayName} onClose={() => setAccountOpen(false)} />}
+      {deleteConfirmOpen && (
+        <div className="modal-backdrop" role="presentation" onClick={() => { if (!deletingAccount) setDeleteConfirmOpen(false); }}>
+          <section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => setDeleteConfirmOpen(false)}
+              aria-label="Tutup konfirmasi"
+              disabled={deletingAccount}
+            >
+              ×
+            </button>
+            <h2>Hapus Akun Permanen?</h2>
+            <p className="modal-copy">
+              Semua task, riwayat sesi fokus, dan pengaturan akun kamu akan dihapus secara permanen dan tidak dapat dipulihkan kembali.
+            </p>
+            <div className="task-confirm-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={deletingAccount}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className="danger-button"
+                onClick={() => void handleDeleteAccount()}
+                disabled={deletingAccount}
+              >
+                {deletingAccount ? "Menghapus..." : "Ya, Hapus Akun"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       {authError && <div className="modal-backdrop" role="presentation" onClick={() => setAuthError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAuthError(null)} aria-label="Tutup error">×</button><h2>Login gagal</h2><p className="modal-copy">{authError}</p><button className="secondary-button" onClick={() => setAuthError(null)}>Tutup</button></section></div>}
       {appError && <div className="modal-backdrop" role="presentation" onClick={() => setAppError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAppError(null)} aria-label="Tutup error">×</button><h2>Terjadi kesalahan</h2><p className="modal-copy">{appError}</p><button className="secondary-button" onClick={() => setAppError(null)}>Tutup</button></section></div>}
       {infoOpen && <div className="modal-backdrop" role="presentation" onClick={() => setInfoOpen(null)}><section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setInfoOpen(null)} aria-label="Tutup">×</button><h2>Fokus dengan ritme yang tepat</h2><p className="modal-copy">{infoOpen}</p><button className="secondary-button" onClick={() => setInfoOpen(null)}>Mengerti</button></section></div>}
