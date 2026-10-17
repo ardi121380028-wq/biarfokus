@@ -48,3 +48,22 @@ export type AdminOverview = {
   completedTasks: number;
   auditLogs: AdminAuditLog[];
 };
+
+export type SubscriptionPlan = "free" | "pro";
+
+export type SubscriptionStatus =
+  | "inactive"
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "canceled";
+
+export type UserSubscription = {
+  user_id: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+};

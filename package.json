@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --experimental-strip-types src/features/timer/timer-utils.test.ts src/features/tasks/task-service.test.ts src/features/stats/stats-service.test.ts src/features/settings/settings-service.test.ts src/features/profile/profile-service.test.ts src/features/admin/admin-service.test.ts"
+    "test": "node --test --experimental-strip-types src/features/timer/timer-utils.test.ts src/features/tasks/task-service.test.ts src/features/stats/stats-service.test.ts src/features/settings/settings-service.test.ts src/features/profile/profile-service.test.ts src/features/admin/admin-service.test.ts src/features/billing/billing-service.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

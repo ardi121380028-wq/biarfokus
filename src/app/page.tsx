@@ -12,7 +12,14 @@ import { SettingsModal as SettingsModalComponent } from "@/app/components/settin
 import { ShortcutsModal as ShortcutsModalComponent } from "@/app/components/shortcuts-modal";
 import { StatsView } from "@/app/components/stats-view";
 import { AdminView } from "@/app/components/admin-view";
+import { PricingView } from "@/app/components/pricing-view";
 import { isAdminRole, loadUserRole } from "@/features/admin/admin-service";
+import {
+  assertTaskLimitAllowed,
+  createDefaultSubscription,
+  isProSubscription,
+  loadUserSubscription,
+} from "@/features/billing/billing-service";
 import {
   DEFAULT_SETTINGS,
   loadLocalSettings,
@@ -21,7 +28,7 @@ import {
   saveUserSettings,
   type UserSettings,
 } from "@/features/settings/settings-service";
-import type { Task, TimerDurations, TimerMode, UserRole } from "@/types/domain";
+import type { Task, TimerDurations, TimerMode, UserRole, UserSubscription } from "@/types/domain";
 import {
   createTask,
   deleteAllTasks as deleteAllCloudTasks,
@@ -142,6 +149,7 @@ export default function Home() {
   const [repeatAlarm, setRepeatAlarm] = useState(DEFAULT_SETTINGS.repeatAlarm);
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole>("user");
+  const [subscription, setSubscription] = useState<UserSubscription>(() => createDefaultSubscription());
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -165,9 +173,17 @@ export default function Home() {
   }, [mode, seconds]);
 
   useEffect(() => {
-    const error = new URLSearchParams(window.location.search).get("auth_error");
-    if (!error) return;
-    const frame = window.requestAnimationFrame(() => setAuthError(error));
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("auth_error");
+    const billing = params.get("billing");
+    if (!error && !billing) return;
+    const frame = window.requestAnimationFrame(() => {
+      if (error) setAuthError(error);
+      if (billing === "success") {
+        setActiveView("pricing");
+        setInfoOpen("Pembayaran berhasil diproses! Langganan Pro kamu sedang diaktifkan.");
+      }
+    });
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
@@ -209,13 +225,15 @@ export default function Home() {
     if (!user) {
       const frame = window.requestAnimationFrame(() => {
         setUserRole("user");
+        setSubscription(createDefaultSubscription());
         setActiveView((current) => (current === "admin" ? "timer" : current));
       });
       return () => window.cancelAnimationFrame(frame);
     }
     const userId = user.id;
     let cancelled = false;
-    void loadUserRole(getSupabaseBrowserClient(), userId)
+    const supabase = getSupabaseBrowserClient();
+    void loadUserRole(supabase, userId)
       .then((role) => {
         if (cancelled) return;
         setUserRole(role);
@@ -227,6 +245,16 @@ export default function Home() {
         if (!cancelled) {
           console.error("Gagal memuat role pengguna; menggunakan role default.", error);
           setUserRole("user");
+        }
+      });
+    void loadUserSubscription(supabase, userId)
+      .then((sub) => {
+        if (!cancelled) setSubscription(sub);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          console.error("Gagal memuat status langganan; menggunakan paket default.", error);
+          setSubscription(createDefaultSubscription(userId));
         }
       });
     return () => { cancelled = true; };
@@ -401,6 +429,8 @@ export default function Home() {
   }, [autoStart, mode, repeatAlarm, running, soundEnabled, timerDurations, user]);
 
   const completedTasks = useMemo(() => tasks.filter((task) => task.done).length, [tasks]);
+  const activeTasksCount = useMemo(() => tasks.filter((task) => !task.done).length, [tasks]);
+  const isPro = isProSubscription(subscription) || isAdminRole(userRole);
   const userName = profileDisplayName ?? user?.user_metadata.full_name ?? user?.user_metadata.name ?? user?.email?.split("@")[0] ?? "Account";
   const userAvatar = user?.user_metadata.avatar_url as string | undefined;
 
@@ -425,6 +455,7 @@ export default function Home() {
   }
 
   async function addTask(title: string) {
+    assertTaskLimitAllowed(activeTasksCount, isPro);
     if (user) {
       try {
         const task = await createTask(getSupabaseBrowserClient(), user.id, title);
@@ -574,7 +605,19 @@ export default function Home() {
       )}
 
       {activeView === "stats" && <StatsView key={user?.id ?? "guest"} supabase={getSupabaseBrowserClient()} userId={user?.id ?? null} completedTasks={completedTasks} />}
-      {activeView === "pricing" && <Pricing onUpgrade={() => setInfoOpen("Checkout Stripe akan aktif setelah akun pembayaran dikonfigurasi.")} />}
+      {activeView === "pricing" && (
+        <PricingView
+          userId={user?.id ?? null}
+          subscription={subscription}
+          isPro={isPro}
+          activeTaskCount={activeTasksCount}
+          onRequireSignIn={() => setLoginOpen(true)}
+          onGoTimer={() => {
+            setActiveView("timer");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      )}
       {activeView === "admin" && <AdminView userId={user?.id ?? null} isAdmin={isAdminRole(userRole)} />}
 
       <footer className="footer">
@@ -612,8 +655,4 @@ export default function Home() {
       {shortcutsOpen && <ShortcutsModalComponent onClose={() => setShortcutsOpen(false)} />}
     </main>
   );
-}
-
-function Pricing({ onUpgrade }: { onUpgrade: () => void }) {
-  return <div className="inner-page"><p className="eyebrow">Biar makin fokus</p><h1>Pilih ruang fokusmu</h1><div className="pricing-grid"><div className="price-card"><span>Free</span><strong>$0 <small>/ forever</small></strong><p>Pomodoro timer, task management, dan fokus tanpa batas.</p><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Mulai gratis</button></div><div className="price-card featured"><b className="popular">MOST POPULAR</b><span>Pro</span><strong>$2.99 <small>/ month</small></strong><p>Statistik lengkap, task tanpa batas, dan suara fokus.</p><button onClick={onUpgrade}>Upgrade ke Pro</button></div></div></div>;
 }
