@@ -5,6 +5,8 @@ import type { Task } from "@/types/domain";
 
 type TaskManagementProps = {
   tasks: Task[];
+  focusedTaskId: string | null;
+  onSelectTask: (taskId: string) => void;
   onAdd: (title: string) => Promise<void>;
   onToggle: (task: Task) => Promise<void>;
   onDelete: (task: Task) => Promise<void>;
@@ -14,6 +16,8 @@ type TaskManagementProps = {
 
 export function TaskManagement({
   tasks,
+  focusedTaskId,
+  onSelectTask,
   onAdd,
   onToggle,
   onDelete,
@@ -127,31 +131,43 @@ export function TaskManagement({
       {error && <p className="task-error" role="alert">{error}</p>}
       <div className="task-list">
         {activeTasks.length === 0 && !archivedTasks.length && <p className="task-empty">Belum ada task. Tambahkan fokus pertamamu.</p>}
-        {activeTasks.map((task) => (
-          <div className={task.done ? "task done" : "task"} key={task.id}>
-            <label className="task-check">
-              <input
-                type="checkbox"
-                checked={task.done}
-                onChange={() => void handleToggle(task)}
+        {activeTasks.map((task) => {
+          const isFocused = task.id === focusedTaskId;
+          return (
+            <div className={isFocused ? "task focused" : "task"} key={task.id}>
+              <label className="task-check">
+                <input
+                  type="checkbox"
+                  checked={task.done}
+                  onChange={() => void handleToggle(task)}
+                  disabled={activeTaskId !== null}
+                />
+                <span className="checkmark" />
+                <span className="task-title">{task.title}</span>
+              </label>
+              <button
+                type="button"
+                className={isFocused ? "task-focus-btn active" : "task-focus-btn"}
+                onClick={() => onSelectTask(task.id)}
+                aria-pressed={isFocused}
+                title={isFocused ? "Sedang menjadi fokus aktif" : "Jadikan fokus aktif"}
+              >
+                {isFocused ? "🎯 Fokus" : "Pilih"}
+              </button>
+              <span className="task-pomos">🍅 {task.pomodoros}</span>
+              <button
+                type="button"
+                className="task-delete"
+                onClick={() => void handleDelete(task)}
                 disabled={activeTaskId !== null}
-              />
-              <span className="checkmark" />
-              <span className="task-title">{task.title}</span>
-            </label>
-            <span className="task-pomos">🍅 {task.pomodoros}</span>
-            <button
-              type="button"
-              className="task-delete"
-              onClick={() => void handleDelete(task)}
-              disabled={activeTaskId !== null}
-              aria-label={`Hapus task ${task.title}`}
-              title="Hapus task"
-            >
-              ×
-            </button>
-          </div>
-        ))}
+                aria-label={`Hapus task ${task.title}`}
+                title="Hapus task"
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
         {archivedTasks.length > 0 && <div className={archiveOpen ? "task-archive expanded" : "task-archive"}>
           <button type="button" className="archive-toggle" onClick={() => setArchiveOpen((open) => !open)} aria-expanded={archiveOpen}>
             <span>Archive ({archivedTasks.length})</span><span>{archiveOpen ? "⌃" : "⌄"}</span>

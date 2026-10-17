@@ -52,6 +52,8 @@ This file serves as a single-source handoff for any developer or AI assistant co
     │   ├── admin/
     │   │   ├── admin-service.ts      # Role lookup, overview response validation, fetch client
     │   │   └── admin-service.test.ts # Unit tests for admin service
+    │   ├── audio/
+    │   │   └── ambient-sound.ts      # Web Audio procedural ambient sounds (rain, ocean waves, brown noise)
     │   ├── billing/
     │   │   ├── billing-service.ts      # Plan constants, subscription state, Stripe signature verify, REST helper
     │   │   └── billing-service.test.ts # Unit tests for billing service
@@ -68,7 +70,7 @@ This file serves as a single-source handoff for any developer or AI assistant co
     │   │   ├── task-service.ts      # Task CRUD, localStorage fallback, idempotent migrate_local_tasks RPC
     │   │   └── task-service.test.ts # Unit tests for task service
     │   └── timer/
-    │       ├── timer-utils.ts       # Pure timer math & formatting helpers
+    │       ├── timer-utils.ts       # Pure timer math & formatting helpers, Pomodoro cycle transitions
     │       └── timer-utils.test.ts  # Unit tests for timer helpers
     └── app/
         ├── api/
@@ -86,10 +88,12 @@ This file serves as a single-source handoff for any developer or AI assistant co
         │   ├── profile-menu.tsx    # Header user dropdown (Account, Paket & Billing, Admin, Sign out)
         │   ├── settings-modal.tsx  # Custom timer duration modal
         │   ├── stats-view.tsx      # Focus statistics (range selector, streak card, bar chart, CSV export)
-        │   └── tasks-card.tsx      # Task list, add form, and bulk delete actions
+        │   ├── task-management.tsx # Task list, add form, active focused task selection, bulk delete
+        │   └── timer-panel.tsx     # Timer display, cycle dots, active focus banner, aux controls, ambient sound
         ├── globals.css             # Theme tokens and UI styles
         ├── icon.svg                # Brand SVG favicon
-        ├── layout.tsx              # Root layout (Indonesian locale, metadata, Plus Jakarta Sans + JetBrains Mono)
+        ├── layout.tsx              # Root layout (Indonesian locale, PWA metadata, Plus Jakarta Sans + JetBrains Mono)
+        ├── manifest.ts             # PWA Web App Manifest (standalone install on Android/iOS/Desktop)
         └── page.tsx                # Main application coordinator (Timer, Tasks, Stats, Pricing, Admin)
 ```
 
@@ -151,6 +155,11 @@ All tables have Row Level Security (RLS) enabled.
   - API Hardening & Observability: Sliding-window rate limiting (`429 Too Many Requests` + `Retry-After`), `x-correlation-id` propagation, and structured JSON request/error logging (`src/lib/api/request-guard.ts`) across all `/api/*` routes.
   - Database Performance Indexes: Targeted composite/partial indexes on `tasks`, `pomodoro_sessions`, `admin_audit_logs`, and `subscriptions`.
   - Zero Lint Warnings: Avatar rendering migrated to `next/image` (`unoptimized`) guarded by `getSafeAvatarUrl`.
+- **MVP7 — Product Experience & Pro Features (Completed):**
+  - Active Task Tracking: Link sessions directly to `pomodoro_sessions.task_id`, select active focus task in `TaskManagement`, display active task banner in `TimerPanel`, and auto-increment task pomodoro count upon completion.
+  - Smart Pomodoro Cycle: Automatic transition to Long Break every 4 pomodoros with visual cycle indicator dots (`Siklus #N · 2/4`) plus direct `Reset (↺)` and `Skip (⏭)` touch/click controls.
+  - Web Audio Ambient Sound: Procedural offline synthesizer for background focus audio (Rain, Waves, Brown noise) with zero external audio assets.
+  - Installable PWA: Web App Manifest (`manifest.webmanifest`) and viewport/apple-web-app metadata for home screen installation on Android and iOS.
 
 ---
 

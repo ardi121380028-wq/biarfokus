@@ -2,6 +2,8 @@ export type TimerMode = "pomodoro" | "short" | "long";
 
 export type TimerDurations = Record<TimerMode, number>;
 
+export type AmbientSoundMode = "off" | "rain" | "waves" | "brown";
+
 export type Task = {
   id: string;
   title: string;

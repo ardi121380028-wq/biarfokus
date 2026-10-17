@@ -30,7 +30,8 @@ import {
   saveUserSettings,
   type UserSettings,
 } from "@/features/settings/settings-service";
-import type { Task, TimerDurations, TimerMode, UserRole, UserSubscription } from "@/types/domain";
+import type { AmbientSoundMode, Task, TimerDurations, TimerMode, UserRole, UserSubscription } from "@/types/domain";
+import { stopAmbientSound, syncAmbientSound } from "@/features/audio/ambient-sound";
 import {
   createTask,
   deleteAllTasks as deleteAllCloudTasks,
@@ -40,9 +41,11 @@ import {
   loadLocalTasks,
   loadTasks,
   recordCompletedSession,
+  resolveFocusedTask,
   setTaskCompleted,
+  updateTaskPomodoros,
 } from "@/features/tasks/task-service";
-import { formatTime, getRemainingSeconds, getTimerEndTime } from "@/features/timer/timer-utils";
+import { formatTime, getNextTimerMode, getRemainingSeconds, getTimerEndTime } from "@/features/timer/timer-utils";
 
 type View = "timer" | "stats" | "pricing" | "admin";
 const durations: Record<TimerMode, number> = {
@@ -133,6 +136,9 @@ export default function Home() {
   const [mode, setMode] = useState<TimerMode>("pomodoro");
   const [seconds, setSeconds] = useState(durations.pomodoro);
   const [running, setRunning] = useState(false);
+  const [completedPomodoros, setCompletedPomodoros] = useState(0);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [ambientSound, setAmbientSound] = useState<AmbientSoundMode>("off");
   const [dark, setDark] = useState(false);
   const [activeView, setActiveView] = useState<View>("timer");
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -287,6 +293,19 @@ export default function Home() {
     return () => document.removeEventListener("click", handleClick, true);
   }, [soundEnabled]);
 
+  const completedTasks = useMemo(() => tasks.filter((task) => task.done).length, [tasks]);
+  const activeTasksCount = useMemo(() => tasks.filter((task) => !task.done).length, [tasks]);
+  const focusedTask = useMemo(() => resolveFocusedTask(tasks, selectedTaskId), [tasks, selectedTaskId]);
+  const isPro = isProSubscription(subscription) || isAdminRole(userRole);
+  const userName = profileDisplayName ?? user?.user_metadata.full_name ?? user?.user_metadata.name ?? user?.email?.split("@")[0] ?? "Account";
+  const userAvatar = getSafeAvatarUrl(user?.user_metadata.avatar_url);
+
+  useEffect(() => {
+    syncAmbientSound(ambientSound, running && mode === "pomodoro");
+  }, [ambientSound, mode, running]);
+
+  useEffect(() => () => stopAmbientSound(), []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isTyping = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName ?? "");
@@ -316,7 +335,7 @@ export default function Home() {
         setSeconds(timerDurations[mode]);
       }
       if (event.key.toLowerCase() === "s") {
-        const nextMode: TimerMode = mode === "pomodoro" ? "short" : "pomodoro";
+        const nextMode = getNextTimerMode(mode, Math.max(1, completedPomodoros));
         setMode(nextMode);
         timerEndAtRef.current = null;
         setSeconds(timerDurations[nextMode]);
@@ -329,7 +348,7 @@ export default function Home() {
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [mode, running, seconds, timerDurations]);
+  }, [completedPomodoros, mode, running, seconds, timerDurations]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -410,15 +429,30 @@ export default function Home() {
 
       timerEndAtRef.current = null;
       setRunning(false);
+      const nextCompleted = mode === "pomodoro" ? completedPomodoros + 1 : completedPomodoros;
+      if (mode === "pomodoro") {
+        setCompletedPomodoros(nextCompleted);
+      }
       if (soundEnabled) playCompletionAlarm(repeatAlarm);
-      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        new Notification("BiarFokus", { body: `${modeLabels[mode]} selesai. Waktunya ganti sesi.` });
+      if (notificationsEnabled && typeof Notification !== "undefined" && Notification.permission === "granted") {
+        const taskContext = mode === "pomodoro" && focusedTask ? ` (${focusedTask.title})` : "";
+        new Notification("BiarFokus", { body: `${modeLabels[mode]}${taskContext} selesai. Waktunya ganti sesi.` });
+      }
+      if (mode === "pomodoro" && focusedTask) {
+        const nextPomodoros = Math.min(999, focusedTask.pomodoros + 1);
+        setTasks((current) =>
+          current.map((item) => (item.id === focusedTask.id ? { ...item, pomodoros: nextPomodoros } : item)),
+        );
+        if (user) {
+          void updateTaskPomodoros(getSupabaseBrowserClient(), user.id, focusedTask.id, nextPomodoros)
+            .catch((error: unknown) => console.error("Gagal memperbarui jumlah pomodoro task:", error));
+        }
       }
       if (user) {
-        void recordCompletedSession(getSupabaseBrowserClient(), user.id, mode, timerDurations[mode])
+        void recordCompletedSession(getSupabaseBrowserClient(), user.id, mode, timerDurations[mode], focusedTask?.id)
           .catch((error: unknown) => setAppError(error instanceof Error ? `Sesi selesai, tetapi gagal disimpan: ${error.message}` : "Sesi selesai, tetapi gagal disimpan."));
       }
-      const nextMode: TimerMode = mode === "pomodoro" ? "short" : "pomodoro";
+      const nextMode = getNextTimerMode(mode, nextCompleted);
       const nextSeconds = timerDurations[autoStart ? nextMode : mode];
       setMode(autoStart ? nextMode : mode);
       setSeconds(nextSeconds);
@@ -428,15 +462,23 @@ export default function Home() {
       }
     }, 250);
     return () => window.clearInterval(interval);
-  }, [autoStart, mode, repeatAlarm, running, soundEnabled, timerDurations, user]);
-
-  const completedTasks = useMemo(() => tasks.filter((task) => task.done).length, [tasks]);
-  const activeTasksCount = useMemo(() => tasks.filter((task) => !task.done).length, [tasks]);
-  const isPro = isProSubscription(subscription) || isAdminRole(userRole);
-  const userName = profileDisplayName ?? user?.user_metadata.full_name ?? user?.user_metadata.name ?? user?.email?.split("@")[0] ?? "Account";
-  const userAvatar = getSafeAvatarUrl(user?.user_metadata.avatar_url);
+  }, [autoStart, completedPomodoros, focusedTask, mode, notificationsEnabled, repeatAlarm, running, soundEnabled, timerDurations, user]);
 
   function changeMode(nextMode: TimerMode) {
+    timerEndAtRef.current = null;
+    setMode(nextMode);
+    setSeconds(timerDurations[nextMode]);
+    setRunning(false);
+  }
+
+  function resetTimer() {
+    timerEndAtRef.current = null;
+    setRunning(false);
+    setSeconds(timerDurations[mode]);
+  }
+
+  function skipSession() {
+    const nextMode = getNextTimerMode(mode, Math.max(1, completedPomodoros));
     timerEndAtRef.current = null;
     setMode(nextMode);
     setSeconds(timerDurations[nextMode]);
@@ -462,13 +504,16 @@ export default function Home() {
       try {
         const task = await createTask(getSupabaseBrowserClient(), user.id, title);
         setTasks((current) => [...current, task]);
+        setSelectedTaskId((current) => current ?? task.id);
         return;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Gagal menyimpan task.";
         throw new Error(message);
       }
     }
-    setTasks((current) => [...current, { id: crypto.randomUUID(), title, done: false, pomodoros: 1 }]);
+    const localTask: Task = { id: crypto.randomUUID(), title, done: false, pomodoros: 1 };
+    setTasks((current) => [...current, localTask]);
+    setSelectedTaskId((current) => current ?? localTask.id);
   }
 
   async function toggleTask(task: Task) {
@@ -587,16 +632,24 @@ export default function Home() {
             mode={mode}
             seconds={seconds}
             running={running}
+            completedPomodoros={completedPomodoros}
+            focusedTask={focusedTask}
+            ambientSound={ambientSound}
             selectedColor={selectedColor}
             colorThemes={colorThemes}
             modeLabels={modeLabels}
             onModeChange={changeMode}
             onToggleRunning={toggleRunning}
+            onReset={resetTimer}
+            onSkip={skipSession}
+            onAmbientSoundChange={setAmbientSound}
             onColorChange={setSelectedColor}
           />
 
           <TaskManagement
             tasks={tasks}
+            focusedTaskId={focusedTask?.id ?? null}
+            onSelectTask={setSelectedTaskId}
             onAdd={addTask}
             onToggle={toggleTask}
             onDelete={deleteTask}

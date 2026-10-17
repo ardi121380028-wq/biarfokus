@@ -3,11 +3,37 @@ import type { DbTask, Task } from "../../types/domain";
 
 export const LOCAL_TASKS_KEY = "biarfokus.tasks";
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export const initialTasks: Task[] = [
   { id: "demo-1", title: "Rencanakan target hari ini", done: true, pomodoros: 2 },
   { id: "demo-2", title: "Kerjakan prioritas utama", done: false, pomodoros: 4 },
   { id: "demo-3", title: "Review pekerjaan dan catatan", done: false, pomodoros: 1 },
 ];
+
+export function isUuid(value: string | null | undefined): value is string {
+  return typeof value === "string" && UUID_PATTERN.test(value);
+}
+
+/**
+ * Resolves the active task being worked on:
+ * - Prefers the explicitly selected task if it is still incomplete.
+ * - Falls back to the first incomplete task in list order.
+ * - Returns null when there are no incomplete tasks.
+ */
+export function resolveFocusedTask(
+  tasks: Task[],
+  selectedTaskId: string | null,
+): Task | null {
+  const activeTasks = tasks.filter((task) => !task.done);
+  if (activeTasks.length === 0) return null;
+  if (selectedTaskId) {
+    const matching = activeTasks.find((task) => task.id === selectedTaskId);
+    if (matching) return matching;
+  }
+  return activeTasks[0];
+}
 
 export function mapDbTask(task: DbTask): Task {
   return {
@@ -107,6 +133,21 @@ export async function setTaskCompleted(
   if (error) throw error;
 }
 
+export async function updateTaskPomodoros(
+  supabase: SupabaseClient,
+  userId: string,
+  taskId: string,
+  pomodoros: number,
+) {
+  const safePomodoros = Math.min(999, Math.max(0, Math.floor(pomodoros)));
+  const { error } = await supabase
+    .from("tasks")
+    .update({ pomodoros: safePomodoros })
+    .eq("id", taskId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
 export async function deleteTaskById(
   supabase: SupabaseClient,
   userId: string,
@@ -150,6 +191,7 @@ export async function recordCompletedSession(
   userId: string,
   mode: "pomodoro" | "short" | "long",
   durationSeconds: number,
+  taskId?: string | null,
 ) {
   const { error } = await supabase
     .from("pomodoro_sessions")
@@ -157,6 +199,7 @@ export async function recordCompletedSession(
       user_id: userId,
       mode,
       duration_seconds: durationSeconds,
+      task_id: isUuid(taskId) ? taskId : null,
     });
   if (error) throw error;
 }
