@@ -172,12 +172,26 @@ export default function Home() {
     const supabase = getSupabaseBrowserClient();
     async function loadUser() {
       try {
+        const sessionResult = await supabase.auth.getSession();
+        if (sessionResult.error) throw sessionResult.error;
+        if (!sessionResult.data.session) {
+          setUser(null);
+          setProfileDisplayName(null);
+          return;
+        }
         const result = await supabase.auth.getUser();
-        if (result.error) throw result.error;
+        if (result.error) {
+          if (result.error.name === "AuthSessionMissingError" || result.error.message.includes("Auth session missing")) {
+            setUser(null);
+            setProfileDisplayName(null);
+            return;
+          }
+          throw result.error;
+        }
         setUser(result.data.user);
         setProfileDisplayName(result.data.user?.user_metadata.display_name ?? null);
       } catch (error) {
-        setAppError(error instanceof Error ? error.message : "Gagal memuat sesi akun.");
+        console.error("Gagal memuat sesi akun; melanjutkan sebagai guest.", error);
       }
     }
     void loadUser();
@@ -198,7 +212,7 @@ export default function Home() {
         const cloudTasks = await loadTasks(supabase, userId);
         if (!cancelled) setTasks(cloudTasks);
       } catch (error) {
-        if (!cancelled) setAppError(error instanceof Error ? `Gagal memuat task: ${error.message}` : "Gagal memuat task.");
+        if (!cancelled) console.error("Gagal memuat task cloud; menggunakan task lokal.", error);
       }
     }
     void loadCloudTasks();
@@ -317,9 +331,7 @@ export default function Home() {
         if (!cancelled) {
           const message = getOperationError(error, "Gagal memuat pengaturan.");
           console.error("Gagal memuat pengaturan cloud; menggunakan settings lokal.", error);
-          if (message.includes("settings") || message.includes("column")) {
-            setAppError("Kolom settings belum tersedia di database production. Jalankan migration 20261016220000_add_profile_settings.sql di Supabase SQL Editor.");
-          }
+          if (message.includes("settings") || message.includes("column")) console.warn("Jalankan migration 20261016220000_add_profile_settings.sql di Supabase SQL Editor.");
         }
       });
     return () => { cancelled = true; };
