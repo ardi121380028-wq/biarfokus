@@ -16,8 +16,12 @@ export const metadata: Metadata = {
   title: "BiarFokus — Bantu kamu fokus selesain setiap pekerjaan",
   description: "BiarFokus membantu kamu fokus dan menyelesaikan setiap pekerjaan dengan Pomodoro timer.",
   icons: {
-    icon: "/biarfokus-logo.svg",
-    shortcut: "/biarfokus-logo.svg",
+    icon: [
+      { url: "/biarfokus-logo.svg", type: "image/svg+xml" },
+      { url: "/biarfokus-icon.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/biarfokus-icon.png",
+    apple: [{ url: "/biarfokus-icon.png", sizes: "192x192", type: "image/png" }],
   },
 };
 
