@@ -8,6 +8,17 @@ export function normalizeDisplayName(value: string) {
   return name;
 }
 
+/** Returns the avatar URL only when it is a well-formed https URL; otherwise null (callers show initials). */
+export function getSafeAvatarUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function updateDisplayName(
   supabase: SupabaseClient,
   userId: string,

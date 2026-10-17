@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import Image from "next/image";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import { getSafeAvatarUrl } from "@/features/profile/profile-service";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TaskManagement } from "@/app/components/task-management";
 import { TimerPanel } from "@/app/components/timer-panel";
@@ -432,7 +434,7 @@ export default function Home() {
   const activeTasksCount = useMemo(() => tasks.filter((task) => !task.done).length, [tasks]);
   const isPro = isProSubscription(subscription) || isAdminRole(userRole);
   const userName = profileDisplayName ?? user?.user_metadata.full_name ?? user?.user_metadata.name ?? user?.email?.split("@")[0] ?? "Account";
-  const userAvatar = user?.user_metadata.avatar_url as string | undefined;
+  const userAvatar = getSafeAvatarUrl(user?.user_metadata.avatar_url);
 
   function changeMode(nextMode: TimerMode) {
     timerEndAtRef.current = null;
@@ -548,7 +550,7 @@ export default function Home() {
           {user ? (
             <div className="profile-area">
               <button className="profile-button" onClick={() => setProfileMenuOpen((open) => !open)} aria-label="Buka menu akun" aria-expanded={profileMenuOpen}>
-                {userAvatar ? <img src={userAvatar} alt="" /> : <span>{userName.charAt(0).toUpperCase()}</span>}
+                {userAvatar ? <Image src={userAvatar} alt="" width={42} height={42} unoptimized /> : <span>{userName.charAt(0).toUpperCase()}</span>}
               </button>
               {profileMenuOpen && <ProfileMenu
                 userName={userName}

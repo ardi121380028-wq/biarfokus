@@ -44,6 +44,14 @@ function isTask(value: unknown): value is Task {
     typeof task.pomodoros === "number";
 }
 
+export function buildLocalTaskMigrationPayload(localTasks: Task[]) {
+  return localTasks.map((task) => ({
+    title: task.title,
+    completed: task.done,
+    pomodoros: task.pomodoros,
+  }));
+}
+
 export async function loadTasks(
   supabase: SupabaseClient,
   userId: string,
@@ -58,18 +66,17 @@ export async function loadTasks(
 
   const localTasks = loadLocalTasks();
   if (localTasks.length === 0) return [];
-  const tasksToMigrate = localTasks.map((task) => ({
-    user_id: userId,
-    title: task.title,
-    completed: task.done,
-    pomodoros: task.pomodoros,
-  }));
-  const { data: migratedTasks, error: migrationError } = await supabase
-    .from("tasks")
-    .insert(tasksToMigrate)
-    .select("id, title, completed, pomodoros");
+
+  // The database decides whether this is the first migration for the user. It
+  // serialises concurrent calls (e.g. two tabs) and records a marker, so local
+  // tasks are imported at most once and never resurrected after being deleted.
+  const { data: migratedTasks, error: migrationError } = await supabase.rpc(
+    "migrate_local_tasks",
+    { p_tasks: buildLocalTaskMigrationPayload(localTasks) },
+  );
   if (migrationError) throw migrationError;
-  return migratedTasks.map(mapDbTask);
+  const rows: DbTask[] = migratedTasks ?? [];
+  return rows.map(mapDbTask);
 }
 
 export async function createTask(

@@ -1,16 +1,30 @@
-import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  apiJson,
+  createRateLimiter,
+  getClientKey,
+  logApiEvent,
+  rateLimitResponse,
+  resolveCorrelationId,
+} from "@/lib/api/request-guard";
 import { loadUserSubscription } from "@/features/billing/billing-service";
 
+const ROUTE = "/api/billing/checkout";
+const limiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
+
 export async function POST(request: Request) {
+  const correlationId = resolveCorrelationId(request.headers.get("x-correlation-id"));
+  const limit = limiter.check(`${ROUTE}:${getClientKey(request.headers)}`, Date.now());
+  if (!limit.allowed) return rateLimitResponse(limit, correlationId);
+
   try {
     const supabase = await getSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser();
 
     if (error || !data.user) {
-      return NextResponse.json(
+      return apiJson(
         { error: "Silakan masuk ke akunmu terlebih dahulu untuk upgrade ke Pro." },
-        { status: 401 },
+        { status: 401, correlationId },
       );
     }
 
@@ -18,12 +32,15 @@ export async function POST(request: Request) {
     const stripePriceId = process.env.STRIPE_PRO_PRICE_ID;
 
     if (!stripeSecretKey || !stripePriceId) {
-      return NextResponse.json(
-        {
-          error:
-            "Konfigurasi Stripe belum lengkap di server (STRIPE_SECRET_KEY dan STRIPE_PRO_PRICE_ID).",
-        },
-        { status: 503 },
+      logApiEvent(
+        "error",
+        ROUTE,
+        correlationId,
+        "Stripe is not configured: STRIPE_SECRET_KEY and STRIPE_PRO_PRICE_ID are required",
+      );
+      return apiJson(
+        { error: "Pembayaran belum tersedia saat ini. Silakan coba lagi nanti." },
+        { status: 503, correlationId },
       );
     }
 
@@ -63,22 +80,25 @@ export async function POST(request: Request) {
     };
 
     if (!stripeResponse.ok || !stripePayload.url) {
-      return NextResponse.json(
-        {
-          error:
-            stripePayload.error?.message ??
-            "Gagal membuat sesi Stripe Checkout.",
-        },
-        { status: 502 },
+      logApiEvent(
+        "error",
+        ROUTE,
+        correlationId,
+        "Stripe rejected the checkout session request",
+        stripePayload.error ?? { message: `HTTP ${stripeResponse.status}` },
+      );
+      return apiJson(
+        { error: "Gagal membuat sesi pembayaran. Silakan coba lagi." },
+        { status: 502, correlationId },
       );
     }
 
-    return NextResponse.json({ url: stripePayload.url });
+    return apiJson({ url: stripePayload.url }, { correlationId });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Gagal memulai sesi checkout Stripe.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logApiEvent("error", ROUTE, correlationId, "Failed to start checkout session", error);
+    return apiJson(
+      { error: "Gagal memulai sesi checkout Stripe." },
+      { status: 500, correlationId },
+    );
   }
 }

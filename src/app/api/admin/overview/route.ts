@@ -1,22 +1,33 @@
-import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  apiJson,
+  createRateLimiter,
+  getClientKey,
+  logApiEvent,
+  rateLimitResponse,
+  resolveCorrelationId,
+} from "@/lib/api/request-guard";
 import {
   createAdminAuditLog,
   isAdminRole,
   loadAdminOverview,
   loadUserRole,
+  validateAuditAction,
 } from "@/features/admin/admin-service";
 
-async function authorizeAdminRequest() {
+const ROUTE = "/api/admin/overview";
+const limiter = createRateLimiter({ limit: 30, windowMs: 60_000 });
+
+async function authorizeAdminRequest(correlationId: string) {
   const supabase = await getSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {
     return {
       authorized: false as const,
-      response: NextResponse.json(
+      response: apiJson(
         { error: "Sesi login diperlukan untuk mengakses area admin." },
-        { status: 401 },
+        { status: 401, correlationId },
       ),
     };
   }
@@ -24,11 +35,12 @@ async function authorizeAdminRequest() {
   try {
     const role = await loadUserRole(supabase, data.user.id);
     if (!isAdminRole(role)) {
+      logApiEvent("warn", ROUTE, correlationId, `Non-admin user ${data.user.id} was denied admin access`);
       return {
         authorized: false as const,
-        response: NextResponse.json(
+        response: apiJson(
           { error: "Akses ditolak. Akun ini tidak memiliki izin admin." },
-          { status: 403 },
+          { status: 403, correlationId },
         ),
       };
     }
@@ -39,43 +51,65 @@ async function authorizeAdminRequest() {
       user: data.user,
     };
   } catch (roleError) {
-    const message =
-      roleError instanceof Error ? roleError.message : "Gagal memverifikasi role admin.";
+    logApiEvent("error", ROUTE, correlationId, "Failed to verify admin role", roleError);
     return {
       authorized: false as const,
-      response: NextResponse.json({ error: message }, { status: 500 }),
+      response: apiJson(
+        { error: "Gagal memverifikasi role admin." },
+        { status: 500, correlationId },
+      ),
     };
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const correlationId = resolveCorrelationId(request.headers.get("x-correlation-id"));
+  const limit = limiter.check(`${ROUTE}:${getClientKey(request.headers)}`, Date.now());
+  if (!limit.allowed) return rateLimitResponse(limit, correlationId);
+
   try {
-    const auth = await authorizeAdminRequest();
+    const auth = await authorizeAdminRequest(correlationId);
     if (!auth.authorized) return auth.response;
 
     const overview = await loadAdminOverview(auth.supabase);
-    return NextResponse.json({ data: overview });
+    return apiJson({ data: overview }, { correlationId });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Gagal memuat ringkasan admin.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logApiEvent("error", ROUTE, correlationId, "Failed to load admin overview", error);
+    return apiJson(
+      { error: "Gagal memuat ringkasan admin." },
+      { status: 500, correlationId },
+    );
   }
 }
 
 export async function POST(request: Request) {
+  const correlationId = resolveCorrelationId(request.headers.get("x-correlation-id"));
+  const limit = limiter.check(`${ROUTE}:${getClientKey(request.headers)}`, Date.now());
+  if (!limit.allowed) return rateLimitResponse(limit, correlationId);
+
   try {
-    const auth = await authorizeAdminRequest();
+    const auth = await authorizeAdminRequest(correlationId);
     if (!auth.authorized) return auth.response;
 
-    const body = (await request.json()) as {
-      action?: unknown;
-      targetType?: unknown;
-      targetId?: unknown;
-    };
+    let body: { action?: unknown; targetType?: unknown; targetId?: unknown };
+    try {
+      body = (await request.json()) as typeof body;
+    } catch {
+      return apiJson({ error: "Body permintaan harus berupa JSON yang valid." }, { status: 400, correlationId });
+    }
 
     const action = typeof body.action === "string" ? body.action : "";
     const targetType = typeof body.targetType === "string" ? body.targetType : "";
     const targetId = typeof body.targetId === "string" ? body.targetId : null;
+
+    try {
+      validateAuditAction(action, targetType);
+    } catch (validationError) {
+      return apiJson(
+        { error: validationError instanceof Error ? validationError.message : "Data audit tidak valid." },
+        { status: 400, correlationId },
+      );
+    }
 
     const logEntry = await createAdminAuditLog(
       auth.supabase,
@@ -83,13 +117,15 @@ export async function POST(request: Request) {
       action,
       targetType,
       targetId,
-      { email: auth.user.email ?? null },
+      { email: auth.user.email ?? null, correlationId },
     );
 
-    return NextResponse.json({ data: logEntry }, { status: 201 });
+    return apiJson({ data: logEntry }, { status: 201, correlationId });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Gagal mencatat audit log admin.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    logApiEvent("error", ROUTE, correlationId, "Failed to record admin audit log", error);
+    return apiJson(
+      { error: "Gagal mencatat audit log admin." },
+      { status: 500, correlationId },
+    );
   }
 }

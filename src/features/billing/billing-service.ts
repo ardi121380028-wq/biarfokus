@@ -4,6 +4,7 @@ import type {
   SubscriptionStatus,
   UserSubscription,
 } from "@/types/domain";
+import { formatApiError } from "../../lib/api/request-guard.ts";
 
 export const FREE_ACTIVE_TASK_LIMIT = 10;
 
@@ -133,10 +134,11 @@ export async function startProCheckoutSession(): Promise<string> {
   const payload = (await response.json()) as {
     url?: string;
     error?: string;
+    correlationId?: string;
   };
 
   if (!response.ok || !payload.url) {
-    throw new Error(payload.error ?? "Gagal memulai sesi checkout Stripe.");
+    throw new Error(formatApiError(payload, "Gagal memulai sesi checkout Stripe."));
   }
 
   return payload.url;
@@ -151,10 +153,11 @@ export async function createBillingPortalSession(): Promise<string> {
   const payload = (await response.json()) as {
     url?: string;
     error?: string;
+    correlationId?: string;
   };
 
   if (!response.ok || !payload.url) {
-    throw new Error(payload.error ?? "Gagal membuka portal penagihan.");
+    throw new Error(formatApiError(payload, "Gagal membuka portal penagihan."));
   }
 
   return payload.url;

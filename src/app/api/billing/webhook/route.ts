@@ -1,7 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
+import { apiJson, logApiEvent, resolveCorrelationId } from "@/lib/api/request-guard";
 import { mapStripeStatusToSubscription } from "@/features/billing/billing-service";
 import { verifyStripeWebhookSignature } from "@/features/billing/stripe-webhook";
+
+const ROUTE = "/api/billing/webhook";
 
 function getSupabaseServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -16,13 +18,18 @@ function getSupabaseServiceClient() {
   });
 }
 
+// Stripe retries any non-2xx response, so this route is intentionally not
+// rate limited and answers 5xx when persisting an event fails.
 export async function POST(request: Request) {
+  const correlationId = resolveCorrelationId(request.headers.get("x-correlation-id"));
+
   try {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
-      return NextResponse.json(
-        { error: "STRIPE_WEBHOOK_SECRET belum dikonfigurasi." },
-        { status: 503 },
+      logApiEvent("error", ROUTE, correlationId, "STRIPE_WEBHOOK_SECRET is not configured");
+      return apiJson(
+        { error: "Webhook belum dikonfigurasi." },
+        { status: 503, correlationId },
       );
     }
 
@@ -30,13 +37,15 @@ export async function POST(request: Request) {
     const rawBody = await request.text();
 
     if (!verifyStripeWebhookSignature(rawBody, signature, webhookSecret)) {
-      return NextResponse.json(
+      logApiEvent("warn", ROUTE, correlationId, "Rejected webhook with an invalid Stripe signature");
+      return apiJson(
         { error: "Signature webhook Stripe tidak valid." },
-        { status: 400 },
+        { status: 400, correlationId },
       );
     }
 
     const event = JSON.parse(rawBody) as {
+      id?: string;
       type?: string;
       data?: {
         object?: {
@@ -100,10 +109,13 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ received: true });
+    logApiEvent("info", ROUTE, correlationId, `Processed Stripe event ${event.type ?? "unknown"} (${event.id ?? "no-id"})`);
+    return apiJson({ received: true }, { correlationId });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Gagal memproses webhook Stripe.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logApiEvent("error", ROUTE, correlationId, "Failed to process Stripe webhook", error);
+    return apiJson(
+      { error: "Gagal memproses webhook Stripe." },
+      { status: 500, correlationId },
+    );
   }
 }

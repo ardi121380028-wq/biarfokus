@@ -1,8 +1,9 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
+import Image from "next/image";
 import { useState } from "react";
-import { updateDisplayName } from "@/features/profile/profile-service";
+import { getSafeAvatarUrl, updateDisplayName } from "@/features/profile/profile-service";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type AccountModalProps = {
@@ -14,7 +15,7 @@ type AccountModalProps = {
 };
 
 export function AccountModal({ user, userName, supabase, onSaved, onClose }: AccountModalProps) {
-  const avatar = user?.user_metadata.avatar_url as string | undefined;
+  const avatar = getSafeAvatarUrl(user?.user_metadata.avatar_url);
   const [displayName, setDisplayName] = useState(userName);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export function AccountModal({ user, userName, supabase, onSaved, onClose }: Acc
       <button className="modal-close" onClick={onClose} aria-label="Tutup account">×</button>
       <p className="account-kicker" id="account-title">ACCOUNT</p>
       <div className="account-profile">
-        {avatar ? <img src={avatar} alt="" /> : <div className="account-avatar">{userName.charAt(0).toUpperCase()}</div>}
+        {avatar ? <Image src={avatar} alt="" width={92} height={92} unoptimized /> : <div className="account-avatar">{userName.charAt(0).toUpperCase()}</div>}
         <div><label className="auth-field">Display name<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={80} disabled={saving} /></label><p>{user?.email}</p></div>
       </div>
       {error && <p className="task-error" role="alert">{error}</p>}

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AdminAuditLog, AdminOverview, UserRole } from "@/types/domain";
+import { formatApiError } from "../../lib/api/request-guard.ts";
 
 export function normalizeUserRole(value: unknown): UserRole {
   return value === "admin" ? "admin" : "user";
@@ -144,10 +145,11 @@ export async function fetchAdminOverviewFromApi(): Promise<AdminOverview> {
   const payload = (await response.json()) as {
     data?: AdminOverview;
     error?: string;
+    correlationId?: string;
   };
 
   if (!response.ok || !payload.data) {
-    throw new Error(payload.error ?? "Gagal memuat data admin.");
+    throw new Error(formatApiError(payload, "Gagal memuat data admin."));
   }
 
   return payload.data;
@@ -175,10 +177,11 @@ export async function postAdminAuditLogToApi(
   const payload = (await response.json()) as {
     data?: AdminAuditLog;
     error?: string;
+    correlationId?: string;
   };
 
   if (!response.ok || !payload.data) {
-    throw new Error(payload.error ?? "Gagal mencatat audit log admin.");
+    throw new Error(formatApiError(payload, "Gagal mencatat audit log admin."));
   }
 
   return payload.data;

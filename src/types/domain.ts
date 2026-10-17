@@ -22,10 +22,18 @@ export type PomodoroSession = {
   completed_at: string;
 };
 
-export type WeeklyStats = {
+export type DailyFocus = {
+  day: string;
   focusSeconds: number;
   pomodoroCount: number;
-  dailyFocusSeconds: number[];
+};
+
+export type StatsRange = "week" | "7d" | "30d";
+
+export type StatsSummary = {
+  focusSeconds: number;
+  pomodoroCount: number;
+  series: Array<{ day: string; focusSeconds: number }>;
 };
 
 export type UserRole = "user" | "admin";
