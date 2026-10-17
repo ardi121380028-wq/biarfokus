@@ -27,3 +27,24 @@ export type WeeklyStats = {
   pomodoroCount: number;
   dailyFocusSeconds: number[];
 };
+
+export type UserRole = "user" | "admin";
+
+export type AdminAuditLog = {
+  id: string;
+  actor_user_id: string;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export type AdminOverview = {
+  totalUsers: number;
+  activeUsersToday: number;
+  completedPomodoros: number;
+  totalTasks: number;
+  completedTasks: number;
+  auditLogs: AdminAuditLog[];
+};

@@ -11,6 +11,8 @@ import { AuthModal as AuthModalComponent } from "@/app/components/auth-modal";
 import { SettingsModal as SettingsModalComponent } from "@/app/components/settings-modal";
 import { ShortcutsModal as ShortcutsModalComponent } from "@/app/components/shortcuts-modal";
 import { StatsView } from "@/app/components/stats-view";
+import { AdminView } from "@/app/components/admin-view";
+import { isAdminRole, loadUserRole } from "@/features/admin/admin-service";
 import {
   DEFAULT_SETTINGS,
   loadLocalSettings,
@@ -19,7 +21,7 @@ import {
   saveUserSettings,
   type UserSettings,
 } from "@/features/settings/settings-service";
-import type { Task, TimerDurations, TimerMode } from "@/types/domain";
+import type { Task, TimerDurations, TimerMode, UserRole } from "@/types/domain";
 import {
   createTask,
   deleteAllTasks as deleteAllCloudTasks,
@@ -139,6 +141,7 @@ export default function Home() {
   const [timerDurations, setTimerDurations] = useState<TimerDurations>(DEFAULT_SETTINGS.timerDurations);
   const [repeatAlarm, setRepeatAlarm] = useState(DEFAULT_SETTINGS.repeatAlarm);
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>("user");
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -201,6 +204,33 @@ export default function Home() {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      const frame = window.requestAnimationFrame(() => {
+        setUserRole("user");
+        setActiveView((current) => (current === "admin" ? "timer" : current));
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+    const userId = user.id;
+    let cancelled = false;
+    void loadUserRole(getSupabaseBrowserClient(), userId)
+      .then((role) => {
+        if (cancelled) return;
+        setUserRole(role);
+        if (!isAdminRole(role)) {
+          setActiveView((current) => (current === "admin" ? "timer" : current));
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          console.error("Gagal memuat role pengguna; menggunakan role default.", error);
+          setUserRole("user");
+        }
+      });
+    return () => { cancelled = true; };
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -491,6 +521,7 @@ export default function Home() {
               </button>
               {profileMenuOpen && <ProfileMenu
                 userName={userName}
+                isAdmin={isAdminRole(userRole)}
                 onAccount={() => { setAccountOpen(true); setProfileMenuOpen(false); }}
                 onPremium={() => { setActiveView("pricing"); setProfileMenuOpen(false); }}
                 onAdmin={() => { setActiveView("admin"); setProfileMenuOpen(false); }}
@@ -544,7 +575,7 @@ export default function Home() {
 
       {activeView === "stats" && <StatsView key={user?.id ?? "guest"} supabase={getSupabaseBrowserClient()} userId={user?.id ?? null} completedTasks={completedTasks} />}
       {activeView === "pricing" && <Pricing onUpgrade={() => setInfoOpen("Checkout Stripe akan aktif setelah akun pembayaran dikonfigurasi.")} />}
-      {activeView === "admin" && <Admin />}
+      {activeView === "admin" && <AdminView userId={user?.id ?? null} isAdmin={isAdminRole(userRole)} />}
 
       <footer className="footer">
         <div><strong>BiarFokus</strong><span>Bantu kamu fokus selesain setiap pekerjaan.</span></div>
@@ -585,8 +616,4 @@ export default function Home() {
 
 function Pricing({ onUpgrade }: { onUpgrade: () => void }) {
   return <div className="inner-page"><p className="eyebrow">Biar makin fokus</p><h1>Pilih ruang fokusmu</h1><div className="pricing-grid"><div className="price-card"><span>Free</span><strong>$0 <small>/ forever</small></strong><p>Pomodoro timer, task management, dan fokus tanpa batas.</p><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Mulai gratis</button></div><div className="price-card featured"><b className="popular">MOST POPULAR</b><span>Pro</span><strong>$2.99 <small>/ month</small></strong><p>Statistik lengkap, task tanpa batas, dan suara fokus.</p><button onClick={onUpgrade}>Upgrade ke Pro</button></div></div></div>;
-}
-
-function Admin() {
-  return <div className="inner-page"><p className="eyebrow">Workspace admin</p><h1>Overview</h1><div className="admin-table"><div><span>Total pengguna</span><strong>1,248</strong><em>↑ 12.4%</em></div><div><span>Pengguna aktif hari ini</span><strong>386</strong><em>↑ 8.1%</em></div><div><span>Pendapatan berulang</span><strong>Rp8.7jt</strong><em>↑ 21.3%</em></div></div><p className="admin-note">Dashboard admin lengkap akan terhubung ke Supabase setelah project production dikonfigurasi.</p></div>;
 }

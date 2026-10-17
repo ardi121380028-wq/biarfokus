@@ -2,6 +2,7 @@
 
 type ProfileMenuProps = {
   userName: string;
+  isAdmin: boolean;
   onAccount: () => void;
   onPremium: () => void;
   onAdmin: () => void;
@@ -12,6 +13,7 @@ type ProfileMenuProps = {
 
 export function ProfileMenu({
   userName,
+  isAdmin,
   onAccount,
   onPremium,
   onAdmin,
@@ -23,7 +25,7 @@ export function ProfileMenu({
     <strong>{userName}</strong>
     <button onClick={onAccount} role="menuitem">♟ <span>Account</span></button>
     <button onClick={onPremium} role="menuitem">♛ <span>Premium</span></button>
-    <button onClick={onAdmin} role="menuitem">▦ <span>Admin</span></button>
+    {isAdmin && <button onClick={onAdmin} role="menuitem">▦ <span>Admin</span></button>}
     <button onClick={onSignOut} role="menuitem">↪ <span>Logout</span></button>
     <button onClick={onShortcuts} role="menuitem">⌨ <span>Shortcuts</span></button>
     <button onClick={onDelete} role="menuitem">♲ <span>Delete Account</span></button>
