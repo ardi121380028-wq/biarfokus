@@ -239,6 +239,47 @@ export function snapMinutes(minutes: number, step = SLOT_STEP_MINUTES): number {
   return Math.max(0, Math.min(MINUTES_PER_DAY - step, Math.floor(minutes / step) * step));
 }
 
+export function snapMinutesToStep(minutes: number, step = 15): number {
+  const rounded = Math.round(minutes / step) * step;
+  return Math.max(0, Math.min(MINUTES_PER_DAY, rounded));
+}
+
+export function moveEventTimeRange(
+  startMins: number,
+  durationMins: number,
+  step = 15,
+): { startTime: string; endTime: string } {
+  const snappedStart = Math.max(0, Math.min(MINUTES_PER_DAY - durationMins, snapMinutesToStep(startMins, step)));
+  const snappedEnd = Math.min(MINUTES_PER_DAY, snappedStart + durationMins);
+  return {
+    startTime: minutesToTime(snappedStart),
+    endTime: minutesToTime(snappedEnd),
+  };
+}
+
+export function resizeEventTimeRange(
+  edge: "top" | "bottom",
+  newMins: number,
+  fixedMins: number,
+  minDuration = 15,
+  step = 15,
+): { startTime: string; endTime: string } {
+  const snapped = snapMinutesToStep(newMins, step);
+  if (edge === "top") {
+    const start = Math.max(0, Math.min(fixedMins - minDuration, snapped));
+    return {
+      startTime: minutesToTime(start),
+      endTime: minutesToTime(fixedMins),
+    };
+  } else {
+    const end = Math.min(MINUTES_PER_DAY, Math.max(fixedMins + minDuration, snapped));
+    return {
+      startTime: minutesToTime(fixedMins),
+      endTime: minutesToTime(end),
+    };
+  }
+}
+
 export function formatDuration(startTime: string, endTime: string): string {
   const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
   if (diff <= 0) return "";

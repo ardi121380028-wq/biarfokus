@@ -12,8 +12,10 @@ import {
   getYearCalendarMonths,
   layoutDayEvents,
   minutesToTime,
+  moveEventTimeRange,
   parseISODate,
   parseStoredEvents,
+  resizeEventTimeRange,
   startOfWeek,
   timeToMinutes,
   toISODate,
@@ -199,4 +201,32 @@ describe("calendar-service", () => {
     assert.equal(filtered.length, 1);
     assert.equal(filtered[0].id, "1");
   });
+
+  it("calculates drag-to-move time range with 15-minute snapping", () => {
+    // Event with 90-minute duration (1.5 hours)
+    // Moving to 08:07 should snap to 08:00 – 09:30
+    const moved = moveEventTimeRange(487, 90, 15);
+    assert.equal(moved.startTime, "08:00");
+    assert.equal(moved.endTime, "09:30");
+
+    // Moving to 14:23 should snap to 14:15 – 15:45 (at 14:23, 23 rounds to 30 => 14:30 – 16:00)
+    const moved2 = moveEventTimeRange(14 * 60 + 23, 90, 15);
+    assert.equal(moved2.startTime, "14:30");
+    assert.equal(moved2.endTime, "16:00");
+  });
+
+  it("calculates resize-to-adjust duration from top and bottom handles", () => {
+    // Drag bottom handle: start is fixed at 08:00 (480 mins)
+    // Dragging end to 10:28 snaps to 10:30
+    const resizedBottom = resizeEventTimeRange("bottom", 10 * 60 + 28, 480, 15, 15);
+    assert.equal(resizedBottom.startTime, "08:00");
+    assert.equal(resizedBottom.endTime, "10:30");
+
+    // Drag top handle: end is fixed at 12:00 (720 mins)
+    // Dragging start up to 09:14 snaps to 09:15
+    const resizedTop = resizeEventTimeRange("top", 9 * 60 + 14, 720, 15, 15);
+    assert.equal(resizedTop.startTime, "09:15");
+    assert.equal(resizedTop.endTime, "12:00");
+  });
 });
+

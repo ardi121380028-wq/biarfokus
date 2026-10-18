@@ -169,6 +169,7 @@ export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
           events={filteredEvents}
           onSlotClick={(dateISO, hour) => handleOpenCreate(dateISO, hour)}
           onEventClick={handleOpenEdit}
+          onUpdateEvent={updateEvent}
         />
       )}
 
