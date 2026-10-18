@@ -37,6 +37,10 @@ type SettingsModalProps = {
   setAlarmSound: (sound: AlarmSoundType) => void;
   longBreakInterval: number;
   setLongBreakInterval: (interval: number) => void;
+  dailyGoalPomodoros: number;
+  setDailyGoalPomodoros: (goal: number) => void;
+  tickingSoundEnabled: boolean;
+  setTickingSoundEnabled: (enabled: boolean) => void;
   timerDurations: TimerDurations;
   setTimerDurations: (durations: TimerDurations) => void;
   onClose: () => void;
@@ -59,6 +63,10 @@ export function SettingsModal({
   setAlarmSound,
   longBreakInterval,
   setLongBreakInterval,
+  dailyGoalPomodoros,
+  setDailyGoalPomodoros,
+  tickingSoundEnabled,
+  setTickingSoundEnabled,
   timerDurations,
   setTimerDurations,
   onClose,
@@ -140,6 +148,29 @@ export function SettingsModal({
               </div>
 
               <div className="settings-section">
+                <p className="settings-section-title">TARGET SESI HARIAN</p>
+                <div className="setting-row">
+                  <span>Target Pomodoro / Hari</span>
+                  <div className="interval-options" role="group" aria-label="Target sesi harian">
+                    {[4, 6, 8, 10, 12].map((count) => (
+                      <button
+                        key={count}
+                        type="button"
+                        className={dailyGoalPomodoros === count ? "interval-chip active" : "interval-chip"}
+                        onClick={() => setDailyGoalPomodoros(count)}
+                        aria-pressed={dailyGoalPomodoros === count}
+                      >
+                        {count} sesi
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="settings-help">
+                  Ditampilkan di panel timer utama (~{Math.round((dailyGoalPomodoros * 25 / 60) * 10) / 10} jam fokus).
+                </p>
+              </div>
+
+              <div className="settings-section">
                 <p className="settings-section-title">PREFERENCES</p>
                 <div className="setting-row"><span>Color theme</span><div className="theme-options">{colorThemes.map(({ color, name }) => <button key={color} title={name} aria-label={name} className={selectedColor === color ? "theme-swatch selected" : "theme-swatch"} style={{ backgroundColor: color }} onClick={() => setSelectedColor(color)} />)}</div></div>
                 <button className="setting-row setting-action" onClick={() => setDark(!dark)}><span>Dark mode</span><b>{dark ? "On" : "Off"}</b></button>
@@ -153,7 +184,14 @@ export function SettingsModal({
                 <p className="settings-section-title">SOUND & ALARM</p>
                 <button className="setting-row setting-action" onClick={() => setSoundEnabled(!soundEnabled)}><span>Focus sound</span><b>{soundEnabled ? "On" : "Off"}</b></button>
                 <button className="setting-row setting-action" onClick={() => setRepeatAlarm(!repeatAlarm)}><span>Repeat alarm</span><b>{repeatAlarm ? "On" : "Off"}</b></button>
-                <p className="settings-help">Suara alarm diputar ketika sesi fokus atau istirahat selesai.</p>
+                <button
+                  className="setting-row setting-action"
+                  onClick={() => setTickingSoundEnabled(!tickingSoundEnabled)}
+                >
+                  <span>Detak jam saat fokus (Clock ticking)</span>
+                  <b>{tickingSoundEnabled ? "On" : "Off"}</b>
+                </button>
+                <p className="settings-help">Suara alarm diputar ketika sesi fokus atau istirahat selesai, dan detak jam berdetik lembut tiap detik saat fokus.</p>
               </div>
 
               <div className="settings-section">

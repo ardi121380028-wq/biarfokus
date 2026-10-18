@@ -15,6 +15,8 @@ import { ShortcutsModal as ShortcutsModalComponent } from "@/app/components/shor
 import { StatsView } from "@/app/components/stats-view";
 import { AdminView } from "@/app/components/admin-view";
 import { PricingView } from "@/app/components/pricing-view";
+import { FocusScratchpad } from "@/app/components/focus-scratchpad";
+import { playTickSound } from "@/features/audio/ticking-sound";
 import { isAdminRole, loadUserRole } from "@/features/admin/admin-service";
 import {
   assertTaskLimitAllowed,
@@ -120,6 +122,8 @@ export default function Home() {
   const [repeatAlarm, setRepeatAlarm] = useState(DEFAULT_SETTINGS.repeatAlarm);
   const [alarmSound, setAlarmSound] = useState<AlarmSoundType>(DEFAULT_SETTINGS.alarmSound);
   const [longBreakInterval, setLongBreakInterval] = useState<number>(DEFAULT_SETTINGS.longBreakInterval);
+  const [dailyGoalPomodoros, setDailyGoalPomodoros] = useState<number>(DEFAULT_SETTINGS.dailyGoalPomodoros);
+  const [tickingSoundEnabled, setTickingSoundEnabled] = useState<boolean>(DEFAULT_SETTINGS.tickingSoundEnabled);
   const [zenMode, setZenMode] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole>("user");
@@ -132,6 +136,7 @@ export default function Home() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [appError, setAppError] = useState<string | null>(null);
   const timerEndAtRef = useRef<number | null>(null);
+  const lastTickedSecondRef = useRef<number | null>(null);
   const settingsHydratedRef = useRef(false);
   const settingsOwnerRef = useRef<string | null>(null);
 
@@ -335,6 +340,8 @@ export default function Home() {
       setRepeatAlarm(localSettings.repeatAlarm);
       setAlarmSound(localSettings.alarmSound);
       setLongBreakInterval(localSettings.longBreakInterval);
+      setDailyGoalPomodoros(localSettings.dailyGoalPomodoros);
+      setTickingSoundEnabled(localSettings.tickingSoundEnabled);
       settingsHydratedRef.current = true;
       setTasksHydrated(true);
     });
@@ -357,6 +364,8 @@ export default function Home() {
       repeatAlarm,
       alarmSound,
       longBreakInterval,
+      dailyGoalPomodoros,
+      tickingSoundEnabled,
     };
     saveLocalSettings(settings);
     if (user && settingsOwnerRef.current !== user.id) return;
@@ -364,7 +373,7 @@ export default function Home() {
       void saveUserSettings(getSupabaseBrowserClient(), user.id, settings)
         .catch((error: unknown) => setAppError(error instanceof Error ? `Pengaturan gagal disimpan: ${error.message}` : "Pengaturan gagal disimpan."));
     }
-  }, [alarmSound, autoStart, longBreakInterval, notificationsEnabled, repeatAlarm, selectedColor, soundEnabled, timerDurations, user]);
+  }, [alarmSound, autoStart, dailyGoalPomodoros, longBreakInterval, notificationsEnabled, repeatAlarm, selectedColor, soundEnabled, tickingSoundEnabled, timerDurations, user]);
 
   useEffect(() => {
     if (!user) {
@@ -383,6 +392,8 @@ export default function Home() {
         setRepeatAlarm(settings.repeatAlarm);
         setAlarmSound(settings.alarmSound);
         setLongBreakInterval(settings.longBreakInterval);
+        setDailyGoalPomodoros(settings.dailyGoalPomodoros);
+        setTickingSoundEnabled(settings.tickingSoundEnabled);
         settingsOwnerRef.current = user.id;
       })
       .catch((error: unknown) => {
@@ -403,10 +414,15 @@ export default function Home() {
       const remaining = getRemainingSeconds(endAt);
       if (remaining > 0) {
         setSeconds(remaining);
+        if (tickingSoundEnabled && mode === "pomodoro" && lastTickedSecondRef.current !== remaining) {
+          lastTickedSecondRef.current = remaining;
+          playTickSound();
+        }
         return;
       }
 
       timerEndAtRef.current = null;
+      lastTickedSecondRef.current = null;
       setRunning(false);
       const nextCompleted = mode === "pomodoro" ? completedPomodoros + 1 : completedPomodoros;
       if (mode === "pomodoro") {
@@ -441,7 +457,7 @@ export default function Home() {
       }
     }, 250);
     return () => window.clearInterval(interval);
-  }, [alarmSound, autoStart, completedPomodoros, focusedTask, longBreakInterval, mode, notificationsEnabled, repeatAlarm, running, soundEnabled, timerDurations, user]);
+  }, [alarmSound, autoStart, completedPomodoros, focusedTask, longBreakInterval, mode, notificationsEnabled, repeatAlarm, running, soundEnabled, tickingSoundEnabled, timerDurations, user]);
 
   function changeMode(nextMode: TimerMode) {
     timerEndAtRef.current = null;
@@ -644,6 +660,7 @@ export default function Home() {
             colorThemes={colorThemes}
             modeLabels={modeLabels}
             longBreakInterval={longBreakInterval}
+            dailyGoalPomodoros={dailyGoalPomodoros}
             onModeChange={changeMode}
             onToggleRunning={toggleRunning}
             onReset={resetTimer}
@@ -663,6 +680,8 @@ export default function Home() {
             onDeleteCompleted={deleteCompletedTasks}
             onDeleteAll={deleteAllTasks}
           />
+
+          <FocusScratchpad userId={user?.id ?? null} />
         </div>
       )}
 
@@ -717,6 +736,10 @@ export default function Home() {
         setAlarmSound={setAlarmSound}
         longBreakInterval={longBreakInterval}
         setLongBreakInterval={setLongBreakInterval}
+        dailyGoalPomodoros={dailyGoalPomodoros}
+        setDailyGoalPomodoros={setDailyGoalPomodoros}
+        tickingSoundEnabled={tickingSoundEnabled}
+        setTickingSoundEnabled={setTickingSoundEnabled}
         timerDurations={timerDurations}
         setTimerDurations={(nextDurations) => {
           setTimerDurations(nextDurations);

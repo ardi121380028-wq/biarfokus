@@ -15,6 +15,7 @@ type TimerPanelProps = {
   colorThemes: readonly { color: string; name: string }[];
   modeLabels: Record<TimerMode, string>;
   longBreakInterval?: number;
+  dailyGoalPomodoros?: number;
   onModeChange: (mode: TimerMode) => void;
   onToggleRunning: () => void;
   onReset: () => void;
@@ -35,6 +36,7 @@ export function TimerPanel({
   colorThemes,
   modeLabels,
   longBreakInterval,
+  dailyGoalPomodoros = 8,
   onModeChange,
   onToggleRunning,
   onReset,
@@ -44,6 +46,9 @@ export function TimerPanel({
   onColorChange,
 }: TimerPanelProps) {
   const cycle = getCycleProgress(completedPomodoros, longBreakInterval);
+  const goalPercentage = dailyGoalPomodoros > 0
+    ? Math.min(100, Math.round((completedPomodoros / dailyGoalPomodoros) * 100))
+    : 0;
 
   return (
     <section className="timer-card card">
@@ -70,6 +75,35 @@ export function TimerPanel({
           ))}
         </div>
       </div>
+
+      {dailyGoalPomodoros > 0 && (
+        <div
+          className="daily-goal-bar"
+          aria-label={`Target hari ini: ${completedPomodoros} dari ${dailyGoalPomodoros} sesi selesai`}
+        >
+          <div className="daily-goal-info">
+            <span className="daily-goal-label">🎯 Target Hari Ini</span>
+            <span className="daily-goal-stats">
+              <strong>{completedPomodoros}</strong> / {dailyGoalPomodoros} sesi ({goalPercentage}%)
+            </span>
+          </div>
+          <div
+            className="daily-goal-track"
+            role="progressbar"
+            aria-valuenow={completedPomodoros}
+            aria-valuemin={0}
+            aria-valuemax={dailyGoalPomodoros}
+          >
+            <div
+              className="daily-goal-fill"
+              style={{ width: `${goalPercentage}%` }}
+            />
+          </div>
+          {completedPomodoros >= dailyGoalPomodoros && (
+            <div className="daily-goal-badge">🎉 Target harian tercapai! Luar biasa!</div>
+          )}
+        </div>
+      )}
 
       <div className="timer-display" aria-live="polite">{formatTime(seconds)}</div>
 

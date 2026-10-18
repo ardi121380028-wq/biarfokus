@@ -12,6 +12,8 @@ describe("settings defaults", () => {
     assert.equal(DEFAULT_SETTINGS.soundEnabled, true);
     assert.equal(DEFAULT_SETTINGS.alarmSound, "bell");
     assert.equal(DEFAULT_SETTINGS.longBreakInterval, 4);
+    assert.equal(DEFAULT_SETTINGS.dailyGoalPomodoros, 8);
+    assert.equal(DEFAULT_SETTINGS.tickingSoundEnabled, false);
   });
 
   it("uses defaults when browser storage is unavailable", () => {
@@ -23,10 +25,14 @@ describe("settings defaults", () => {
       selectedColor: "#f77fa5",
       alarmSound: "zen",
       longBreakInterval: 6,
+      dailyGoalPomodoros: 10,
+      tickingSoundEnabled: true,
     });
     assert.equal(normalized.selectedColor, "#f77fa5");
     assert.equal(normalized.alarmSound, "zen");
     assert.equal(normalized.longBreakInterval, 6);
+    assert.equal(normalized.dailyGoalPomodoros, 10);
+    assert.equal(normalized.tickingSoundEnabled, true);
     assert.equal(normalized.autoStart, false);
     assert.equal(normalized.soundEnabled, true);
   });

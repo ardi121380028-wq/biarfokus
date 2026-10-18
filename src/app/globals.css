@@ -124,3 +124,32 @@ button:active:not(:disabled) { transform:translateY(2px) scale(.985); }
   .zen-timer-display { font-size:clamp(68px,20vw,96px); margin:18px 0; }
   .zen-header { top:16px; left:16px; right:16px; }
 }
+
+/* Daily Goal Progress Bar */
+.daily-goal-bar { width:100%; margin:4px 0 16px; padding:10px 14px; border-radius:12px; background:color-mix(in srgb,var(--ink) 4%,var(--paper)); border:1px solid color-mix(in srgb,var(--ink) 8%,transparent); }
+.daily-goal-info { display:flex; align-items:center; justify-content:space-between; font-size:12px; margin-bottom:6px; color:var(--ink); }
+.daily-goal-label { font-weight:700; display:inline-flex; align-items:center; gap:4px; }
+.daily-goal-stats { font-variant-numeric:tabular-nums; color:var(--muted); font-size:12px; }
+.daily-goal-stats strong { color:var(--ink); font-weight:800; }
+.daily-goal-track { height:8px; width:100%; border-radius:4px; background:color-mix(in srgb,var(--ink) 10%,transparent); overflow:hidden; }
+.daily-goal-fill { height:100%; border-radius:4px; background:linear-gradient(90deg, #1976df, #00b074); transition:width .4s cubic-bezier(0.4, 0, 0.2, 1); }
+.daily-goal-badge { margin-top:8px; font-size:11px; font-weight:700; color:#008a5b; background:rgba(0,176,116,0.12); padding:4px 8px; border-radius:6px; text-align:center; animation:popBadge .3s ease; }
+@keyframes popBadge { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+
+/* Focus Scratchpad */
+.scratchpad-card { margin-top:16px; padding:14px 18px; border-radius:16px; }
+.scratchpad-header { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.scratchpad-toggle { display:flex; align-items:center; justify-content:space-between; flex:1; background:transparent; border:none; padding:0; text-align:left; cursor:pointer; color:inherit; }
+.scratchpad-title-group { display:inline-flex; align-items:center; gap:8px; }
+.scratchpad-emoji { font-size:16px; }
+.scratchpad-title { font-size:14px; font-weight:700; color:var(--ink); }
+.scratchpad-badge { font-size:10px; font-weight:600; padding:2px 7px; border-radius:999px; background:color-mix(in srgb,var(--blue) 12%,transparent); color:var(--blue); text-transform:uppercase; letter-spacing:0.4px; }
+.scratchpad-chevron { font-size:11px; color:var(--muted); }
+.scratchpad-clear-btn { border:none; background:transparent; color:var(--muted); font-size:11px; font-weight:600; cursor:pointer; padding:4px 8px; border-radius:6px; transition:color .15s, background .15s; }
+.scratchpad-clear-btn:hover { color:#e53e3e; background:rgba(229,62,62,0.08); }
+.scratchpad-body { margin-top:12px; }
+.scratchpad-textarea { width:100%; border-radius:10px; border:1px solid color-mix(in srgb,var(--ink) 12%,transparent); background:color-mix(in srgb,var(--ink) 2%,var(--paper)); color:var(--ink); padding:10px 12px; font-size:13px; font-family:inherit; line-height:1.5; resize:vertical; min-height:80px; box-sizing:border-box; transition:border-color .2s; }
+.scratchpad-textarea:focus { outline:none; border-color:var(--blue); background:var(--paper); }
+.scratchpad-textarea::placeholder { color:var(--muted); opacity:0.8; }
+.scratchpad-footer { display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:6px; padding:0 2px; }
+.scratchpad-status { font-style:italic; }

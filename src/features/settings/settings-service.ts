@@ -13,6 +13,8 @@ export type UserSettings = {
   repeatAlarm: boolean;
   alarmSound: AlarmSoundType;
   longBreakInterval: number;
+  dailyGoalPomodoros: number;
+  tickingSoundEnabled: boolean;
 };
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -24,6 +26,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
   repeatAlarm: false,
   alarmSound: "bell",
   longBreakInterval: 4,
+  dailyGoalPomodoros: 8,
+  tickingSoundEnabled: false,
 };
 
 export function normalizeSettings(value: unknown): UserSettings {
@@ -57,6 +61,14 @@ export function normalizeSettings(value: unknown): UserSettings {
       ? Math.floor(s.longBreakInterval)
       : 4;
 
+  const dailyGoalPomodoros =
+    typeof s.dailyGoalPomodoros === "number" && s.dailyGoalPomodoros >= 1 && s.dailyGoalPomodoros <= 24
+      ? Math.floor(s.dailyGoalPomodoros)
+      : 8;
+
+  const tickingSoundEnabled =
+    typeof s.tickingSoundEnabled === "boolean" ? s.tickingSoundEnabled : false;
+
   return {
     selectedColor: typeof s.selectedColor === "string" ? s.selectedColor : DEFAULT_SETTINGS.selectedColor,
     autoStart: typeof s.autoStart === "boolean" ? s.autoStart : DEFAULT_SETTINGS.autoStart,
@@ -66,6 +78,8 @@ export function normalizeSettings(value: unknown): UserSettings {
     timerDurations: { pomodoro, short, long },
     alarmSound,
     longBreakInterval,
+    dailyGoalPomodoros,
+    tickingSoundEnabled,
   };
 }
 
