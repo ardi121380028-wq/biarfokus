@@ -50,11 +50,13 @@ export function CalendarGrid({
       <div ref={scrollRef} className="cal-main-scroll">
         {/* Sticky Columns Header */}
         <div className="cal-date-columns-header">
-          <div className="cal-time-axis-spacer" />
+          <div className="cal-time-axis-spacer">
+            <span className="cal-timezone-badge">GMT+07</span>
+          </div>
           <div className="cal-columns-row">
             {days.map((d) => {
               const isToday = isSameDay(d, today);
-              const dayName = d.toLocaleDateString("id-ID", { weekday: "short" });
+              const dayName = d.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
               return (
                 <div
                   key={toISODate(d)}
@@ -72,15 +74,18 @@ export function CalendarGrid({
         <div className="cal-grid-body" style={{ height: totalHeight }}>
           {/* Time Labels on Left Axis */}
           <div className="cal-time-axis">
-            {HOURS_24.map((hour) => (
-              <div
-                key={hour}
-                className="cal-time-label"
-                style={{ height: HOUR_HEIGHT_PX }}
-              >
-                <span>{String(hour).padStart(2, "0")}:00</span>
-              </div>
-            ))}
+            {HOURS_24.map((hour) => {
+              const hour12 = hour === 0 ? "12 AM" : hour === 12 ? "12 PM" : hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+              return (
+                <div
+                  key={hour}
+                  className="cal-time-label"
+                  style={{ height: HOUR_HEIGHT_PX }}
+                >
+                  <span>{hour12}</span>
+                </div>
+              );
+            })}
           </div>
 
           {/* Columns */}
@@ -119,7 +124,7 @@ export function CalendarGrid({
                     </div>
                   )}
 
-                  {/* Positioned Event Blocks */}
+                  {/* Positioned Event Blocks with signature left accent stripe */}
                   {positioned.map(({ event, top, height, column, columns }) => {
                     const widthPercent = 100 / columns;
                     const leftPercent = column * widthPercent;
@@ -140,6 +145,9 @@ export function CalendarGrid({
                           onEventClick(event);
                         }}
                       >
+                        {/* Cyan / Accent Left Stripe */}
+                        <div className="cal-event-accent-strip" />
+
                         <div className="cal-event-content">
                           <strong className="cal-event-title">{event.title}</strong>
                           <span className="cal-event-time">

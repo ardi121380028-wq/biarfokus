@@ -6,7 +6,10 @@ import {
   formatPeriodLabel,
   getCurrentTimeTop,
   getEventsForDate,
+  getMonthCalendarWeeks,
   getVisibleDays,
+  getWeekNumber,
+  getYearCalendarMonths,
   layoutDayEvents,
   minutesToTime,
   parseISODate,
@@ -38,19 +41,50 @@ describe("calendar-service", () => {
     assert.equal(parsed.getDate(), 18);
   });
 
-  it("calculates Monday-first week start and 7 visible days for week mode", () => {
-    // 18 Oct 2026 is Sunday. Monday of that week was 12 Oct 2026.
+  it("calculates Sunday-first and Monday-first week start accurately", () => {
+    // 18 Oct 2026 is Sunday.
     const sunday = new Date(2026, 9, 18);
-    const monday = startOfWeek(sunday);
-    assert.equal(toISODate(monday), "2026-10-12");
+    // Sunday-first (Google Calendar standard)
+    const sunStart = startOfWeek(sunday, true);
+    assert.equal(toISODate(sunStart), "2026-10-18");
+    const sunDays = getVisibleDays(sunday, "week", true);
+    assert.equal(sunDays.length, 7);
+    assert.equal(toISODate(sunDays[0]), "2026-10-18");
+    assert.equal(toISODate(sunDays[6]), "2026-10-24");
 
-    const days = getVisibleDays(sunday, "week");
-    assert.equal(days.length, 7);
-    assert.equal(toISODate(days[0]), "2026-10-12");
-    assert.equal(toISODate(days[6]), "2026-10-18");
+    // Monday-first
+    const monStart = startOfWeek(sunday, false);
+    assert.equal(toISODate(monStart), "2026-10-12");
+    const monDays = getVisibleDays(sunday, "week", false);
+    assert.equal(monDays.length, 7);
+    assert.equal(toISODate(monDays[0]), "2026-10-12");
+    assert.equal(toISODate(monDays[6]), "2026-10-18");
   });
 
-  it("paginates by days and months correctly", () => {
+  it("calculates ISO week number correctly (Week 43 for 18 Oct 2026)", () => {
+    const d = new Date(2026, 9, 18);
+    assert.equal(getWeekNumber(d), 43);
+  });
+
+  it("builds multi-week grid for Month view", () => {
+    const anchor = new Date(2026, 9, 18);
+    const weeks = getMonthCalendarWeeks(anchor, true);
+    // October has 5 or 6 weeks depending on padding
+    assert.equal(weeks.length >= 5 && weeks.length <= 6, true);
+    for (const w of weeks) {
+      assert.equal(w.days.length, 7);
+    }
+  });
+
+  it("builds 12-month overview for Year view", () => {
+    const months = getYearCalendarMonths(2026, true);
+    assert.equal(months.length, 12);
+    assert.equal(months[0].monthIndex, 0); // January
+    assert.equal(months[9].monthIndex, 9); // October
+    assert.equal(months[11].monthIndex, 11); // December
+  });
+
+  it("paginates by days, months and years correctly", () => {
     const d = new Date(2026, 9, 18);
     assert.equal(toISODate(addDays(d, 7)), "2026-10-25");
     assert.equal(toISODate(addDays(d, -7)), "2026-10-11");
@@ -61,7 +95,7 @@ describe("calendar-service", () => {
 
   it("formats 7-day period label showing range and year", () => {
     const sunday = new Date(2026, 9, 18);
-    const weekDays = getVisibleDays(sunday, "week");
+    const weekDays = getVisibleDays(sunday, "week", false);
     const label = formatPeriodLabel(weekDays);
     // Should contain dates and year 2026
     assert.equal(label.includes("2026"), true);

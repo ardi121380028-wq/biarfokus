@@ -1,112 +1,174 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import type { CalendarViewMode } from "@/features/calendar/calendar-service";
+import { getWeekNumber } from "@/features/calendar/calendar-service";
 
 type CalendarHeaderProps = {
-  periodLabel: string;
+  anchorDate: Date;
   viewMode: CalendarViewMode;
   onViewModeChange: (mode: CalendarViewMode) => void;
   onToday: () => void;
-  onPrevPeriod: () => void;
-  onNextPeriod: () => void;
-  onPrevMonth: () => void;
-  onNextMonth: () => void;
+  onPrev: () => void;
+  onNext: () => void;
   onCreateClick: () => void;
+  onNavigateToNotes?: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 };
 
 export function CalendarHeader({
-  periodLabel,
+  anchorDate,
   viewMode,
   onViewModeChange,
   onToday,
-  onPrevPeriod,
-  onNextPeriod,
-  onPrevMonth,
-  onNextMonth,
+  onPrev,
+  onNext,
   onCreateClick,
+  onNavigateToNotes,
+  searchQuery,
+  onSearchChange,
 }: CalendarHeaderProps) {
-  const isWeek = viewMode === "week";
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const weekNumber = useMemo(() => getWeekNumber(anchorDate, true), [anchorDate]);
+
+  // Title formatted to match Google Calendar
+  const titleText = useMemo(() => {
+    if (viewMode === "year") {
+      return String(anchorDate.getFullYear());
+    }
+    if (viewMode === "month" || viewMode === "week") {
+      return anchorDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    }
+    // Day view
+    return anchorDate.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  }, [anchorDate, viewMode]);
 
   return (
     <header className="cal-header">
+      {/* Left controls: Today, <, >, Title, Week badge */}
       <div className="cal-title-group">
-        <div className="cal-branding">
-          <span className="cal-icon-date">{new Date().getDate()}</span>
-          <div className="cal-header-text">
-            <h2>Kalender Time Blocking</h2>
-            <span className="cal-subtext">{periodLabel}</span>
-          </div>
+        <button
+          type="button"
+          className="cal-today-pill-btn"
+          onClick={onToday}
+          title="Kembali ke hari ini"
+        >
+          Today
+        </button>
+
+        <div className="cal-arrow-nav">
+          <button
+            type="button"
+            className="cal-arrow-btn"
+            onClick={onPrev}
+            aria-label="Sebelumnya"
+            title="Sebelumnya"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className="cal-arrow-btn"
+            onClick={onNext}
+            aria-label="Selanjutnya"
+            title="Selanjutnya"
+          >
+            ›
+          </button>
         </div>
 
-        {/* Pagination & Navigation Toolbar */}
-        <div className="cal-nav-buttons">
-          <button
-            type="button"
-            className="cal-nav-btn today"
-            onClick={onToday}
-            title="Kembali ke hari ini"
-          >
-            Hari Ini
-          </button>
-
-          {/* Month pagination */}
-          <button
-            type="button"
-            className="cal-nav-btn"
-            onClick={onPrevMonth}
-            title="Lompat 1 Bulan Sebelumnya"
-          >
-            « Bulan Lalu
-          </button>
-
-          {/* Period (Week / Day) pagination */}
-          <button
-            type="button"
-            className="cal-nav-btn"
-            onClick={onPrevPeriod}
-            title={isWeek ? "7 Hari Sebelumnya" : "Hari Sebelumnya"}
-          >
-            ‹ {isWeek ? "7 Hari" : "Kemarin"}
-          </button>
-
-          <button
-            type="button"
-            className="cal-nav-btn"
-            onClick={onNextPeriod}
-            title={isWeek ? "7 Hari Selanjutnya" : "Hari Selanjutnya"}
-          >
-            {isWeek ? "7 Hari" : "Besok"} ›
-          </button>
-
-          <button
-            type="button"
-            className="cal-nav-btn"
-            onClick={onNextMonth}
-            title="Lompat 1 Bulan Selanjutnya"
-          >
-            Bulan Depan »
-          </button>
+        <div className="cal-title-with-badge">
+          <h2 className="cal-main-heading">{titleText}</h2>
+          {viewMode === "week" && (
+            <span className="cal-week-pill-badge" title={`Minggu ke-${weekNumber}`}>
+              Week {weekNumber}
+            </span>
+          )}
         </div>
       </div>
 
+      {/* Right controls: Search, View Mode Select, Toggle Icon, Create Button */}
       <div className="cal-actions-right">
-        <div className="cal-view-modes">
+        {/* Search button / input */}
+        {searchOpen ? (
+          <div className="cal-search-inline">
+            <span className="cal-search-icon">🔍</span>
+            <input
+              type="text"
+              autoFocus
+              placeholder="Cari jadwal..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="cal-search-input"
+            />
+            <button
+              type="button"
+              className="cal-search-close"
+              onClick={() => {
+                onSearchChange("");
+                setSearchOpen(false);
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
-            className={viewMode === "week" ? "cal-mode-btn active" : "cal-mode-btn"}
-            onClick={() => onViewModeChange("week")}
+            className="cal-icon-btn"
+            onClick={() => setSearchOpen(true)}
+            title="Cari jadwal"
+            aria-label="Cari jadwal"
           >
-            7 Hari
+            🔍
           </button>
-          <button
-            type="button"
-            className={viewMode === "day" ? "cal-mode-btn active" : "cal-mode-btn"}
-            onClick={() => onViewModeChange("day")}
+        )}
+
+        {/* View Mode Dropdown (Day, Week, Month, Year) */}
+        <div className="cal-view-selector-wrapper">
+          <select
+            value={viewMode}
+            onChange={(e) => onViewModeChange(e.target.value as CalendarViewMode)}
+            className="cal-view-select"
+            aria-label="Pilih tampilan kalender"
           >
-            1 Hari
-          </button>
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+            <option value="year">Year</option>
+          </select>
         </div>
 
+        {/* Quick Tab to Notes / Checklist */}
+        {onNavigateToNotes && (
+          <div className="cal-tab-switcher">
+            <button
+              type="button"
+              className="cal-tab-btn active"
+              title="Tampilan Kalender"
+              aria-label="Tampilan Kalender"
+            >
+              📅
+            </button>
+            <button
+              type="button"
+              className="cal-tab-btn"
+              onClick={onNavigateToNotes}
+              title="Buka Catatan & Todo List"
+              aria-label="Buka Catatan & Todo List"
+            >
+              ☑️
+            </button>
+          </div>
+        )}
+
+        {/* Create Event Button */}
         <button
           type="button"
           className="cal-create-event-btn"

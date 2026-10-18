@@ -5,8 +5,8 @@ import type { CalendarEvent } from "@/types/domain";
 import {
   addDays,
   addMonths,
+  addYears,
   DEFAULT_EVENT_COLOR,
-  formatPeriodLabel,
   getVisibleDays,
   minutesToTime,
   snapMinutes,
@@ -18,6 +18,8 @@ import { useCalendarEvents } from "@/features/calendar/use-calendar-events";
 import { useKeepNotes } from "@/features/notes/use-keep-notes";
 import { CalendarHeader } from "./calendar-header";
 import { CalendarGrid } from "./calendar-grid";
+import { CalendarMonthView } from "./calendar-month-view";
+import { CalendarYearView } from "./calendar-year-view";
 import { CalendarEventModal } from "./calendar-event-modal";
 
 type CalendarViewProps = {
@@ -31,42 +33,58 @@ export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
 
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>(undefined);
   const [modalDraft, setModalDraft] = useState<EventDraft | null>(null);
 
-  // Visible days: 7 days for week mode, 1 day for day mode
+  // Filtered events
+  const filteredEvents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return events;
+    return events.filter(
+      (e) =>
+        e.title.toLowerCase().includes(q) ||
+        (e.description && e.description.toLowerCase().includes(q)) ||
+        (e.linkedNoteTitle && e.linkedNoteTitle.toLowerCase().includes(q)),
+    );
+  }, [events, searchQuery]);
+
+  // Visible days for Day/Week
   const visibleDays = useMemo(
-    () => getVisibleDays(anchorDate, viewMode),
+    () => getVisibleDays(anchorDate, viewMode, true),
     [anchorDate, viewMode],
   );
 
-  const periodLabel = useMemo(
-    () => formatPeriodLabel(visibleDays),
-    [visibleDays],
-  );
-
-  /* Pagination */
+  /* Navigation */
   function handleToday() {
     setAnchorDate(new Date());
   }
 
-  function handlePrevPeriod() {
-    setAnchorDate((prev) => addDays(prev, viewMode === "week" ? -7 : -1));
+  function handlePrev() {
+    setAnchorDate((prev) => {
+      if (viewMode === "year") return addYears(prev, -1);
+      if (viewMode === "month") return addMonths(prev, -1);
+      if (viewMode === "week") return addDays(prev, -7);
+      return addDays(prev, -1);
+    });
   }
 
-  function handleNextPeriod() {
-    setAnchorDate((prev) => addDays(prev, viewMode === "week" ? 7 : 1));
+  function handleNext() {
+    setAnchorDate((prev) => {
+      if (viewMode === "year") return addYears(prev, 1);
+      if (viewMode === "month") return addMonths(prev, 1);
+      if (viewMode === "week") return addDays(prev, 7);
+      return addDays(prev, 1);
+    });
   }
 
-  function handlePrevMonth() {
-    setAnchorDate((prev) => addMonths(prev, -1));
-  }
-
-  function handleNextMonth() {
-    setAnchorDate((prev) => addMonths(prev, 1));
+  /* Date selection from Month or Year view */
+  function handleSelectDate(date: Date) {
+    setAnchorDate(date);
+    setViewMode("day");
   }
 
   /* Create & Edit Modal Triggers */
@@ -117,15 +135,16 @@ export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
   return (
     <section className="inner-page calendar-page-view">
       <CalendarHeader
-        periodLabel={periodLabel}
+        anchorDate={anchorDate}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onToday={handleToday}
-        onPrevPeriod={handlePrevPeriod}
-        onNextPeriod={handleNextPeriod}
-        onPrevMonth={handlePrevMonth}
-        onNextMonth={handleNextMonth}
+        onPrev={handlePrev}
+        onNext={handleNext}
         onCreateClick={() => handleOpenCreate()}
+        onNavigateToNotes={onNavigateToNotes}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       {/* Empty notice banner if no events have been created yet */}
@@ -136,23 +155,40 @@ export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
             <strong>+ Buat Jadwal</strong> untuk mulai time-blocking dan menghubungkan to-do list aktif kamu.
           </span>
           {onNavigateToNotes && (
-            <button
-              type="button"
-              onClick={onNavigateToNotes}
-            >
+            <button type="button" onClick={onNavigateToNotes}>
               Lihat Catatan →
             </button>
           )}
         </div>
       )}
 
-      {/* 7-Day / 1-Day Time-Blocking Grid */}
-      <CalendarGrid
-        days={visibleDays}
-        events={events}
-        onSlotClick={(dateISO, hour) => handleOpenCreate(dateISO, hour)}
-        onEventClick={handleOpenEdit}
-      />
+      {/* Main View Mode Content */}
+      {(viewMode === "day" || viewMode === "week") && (
+        <CalendarGrid
+          days={visibleDays}
+          events={filteredEvents}
+          onSlotClick={(dateISO, hour) => handleOpenCreate(dateISO, hour)}
+          onEventClick={handleOpenEdit}
+        />
+      )}
+
+      {viewMode === "month" && (
+        <CalendarMonthView
+          anchorDate={anchorDate}
+          events={filteredEvents}
+          onSelectDate={handleSelectDate}
+          onSlotClick={(dateISO, hour) => handleOpenCreate(dateISO, hour)}
+          onEventClick={handleOpenEdit}
+        />
+      )}
+
+      {viewMode === "year" && (
+        <CalendarYearView
+          anchorDate={anchorDate}
+          events={filteredEvents}
+          onSelectDate={handleSelectDate}
+        />
+      )}
 
       {/* Create / Edit Event Modal */}
       {modalOpen && modalDraft && (

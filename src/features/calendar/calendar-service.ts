@@ -17,7 +17,7 @@ export function getCurrentTimeTop(now: Date, hourHeight = HOUR_HEIGHT_PX): numbe
   return (mins / 60) * hourHeight;
 }
 
-export type CalendarViewMode = "day" | "week";
+export type CalendarViewMode = "day" | "week" | "month" | "year";
 export type EventDraft = Omit<CalendarEvent, "id">;
 
 export const CALENDAR_COLORS = [
@@ -80,26 +80,94 @@ export function addMonths(d: Date, amount: number): Date {
   return new Date(firstOfTarget.getFullYear(), firstOfTarget.getMonth(), Math.min(d.getDate(), lastDay));
 }
 
-/** Monday-first week start. */
-export function startOfWeek(d: Date): Date {
-  const offset = (d.getDay() + 6) % 7;
+export function addYears(d: Date, amount: number): Date {
+  return new Date(d.getFullYear() + amount, d.getMonth(), d.getDate());
+}
+
+/** Week start: defaults to Sunday-first (0) matching Google Calendar standard. */
+export function startOfWeek(d: Date, startOnSunday = true): Date {
+  const day = d.getDay();
+  const offset = startOnSunday ? day : (day + 6) % 7;
   return addDays(startOfDay(d), -offset);
+}
+
+/** Returns ISO week number (1..53). */
+export function getWeekNumber(d: Date, startOnSunday = true): number {
+  const ref = startOnSunday ? addDays(startOfWeek(d, true), 3) : d;
+  const target = new Date(Date.UTC(ref.getFullYear(), ref.getMonth(), ref.getDate()));
+  const dayNr = (target.getUTCDay() + 6) % 7;
+  target.setUTCDate(target.getUTCDate() - dayNr + 3);
+  const firstThursday = target.getTime();
+  target.setUTCMonth(0, 1);
+  if (target.getUTCDay() !== 4) {
+    target.setUTCMonth(0, 1 + ((4 - target.getUTCDay()) + 7) % 7);
+  }
+  return 1 + Math.ceil((firstThursday - target.getTime()) / 604800000);
 }
 
 export function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export function getVisibleDays(anchor: Date, mode: CalendarViewMode): Date[] {
+export function getVisibleDays(anchor: Date, mode: CalendarViewMode, startOnSunday = true): Date[] {
   if (mode === "day") return [startOfDay(anchor)];
-  const monday = startOfWeek(anchor);
-  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  if (mode === "week") {
+    const start = startOfWeek(anchor, startOnSunday);
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  }
+  if (mode === "month") {
+    const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+    const start = startOfWeek(first, startOnSunday);
+    const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+    const end = addDays(startOfWeek(last, startOnSunday), 6);
+    const dayDiff = Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+    const totalDays = dayDiff <= 35 ? 35 : 42;
+    return Array.from({ length: totalDays }, (_, i) => addDays(start, i));
+  }
+  return [startOfDay(anchor)];
 }
 
-/** 6x7 grid (42 days) for a mini month calendar, Monday-first. */
-export function getMonthGrid(monthAnchor: Date): Date[] {
+export type MonthCalendarWeek = {
+  weekNumber: number;
+  days: Date[];
+};
+
+export function getMonthCalendarWeeks(anchor: Date, startOnSunday = true): MonthCalendarWeek[] {
+  const days = getVisibleDays(anchor, "month", startOnSunday);
+  const weeks: MonthCalendarWeek[] = [];
+  for (let i = 0; i < days.length; i += 7) {
+    const chunk = days.slice(i, i + 7);
+    const midDay = chunk[startOnSunday ? 3 : 0] || chunk[0];
+    weeks.push({
+      weekNumber: getWeekNumber(midDay),
+      days: chunk,
+    });
+  }
+  return weeks;
+}
+
+export type YearCalendarMonth = {
+  monthIndex: number;
+  monthName: string;
+  weeks: MonthCalendarWeek[];
+};
+
+export function getYearCalendarMonths(year: number, startOnSunday = true): YearCalendarMonth[] {
+  return Array.from({ length: 12 }, (_, m) => {
+    const anchor = new Date(year, m, 1);
+    const monthName = anchor.toLocaleDateString("id-ID", { month: "long" });
+    return {
+      monthIndex: m,
+      monthName,
+      weeks: getMonthCalendarWeeks(anchor, startOnSunday),
+    };
+  });
+}
+
+/** 6x7 grid (42 days) for a mini month calendar. */
+export function getMonthGrid(monthAnchor: Date, startOnSunday = true): Date[] {
   const first = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth(), 1);
-  const start = startOfWeek(first);
+  const start = startOfWeek(first, startOnSunday);
   return Array.from({ length: 42 }, (_, i) => addDays(start, i));
 }
 
@@ -107,6 +175,24 @@ const LOCALE = "id-ID";
 
 export function formatMonthYear(d: Date): string {
   return d.toLocaleDateString(LOCALE, { month: "long", year: "numeric" });
+}
+
+export function formatViewTitle(anchor: Date, mode: CalendarViewMode, startOnSunday = true): string {
+  if (mode === "year") {
+    return String(anchor.getFullYear());
+  }
+  if (mode === "month") {
+    return formatMonthYear(anchor);
+  }
+  if (mode === "day") {
+    return anchor.toLocaleDateString(LOCALE, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+  return formatMonthYear(anchor);
 }
 
 /** "12 – 18 Oktober 2026", "28 Sep – 4 Okt 2026", "29 Des 2026 – 4 Jan 2027". */
@@ -127,6 +213,7 @@ export function formatPeriodLabel(days: Date[]): string {
   }
   return `${first.getDate()} – ${last.getDate()} ${formatMonthYear(last)}`;
 }
+
 
 /* ------------------------------------------------------------------ */
 /* Time helpers                                                        */
