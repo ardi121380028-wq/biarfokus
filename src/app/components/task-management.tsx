@@ -102,7 +102,7 @@ export function TaskManagement({
   return (
     <section className="task-card card">
       <div className="section-heading">
-        <div><p className="eyebrow">Fokus hari ini</p><h1>Task Management</h1></div>
+        <div><p className="eyebrow">Fokus hari ini</p><h1>Eat Your Frog</h1></div>
         <div className="task-heading-actions">
           <span className="progress-count">{completedTasks}/{tasks.length}</span>
           <div className="task-menu">

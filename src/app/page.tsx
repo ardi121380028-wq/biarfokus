@@ -17,6 +17,8 @@ import { AdminView } from "@/app/components/admin-view";
 import { PricingView } from "@/app/components/pricing-view";
 import { NotesModal } from "@/app/components/notes-modal";
 import { CalendarView } from "@/app/components/calendar-view";
+import { AboutModal } from "@/app/components/about-modal";
+import { PomodoroModal } from "@/app/components/pomodoro-modal";
 import { trackSiteVisit } from "@/features/analytics/visitor-tracker";
 import { playTickSound } from "@/features/audio/ticking-sound";
 import { isAdminRole, loadUserRole } from "@/features/admin/admin-service";
@@ -52,7 +54,6 @@ import {
 } from "@/features/tasks/task-service";
 import {
   formatTime,
-  getCycleProgress,
   getNextTimerMode,
   getRemainingSeconds,
   getTimerEndTime,
@@ -134,6 +135,8 @@ export default function Home() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [pomodoroModalOpen, setPomodoroModalOpen] = useState(false);
+  const [aboutModalOpen, setAboutModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -739,11 +742,8 @@ export default function Home() {
       <footer className="footer">
         <div><strong>BiarFokus</strong><span>Bantu kamu fokus selesain setiap pekerjaan.</span></div>
         <div className="footer-links">
-          <button onClick={() => setActiveView("timer")}>Timer</button>
-          <button onClick={() => setActiveView("notes")}>Catatan Fokus</button>
-          <button onClick={() => setActiveView("calendar")}>Kalender</button>
-          <button onClick={() => setInfoOpen("Pomodoro membagi waktu kerja menjadi interval fokus dan istirahat agar kamu bisa bekerja dengan ritme yang konsisten.")}>Apa itu Pomodoro?</button>
-          <button onClick={() => setInfoOpen("BiarFokus dibuat untuk membantu kamu menyelesaikan pekerjaan dengan lebih tenang dan terarah.")}>Tentang Kami</button>
+          <button type="button" onClick={() => setPomodoroModalOpen(true)}>Apa itu Pomodoro?</button>
+          <button type="button" onClick={() => setAboutModalOpen(true)}>Tentang Kami</button>
           <a
             href="https://www.instagram.com/biarfokus.id/"
             target="_blank"
@@ -842,23 +842,23 @@ export default function Home() {
       )}
       {authError && <div className="modal-backdrop" role="presentation" onClick={() => setAuthError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAuthError(null)} aria-label="Tutup error">×</button><h2>Login gagal</h2><p className="modal-copy">{authError}</p><button className="secondary-button" onClick={() => setAuthError(null)}>Tutup</button></section></div>}
       {appError && <div className="modal-backdrop" role="presentation" onClick={() => setAppError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAppError(null)} aria-label="Tutup error">×</button><h2>Terjadi kesalahan</h2><p className="modal-copy">{appError}</p><button className="secondary-button" onClick={() => setAppError(null)}>Tutup</button></section></div>}
-      {infoOpen && <div className="modal-backdrop" role="presentation" onClick={() => setInfoOpen(null)}><section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setInfoOpen(null)} aria-label="Tutup">×</button><h2>Fokus dengan ritme yang tepat</h2><p className="modal-copy">{infoOpen}</p><button className="secondary-button" onClick={() => setInfoOpen(null)}>Mengerti</button></section></div>}
+      {infoOpen && (
+        <div className="modal-backdrop" role="presentation" onClick={() => setInfoOpen(null)}>
+          <section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <button className="modal-close" onClick={() => setInfoOpen(null)} aria-label="Tutup">×</button>
+            <h2>Informasi</h2>
+            <p className="modal-copy">{infoOpen}</p>
+            <button className="secondary-button" onClick={() => setInfoOpen(null)}>Mengerti</button>
+          </section>
+        </div>
+      )}
+      {aboutModalOpen && <AboutModal onClose={() => setAboutModalOpen(false)} />}
+      {pomodoroModalOpen && <PomodoroModal onClose={() => setPomodoroModalOpen(false)} />}
       {shortcutsOpen && <ShortcutsModalComponent onClose={() => setShortcutsOpen(false)} />}
 
       {zenMode && (
         <div className="zen-overlay" role="dialog" aria-modal="true" aria-label="Mode Zen Fokus">
           <div className="zen-header">
-            <div className="cycle-bar" aria-label={`Siklus ${getCycleProgress(completedPomodoros, longBreakInterval).cycleNumber}`}>
-              <span className="cycle-label">Siklus #{getCycleProgress(completedPomodoros, longBreakInterval).cycleNumber}</span>
-              <div className="cycle-dots" aria-hidden="true">
-                {Array.from({ length: getCycleProgress(completedPomodoros, longBreakInterval).totalInCycle }, (_, idx) => (
-                  <span
-                    key={idx}
-                    className={idx < getCycleProgress(completedPomodoros, longBreakInterval).completedInCycle ? "cycle-dot filled" : "cycle-dot"}
-                  />
-                ))}
-              </div>
-            </div>
             <button
               type="button"
               className="zen-close-button"
