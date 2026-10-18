@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { ChecklistItem, KeepNote } from "@/types/domain";
+import type { ChecklistItem } from "@/types/domain";
 import {
   convertDraftType,
   createEmptyDraft,
@@ -12,7 +12,6 @@ import {
 } from "@/features/notes/notes-service";
 import { LabelSelect } from "./label-select";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
-import styles from "./notes.module.css";
 
 type NoteComposerProps = {
   labels: string[];
@@ -89,21 +88,21 @@ export function NoteComposer({
   return (
     <div
       ref={containerRef}
-      className={styles.composer}
+      className="keep-create-box"
       style={{ background: draft.color }}
     >
       {!isExpanded ? (
         <div
-          className={styles.composerCollapsed}
+          className="keep-create-placeholder-row"
           onClick={() => setIsExpanded(true)}
         >
-          <span className={styles.composerPrompt}>
+          <span className="keep-create-prompt">
             Buat catatan baru atau to-do list...
           </span>
-          <div className={styles.composerQuickActions}>
+          <div className="keep-quick-create-actions">
             <button
               type="button"
-              className={styles.quickActionBtn}
+              className="keep-quick-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 setDraft(createEmptyDraft("checklist"));
@@ -114,7 +113,7 @@ export function NoteComposer({
             </button>
             <button
               type="button"
-              className={styles.quickActionBtn}
+              className="keep-quick-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 setDraft(createEmptyDraft("text"));
@@ -126,19 +125,19 @@ export function NoteComposer({
           </div>
         </div>
       ) : (
-        <div className={styles.composerExpanded}>
-          <div className={styles.titleRow}>
+        <div className="keep-create-expanded">
+          <div className="keep-create-title-row">
             <input
               type="text"
               placeholder="Judul catatan..."
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-              className={styles.titleInput}
+              className="keep-create-input keep-title-input"
               autoFocus
             />
             <button
               type="button"
-              className={draft.pinned ? `${styles.pinBtn} ${styles.pinBtnActive}` : styles.pinBtn}
+              className={draft.pinned ? "keep-pin-btn active" : "keep-pin-btn"}
               onClick={() => setDraft({ ...draft, pinned: !draft.pinned })}
               title={draft.pinned ? "Lepaskan sematan" : "Sematkan ke atas"}
               aria-label={draft.pinned ? "Lepaskan sematan" : "Sematkan ke atas"}
@@ -147,13 +146,13 @@ export function NoteComposer({
             </button>
           </div>
 
-          <div className={styles.typeSwitcher}>
+          <div className="keep-type-switcher">
             <button
               type="button"
               className={
                 draft.type === "checklist"
-                  ? `${styles.typeSwitchBtn} ${styles.typeSwitchBtnActive}`
-                  : styles.typeSwitchBtn
+                  ? "keep-switch-btn active"
+                  : "keep-switch-btn"
               }
               onClick={() => setDraft((prev) => convertDraftType(prev, "checklist"))}
             >
@@ -163,8 +162,8 @@ export function NoteComposer({
               type="button"
               className={
                 draft.type === "text"
-                  ? `${styles.typeSwitchBtn} ${styles.typeSwitchBtnActive}`
-                  : styles.typeSwitchBtn
+                  ? "keep-switch-btn active"
+                  : "keep-switch-btn"
               }
               onClick={() => setDraft((prev) => convertDraftType(prev, "text"))}
             >
@@ -178,18 +177,18 @@ export function NoteComposer({
               value={draft.content || ""}
               onChange={(e) => setDraft({ ...draft, content: e.target.value })}
               rows={4}
-              className={styles.textArea}
+              className="keep-create-input keep-textarea"
             />
           ) : (
-            <div className={styles.checklistSection}>
-              <div className={styles.checklistItems}>
+            <div className="keep-checklist-create-section">
+              <div className="keep-checklist-items">
                 {(draft.items || []).map((item) => (
-                  <div key={item.id} className={styles.checklistItemRow}>
+                  <div key={item.id} className="keep-checklist-item-row">
                     <input
                       type="checkbox"
                       checked={item.done}
                       onChange={() => handleToggleItem(item.id)}
-                      className={styles.itemCheckbox}
+                      className="keep-checkbox"
                     />
                     <input
                       type="text"
@@ -205,14 +204,14 @@ export function NoteComposer({
                       }}
                       className={
                         item.done
-                          ? `${styles.itemTextInput} ${styles.itemDone}`
-                          : styles.itemTextInput
+                          ? "keep-item-edit-input done"
+                          : "keep-item-edit-input"
                       }
                     />
                     <button
                       type="button"
                       onClick={() => handleDeleteItem(item.id)}
-                      className={styles.itemDeleteBtn}
+                      className="keep-item-delete"
                       aria-label="Hapus item"
                     >
                       ✕
@@ -221,8 +220,8 @@ export function NoteComposer({
                 ))}
               </div>
 
-              <div className={styles.checklistAddRow}>
-                <span className={styles.addIcon}>＋</span>
+              <div className="keep-checklist-add-row">
+                <span className="keep-add-icon">＋</span>
                 <input
                   type="text"
                   placeholder="Tambah item todo (Enter)..."
@@ -234,13 +233,13 @@ export function NoteComposer({
                       handleAddItem();
                     }
                   }}
-                  className={styles.checklistAddInput}
+                  className="keep-checklist-add-input"
                 />
                 <button
                   type="button"
                   onClick={handleAddItem}
                   disabled={!newItemText.trim()}
-                  className={styles.addItemBtn}
+                  className="keep-add-item-btn"
                 >
                   Tambah
                 </button>
@@ -256,8 +255,8 @@ export function NoteComposer({
             onCreateLabel={onCreateLabel}
           />
 
-          <div className={styles.composerFooter}>
-            <div className={styles.swatchesRow}>
+          <div className="keep-create-footer-bar">
+            <div className="keep-color-picker-row">
               {NOTE_COLORS.map((col) => (
                 <button
                   key={col.name}
@@ -265,8 +264,8 @@ export function NoteComposer({
                   title={col.name}
                   className={
                     draft.color === col.bg
-                      ? `${styles.swatch} ${styles.swatchActive}`
-                      : styles.swatch
+                      ? "keep-color-swatch active"
+                      : "keep-color-swatch"
                   }
                   style={{ backgroundColor: col.bg, borderColor: col.border }}
                   onClick={() => setDraft({ ...draft, color: col.bg })}
@@ -274,17 +273,17 @@ export function NoteComposer({
               ))}
             </div>
 
-            <div className={styles.composerActions}>
+            <div className="keep-footer-btns">
               <button
                 type="button"
-                className={styles.cancelBtn}
+                className="keep-cancel-btn"
                 onClick={reset}
               >
                 Tutup
               </button>
               <button
                 type="button"
-                className={styles.saveBtn}
+                className="keep-save-btn"
                 onClick={handleSave}
               >
                 Simpan

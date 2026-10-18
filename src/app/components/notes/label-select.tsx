@@ -3,7 +3,6 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { findLabel, MAX_LABEL_LENGTH, normalizeLabel } from "@/features/notes/notes-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
-import styles from "./notes.module.css";
 
 type LabelSelectProps = {
   /** Labels currently applied to the note. */
@@ -54,59 +53,67 @@ export function LabelSelect({ value, options, onChange, onCreateLabel }: LabelSe
   };
 
   return (
-    <div className={styles.labelSelect} ref={rootRef}>
-      <div className={styles.labelChipsRow}>
-        {value.map((label) => (
-          <span key={label} className={styles.labelChip}>
-            {label}
-            <button type="button" onClick={() => toggle(label)} aria-label={`Hapus label ${label}`}>
-              ✕
-            </button>
-          </span>
-        ))}
-        <button
-          type="button"
-          className={styles.labelTrigger}
-          onClick={() => (open ? close() : setOpen(true))}
-          aria-expanded={open}
-          aria-controls={listId}
-        >
-          🏷️ {value.length ? "Ubah label" : "Pilih label"}
-        </button>
-      </div>
+    <div className="keep-create-labels-row" ref={rootRef}>
+      {value.map((label) => (
+        <span key={label} className="keep-label-tag">
+          {label}
+          <button type="button" onClick={() => toggle(label)} aria-label={`Hapus label ${label}`}>
+            ✕
+          </button>
+        </span>
+      ))}
+      <button
+        type="button"
+        className="keep-add-label-btn"
+        onClick={() => (open ? close() : setOpen(true))}
+        aria-expanded={open}
+        aria-controls={listId}
+      >
+        🏷️ {value.length ? "Ubah label" : "Pilih label"}
+      </button>
 
       {open && (
-        <div className={styles.labelPopover} role="dialog" aria-label="Pilih atau buat label">
-          <p className={styles.labelPopoverTitle}>Beri label catatan</p>
-          <input
-            autoFocus
-            className={styles.labelSearch}
-            placeholder="Cari atau ketik label baru..."
-            value={query}
-            maxLength={MAX_LABEL_LENGTH}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              e.preventDefault();
-              if (exactMatch) toggle(exactMatch);
-              else if (canCreate) create();
-            }}
-          />
+        <div className="keep-label-picker-popover" role="dialog" aria-label="Pilih atau buat label">
+          <span className="popover-title">Beri label catatan</span>
+          <div className="popover-new-label-row">
+            <input
+              autoFocus
+              placeholder="Cari atau ketik label baru..."
+              value={query}
+              maxLength={MAX_LABEL_LENGTH}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                if (exactMatch) toggle(exactMatch);
+                else if (canCreate) create();
+              }}
+            />
+          </div>
 
-          <ul id={listId} className={styles.labelOptions}>
+          <ul id={listId} className="keep-label-options-list">
             {filtered.map((label) => (
               <li key={label}>
-                <label className={styles.labelOption}>
-                  <input type="checkbox" checked={isSelected(label)} onChange={() => toggle(label)} />
+                <label className="keep-label-option-row">
+                  <input
+                    type="checkbox"
+                    className="keep-checkbox"
+                    checked={isSelected(label)}
+                    onChange={() => toggle(label)}
+                  />
                   <span>{label}</span>
                 </label>
               </li>
             ))}
-            {filtered.length === 0 && !canCreate && <li className={styles.labelEmpty}>Belum ada label.</li>}
+            {filtered.length === 0 && !canCreate && (
+              <li style={{ padding: "6px", fontSize: "11px", color: "var(--muted)" }}>
+                Belum ada label.
+              </li>
+            )}
           </ul>
 
           {canCreate && (
-            <button type="button" className={styles.labelCreate} onClick={create}>
+            <button type="button" className="keep-label-create-btn" onClick={create}>
               ＋ Buat label &ldquo;{normalizedQuery}&rdquo;
             </button>
           )}

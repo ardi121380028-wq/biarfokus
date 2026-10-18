@@ -1,7 +1,6 @@
 "use client";
 
 import type { CalendarViewMode } from "@/features/calendar/calendar-service";
-import styles from "./calendar.module.css";
 
 type CalendarHeaderProps = {
   periodLabel: string;
@@ -29,21 +28,21 @@ export function CalendarHeader({
   const isWeek = viewMode === "week";
 
   return (
-    <header className={styles.header}>
-      <div className={styles.headerLeft}>
-        <div className={styles.branding}>
-          <span className={styles.dateIcon}>{new Date().getDate()}</span>
-          <div className={styles.titleArea}>
-            <h2 className={styles.title}>Kalender Time Blocking</h2>
-            <span className={styles.periodLabel}>{periodLabel}</span>
+    <header className="cal-header">
+      <div className="cal-title-group">
+        <div className="cal-branding">
+          <span className="cal-icon-date">{new Date().getDate()}</span>
+          <div className="cal-header-text">
+            <h2>Kalender Time Blocking</h2>
+            <span className="cal-subtext">{periodLabel}</span>
           </div>
         </div>
 
         {/* Pagination & Navigation Toolbar */}
-        <div className={styles.navToolbar}>
+        <div className="cal-nav-buttons">
           <button
             type="button"
-            className={styles.todayBtn}
+            className="cal-nav-btn today"
             onClick={onToday}
             title="Kembali ke hari ini"
           >
@@ -53,7 +52,7 @@ export function CalendarHeader({
           {/* Month pagination */}
           <button
             type="button"
-            className={styles.paginationBtn}
+            className="cal-nav-btn"
             onClick={onPrevMonth}
             title="Lompat 1 Bulan Sebelumnya"
           >
@@ -63,7 +62,7 @@ export function CalendarHeader({
           {/* Period (Week / Day) pagination */}
           <button
             type="button"
-            className={styles.paginationBtn}
+            className="cal-nav-btn"
             onClick={onPrevPeriod}
             title={isWeek ? "7 Hari Sebelumnya" : "Hari Sebelumnya"}
           >
@@ -72,7 +71,7 @@ export function CalendarHeader({
 
           <button
             type="button"
-            className={styles.paginationBtn}
+            className="cal-nav-btn"
             onClick={onNextPeriod}
             title={isWeek ? "7 Hari Selanjutnya" : "Hari Selanjutnya"}
           >
@@ -81,7 +80,7 @@ export function CalendarHeader({
 
           <button
             type="button"
-            className={styles.paginationBtn}
+            className="cal-nav-btn"
             onClick={onNextMonth}
             title="Lompat 1 Bulan Selanjutnya"
           >
@@ -90,26 +89,18 @@ export function CalendarHeader({
         </div>
       </div>
 
-      <div className={styles.headerRight}>
-        <div className={styles.viewSwitcher}>
+      <div className="cal-actions-right">
+        <div className="cal-view-modes">
           <button
             type="button"
-            className={
-              viewMode === "week"
-                ? `${styles.viewModeBtn} ${styles.viewModeBtnActive}`
-                : styles.viewModeBtn
-            }
+            className={viewMode === "week" ? "cal-mode-btn active" : "cal-mode-btn"}
             onClick={() => onViewModeChange("week")}
           >
             7 Hari
           </button>
           <button
             type="button"
-            className={
-              viewMode === "day"
-                ? `${styles.viewModeBtn} ${styles.viewModeBtnActive}`
-                : styles.viewModeBtn
-            }
+            className={viewMode === "day" ? "cal-mode-btn active" : "cal-mode-btn"}
             onClick={() => onViewModeChange("day")}
           >
             1 Hari
@@ -118,7 +109,7 @@ export function CalendarHeader({
 
         <button
           type="button"
-          className={styles.createBtn}
+          className="cal-create-event-btn"
           onClick={onCreateClick}
         >
           ＋ Buat Jadwal

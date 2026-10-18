@@ -4,13 +4,11 @@ import { useMemo, useRef, useState } from "react";
 import type { CalendarEvent, KeepNote } from "@/types/domain";
 import {
   CALENDAR_COLORS,
-  DEFAULT_EVENT_COLOR,
   formatDuration,
   validateEventDraft,
   type EventDraft,
 } from "@/features/calendar/calendar-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
-import styles from "./calendar.module.css";
 
 type CalendarEventModalProps = {
   initialDraft: EventDraft;
@@ -64,20 +62,20 @@ export function CalendarEventModal({
   }
 
   return (
-    <div className={styles.modalBackdrop} role="presentation">
+    <div className="cal-modal-backdrop" role="presentation">
       <div
         ref={cardRef}
-        className={styles.modalCard}
+        className="cal-modal-card"
         role="dialog"
         aria-label={editingId ? "Edit Jadwal" : "Buat Jadwal Baru"}
       >
-        <div className={styles.modalTopBar}>
-          <h3 className={styles.modalTitle}>
-            {editingId ? "Edit Jadwal" : "Buat Jadwal Time-Blocking"}
-          </h3>
+        <div className="cal-modal-top-bar">
+          <span className="cal-modal-handle">
+            {editingId ? "EDIT JADWAL" : "TIME-BLOCKING JADWAL"}
+          </span>
           <button
             type="button"
-            className={styles.modalClose}
+            className="cal-modal-close"
             onClick={onClose}
             aria-label="Tutup modal"
           >
@@ -85,10 +83,10 @@ export function CalendarEventModal({
           </button>
         </div>
 
-        {error && <div className={styles.errorBanner}>{error}</div>}
+        {error && <div className="cal-error-banner">{error}</div>}
 
         {/* Title Input */}
-        <div className={styles.titleInputWrapper}>
+        <div className="cal-input-title-wrapper">
           <input
             type="text"
             placeholder="Tambahkan judul jadwal..."
@@ -97,19 +95,19 @@ export function CalendarEventModal({
               setDraft({ ...draft, title: e.target.value });
               if (error) setError(null);
             }}
-            className={styles.eventTitleInput}
+            className="cal-title-input"
             autoFocus
           />
         </div>
 
         {/* Category: Event vs Task */}
-        <div className={styles.categoryTabs}>
+        <div className="cal-category-tabs">
           <button
             type="button"
             className={
               draft.category !== "task"
-                ? `${styles.catTab} ${styles.catTabActive}`
-                : styles.catTab
+                ? "cal-cat-tab active"
+                : "cal-cat-tab"
             }
             onClick={() => setDraft({ ...draft, category: "event" })}
           >
@@ -119,8 +117,8 @@ export function CalendarEventModal({
             type="button"
             className={
               draft.category === "task"
-                ? `${styles.catTab} ${styles.catTabActive}`
-                : styles.catTab
+                ? "cal-cat-tab active"
+                : "cal-cat-tab"
             }
             onClick={() => setDraft({ ...draft, category: "task" })}
           >
@@ -129,17 +127,17 @@ export function CalendarEventModal({
         </div>
 
         {/* Date and Time Pickers */}
-        <div className={styles.fieldRow}>
-          <span className={styles.fieldIcon}>🕒</span>
-          <div className={styles.fieldContent}>
-            <span className={styles.fieldLabel}>Waktu:</span>
+        <div className="cal-time-pickers-row">
+          <span className="cal-field-icon">🕒</span>
+          <div className="cal-field-content">
+            <span className="cal-field-label">Waktu:</span>
             <input
               type="date"
               value={draft.date}
               onChange={(e) => setDraft({ ...draft, date: e.target.value })}
-              className={styles.dateInput}
+              className="cal-date-picker"
             />
-            <div className={styles.timeRangeRow}>
+            <div className="cal-range-times">
               <input
                 type="time"
                 value={draft.startTime}
@@ -147,7 +145,7 @@ export function CalendarEventModal({
                   setDraft({ ...draft, startTime: e.target.value });
                   if (error) setError(null);
                 }}
-                className={styles.timeInput}
+                className="cal-time-picker"
               />
               <span>—</span>
               <input
@@ -157,20 +155,20 @@ export function CalendarEventModal({
                   setDraft({ ...draft, endTime: e.target.value });
                   if (error) setError(null);
                 }}
-                className={styles.timeInput}
+                className="cal-time-picker"
               />
               {durationText && (
-                <span className={styles.durationBadge}>({durationText})</span>
+                <span className="cal-duration-badge">({durationText})</span>
               )}
             </div>
           </div>
         </div>
 
         {/* Connect to Active Notes / Todo Lists */}
-        <div className={styles.fieldRow}>
-          <span className={styles.fieldIcon}>📝</span>
-          <div className={styles.fieldContent}>
-            <span className={styles.fieldLabel}>Hubungkan Catatan / Todo:</span>
+        <div className="cal-linked-note-row">
+          <span className="cal-field-icon">📝</span>
+          <div className="cal-field-content">
+            <span className="cal-field-label">Hubungkan Catatan / Todo:</span>
             <select
               value={draft.linkedNoteId || ""}
               onChange={(e) => {
@@ -181,7 +179,7 @@ export function CalendarEventModal({
                   linkedItemId: undefined,
                 });
               }}
-              className={styles.selectInput}
+              className="cal-select-note"
             >
               <option value="">-- Tidak terhubung / Mandiri --</option>
               {notes.map((n) => (
@@ -194,24 +192,24 @@ export function CalendarEventModal({
 
             {/* Preview of Connected Note */}
             {selectedNote && (
-              <div className={styles.linkedPreview}>
-                <div className={styles.linkedPreviewHeader}>
+              <div className="cal-linked-preview-box">
+                <div className="preview-header">
                   <strong>Terhubung: {selectedNote.title}</strong>
                   <span>{selectedNote.type === "checklist" ? "Checklist" : "Teks"}</span>
                 </div>
 
                 {selectedNote.type === "checklist" && selectedNote.items && (
-                  <div className={styles.linkedChecklistItems}>
+                  <div className="preview-items-list">
                     {selectedNote.items.slice(0, 4).map((it) => (
-                      <div key={it.id} className={styles.linkedChecklistItem}>
+                      <div key={it.id} className="preview-item">
                         <span>{it.done ? "✓" : "○"}</span>
-                        <span className={it.done ? styles.linkedItemDone : ""}>
+                        <span className={it.done ? "preview-done" : ""}>
                           {it.text}
                         </span>
                       </div>
                     ))}
                     {selectedNote.items.length > 4 && (
-                      <small style={{ color: "var(--muted)" }}>
+                      <small className="preview-more">
                         +{selectedNote.items.length - 4} item lainnya...
                       </small>
                     )}
@@ -223,26 +221,26 @@ export function CalendarEventModal({
         </div>
 
         {/* Description textarea */}
-        <div className={styles.fieldRow}>
-          <span className={styles.fieldIcon}>≡</span>
-          <div className={styles.fieldContent}>
-            <span className={styles.fieldLabel}>Deskripsi:</span>
+        <div className="cal-desc-row">
+          <span className="cal-field-icon">≡</span>
+          <div className="cal-field-content">
+            <span className="cal-field-label">Deskripsi:</span>
             <textarea
               placeholder="Tambahkan catatan atau deskripsi agenda..."
               value={draft.description || ""}
               onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               rows={2}
-              className={styles.descTextarea}
+              className="cal-desc-input"
             />
           </div>
         </div>
 
         {/* Color Palette */}
-        <div className={styles.fieldRow}>
-          <span className={styles.fieldIcon}>🎨</span>
-          <div className={styles.fieldContent}>
-            <span className={styles.fieldLabel}>Warna:</span>
-            <div className={styles.colorPalette}>
+        <div className="cal-color-row">
+          <span className="cal-field-icon">🎨</span>
+          <div className="cal-field-content">
+            <span className="cal-field-label">Warna:</span>
+            <div className="cal-color-palette">
               {CALENDAR_COLORS.map((col) => (
                 <button
                   key={col.name}
@@ -251,8 +249,8 @@ export function CalendarEventModal({
                   style={{ backgroundColor: col.hex }}
                   className={
                     draft.color === col.hex
-                      ? `${styles.colorDot} ${styles.colorDotSelected}`
-                      : styles.colorDot
+                      ? "cal-color-swatch selected"
+                      : "cal-color-swatch"
                   }
                   onClick={() => setDraft({ ...draft, color: col.hex })}
                 />
@@ -262,11 +260,11 @@ export function CalendarEventModal({
         </div>
 
         {/* Modal Actions */}
-        <div className={styles.modalActions}>
+        <div className="cal-modal-actions-bar">
           {editingId && onDelete ? (
             <button
               type="button"
-              className={styles.deleteEventBtn}
+              className="cal-delete-btn"
               onClick={() => {
                 onDelete(editingId);
                 onClose();
@@ -278,17 +276,17 @@ export function CalendarEventModal({
             <div />
           )}
 
-          <div className={styles.modalActionsRight}>
+          <div className="cal-action-btns-right">
             <button
               type="button"
-              className={styles.cancelEventBtn}
+              className="cal-btn-cancel"
               onClick={onClose}
             >
               Batal
             </button>
             <button
               type="button"
-              className={styles.saveEventBtn}
+              className="cal-btn-save"
               disabled={!draft.title.trim()}
               onClick={handleSave}
             >

@@ -11,7 +11,6 @@ import {
   layoutDayEvents,
   toISODate,
 } from "@/features/calendar/calendar-service";
-import styles from "./calendar.module.css";
 
 type CalendarGridProps = {
   days: Date[];
@@ -47,26 +46,22 @@ export function CalendarGrid({
   const totalHeight = 24 * HOUR_HEIGHT_PX;
 
   return (
-    <div className={styles.gridWrapper}>
-      <div ref={scrollRef} className={styles.scrollArea}>
+    <div className="cal-grid-wrapper">
+      <div ref={scrollRef} className="cal-main-scroll">
         {/* Sticky Columns Header */}
-        <div className={styles.columnsHeaderRow}>
-          <div className={styles.timeAxisSpacer} />
-          <div className={styles.columnsHeaderList}>
+        <div className="cal-date-columns-header">
+          <div className="cal-time-axis-spacer" />
+          <div className="cal-columns-row">
             {days.map((d) => {
               const isToday = isSameDay(d, today);
               const dayName = d.toLocaleDateString("id-ID", { weekday: "short" });
               return (
                 <div
                   key={toISODate(d)}
-                  className={
-                    isToday
-                      ? `${styles.dayColumnHeader} ${styles.dayToday}`
-                      : styles.dayColumnHeader
-                  }
+                  className={isToday ? "cal-day-header is-today" : "cal-day-header"}
                 >
-                  <span className={styles.dayName}>{dayName}</span>
-                  <span className={styles.dayNumber}>{d.getDate()}</span>
+                  <span className="cal-day-name">{dayName}</span>
+                  <span className="cal-day-number">{d.getDate()}</span>
                 </div>
               );
             })}
@@ -74,13 +69,13 @@ export function CalendarGrid({
         </div>
 
         {/* 24-Hour Grid Body */}
-        <div className={styles.gridBody} style={{ height: totalHeight }}>
+        <div className="cal-grid-body" style={{ height: totalHeight }}>
           {/* Time Labels on Left Axis */}
-          <div className={styles.timeAxis}>
+          <div className="cal-time-axis">
             {HOURS_24.map((hour) => (
               <div
                 key={hour}
-                className={styles.timeLabel}
+                className="cal-time-label"
                 style={{ height: HOUR_HEIGHT_PX }}
               >
                 <span>{String(hour).padStart(2, "0")}:00</span>
@@ -89,7 +84,7 @@ export function CalendarGrid({
           </div>
 
           {/* Columns */}
-          <div className={styles.columnsBody}>
+          <div className="cal-columns-body">
             {days.map((d) => {
               const dateISO = toISODate(d);
               const isToday = isSameDay(d, today);
@@ -99,18 +94,14 @@ export function CalendarGrid({
               return (
                 <div
                   key={dateISO}
-                  className={
-                    isToday
-                      ? `${styles.column} ${styles.columnToday}`
-                      : styles.column
-                  }
+                  className={isToday ? "cal-column is-today" : "cal-column"}
                   style={{ height: totalHeight }}
                 >
                   {/* Hour Cells */}
                   {HOURS_24.map((hour) => (
                     <div
                       key={hour}
-                      className={styles.hourCell}
+                      className="cal-hour-cell"
                       style={{ height: HOUR_HEIGHT_PX }}
                       onClick={() => onSlotClick(dateISO, hour)}
                       title={`Klik untuk buat jadwal pada ${dateISO} pukul ${String(hour).padStart(2, "0")}:00`}
@@ -120,11 +111,11 @@ export function CalendarGrid({
                   {/* Red Current Time Line on Today */}
                   {isToday && (
                     <div
-                      className={styles.currentTimeIndicator}
+                      className="cal-current-time-indicator"
                       style={{ top: currentTop }}
                     >
-                      <span className={styles.currentTimeDot} />
-                      <span className={styles.currentTimeLine} />
+                      <span className="cal-current-time-dot" />
+                      <span className="cal-current-time-line" />
                     </div>
                   )}
 
@@ -136,7 +127,7 @@ export function CalendarGrid({
                     return (
                       <div
                         key={event.id}
-                        className={styles.eventBlock}
+                        className="cal-event-block"
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
@@ -149,14 +140,14 @@ export function CalendarGrid({
                           onEventClick(event);
                         }}
                       >
-                        <div className={styles.eventContent}>
-                          <strong className={styles.eventTitle}>{event.title}</strong>
-                          <span className={styles.eventTime}>
+                        <div className="cal-event-content">
+                          <strong className="cal-event-title">{event.title}</strong>
+                          <span className="cal-event-time">
                             {event.startTime} – {event.endTime}
                           </span>
                           {event.linkedNoteTitle && (
                             <span
-                              className={styles.eventLinkedBadge}
+                              className="cal-event-linked-badge"
                               title={`Terhubung dengan catatan: ${event.linkedNoteTitle}`}
                             >
                               📝 {event.linkedNoteTitle}

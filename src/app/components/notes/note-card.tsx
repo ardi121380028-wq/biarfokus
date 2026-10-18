@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { KeepNote } from "@/types/domain";
-import styles from "./notes.module.css";
 
 type NoteCardProps = {
   note: KeepNote;
@@ -27,15 +26,15 @@ export function NoteCard({
 
   return (
     <div
-      className={styles.card}
+      className="keep-note-card"
       style={{ background: note.color }}
       onClick={() => onEdit(note)}
     >
-      <div className={styles.cardTop}>
-        <h4 className={styles.cardTitle}>{note.title || "(Tanpa judul)"}</h4>
+      <div className="keep-card-top">
+        <h4 className="keep-card-title">{note.title || "(Tanpa judul)"}</h4>
         <button
           type="button"
-          className={note.pinned ? `${styles.pinBtn} ${styles.pinBtnActive}` : styles.pinBtn}
+          className={note.pinned ? "keep-pin-btn active" : "keep-pin-btn"}
           onClick={(e) => {
             e.stopPropagation();
             onTogglePin(note.id);
@@ -48,38 +47,40 @@ export function NoteCard({
       </div>
 
       {isChecklist ? (
-        <div className={styles.cardChecklist} onClick={(e) => e.stopPropagation()}>
+        <div className="keep-card-checklist" onClick={(e) => e.stopPropagation()}>
           {activeItems.map((item) => (
-            <label key={item.id} className={styles.cardItem}>
+            <label key={item.id} className="keep-card-item">
               <input
                 type="checkbox"
                 checked={false}
                 onChange={() => onToggleItem(note.id, item.id)}
+                className="keep-checkbox"
               />
-              <span className={styles.cardItemText}>{item.text}</span>
+              <span className="keep-card-item-text">{item.text}</span>
             </label>
           ))}
 
           {doneItems.length > 0 && (
-            <div className={styles.cardDoneSection}>
+            <div className="keep-card-done-section">
               <button
                 type="button"
-                className={styles.cardDoneToggle}
+                className="keep-card-done-toggle"
                 onClick={() => setCollapsedDone(!collapsedDone)}
               >
                 {collapsedDone ? "▶" : "▼"} {doneItems.length} item diselesaikan
               </button>
 
               {!collapsedDone && (
-                <div className={styles.cardDoneList}>
+                <div className="keep-card-done-list">
                   {doneItems.map((item) => (
-                    <label key={item.id} className={styles.cardItem}>
+                    <label key={item.id} className="keep-card-item">
                       <input
                         type="checkbox"
                         checked={true}
                         onChange={() => onToggleItem(note.id, item.id)}
+                        className="keep-checkbox"
                       />
-                      <span className={`${styles.cardItemText} ${styles.cardItemTextDone}`}>
+                      <span className="keep-card-item-text done">
                         {item.text}
                       </span>
                     </label>
@@ -90,25 +91,25 @@ export function NoteCard({
           )}
         </div>
       ) : (
-        <p className={styles.cardText}>{note.content || "Catatan kosong..."}</p>
+        <p className="keep-card-text">{note.content || "Catatan kosong..."}</p>
       )}
 
       {note.labels && note.labels.length > 0 && (
-        <div className={styles.cardTags}>
+        <div className="keep-card-tags">
           {note.labels.map((lbl) => (
-            <span key={lbl} className={styles.cardTag}>
+            <span key={lbl} className="keep-card-tag">
               🏷️ {lbl}
             </span>
           ))}
         </div>
       )}
 
-      <div className={styles.cardBottom} onClick={(e) => e.stopPropagation()}>
+      <div className="keep-card-bottom" onClick={(e) => e.stopPropagation()}>
         <span>{note.updatedAt}</span>
-        <div className={styles.cardActions}>
+        <div className="keep-card-actions">
           <button
             type="button"
-            className={styles.cardIconBtn}
+            className="keep-icon-action"
             onClick={() => onEdit(note)}
             title="Edit catatan"
             aria-label="Edit catatan"
@@ -117,7 +118,7 @@ export function NoteCard({
           </button>
           <button
             type="button"
-            className={styles.cardIconBtn}
+            className="keep-icon-action"
             onClick={() => onDelete(note.id)}
             title="Hapus catatan"
             aria-label="Hapus catatan"

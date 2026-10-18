@@ -10,7 +10,6 @@ import {
 } from "@/features/notes/notes-service";
 import { LabelSelect } from "./label-select";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
-import styles from "./notes.module.css";
 
 type NoteEditDialogProps = {
   note: KeepNote;
@@ -75,26 +74,26 @@ export function NoteEditDialog({
   }
 
   return (
-    <div className={styles.editOverlay} role="presentation">
+    <div className="keep-edit-modal-backdrop" role="presentation">
       <div
         ref={cardRef}
-        className={styles.editDialog}
+        className="keep-edit-modal-card"
         style={{ background: draft.color }}
         role="dialog"
         aria-label="Edit Catatan"
       >
-        <div className={styles.titleRow}>
+        <div className="keep-create-title-row">
           <input
             type="text"
             placeholder="Judul catatan..."
             value={draft.title}
             onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-            className={styles.titleInput}
+            className="keep-create-input keep-title-input"
             autoFocus
           />
           <button
             type="button"
-            className={draft.pinned ? `${styles.pinBtn} ${styles.pinBtnActive}` : styles.pinBtn}
+            className={draft.pinned ? "keep-pin-btn active" : "keep-pin-btn"}
             onClick={() => setDraft({ ...draft, pinned: !draft.pinned })}
             title={draft.pinned ? "Lepaskan sematan" : "Sematkan"}
             aria-label={draft.pinned ? "Lepaskan sematan" : "Sematkan"}
@@ -103,13 +102,13 @@ export function NoteEditDialog({
           </button>
         </div>
 
-        <div className={styles.typeSwitcher}>
+        <div className="keep-type-switcher">
           <button
             type="button"
             className={
               draft.type === "checklist"
-                ? `${styles.typeSwitchBtn} ${styles.typeSwitchBtnActive}`
-                : styles.typeSwitchBtn
+                ? "keep-switch-btn active"
+                : "keep-switch-btn"
             }
             onClick={() => setDraft((prev) => convertDraftType(prev, "checklist"))}
           >
@@ -119,8 +118,8 @@ export function NoteEditDialog({
             type="button"
             className={
               draft.type === "text"
-                ? `${styles.typeSwitchBtn} ${styles.typeSwitchBtnActive}`
-                : styles.typeSwitchBtn
+                ? "keep-switch-btn active"
+                : "keep-switch-btn"
             }
             onClick={() => setDraft((prev) => convertDraftType(prev, "text"))}
           >
@@ -134,18 +133,18 @@ export function NoteEditDialog({
             value={draft.content || ""}
             onChange={(e) => setDraft({ ...draft, content: e.target.value })}
             rows={6}
-            className={styles.textArea}
+            className="keep-create-input keep-textarea"
           />
         ) : (
-          <div className={styles.checklistSection}>
-            <div className={styles.checklistItems}>
+          <div className="keep-checklist-create-section">
+            <div className="keep-checklist-items">
               {(draft.items || []).map((item) => (
-                <div key={item.id} className={styles.checklistItemRow}>
+                <div key={item.id} className="keep-checklist-item-row">
                   <input
                     type="checkbox"
                     checked={item.done}
                     onChange={() => handleToggleItem(item.id)}
-                    className={styles.itemCheckbox}
+                    className="keep-checkbox"
                   />
                   <input
                     type="text"
@@ -161,14 +160,14 @@ export function NoteEditDialog({
                     }}
                     className={
                       item.done
-                        ? `${styles.itemTextInput} ${styles.itemDone}`
-                        : styles.itemTextInput
+                        ? "keep-item-edit-input done"
+                        : "keep-item-edit-input"
                     }
                   />
                   <button
                     type="button"
                     onClick={() => handleDeleteItem(item.id)}
-                    className={styles.itemDeleteBtn}
+                    className="keep-item-delete"
                     aria-label="Hapus item"
                   >
                     ✕
@@ -177,8 +176,8 @@ export function NoteEditDialog({
               ))}
             </div>
 
-            <div className={styles.checklistAddRow}>
-              <span className={styles.addIcon}>＋</span>
+            <div className="keep-checklist-add-row">
+              <span className="keep-add-icon">＋</span>
               <input
                 type="text"
                 placeholder="Tambah item baru (Enter)..."
@@ -190,13 +189,13 @@ export function NoteEditDialog({
                     handleAddItem();
                   }
                 }}
-                className={styles.checklistAddInput}
+                className="keep-checklist-add-input"
               />
               <button
                 type="button"
                 onClick={handleAddItem}
                 disabled={!newItemText.trim()}
-                className={styles.addItemBtn}
+                className="keep-add-item-btn"
               >
                 Tambah
               </button>
@@ -211,8 +210,8 @@ export function NoteEditDialog({
           onCreateLabel={onCreateLabel}
         />
 
-        <div className={styles.composerFooter}>
-          <div className={styles.swatchesRow}>
+        <div className="keep-create-footer-bar">
+          <div className="keep-color-picker-row">
             {NOTE_COLORS.map((col) => (
               <button
                 key={col.name}
@@ -220,8 +219,8 @@ export function NoteEditDialog({
                 title={col.name}
                 className={
                   draft.color === col.bg
-                    ? `${styles.swatch} ${styles.swatchActive}`
-                    : styles.swatch
+                    ? "keep-color-swatch active"
+                    : "keep-color-swatch"
                 }
                 style={{ backgroundColor: col.bg, borderColor: col.border }}
                 onClick={() => setDraft({ ...draft, color: col.bg })}
@@ -229,10 +228,10 @@ export function NoteEditDialog({
             ))}
           </div>
 
-          <div className={styles.composerActions}>
+          <div className="keep-footer-btns">
             <button
               type="button"
-              className={styles.deleteBtn}
+              className="keep-delete-btn"
               onClick={() => {
                 onDelete(note.id);
                 onClose();
@@ -242,7 +241,7 @@ export function NoteEditDialog({
             </button>
             <button
               type="button"
-              className={styles.saveBtn}
+              className="keep-save-btn"
               onClick={handleSaveAndClose}
             >
               Selesai
