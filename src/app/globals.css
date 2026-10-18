@@ -12,7 +12,7 @@ button:active:not(:disabled) { transform:translateY(2px) scale(.985); }
 .topbar,.content-grid,.footer,.inner-page { width:min(100%,1160px); margin-left:auto; margin-right:auto; }
 .topbar { background:var(--paper); border-radius:34px; min-height:70px; padding:10px 18px 10px 26px; display:flex; align-items:center; justify-content:space-between; border:1px solid color-mix(in srgb,var(--ink) 7%,transparent); }
 .brand { border:0; background:none; display:flex; align-items:center; gap:10px; font:24px Georgia,serif; color:var(--ink); }
-.brand-mark { width:40px; height:40px; display:inline-block; flex:none; background:url("/biarfokus-logo.svg") center/contain no-repeat; }
+.brand-mark { width:40px; height:40px; display:inline-block; flex:none; background:url("/biarfokus-icon.png") center/contain no-repeat; }
 .desktop-nav { display:flex; gap:25px; }.nav-link,.footer-links button { border:0; background:none; color:var(--muted); }.nav-link.active { color:var(--ink); font-weight:bold; border-bottom:3px solid var(--yellow); padding-bottom:4px; }
 .mobile-nav { display:none; }.mobile-login-button { border:0; border-radius:20px; padding:10px 14px; background:var(--blue); color:#fff; }
 .top-actions { display:flex; align-items:center; gap:8px; }.icon-button,.menu-button { border:0; border-radius:50%; width:42px; height:42px; color:var(--ink); background:transparent; font-size:20px; }.menu-button { display:none; background:var(--ink); color:var(--paper); }.settings-button,.login-button { border:0; border-radius:22px; padding:11px 17px; }.settings-button { background:var(--ink); color:var(--paper); }.login-button { background:var(--blue); color:white; }
@@ -60,3 +60,67 @@ button:active:not(:disabled) { transform:translateY(2px) scale(.985); }
 .admin-plan-btn { padding:7px 14px; font-size:12px; border-radius:8px; }
 @media (max-width:900px) { .app { padding:10px 16px 35px; }.desktop-nav,.settings-button,.login-button { display:none; }.menu-button { display:block; }.mobile-nav { width:min(100%,1160px); margin:8px auto 0; padding:15px; display:flex; align-items:center; flex-wrap:wrap; justify-content:center; gap:10px 16px; border-radius:18px; background:var(--paper); }.topbar { padding-left:18px; }.content-grid,.stat-grid,.pricing-grid,.admin-table,.footer,.settings-modal { grid-template-columns:minmax(0,1fr); }.timer-card { min-height:430px; padding:24px 15px; }.timer-display { font-size:76px; margin:28px 0 16px; }.mode-tabs { gap:14px; font-size:13px; }.task-card { min-height:380px; padding:24px 18px; }.inner-page { padding:28px 20px; }.footer-links { flex-wrap:wrap; }.footer small { grid-column:auto; }.settings-modal { max-height:90vh; overflow:auto; }.settings-sidebar { padding:22px 20px 10px; border-right:0; border-bottom:1px solid color-mix(in srgb,var(--ink) 12%,transparent); }.settings-sidebar h2 { margin-bottom:12px; }.settings-tab { display:inline-flex; width:auto; margin-right:4px; }.settings-tab span { display:none; }.settings-content { padding:22px 20px; } }
 @media (max-width:600px) { .app { padding:10px 12px 35px; }.topbar { min-height:60px; padding:8px 12px 8px 14px; }.brand { font-size:20px; gap:7px; min-width:0; }.brand-mark { width:32px; height:32px; }.top-actions { gap:2px; flex:none; }.icon-button,.menu-button { width:36px; height:36px; font-size:17px; }.content-grid { width:100%; }.timer-card,.task-card,.inner-page { width:100%; min-width:0; border-radius:20px; padding:22px 16px; }.timer-display { width:100%; font-size:clamp(54px,17vw,82px); letter-spacing:0; margin:24px 0 16px; }.mode-tabs { gap:8px; max-width:100%; }.mode-tab { min-width:0; }.color-picker { gap:10px; margin-top:22px; }.focused-task-banner { flex-wrap:wrap; justify-content:center; text-align:center; }.focused-task-title { text-align:center; }.task-form { flex-wrap:wrap; }.task-form input { min-width:0; flex-basis:100%; }.task-form button { min-height:42px; width:100%; }.section-heading h1,.inner-page h1 { font-size:clamp(22px,6.5vw,27px); margin-bottom:18px; }.bars { gap:8px; }.account-profile { align-items:flex-start; flex-direction:column; padding:18px 22px 26px; }.account-profile h2 { font-size:26px; }.account-kicker { padding:24px 22px 8px; }.account-actions { padding:14px 22px; }.auth-modal { padding:28px 22px; }.settings-tab { padding-left:8px; padding-right:8px; } }
+
+/* Jalur 2: Settings Interval Chips & Alarm Selection */
+.interval-options { display:flex; gap:6px; flex-wrap:wrap; }
+.interval-chip { border:1px solid color-mix(in srgb,var(--ink) 15%,transparent); border-radius:14px; background:transparent; color:var(--muted); padding:6px 12px; font-size:12px; }
+.interval-chip:hover { border-color:var(--accent); color:var(--ink); }
+.interval-chip.active { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 15%,var(--paper)); color:var(--accent); font-weight:bold; }
+.alarm-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px; }
+.alarm-option-card { border:1px solid color-mix(in srgb,var(--ink) 12%,transparent); border-radius:14px; padding:12px 14px; background:color-mix(in srgb,var(--ink) 2%,var(--paper)); color:var(--ink); text-align:left; display:flex; flex-direction:column; gap:6px; }
+.alarm-option-card:hover { border-color:color-mix(in srgb,var(--accent) 55%,var(--ink)); }
+.alarm-option-card.active { border:2px solid var(--accent); background:color-mix(in srgb,var(--accent) 12%,var(--paper)); }
+.alarm-option-header { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.alarm-option-header strong { font-size:13px; }
+.alarm-check { font-size:10px; font-weight:bold; color:var(--accent); background:color-mix(in srgb,var(--accent) 18%,var(--paper)); padding:2px 6px; border-radius:6px; }
+.alarm-option-card p { margin:0; color:var(--muted); font-size:11px; line-height:1.4; }
+.alarm-test-wrap { margin-top:14px; padding:12px; border-radius:12px; background:color-mix(in srgb,var(--ink) 4%,transparent); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.alarm-test-btn { border:0; border-radius:20px; padding:8px 16px; background:var(--ink); color:var(--paper); font-size:12px; font-weight:bold; }
+.alarm-test-btn.playing { background:#d14b4b; color:#fff; }
+.alarm-test-wrap small { color:var(--muted); font-size:11px; flex:1; min-width:200px; }
+
+/* Jalur 2: Gamification & Badges */
+.badges-section { margin-top:38px; border-top:1px solid color-mix(in srgb,var(--ink) 12%,transparent); padding-top:26px; }
+.badges-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+.badges-header h2 { margin:0 0 4px; font:24px Georgia,serif; }
+.badges-subtitle { margin:0; font-size:13px; color:var(--muted); }
+.badges-count-pill { font-size:12px; font-weight:bold; padding:5px 12px; border-radius:999px; background:color-mix(in srgb,var(--blue) 14%,transparent); color:var(--blue); }
+.badges-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+.badge-card { display:flex; align-items:flex-start; gap:14px; padding:16px; border-radius:16px; border:1px solid color-mix(in srgb,var(--ink) 12%,transparent); background:color-mix(in srgb,var(--ink) 2%,var(--paper)); filter:grayscale(0.85); opacity:0.75; transition:filter .2s ease,opacity .2s ease,border-color .2s ease,transform .2s ease; }
+.badge-card:hover { transform:translateY(-2px); }
+.badge-card.unlocked { filter:grayscale(0); opacity:1; border-color:color-mix(in srgb,var(--yellow) 55%,transparent); background:color-mix(in srgb,var(--yellow) 6%,var(--paper)); box-shadow:0 4px 14px color-mix(in srgb,var(--yellow) 15%,transparent); }
+.badge-icon { font-size:32px; line-height:1; flex:none; }
+.badge-content { flex:1; min-width:0; }
+.badge-title-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.badge-title-row strong { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.badge-status-pill { font-size:10px; font-weight:bold; padding:2px 7px; border-radius:999px; flex:none; }
+.badge-status-pill.unlocked { background:var(--yellow); color:#111; }
+.badge-status-pill.locked { background:color-mix(in srgb,var(--ink) 8%,transparent); color:var(--muted); }
+.badge-content p { margin:0 0 8px; color:var(--muted); font-size:11px; line-height:1.4; }
+.badge-progress-wrap { height:6px; width:100%; border-radius:3px; background:color-mix(in srgb,var(--ink) 10%,transparent); overflow:hidden; margin-bottom:5px; }
+.badge-progress-fill { height:100%; border-radius:3px; background:var(--blue); transition:width .3s ease; }
+.badge-card.unlocked .badge-progress-fill { background:var(--yellow); }
+.badge-content small { display:block; font-size:10px; color:var(--muted); }
+
+/* Jalur 2: Zen Mode Overlay */
+.zen-overlay { position:fixed; inset:0; z-index:900; background:var(--page); color:var(--ink); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; animation:zenFadeIn .2s ease; }
+@keyframes zenFadeIn { from { opacity:0; transform:scale(0.99); } to { opacity:1; transform:scale(1); } }
+.zen-header { position:absolute; top:24px; left:24px; right:24px; display:flex; align-items:center; justify-content:space-between; }
+.zen-close-button { border:1px solid color-mix(in srgb,var(--ink) 20%,transparent); border-radius:20px; background:var(--paper); color:var(--ink); font-size:13px; font-weight:bold; padding:8px 16px; }
+.zen-close-button:hover { background:var(--ink); color:var(--paper); }
+.zen-mode-tabs { margin-bottom:12px; }
+.zen-timer-display { font:clamp(92px,16vw,170px) Georgia,serif; letter-spacing:4px; line-height:1; margin:24px 0; text-align:center; font-variant-numeric:tabular-nums; }
+.zen-focused-task { display:flex; align-items:center; gap:10px; padding:8px 16px; border-radius:999px; background:var(--paper); border:1px solid color-mix(in srgb,var(--blue) 25%,transparent); font-size:14px; margin-bottom:28px; max-width:min(500px,90%); }
+.zen-focused-task strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.zen-controls { width:min(440px,90%); }
+.zen-start-button { font-size:18px; padding:18px; }
+.zen-ambient-bar { margin-top:28px; width:min(500px,92%); }
+.zen-hint { margin-top:20px; font-size:12px; color:var(--muted); text-align:center; }
+.zen-hint kbd { border:1px solid color-mix(in srgb,var(--ink) 20%,transparent); border-radius:5px; padding:2px 6px; background:var(--paper); }
+
+@media (max-width:600px) {
+  .alarm-options { grid-template-columns:1fr; }
+  .badges-grid { grid-template-columns:1fr; }
+  .zen-timer-display { font-size:clamp(68px,20vw,96px); margin:18px 0; }
+  .zen-header { top:16px; left:16px; right:16px; }
+}

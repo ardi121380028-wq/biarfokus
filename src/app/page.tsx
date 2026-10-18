@@ -31,7 +31,8 @@ import {
   type UserSettings,
 } from "@/features/settings/settings-service";
 import type { AmbientSoundMode, Task, TimerDurations, TimerMode, UserRole, UserSubscription } from "@/types/domain";
-import { stopAmbientSound, syncAmbientSound } from "@/features/audio/ambient-sound";
+import { AMBIENT_SOUND_OPTIONS, stopAmbientSound, syncAmbientSound } from "@/features/audio/ambient-sound";
+import { playAlarmSound, type AlarmSoundType } from "@/features/audio/alarm-sound";
 import {
   createTask,
   deleteAllTasks as deleteAllCloudTasks,
@@ -45,7 +46,13 @@ import {
   setTaskCompleted,
   updateTaskPomodoros,
 } from "@/features/tasks/task-service";
-import { formatTime, getNextTimerMode, getRemainingSeconds, getTimerEndTime } from "@/features/timer/timer-utils";
+import {
+  formatTime,
+  getCycleProgress,
+  getNextTimerMode,
+  getRemainingSeconds,
+  getTimerEndTime,
+} from "@/features/timer/timer-utils";
 
 type View = "timer" | "stats" | "pricing" | "admin";
 const durations: Record<TimerMode, number> = {
@@ -68,50 +75,6 @@ const colorThemes = [
   { color: "#ffc247", name: "Sun" },
   { color: "#f7c928", name: "Focus" },
 ];
-
-function playCompletionSound(startAt = 0) {
-  const AudioContextClass = window.AudioContext ||
-    (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AudioContextClass) return;
-  const context = new AudioContextClass();
-  const startTime = context.currentTime + startAt;
-  const notes = [659.25, 783.99, 987.77, 1318.51];
-  notes.forEach((frequency, index) => {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    const noteStart = startTime + index * 0.16;
-    oscillator.frequency.value = frequency;
-    oscillator.type = index % 2 === 0 ? "sine" : "triangle";
-    gain.gain.setValueAtTime(0.001, noteStart);
-    gain.gain.exponentialRampToValueAtTime(0.2, noteStart + 0.025);
-    gain.gain.exponentialRampToValueAtTime(0.001, noteStart + 0.55);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(noteStart);
-    oscillator.stop(noteStart + 0.58);
-  });
-  const chordStart = startTime + 0.55;
-  [659.25, 783.99, 987.77].forEach((frequency) => {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.frequency.value = frequency;
-    oscillator.type = "sine";
-    gain.gain.setValueAtTime(0.001, chordStart);
-    gain.gain.exponentialRampToValueAtTime(0.12, chordStart + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.001, chordStart + 0.9);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(chordStart);
-    oscillator.stop(chordStart + 0.95);
-  });
-  void context.resume();
-  window.setTimeout(() => void context.close(), (startAt + 1.7) * 1000);
-}
-
-function playCompletionAlarm(repeat: boolean) {
-  playCompletionSound();
-  if (repeat) playCompletionSound(2.2);
-}
 
 function playClickSound() {
   const AudioContextClass = window.AudioContext ||
@@ -155,6 +118,9 @@ export default function Home() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(DEFAULT_SETTINGS.notificationsEnabled);
   const [timerDurations, setTimerDurations] = useState<TimerDurations>(DEFAULT_SETTINGS.timerDurations);
   const [repeatAlarm, setRepeatAlarm] = useState(DEFAULT_SETTINGS.repeatAlarm);
+  const [alarmSound, setAlarmSound] = useState<AlarmSoundType>(DEFAULT_SETTINGS.alarmSound);
+  const [longBreakInterval, setLongBreakInterval] = useState<number>(DEFAULT_SETTINGS.longBreakInterval);
+  const [zenMode, setZenMode] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole>("user");
   const [subscription, setSubscription] = useState<UserSubscription>(() => createDefaultSubscription());
@@ -315,9 +281,14 @@ export default function Home() {
         setShowSettings(false);
         setLoginOpen(false);
         setShortcutsOpen(false);
+        setZenMode(false);
       }
       if (isTyping) return;
       if (event.key === "?" || (event.shiftKey && event.key === "/")) setShortcutsOpen(true);
+      if (event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setZenMode((z) => !z);
+      }
       if (event.code === "Space") {
         event.preventDefault();
         if (running) {
@@ -337,7 +308,7 @@ export default function Home() {
         setSeconds(timerDurations[mode]);
       }
       if (event.key.toLowerCase() === "s") {
-        const nextMode = getNextTimerMode(mode, Math.max(1, completedPomodoros));
+        const nextMode = getNextTimerMode(mode, Math.max(1, completedPomodoros), longBreakInterval);
         setMode(nextMode);
         timerEndAtRef.current = null;
         setSeconds(timerDurations[nextMode]);
@@ -350,7 +321,7 @@ export default function Home() {
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [completedPomodoros, mode, running, seconds, timerDurations]);
+  }, [completedPomodoros, longBreakInterval, mode, running, seconds, timerDurations]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -362,6 +333,8 @@ export default function Home() {
       setNotificationsEnabled(localSettings.notificationsEnabled);
       setTimerDurations(localSettings.timerDurations);
       setRepeatAlarm(localSettings.repeatAlarm);
+      setAlarmSound(localSettings.alarmSound);
+      setLongBreakInterval(localSettings.longBreakInterval);
       settingsHydratedRef.current = true;
       setTasksHydrated(true);
     });
@@ -382,6 +355,8 @@ export default function Home() {
       notificationsEnabled,
       timerDurations,
       repeatAlarm,
+      alarmSound,
+      longBreakInterval,
     };
     saveLocalSettings(settings);
     if (user && settingsOwnerRef.current !== user.id) return;
@@ -389,7 +364,7 @@ export default function Home() {
       void saveUserSettings(getSupabaseBrowserClient(), user.id, settings)
         .catch((error: unknown) => setAppError(error instanceof Error ? `Pengaturan gagal disimpan: ${error.message}` : "Pengaturan gagal disimpan."));
     }
-  }, [autoStart, notificationsEnabled, repeatAlarm, selectedColor, soundEnabled, timerDurations, user]);
+  }, [alarmSound, autoStart, longBreakInterval, notificationsEnabled, repeatAlarm, selectedColor, soundEnabled, timerDurations, user]);
 
   useEffect(() => {
     if (!user) {
@@ -406,6 +381,8 @@ export default function Home() {
         setNotificationsEnabled(settings.notificationsEnabled);
         setTimerDurations(settings.timerDurations);
         setRepeatAlarm(settings.repeatAlarm);
+        setAlarmSound(settings.alarmSound);
+        setLongBreakInterval(settings.longBreakInterval);
         settingsOwnerRef.current = user.id;
       })
       .catch((error: unknown) => {
@@ -435,7 +412,7 @@ export default function Home() {
       if (mode === "pomodoro") {
         setCompletedPomodoros(nextCompleted);
       }
-      if (soundEnabled) playCompletionAlarm(repeatAlarm);
+      if (soundEnabled) playAlarmSound(alarmSound, repeatAlarm);
       if (notificationsEnabled && typeof Notification !== "undefined" && Notification.permission === "granted") {
         const taskContext = mode === "pomodoro" && focusedTask ? ` (${focusedTask.title})` : "";
         new Notification("BiarFokus", { body: `${modeLabels[mode]}${taskContext} selesai. Waktunya ganti sesi.` });
@@ -454,7 +431,7 @@ export default function Home() {
         void recordCompletedSession(getSupabaseBrowserClient(), user.id, mode, timerDurations[mode], focusedTask?.id)
           .catch((error: unknown) => setAppError(error instanceof Error ? `Sesi selesai, tetapi gagal disimpan: ${error.message}` : "Sesi selesai, tetapi gagal disimpan."));
       }
-      const nextMode = getNextTimerMode(mode, nextCompleted);
+      const nextMode = getNextTimerMode(mode, nextCompleted, longBreakInterval);
       const nextSeconds = timerDurations[autoStart ? nextMode : mode];
       setMode(autoStart ? nextMode : mode);
       setSeconds(nextSeconds);
@@ -464,7 +441,7 @@ export default function Home() {
       }
     }, 250);
     return () => window.clearInterval(interval);
-  }, [autoStart, completedPomodoros, focusedTask, mode, notificationsEnabled, repeatAlarm, running, soundEnabled, timerDurations, user]);
+  }, [alarmSound, autoStart, completedPomodoros, focusedTask, longBreakInterval, mode, notificationsEnabled, repeatAlarm, running, soundEnabled, timerDurations, user]);
 
   function changeMode(nextMode: TimerMode) {
     timerEndAtRef.current = null;
@@ -480,7 +457,7 @@ export default function Home() {
   }
 
   function skipSession() {
-    const nextMode = getNextTimerMode(mode, Math.max(1, completedPomodoros));
+    const nextMode = getNextTimerMode(mode, Math.max(1, completedPomodoros), longBreakInterval);
     timerEndAtRef.current = null;
     setMode(nextMode);
     setSeconds(timerDurations[nextMode]);
@@ -666,10 +643,12 @@ export default function Home() {
             selectedColor={selectedColor}
             colorThemes={colorThemes}
             modeLabels={modeLabels}
+            longBreakInterval={longBreakInterval}
             onModeChange={changeMode}
             onToggleRunning={toggleRunning}
             onReset={resetTimer}
             onSkip={skipSession}
+            onToggleZen={() => setZenMode(true)}
             onAmbientSoundChange={setAmbientSound}
             onColorChange={setSelectedColor}
           />
@@ -734,6 +713,10 @@ export default function Home() {
         setNotificationsEnabled={setNotificationsEnabled}
         repeatAlarm={repeatAlarm}
         setRepeatAlarm={setRepeatAlarm}
+        alarmSound={alarmSound}
+        setAlarmSound={setAlarmSound}
+        longBreakInterval={longBreakInterval}
+        setLongBreakInterval={setLongBreakInterval}
         timerDurations={timerDurations}
         setTimerDurations={(nextDurations) => {
           setTimerDurations(nextDurations);
@@ -784,6 +767,102 @@ export default function Home() {
       {appError && <div className="modal-backdrop" role="presentation" onClick={() => setAppError(null)}><section className="modal" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setAppError(null)} aria-label="Tutup error">×</button><h2>Terjadi kesalahan</h2><p className="modal-copy">{appError}</p><button className="secondary-button" onClick={() => setAppError(null)}>Tutup</button></section></div>}
       {infoOpen && <div className="modal-backdrop" role="presentation" onClick={() => setInfoOpen(null)}><section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setInfoOpen(null)} aria-label="Tutup">×</button><h2>Fokus dengan ritme yang tepat</h2><p className="modal-copy">{infoOpen}</p><button className="secondary-button" onClick={() => setInfoOpen(null)}>Mengerti</button></section></div>}
       {shortcutsOpen && <ShortcutsModalComponent onClose={() => setShortcutsOpen(false)} />}
+
+      {zenMode && (
+        <div className="zen-overlay" role="dialog" aria-modal="true" aria-label="Mode Zen Fokus">
+          <div className="zen-header">
+            <div className="cycle-bar" aria-label={`Siklus ${getCycleProgress(completedPomodoros, longBreakInterval).cycleNumber}`}>
+              <span className="cycle-label">Siklus #{getCycleProgress(completedPomodoros, longBreakInterval).cycleNumber}</span>
+              <div className="cycle-dots" aria-hidden="true">
+                {Array.from({ length: getCycleProgress(completedPomodoros, longBreakInterval).totalInCycle }, (_, idx) => (
+                  <span
+                    key={idx}
+                    className={idx < getCycleProgress(completedPomodoros, longBreakInterval).completedInCycle ? "cycle-dot filled" : "cycle-dot"}
+                  />
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              className="zen-close-button"
+              onClick={() => setZenMode(false)}
+              aria-label="Keluar dari mode Zen"
+              title="Keluar Zen (Esc atau F)"
+            >
+              ✕ Keluar Zen
+            </button>
+          </div>
+
+          <div className="mode-tabs zen-mode-tabs">
+            {(Object.keys(modeLabels) as TimerMode[]).map((item) => (
+              <button
+                key={item}
+                className={mode === item ? "mode-tab selected" : "mode-tab"}
+                onClick={() => changeMode(item)}
+              >
+                {modeLabels[item]}
+              </button>
+            ))}
+          </div>
+
+          <div className="zen-timer-display" aria-live="polite">
+            {formatTime(seconds)}
+          </div>
+
+          {focusedTask && (
+            <div className="zen-focused-task">
+              <span className="focused-task-badge">🎯 Fokus</span>
+              <strong>{focusedTask.title}</strong>
+              <span className="focused-task-pomos">🍅 {focusedTask.pomodoros}</span>
+            </div>
+          )}
+
+          <div className="timer-controls zen-controls">
+            <button
+              type="button"
+              className="timer-aux-button"
+              onClick={resetTimer}
+              aria-label="Reset timer"
+              title="Reset timer (R)"
+            >
+              ↺
+            </button>
+            <button className="start-button zen-start-button" onClick={toggleRunning}>
+              {running ? "PAUSE" : "START"}
+            </button>
+            <button
+              type="button"
+              className="timer-aux-button"
+              onClick={skipSession}
+              aria-label="Lewati sesi ini"
+              title="Lewati sesi (S)"
+            >
+              ⏭
+            </button>
+          </div>
+
+          <div className="ambient-bar zen-ambient-bar" role="group" aria-label="Suara latar fokus">
+            <span className="ambient-label">🎧 Suara latar</span>
+            <div className="ambient-pills">
+              {AMBIENT_SOUND_OPTIONS.map((option) => (
+                <button
+                  key={option.mode}
+                  type="button"
+                  className={ambientSound === option.mode ? "ambient-pill selected" : "ambient-pill"}
+                  onClick={() => setAmbientSound(option.mode)}
+                  aria-pressed={ambientSound === option.mode}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="zen-hint">
+            Tekan <kbd>Space</kbd> untuk mulai/jeda · <kbd>F</kbd> atau <kbd>Esc</kbd> untuk keluar
+          </p>
+        </div>
+      )}
     </main>
   );
 }

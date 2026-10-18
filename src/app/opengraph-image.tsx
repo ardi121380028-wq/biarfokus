@@ -123,7 +123,7 @@ export default async function Image() {
               fontWeight: "bold",
             }}
           >
-            biarfokus.vercel.app
+            biarfokus.site
           </div>
           <div
             style={{

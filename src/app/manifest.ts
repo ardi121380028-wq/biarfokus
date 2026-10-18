@@ -19,10 +19,16 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "any",
       },
       {
-        src: "/biarfokus-logo.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/biarfokus-icon.png",
+        sizes: "512x512",
+        type: "image/png",
         purpose: "any",
+      },
+      {
+        src: "/biarfokus-icon.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
     ],
   };

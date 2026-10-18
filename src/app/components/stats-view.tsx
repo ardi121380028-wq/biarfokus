@@ -12,6 +12,7 @@ import {
   loadDailyFocus,
   summarizeRange,
 } from "@/features/stats/stats-service";
+import { evaluateBadges } from "@/features/gamification/badges";
 
 type StatsViewProps = {
   supabase: SupabaseClient;
@@ -80,6 +81,19 @@ export function StatsView({ supabase, userId, completedTasks }: StatsViewProps) 
     () => (stats ? calculateStreaks(stats.daily, stats.today) : null),
     [stats],
   );
+  const currentStreak = streaks?.current ?? 0;
+  const longestStreak = streaks?.longest ?? 0;
+  const badges = useMemo(() => {
+    if (!stats || !streaks) return [];
+    const totalPomodoros = stats.daily.reduce((acc, d) => acc + d.pomodoroCount, 0);
+    const deepWorkCount = stats.daily.some((d) => d.focusSeconds >= 3000) ? 1 : 0;
+    return evaluateBadges({
+      totalPomodoros,
+      currentStreak,
+      longestStreak,
+      deepWorkCount,
+    });
+  }, [currentStreak, longestStreak, stats, streaks]);
   const activeRange = rangeOptions.find((option) => option.value === range) ?? rangeOptions[0];
 
   function handleExport() {
@@ -154,5 +168,47 @@ export function StatsView({ supabase, userId, completedTasks }: StatsViewProps) 
       </div>
     </div>
     {summary.pomodoroCount === 0 && <p className="admin-note">Belum ada sesi fokus yang selesai di rentang ini.</p>}
+
+    <div className="badges-section">
+      <div className="badges-header">
+        <div>
+          <h2>Lencana & Pencapaian</h2>
+          <p className="badges-subtitle">Pencapaian fokus dan konsistensi belajarmu</p>
+        </div>
+        <span className="badges-count-pill">
+          {badges.filter((b) => b.unlocked).length} / {badges.length} Terbuka
+        </span>
+      </div>
+
+      <div className="badges-grid">
+        {badges.map((badge) => (
+          <div key={badge.id} className={badge.unlocked ? "badge-card unlocked" : "badge-card"}>
+            <div className="badge-icon" aria-hidden="true">{badge.icon}</div>
+            <div className="badge-content">
+              <div className="badge-title-row">
+                <strong>{badge.title}</strong>
+                {badge.unlocked ? (
+                  <span className="badge-status-pill unlocked">Tercapai</span>
+                ) : (
+                  <span className="badge-status-pill locked">{badge.progressPercent}%</span>
+                )}
+              </div>
+              <p>{badge.description}</p>
+              <div className="badge-progress-wrap" aria-hidden="true">
+                <div
+                  className="badge-progress-fill"
+                  style={{ width: `${badge.progressPercent}%` }}
+                />
+              </div>
+              <small>
+                {badge.unlocked
+                  ? "✓ Target terpenuhi"
+                  : `${badge.current} / ${badge.target} ${badge.unit}`}
+              </small>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   </div>;
 }

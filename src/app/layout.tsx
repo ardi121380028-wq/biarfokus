@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://biarfokus.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.biarfokus.site"),
   title: "BiarFokus — Bantu kamu fokus selesain setiap pekerjaan",
   description:
     "Aplikasi Pomodoro timer akurat dan task management harian untuk membantumu fokus, konsisten, dan menyelesaikan setiap pekerjaan.",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/biarfokus-logo.svg", type: "image/svg+xml" },
+      { url: "/biarfokus-icon.png", sizes: "512x512", type: "image/png" },
       { url: "/biarfokus-icon.png", sizes: "192x192", type: "image/png" },
     ],
     shortcut: "/biarfokus-icon.png",
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     title: "BiarFokus — Bantu kamu fokus selesain setiap pekerjaan",
     description:
       "Aplikasi Pomodoro timer akurat, task management, focus streaks, dan suara latar penenang untuk produktivitas maksimal.",
-    url: "https://biarfokus.vercel.app",
+    url: "https://www.biarfokus.site",
     siteName: "BiarFokus",
     locale: "id_ID",
     type: "website",

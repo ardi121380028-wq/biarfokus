@@ -14,10 +14,12 @@ type TimerPanelProps = {
   selectedColor: string;
   colorThemes: readonly { color: string; name: string }[];
   modeLabels: Record<TimerMode, string>;
+  longBreakInterval?: number;
   onModeChange: (mode: TimerMode) => void;
   onToggleRunning: () => void;
   onReset: () => void;
   onSkip: () => void;
+  onToggleZen?: () => void;
   onAmbientSoundChange: (mode: AmbientSoundMode) => void;
   onColorChange: (color: string) => void;
 };
@@ -32,14 +34,16 @@ export function TimerPanel({
   selectedColor,
   colorThemes,
   modeLabels,
+  longBreakInterval,
   onModeChange,
   onToggleRunning,
   onReset,
   onSkip,
+  onToggleZen,
   onAmbientSoundChange,
   onColorChange,
 }: TimerPanelProps) {
-  const cycle = getCycleProgress(completedPomodoros);
+  const cycle = getCycleProgress(completedPomodoros, longBreakInterval);
 
   return (
     <section className="timer-card card">
@@ -103,6 +107,17 @@ export function TimerPanel({
         >
           ⏭
         </button>
+        {onToggleZen && (
+          <button
+            type="button"
+            className="timer-aux-button zen-button"
+            onClick={onToggleZen}
+            aria-label="Mode Zen / Layar Penuh"
+            title="Mode Zen (F)"
+          >
+            ⛶
+          </button>
+        )}
       </div>
 
       <div className="ambient-bar" role="group" aria-label="Suara latar fokus">

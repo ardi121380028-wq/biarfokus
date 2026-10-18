@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TimerDurations } from "@/types/domain";
+import type { AlarmSoundType } from "../audio/alarm-sound.ts";
 
 export const SETTINGS_STORAGE_KEY = "biarfokus.settings";
 
@@ -10,6 +11,8 @@ export type UserSettings = {
   notificationsEnabled: boolean;
   timerDurations: TimerDurations;
   repeatAlarm: boolean;
+  alarmSound: AlarmSoundType;
+  longBreakInterval: number;
 };
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -19,22 +22,51 @@ export const DEFAULT_SETTINGS: UserSettings = {
   notificationsEnabled: false,
   timerDurations: { pomodoro: 25 * 60, short: 5 * 60, long: 15 * 60 },
   repeatAlarm: false,
+  alarmSound: "bell",
+  longBreakInterval: 4,
 };
 
-function isSettings(value: unknown): value is UserSettings {
-  if (typeof value !== "object" || value === null) return false;
-  const settings = value as Record<string, unknown>;
-  const timerDurations = settings.timerDurations;
-  if (typeof timerDurations !== "object" || timerDurations === null) return false;
-  const durations = timerDurations as Record<string, unknown>;
-  return typeof settings.selectedColor === "string" &&
-    typeof settings.autoStart === "boolean" &&
-    typeof settings.soundEnabled === "boolean" &&
-    typeof settings.notificationsEnabled === "boolean" &&
-    typeof settings.repeatAlarm === "boolean" &&
-    typeof durations.pomodoro === "number" &&
-    typeof durations.short === "number" &&
-    typeof durations.long === "number";
+export function normalizeSettings(value: unknown): UserSettings {
+  if (typeof value !== "object" || value === null) return DEFAULT_SETTINGS;
+  const s = value as Record<string, unknown>;
+  const rawDurations =
+    typeof s.timerDurations === "object" && s.timerDurations !== null
+      ? (s.timerDurations as Record<string, unknown>)
+      : {};
+
+  const pomodoro =
+    typeof rawDurations.pomodoro === "number" && rawDurations.pomodoro > 0
+      ? rawDurations.pomodoro
+      : DEFAULT_SETTINGS.timerDurations.pomodoro;
+  const short =
+    typeof rawDurations.short === "number" && rawDurations.short > 0
+      ? rawDurations.short
+      : DEFAULT_SETTINGS.timerDurations.short;
+  const long =
+    typeof rawDurations.long === "number" && rawDurations.long > 0
+      ? rawDurations.long
+      : DEFAULT_SETTINGS.timerDurations.long;
+
+  const alarmSound: AlarmSoundType =
+    s.alarmSound === "digital" || s.alarmSound === "marimba" || s.alarmSound === "zen"
+      ? s.alarmSound
+      : "bell";
+
+  const longBreakInterval =
+    typeof s.longBreakInterval === "number" && s.longBreakInterval >= 1 && s.longBreakInterval <= 12
+      ? Math.floor(s.longBreakInterval)
+      : 4;
+
+  return {
+    selectedColor: typeof s.selectedColor === "string" ? s.selectedColor : DEFAULT_SETTINGS.selectedColor,
+    autoStart: typeof s.autoStart === "boolean" ? s.autoStart : DEFAULT_SETTINGS.autoStart,
+    soundEnabled: typeof s.soundEnabled === "boolean" ? s.soundEnabled : DEFAULT_SETTINGS.soundEnabled,
+    notificationsEnabled: typeof s.notificationsEnabled === "boolean" ? s.notificationsEnabled : DEFAULT_SETTINGS.notificationsEnabled,
+    repeatAlarm: typeof s.repeatAlarm === "boolean" ? s.repeatAlarm : DEFAULT_SETTINGS.repeatAlarm,
+    timerDurations: { pomodoro, short, long },
+    alarmSound,
+    longBreakInterval,
+  };
 }
 
 export function loadLocalSettings(): UserSettings {
@@ -43,7 +75,7 @@ export function loadLocalSettings(): UserSettings {
   if (!saved) return DEFAULT_SETTINGS;
   try {
     const parsed: unknown = JSON.parse(saved);
-    return isSettings(parsed) ? parsed : DEFAULT_SETTINGS;
+    return normalizeSettings(parsed);
   } catch (error) {
     if (!(error instanceof SyntaxError)) throw error;
     window.localStorage.removeItem(SETTINGS_STORAGE_KEY);
@@ -65,7 +97,7 @@ export async function loadUserSettings(
     .eq("id", userId)
     .maybeSingle();
   if (error) throw error;
-  return data && isSettings(data.settings) ? data.settings : DEFAULT_SETTINGS;
+  return data?.settings ? normalizeSettings(data.settings) : DEFAULT_SETTINGS;
 }
 
 export async function saveUserSettings(
