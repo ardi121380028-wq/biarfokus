@@ -36,27 +36,37 @@ This file serves as a single-source handoff for any developer or AI assistant co
 │       ├── 20261016220000_add_profile_settings.sql            # Timer settings columns on profiles
 │       ├── 20261017140000_add_admin_roles_and_audit_logs.sql  # Roles, audit logs, is_admin()
 │       ├── 20261017143000_add_subscriptions.sql               # Subscriptions, is_pro_user(), free-tier task limit trigger
-│       └── 20261018000000_mvp6_scale_and_reliability.sql      # Task migration RPC, daily focus RPC, indexes
+│       ├── 20261018000000_mvp6_scale_and_reliability.sql      # Task migration RPC, daily focus RPC, indexes
+│       ├── 20261018223000_add_notes_and_calendar_events.sql   # keep_notes, keep_labels, calendar_events + RLS
+│       └── 20261018233000_add_linked_item_text_and_site_visits.sql # Sub-task linking & site_visits analytics table
 └── src/
     ├── proxy.ts                # Next.js 16 request proxy refreshing Supabase auth cookies
     ├── types/
-    │   └── domain.ts           # Shared domain types (Timer, Task, Stats, Profile, Admin, Billing)
+    │   └── domain.ts           # Shared domain types (Timer, Task, Stats, Profile, Admin, Billing, Notes, Calendar)
     ├── lib/
     │   ├── api/
     │   │   ├── request-guard.ts      # Rate limiting, correlation IDs, structured API logs
     │   │   └── request-guard.test.ts # Unit tests for request guard
-    │   └── supabase/
-    │       ├── client.ts       # Browser Supabase client + isSupabaseConfigured flag
-    │       └── server.ts       # Server Supabase client using next/headers cookies
+    │   ├── supabase/
+    │   │   ├── client.ts       # Browser Supabase client + isSupabaseConfigured flag
+    │   │   └── server.ts       # Server Supabase client using next/headers cookies
+    │   └── tracking/
+    │       └── visitor-tracker.ts    # Client-side anonymous visit logging
     ├── features/
     │   ├── admin/
-    │   │   ├── admin-service.ts      # Role lookup, overview response validation, fetch client
+    │   │   ├── admin-service.ts      # Role lookup, overview response validation, traffic stats
     │   │   └── admin-service.test.ts # Unit tests for admin service
     │   ├── audio/
     │   │   └── ambient-sound.ts      # Web Audio procedural ambient sounds (rain, ocean waves, brown noise)
     │   ├── billing/
     │   │   ├── billing-service.ts      # Plan constants, subscription state, Stripe signature verify, REST helper
     │   │   └── billing-service.test.ts # Unit tests for billing service
+    │   ├── calendar/
+    │   │   ├── calendar-service.ts      # Day/Week/Month/Year calculations, drag-and-drop & resize logic
+    │   │   └── calendar-service.test.ts # Unit tests for calendar service
+    │   ├── notes/
+    │   │   ├── note-service.ts          # Google Keep style notes CRUD, checklist & pin logic
+    │   │   └── note-service.test.ts     # Unit tests for note service
     │   ├── profile/
     │   │   ├── profile-service.ts      # Profile load/upsert, display name, safe avatar URL validation
     │   │   └── profile-service.test.ts # Unit tests for profile service
@@ -77,29 +87,38 @@ This file serves as a single-source handoff for any developer or AI assistant co
         │   ├── account/
         │   │   └── delete/route.ts       # Secure user account and data deletion endpoint
         │   ├── admin/
-        │   │   ├── overview/route.ts     # Server-verified admin overview & audit log API
+        │   │   ├── overview/route.ts     # Server-verified admin overview, traffic analytics & audit logs
         │   │   └── users/route.ts        # Admin user listing & manual Pro/Free plan toggling
-        │   └── billing/
-        │       ├── checkout/route.ts     # Stripe Checkout Session creation (Pro subscription)
-        │       ├── portal/route.ts       # Stripe Customer Portal session creation
-        │       └── webhook/route.ts      # Verified Stripe webhook handler updating subscriptions
+        │   ├── billing/
+        │   │   ├── checkout/route.ts     # Stripe Checkout Session creation (Pro subscription)
+        │   │   ├── portal/route.ts       # Stripe Customer Portal session creation
+        │   │   └── webhook/route.ts      # Verified Stripe webhook handler updating subscriptions
+        │   └── track/
+        │       └── visit/route.ts        # Anonymous visitor tracking with IP hashing & rate limits
         ├── auth/callback/route.ts  # OAuth code exchange route handler
         ├── components/
+        │   ├── about-modal.tsx     # Founder story & mission popup modal
         │   ├── account-modal.tsx   # Profile editor (display name, avatar preview, email, sign-out)
-        │   ├── admin-view.tsx      # Admin dashboard (metrics + user management + audit log table)
+        │   ├── admin-view.tsx      # Admin dashboard (traffic metrics + user management + audit logs)
         │   ├── auth-modal.tsx      # Login / register / Google OAuth modal
+        │   ├── calendar/           # Calendar sub-views (Day, Week, Month, Year, Event Modal)
+        │   ├── calendar-view.tsx   # Google Calendar view with drag-and-drop & resize time-blocking
+        │   ├── notes/              # Notes sub-components (Card, Edit Modal, Checklist items)
+        │   ├── notes-modal.tsx     # Google Keep-style Notes drawer/modal
+        │   ├── pomodoro-modal.tsx  # Interactive educational Pomodoro technique & science modal
         │   ├── pricing-view.tsx    # Free vs Pro plan status, upgrade & billing portal actions
         │   ├── profile-menu.tsx    # Header user dropdown (Account, Paket & Billing, Admin, Sign out)
         │   ├── settings-modal.tsx  # Custom timer duration modal
+        │   ├── shortcuts-modal.tsx # Keyboard shortcuts cheat sheet
         │   ├── stats-view.tsx      # Focus statistics (range selector, streak card, bar chart, CSV export)
-        │   ├── task-management.tsx # Task list, add form, active focused task selection, bulk delete
-        │   └── timer-panel.tsx     # Timer display, cycle dots, active focus banner, aux controls, ambient sound
-        ├── globals.css             # Theme tokens and UI styles
+        │   ├── task-management.tsx # Eat Your Frog task list, add form, active focus task selection
+        │   └── timer-panel.tsx     # Timer display, active focus banner, aux controls, ambient sound
+        ├── globals.css             # Theme tokens, dark/light pastel card contrast, responsive styles
         ├── icon.svg                # Brand SVG favicon
         ├── layout.tsx              # Root layout (Indonesian locale, PWA metadata, OpenGraph & Twitter tags)
         ├── manifest.ts             # PWA Web App Manifest (standalone install on Android/iOS/Desktop)
         ├── opengraph-image.tsx     # Dynamic 1200x630 branded social share image (Next.js ImageResponse)
-        └── page.tsx                # Main application coordinator (Timer, Tasks, Stats, Pricing, Admin)
+        └── page.tsx                # Main application coordinator (Timer, Tasks, Notes, Calendar, Stats, Pricing, Admin)
 ```
 
 ---
@@ -142,6 +161,14 @@ Defined in `supabase/migrations/`:
    - `status text not null default 'inactive' check (status in ('inactive', 'trialing', 'active', 'past_due', 'canceled'))`
    - `stripe_customer_id text unique`, `stripe_subscription_id text unique`, `current_period_end timestamptz`, `cancel_at_period_end boolean not null default false`
    - Helper `public.is_pro_user()` (`security definer`) returns `true` when `auth.uid()` has a `pro` subscription with status `active` or `trialing` (and non-expired `current_period_end`) or is an admin.
+7. **`public.keep_notes` & `public.keep_labels`**
+   - `keep_notes`: `id text primary key`, `user_id uuid not null references auth.users(id) on delete cascade`, `title text`, `type text check (type in ('checklist', 'text'))`, `content text`, `items jsonb default '[]'::jsonb`, `color text`, `labels text[]`, `pinned boolean default false`, `created_at timestamptz`, `updated_at timestamptz`.
+   - `keep_labels`: `id uuid primary key default gen_random_uuid()`, `user_id uuid references auth.users(id) on delete cascade`, `name text not null`, unique on `(user_id, name)`.
+8. **`public.calendar_events`**
+   - `id text primary key`, `user_id uuid not null references auth.users(id) on delete cascade`, `title text not null`, `date date not null`, `start_time text (HH:mm)`, `end_time text (HH:mm)`, `color text`, `category text check (category in ('event', 'task'))`, `description text`, `linked_note_id text`, `linked_note_title text`, `linked_item_id text`, `linked_item_text text`, `created_at timestamptz`, `updated_at timestamptz`.
+9. **`public.site_visits`**
+   - `id uuid primary key default gen_random_uuid()`, `visitor_id text not null`, `path text not null default '/'`, `referrer text`, `user_agent text`, `user_id uuid references auth.users(id) on delete set null`, `created_at timestamptz not null default now()`.
+   - Insert policy open to all (anonymous visitor logging); select policy strictly gated to administrators via `public.user_roles`.
 
 All tables have Row Level Security (RLS) enabled.
 
@@ -162,13 +189,21 @@ All tables have Row Level Security (RLS) enabled.
   - Zero Lint Warnings: Avatar rendering migrated to `next/image` (`unoptimized`) guarded by `getSafeAvatarUrl`.
 - **MVP7 — Product Experience & Pro Features (Completed):**
   - Active Task Tracking: Link sessions directly to `pomodoro_sessions.task_id`, select active focus task in `TaskManagement`, display active task banner in `TimerPanel`, and auto-increment task pomodoro count upon completion.
-  - Smart Pomodoro Cycle: Automatic transition to Long Break every 4 pomodoros with visual cycle indicator dots (`Siklus #N · 2/4`) plus direct `Reset (↺)` and `Skip (⏭)` touch/click controls.
   - Web Audio Ambient Sound: Procedural offline synthesizer for background focus audio (Rain, Waves, Brown noise) with zero external audio assets.
   - Installable PWA: Web App Manifest (`manifest.webmanifest`) and viewport/apple-web-app metadata for home screen installation on Android and iOS.
 - **MVP8 — Admin User Controls, Account Deletion & Social Share (Completed):**
   - Admin User Management: `/api/admin/users` endpoint + `AdminView` user cards list with live status and manual "Jadikan Pro" / "Turunkan ke Free" toggles audited in `admin_audit_logs`.
   - Secure Account Deletion: `/api/account/delete` endpoint cascading profile and domain data deletion + confirmation modal in `page.tsx`.
   - SEO & Dynamic Social Share Preview: Automated 1200x630 OpenGraph image (`/opengraph-image`) with branding, metadata base, Twitter card tags, and official Instagram link (`https://www.instagram.com/biarfokus.id/`) in the footer.
+- **MVP9 — Notes, Calendar Time-Blocking & Experience Polish (Completed):**
+  - **Google Keep-Style Notes (`NotesModal`):** Dynamic multi-color cards (12 pastel shades with automatic dark-mode contrast), pinned notes, custom labels/tags, checklist items with inline completion, and dual-layer sync (Supabase RLS + guest `localStorage`).
+  - **Google Calendar Time-Blocking (`CalendarView`):** Day, Week, Month, and Year calendar views with native drag-and-drop between hour slots, top/bottom resize drag handles for intuitive duration adjustment, event categorization, and sub-task / checklist deep linking (`☑️ [Sub-task] (Catatan)`).
+  - **Eat Your Frog Task Philosophy:** Rebranded task management to "Eat Your Frog" prioritizing high-value cognitive tasks and clean visual focus indicators.
+  - **Site Traffic & Visitor Analytics:** Privacy-preserving visitor tracking (`/api/track/visit` + `visitor-tracker.ts`), daily visit counter, 24-hour visit volume, and 7-day visit trend table in the Admin dashboard.
+  - **Brand Mission & Educational Modals:** `AboutModal` (founder story on ADHD/focus journey and vision behind BiarFokus) and `PomodoroModal` (Cirillo 4-step framework, time rules, and scientific benefits).
+  - **Dark Mode & Contrast Polish:** Fixed dark mode pastel note text contrast using theme ink variables, cleaned redundant footer links, and resolved profile popup z-index stacking layers.
+- **MVP10 — Revenue Strategy & Monetization Architecture (In Planning):**
+  - Multi-stream revenue model: B2C Pro Subscriptions (Midtrans/Xendit/Stripe), Founder's Lifetime Deal (LTD), digital focus add-ons (binaural sound packs, productivity templates), and B2B Team Focus / Study Squad rooms.
 
 ---
 
