@@ -15,7 +15,7 @@ import { ShortcutsModal as ShortcutsModalComponent } from "@/app/components/shor
 import { StatsView } from "@/app/components/stats-view";
 import { AdminView } from "@/app/components/admin-view";
 import { PricingView } from "@/app/components/pricing-view";
-import { FocusScratchpad } from "@/app/components/focus-scratchpad";
+import { NotesModal } from "@/app/components/notes-modal";
 import { playTickSound } from "@/features/audio/ticking-sound";
 import { isAdminRole, loadUserRole } from "@/features/admin/admin-service";
 import {
@@ -131,6 +131,7 @@ export default function Home() {
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -680,8 +681,6 @@ export default function Home() {
             onDeleteCompleted={deleteCompletedTasks}
             onDeleteAll={deleteAllTasks}
           />
-
-          <FocusScratchpad userId={user?.id ?? null} />
         </div>
       )}
 
@@ -718,7 +717,24 @@ export default function Home() {
         </div>
         <small>© 2025 biarfokus - All rights reserved</small>
       </footer>
+
+      {/* Floating Action Buttons */}
+      <button
+        className="notes-fab"
+        onClick={() => setNotesOpen(true)}
+        aria-label="Catatan Fokus"
+        title="Buka Catatan Fokus (Keep)"
+      >
+        ✏️
+      </button>
       <button className="settings-fab" onClick={() => setShowSettings(true)} aria-label="Pengaturan">⚙</button>
+
+      {notesOpen && (
+        <NotesModal
+          userId={user?.id ?? null}
+          onClose={() => setNotesOpen(false)}
+        />
+      )}
       {showSettings && <SettingsModalComponent
         selectedColor={selectedColor}
         setSelectedColor={setSelectedColor}
