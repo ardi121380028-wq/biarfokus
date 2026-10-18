@@ -16,6 +16,7 @@ import { StatsView } from "@/app/components/stats-view";
 import { AdminView } from "@/app/components/admin-view";
 import { PricingView } from "@/app/components/pricing-view";
 import { NotesModal } from "@/app/components/notes-modal";
+import { CalendarView } from "@/app/components/calendar-view";
 import { playTickSound } from "@/features/audio/ticking-sound";
 import { isAdminRole, loadUserRole } from "@/features/admin/admin-service";
 import {
@@ -56,7 +57,7 @@ import {
   getTimerEndTime,
 } from "@/features/timer/timer-utils";
 
-type View = "timer" | "stats" | "pricing" | "admin";
+type View = "timer" | "notes" | "calendar" | "stats" | "pricing" | "admin";
 const durations: Record<TimerMode, number> = {
   pomodoro: 25 * 60,
   short: 5 * 60,
@@ -604,9 +605,15 @@ export default function Home() {
           <span>biarfokus</span>
         </button>
         <nav className="desktop-nav" aria-label="Navigasi utama">
-          {(["timer", "stats", "pricing"] as View[]).map((view) => (
+          {([
+            { view: "timer", label: "Timer" },
+            { view: "notes", label: "Catatan" },
+            { view: "calendar", label: "Kalender" },
+            { view: "stats", label: "Statistik" },
+            { view: "pricing", label: "Pro" },
+          ] as { view: View; label: string }[]).map(({ view, label }) => (
             <button key={view} className={activeView === view ? "nav-link active" : "nav-link"} onClick={() => setActiveView(view)}>
-              {view === "timer" ? "Timer" : view === "stats" ? "Statistik" : view === "pricing" ? "Pro" : "Admin"}
+              {label}
             </button>
           ))}
         </nav>
@@ -640,9 +647,15 @@ export default function Home() {
         </div>
       </header>
       {menuOpen && <nav className="mobile-nav" aria-label="Navigasi mobile">
-        {(["timer", "stats", "pricing"] as View[]).map((view) => (
+        {([
+          { view: "timer", label: "Timer" },
+          { view: "notes", label: "Catatan" },
+          { view: "calendar", label: "Kalender" },
+          { view: "stats", label: "Statistik" },
+          { view: "pricing", label: "Pro" },
+        ] as { view: View; label: string }[]).map(({ view, label }) => (
           <button key={view} className={activeView === view ? "nav-link active" : "nav-link"} onClick={() => { setActiveView(view); setMenuOpen(false); }}>
-            {view === "timer" ? "Timer" : view === "stats" ? "Statistik" : view === "pricing" ? "Pro" : "Admin"}
+            {label}
           </button>
         ))}
         {!user && <button className="mobile-login-button" onClick={() => { setLoginOpen(true); setMenuOpen(false); }}>🔐 Sign In</button>}
@@ -684,6 +697,20 @@ export default function Home() {
         </div>
       )}
 
+      {activeView === "notes" && (
+        <NotesModal
+          userId={user?.id ?? null}
+          isPageView={true}
+        />
+      )}
+
+      {activeView === "calendar" && (
+        <CalendarView
+          userId={user?.id ?? null}
+          onNavigateToNotes={() => setActiveView("notes")}
+        />
+      )}
+
       {activeView === "stats" && <StatsView key={user?.id ?? "guest"} supabase={getSupabaseBrowserClient()} userId={user?.id ?? null} completedTasks={completedTasks} />}
       {activeView === "pricing" && (
         <PricingView
@@ -703,7 +730,9 @@ export default function Home() {
       <footer className="footer">
         <div><strong>BiarFokus</strong><span>Bantu kamu fokus selesain setiap pekerjaan.</span></div>
         <div className="footer-links">
-          <button onClick={() => setActiveView("timer")}>Main App</button>
+          <button onClick={() => setActiveView("timer")}>Timer</button>
+          <button onClick={() => setActiveView("notes")}>Catatan Fokus</button>
+          <button onClick={() => setActiveView("calendar")}>Kalender</button>
           <button onClick={() => setInfoOpen("Pomodoro membagi waktu kerja menjadi interval fokus dan istirahat agar kamu bisa bekerja dengan ritme yang konsisten.")}>Apa itu Pomodoro?</button>
           <button onClick={() => setInfoOpen("BiarFokus dibuat untuk membantu kamu menyelesaikan pekerjaan dengan lebih tenang dan terarah.")}>Tentang Kami</button>
           <a

@@ -87,3 +87,34 @@ export type UserSubscription = {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
 };
+
+export type ChecklistItem = {
+  id: string;
+  text: string;
+  done: boolean;
+};
+
+export type KeepNote = {
+  id: string;
+  title: string;
+  type: "text" | "checklist";
+  content?: string;
+  items?: ChecklistItem[];
+  color: string;
+  labels: string[];
+  pinned?: boolean;
+  updatedAt: string;
+};
+
+export type CalendarEvent = {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm (e.g. "08:00")
+  endTime: string; // HH:mm (e.g. "10:30")
+  color: string; // Hex color code
+  category?: "event" | "task";
+  description?: string;
+  linkedNoteId?: string;
+  linkedNoteTitle?: string;
+};
