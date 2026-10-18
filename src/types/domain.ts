@@ -116,5 +116,6 @@ export type CalendarEvent = {
   category?: "event" | "task";
   description?: string;
   linkedNoteId?: string;
-  linkedNoteTitle?: string;
+  linkedNoteTitle?: string; // snapshot, used as fallback if the note is deleted
+  linkedItemId?: string; // optional specific checklist item inside the linked note
 };

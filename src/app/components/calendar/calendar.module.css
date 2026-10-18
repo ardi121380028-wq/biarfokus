@@ -1,0 +1,695 @@
+/* ------------------------------------------------------------------ */
+/* Calendar Container & Header                                        */
+/* ------------------------------------------------------------------ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  color: var(--ink);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.branding {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dateIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--blue);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  font-weight: bold;
+  font-family: Georgia, serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  flex: none;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  margin: 0;
+  font: 22px Georgia, serif;
+  color: var(--ink);
+}
+
+.periodLabel {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--blue);
+  margin-top: 2px;
+}
+
+/* Pagination & Navigation Toolbar */
+.navToolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.todayBtn {
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--ink);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.todayBtn:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.paginationBtn {
+  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--ink);
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.paginationBtn:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.viewSwitcher {
+  display: flex;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.viewModeBtn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.viewModeBtnActive {
+  background: var(--blue);
+  color: #fff;
+}
+
+.createBtn {
+  border: none;
+  border-bottom: 2px solid var(--ink);
+  border-radius: 20px;
+  background: var(--pink);
+  color: #fff;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.12s;
+}
+
+.createBtn:hover {
+  transform: scale(1.03);
+}
+
+/* ------------------------------------------------------------------ */
+/* Calendar Scroll Grid                                               */
+/* ------------------------------------------------------------------ */
+
+.gridWrapper {
+  flex: 1;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 18px;
+  background: var(--paper);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.scrollArea {
+  overflow-y: auto;
+  overflow-x: auto;
+  flex: 1;
+  height: 600px;
+  position: relative;
+}
+
+/* Date Header Columns Row (Sticky) */
+.columnsHeaderRow {
+  display: flex;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-width: 700px;
+}
+
+.timeAxisSpacer {
+  width: 64px;
+  flex: none;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.columnsHeaderList {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+.dayColumnHeader {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  min-width: 90px;
+}
+
+.dayName {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  font-weight: bold;
+}
+
+.dayNumber {
+  display: inline-grid;
+  place-items: center;
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: bold;
+  margin-top: 2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.dayToday .dayNumber {
+  background: var(--blue);
+  color: #fff;
+}
+
+.dayToday .dayName {
+  color: var(--blue);
+}
+
+/* Grid Body */
+.gridBody {
+  display: flex;
+  position: relative;
+  min-width: 700px;
+}
+
+.timeAxis {
+  width: 64px;
+  flex: none;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  user-select: none;
+}
+
+.timeLabel {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  padding-right: 8px;
+  transform: translateY(-8px);
+  box-sizing: border-box;
+  font-variant-numeric: tabular-nums;
+}
+
+.columnsBody {
+  flex: 1;
+  display: flex;
+  position: relative;
+  min-width: 0;
+}
+
+.column {
+  flex: 1;
+  position: relative;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  min-width: 90px;
+}
+
+.columnToday {
+  background: color-mix(in srgb, var(--blue) 2.5%, transparent);
+}
+
+.hourCell {
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.hourCell:hover {
+  background: color-mix(in srgb, var(--blue) 5%, transparent);
+}
+
+/* Red Current Time Indicator */
+.currentTimeIndicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.currentTimeDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ea4335;
+  margin-left: -6px;
+  flex: none;
+  box-shadow: 0 0 4px rgba(234, 67, 53, 0.7);
+}
+
+.currentTimeLine {
+  flex: 1;
+  height: 2px;
+  background: #ea4335;
+}
+
+/* Event Blocks on Grid (Google Calendar style) */
+.eventBlock {
+  position: absolute;
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  z-index: 4;
+  transition: transform 0.12s, box-shadow 0.12s;
+  box-sizing: border-box;
+}
+
+.eventBlock:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  z-index: 5;
+}
+
+.eventContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.eventTitle {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.eventTime {
+  font-size: 10px;
+  opacity: 0.92;
+  white-space: nowrap;
+}
+
+.eventLinkedBadge {
+  display: inline-block;
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: fit-content;
+}
+
+/* Empty State Banner (clean, informative) */
+.emptyNotice {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--ink) 14%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.emptyNotice strong {
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ */
+/* Event Create / Edit Modal                                          */
+/* ------------------------------------------------------------------ */
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.modalCard {
+  position: relative;
+  width: min(520px, 94vw);
+  border-radius: 24px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 24px 28px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.modalTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalTitle {
+  margin: 0;
+  font: 20px Georgia, serif;
+}
+
+.modalClose {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.modalClose:hover {
+  color: var(--ink);
+}
+
+.titleInputWrapper {
+  width: 100%;
+}
+
+.eventTitleInput {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid var(--blue);
+  background: transparent;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  padding: 6px 0;
+  outline: none;
+}
+
+.categoryTabs {
+  display: flex;
+  gap: 8px;
+}
+
+.catTab {
+  border: none;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--muted);
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.catTabActive {
+  background: color-mix(in srgb, var(--blue) 18%, var(--paper));
+  color: var(--blue);
+}
+
+.fieldRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.fieldIcon {
+  font-size: 17px;
+  opacity: 0.75;
+  padding-top: 5px;
+  flex: none;
+}
+
+.fieldContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dateInput,
+.timeInput,
+.selectInput,
+.descTextarea {
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.dateInput:focus,
+.timeInput:focus,
+.selectInput:focus,
+.descTextarea:focus {
+  border-color: var(--blue);
+}
+
+.timeRangeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.durationBadge {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.descTextarea {
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.selectInput {
+  width: 100%;
+}
+
+/* Linked Note Preview in Event Modal */
+.linkedPreview {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+
+.linkedPreviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.linkedPreviewHeader strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.linkedChecklistItems {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.linkedChecklistItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #374151;
+}
+
+.linkedItemDone {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Color Palette in Modal */
+.colorPalette {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.colorDot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.12s;
+}
+
+.colorDot:hover {
+  transform: scale(1.15);
+}
+
+.colorDotSelected {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.modalActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.modalActionsRight {
+  display: flex;
+  gap: 10px;
+}
+
+.saveEventBtn {
+  border: none;
+  border-radius: 20px;
+  background: #1a73e8;
+  color: #fff;
+  padding: 8px 22px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.saveEventBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cancelEventBtn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.deleteEventBtn {
+  border: none;
+  background: transparent;
+  color: #d93025;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.deleteEventBtn:hover {
+  text-decoration: underline;
+}
+
+.errorBanner {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}

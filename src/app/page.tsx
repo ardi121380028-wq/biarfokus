@@ -283,7 +283,8 @@ export default function Home() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const isTyping = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName ?? "");
+      const active = document.activeElement as HTMLElement | null;
+      const isTyping = ["INPUT", "TEXTAREA", "SELECT"].includes(active?.tagName ?? "") || Boolean(active?.isContentEditable);
       if (event.key === "Escape") {
         setShowSettings(false);
         setLoginOpen(false);
@@ -292,6 +293,13 @@ export default function Home() {
       }
       if (isTyping) return;
       if (event.key === "?" || (event.shiftKey && event.key === "/")) setShortcutsOpen(true);
+      if (event.ctrlKey && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        setShowSettings(true);
+        return;
+      }
+      // Timer shortcuts only make sense on the timer screen without an overlay open.
+      if (activeView !== "timer" || notesOpen) return;
       if (event.key.toLowerCase() === "f") {
         event.preventDefault();
         setZenMode((z) => !z);
@@ -321,14 +329,10 @@ export default function Home() {
         setSeconds(timerDurations[nextMode]);
         setRunning(false);
       }
-      if (event.ctrlKey && event.key.toLowerCase() === "s") {
-        event.preventDefault();
-        setShowSettings(true);
-      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [completedPomodoros, longBreakInterval, mode, running, seconds, timerDurations]);
+  }, [activeView, completedPomodoros, longBreakInterval, mode, notesOpen, running, seconds, timerDurations]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {

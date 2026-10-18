@@ -1,52 +1,104 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  convertDraftType,
   filterNotes,
-  INITIAL_KEEP_NOTES,
+  findLabel,
+  mergeLabels,
+  normalizeLabel,
+  parseStoredLabels,
+  parseStoredNotes,
+  removeLabelFromNotes,
   toggleChecklistItem,
 } from "./notes-service.ts";
 import type { KeepNote } from "../../types/domain.ts";
 
 describe("notes-service", () => {
-  it("filters notes by search query across title, content, items, and labels", () => {
-    const results = filterNotes(INITIAL_KEEP_NOTES, "engraving");
-    assert.equal(results.length, 1);
-    assert.equal(results[0].title, "Todolist Bismillah - Work Zitline");
-
-    const labelResults = filterNotes(INITIAL_KEEP_NOTES, "habit");
-    assert.equal(labelResults.length, 1);
-    assert.equal(labelResults[0].title, "Ide & Mindset Fokus Hari Ini");
-  });
-
-  it("filters notes by label chip", () => {
-    const workNotes = filterNotes(INITIAL_KEEP_NOTES, "", "Work");
-    assert.equal(workNotes.length, 1);
-    assert.equal(workNotes[0].labels.includes("Work"), true);
-
-    const ideNotes = filterNotes(INITIAL_KEEP_NOTES, "", "Ide");
-    assert.equal(ideNotes.length, 1);
-    assert.equal(ideNotes[0].labels.includes("Ide"), true);
-  });
-
-  it("toggles checklist items accurately without mutating others", () => {
-    const initialNote: KeepNote = {
+  const sampleNotes: KeepNote[] = [
+    {
       id: "note-1",
-      title: "Test Note",
+      title: "Pekerjaan Proyek",
       type: "checklist",
-      color: "#ffffff",
-      labels: [],
-      updatedAt: "now",
       items: [
-        { id: "item-a", text: "Buy milk", done: false },
-        { id: "item-b", text: "Wash car", done: true },
+        { id: "item-1", text: "Kirim invoice", done: false },
+        { id: "item-2", text: "Review desain", done: true },
       ],
+      color: "#faafa8",
+      labels: ["Work", "Urgent"],
+      pinned: true,
+      updatedAt: "18 Okt, 20:00",
+    },
+    {
+      id: "note-2",
+      title: "Ide Konten Baru",
+      type: "text",
+      content: "Bikin video tutorial time blocking dan teknik pomodoro.",
+      color: "#fff8b8",
+      labels: ["Ide"],
+      pinned: false,
+      updatedAt: "18 Okt, 21:00",
+    },
+  ];
+
+  it("normalizes, finds, merges and removes labels accurately", () => {
+    assert.equal(normalizeLabel("  The   Frog  "), "The Frog");
+    assert.equal(findLabel(["Work", "Kuliah"], "work"), "Work");
+    assert.equal(findLabel(["Work", "Kuliah"], "nonexistent"), undefined);
+
+    const merged = mergeLabels(["Work"], sampleNotes);
+    assert.equal(merged.includes("Work"), true);
+    assert.equal(merged.includes("Urgent"), true);
+    assert.equal(merged.includes("Ide"), true);
+
+    const cleaned = removeLabelFromNotes(sampleNotes, "urgent");
+    assert.equal(cleaned[0].labels.includes("Urgent"), false);
+  });
+
+  it("converts draft between text and checklist smoothly", () => {
+    const textDraft = {
+      title: "Todo",
+      type: "text" as const,
+      content: "- Beli susu\n- Cuci mobil",
+      color: "var(--paper)",
+      labels: [],
+      pinned: false,
     };
+    const checklistDraft = convertDraftType(textDraft, "checklist");
+    assert.equal(checklistDraft.type, "checklist");
+    assert.equal(checklistDraft.items?.length, 2);
+    assert.equal(checklistDraft.items?.[0].text, "Beli susu");
 
-    const toggled = toggleChecklistItem([initialNote], "note-1", "item-a");
+    const backToText = convertDraftType(checklistDraft, "text");
+    assert.equal(backToText.type, "text");
+    assert.equal(backToText.content?.includes("Beli susu"), true);
+  });
+
+  it("filters notes by search query across title, content, items, and labels", () => {
+    const results = filterNotes(sampleNotes, "invoice");
+    assert.equal(results.length, 1);
+    assert.equal(results[0].id, "note-1");
+
+    const labelResults = filterNotes(sampleNotes, "", "Ide");
+    assert.equal(labelResults.length, 1);
+    assert.equal(labelResults[0].id, "note-2");
+  });
+
+  it("toggles checklist item done status", () => {
+    const toggled = toggleChecklistItem(sampleNotes, "note-1", "item-1");
     assert.equal(toggled[0].items?.[0].done, true);
-    assert.equal(toggled[0].items?.[1].done, true);
 
-    const toggledBack = toggleChecklistItem(toggled, "note-1", "item-b");
-    assert.equal(toggledBack[0].items?.[1].done, false);
+    const toggledBack = toggleChecklistItem(toggled, "note-1", "item-1");
+    assert.equal(toggledBack[0].items?.[0].done, false);
+  });
+
+  it("defaults to empty array on empty or corrupt storage", () => {
+    assert.deepEqual(parseStoredNotes(null), []);
+    assert.deepEqual(parseStoredNotes(""), []);
+    assert.deepEqual(parseStoredNotes("not json"), []);
+  });
+
+  it("parses stored labels with fallback to default labels", () => {
+    assert.deepEqual(parseStoredLabels(null), ["Work", "Kuliah", "Ide", "Habit"]);
+    assert.deepEqual(parseStoredLabels(JSON.stringify(["Urgent", "Personal"])), ["Urgent", "Personal"]);
   });
 });

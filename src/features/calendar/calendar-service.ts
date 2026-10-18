@@ -1,193 +1,301 @@
 import type { CalendarEvent } from "../../types/domain.ts";
 
+/* ------------------------------------------------------------------ */
+/* Constants                                                           */
+/* ------------------------------------------------------------------ */
+
 export const CALENDAR_STORAGE_PREFIX = "biarfokus.calendar_events.";
+export const HOUR_HEIGHT_PX = 48;
+export const MINUTES_PER_DAY = 24 * 60;
+export const MIN_EVENT_MINUTES = 15;
+export const SLOT_STEP_MINUTES = 30;
+
+export const HOURS_24 = Array.from({ length: 24 }, (_, i) => i);
+
+export function getCurrentTimeTop(now: Date, hourHeight = HOUR_HEIGHT_PX): number {
+  const mins = now.getHours() * 60 + now.getMinutes();
+  return (mins / 60) * hourHeight;
+}
+
+export type CalendarViewMode = "day" | "week";
+export type EventDraft = Omit<CalendarEvent, "id">;
 
 export const CALENDAR_COLORS = [
-  { name: "Tomato (Merah)", hex: "#d93025" },
-  { name: "Grape (Ungu)", hex: "#8e24aa" },
-  { name: "Peacock (Biru Langit)", hex: "#039be5" },
-  { name: "Basil (Hijau)", hex: "#0b8043" },
-  { name: "Blueberry (Biru Tua)", hex: "#3f51b5" },
-  { name: "Flamingo (Pink)", hex: "#e67c73" },
-  { name: "Tangerine (Oranye)", hex: "#f4511e" },
-  { name: "Banana (Kuning)", hex: "#f6bf26" },
-];
+  { name: "Tomato", hex: "#d50000" },
+  { name: "Flamingo", hex: "#e67c73" },
+  { name: "Tangerine", hex: "#f4511e" },
+  { name: "Banana", hex: "#f6bf26" },
+  { name: "Sage", hex: "#33b679" },
+  { name: "Basil", hex: "#0b8043" },
+  { name: "Peacock", hex: "#039be5" },
+  { name: "Blueberry", hex: "#3f51b5" },
+  { name: "Lavender", hex: "#7986cb" },
+  { name: "Grape", hex: "#8e24aa" },
+  { name: "Graphite", hex: "#616161" },
+] as const;
 
-export const GRID_START_HOUR = 6; // 06:00
-export const GRID_END_HOUR = 23; // 23:00
-export const HOUR_HEIGHT_PX = 60; // 60px per hour
+export const DEFAULT_EVENT_COLOR: string = CALENDAR_COLORS[6].hex;
 
-export function formatDateToISO(d: Date): string {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
+/** Ids of demo events shipped by an earlier version. They are purged on load. */
+const LEGACY_SEED_EVENT_IDS = new Set([
+  "event-work-zitline",
+  "event-workout-learn",
+  "event-rest-break",
+  "event-business",
+  "event-crucial-grow",
+]);
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+
+/* ------------------------------------------------------------------ */
+/* Date helpers (all local-time, no UTC drift)                         */
+/* ------------------------------------------------------------------ */
+
+export function toISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return `${y}-${m}-${day}`;
 }
 
-export function formatReadableDate(d: Date): string {
-  return d.toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+export function parseISODate(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
 }
 
-export function getInitialCalendarEvents(todayDateStr: string): CalendarEvent[] {
-  return [
-    {
-      id: "event-work-zitline",
-      title: "Working Z",
-      date: todayDateStr,
-      startTime: "08:00",
-      endTime: "16:00",
-      color: "#d93025",
-      category: "event",
-      description: "Deep work & fokus penyelesaian prioritas hari ini.",
-      linkedNoteId: "sample_note_work_zitline",
-      linkedNoteTitle: "Todolist Bismillah - Work Zitline",
-    },
-    {
-      id: "event-workout-learn",
-      title: "Workout and Learn",
-      date: todayDateStr,
-      startTime: "16:00",
-      endTime: "18:00",
-      color: "#8e24aa",
-      category: "event",
-      description: "Olahraga rutin & membaca / eksplorasi skill baru.",
-    },
-    {
-      id: "event-rest-break",
-      title: "rest, break, religi",
-      date: todayDateStr,
-      startTime: "18:00",
-      endTime: "19:30",
-      color: "#039be5",
-      category: "event",
-      description: "Makan malam, sholat, dan istirahat sejenak.",
-    },
-    {
-      id: "event-business",
-      title: "Business",
-      date: todayDateStr,
-      startTime: "19:30",
-      endTime: "20:30",
-      color: "#0b8043",
-      category: "task",
-      description: "Review metrik dan perencanaan bisnis.",
-    },
-    {
-      id: "event-crucial-grow",
-      title: "Crucial Time To Grow",
-      date: todayDateStr,
-      startTime: "20:30",
-      endTime: "22:00",
-      color: "#3f51b5",
-      category: "task",
-      description: "Waktu krusial untuk evaluasi diri dan persiapan besok.",
-    },
-  ];
+export function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-export function getCalendarStorageKey(userId?: string | null): string {
-  return `${CALENDAR_STORAGE_PREFIX}${userId || "guest"}`;
+export function addDays(d: Date, amount: number): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + amount);
 }
 
-export function loadCalendarEvents(userId?: string | null): CalendarEvent[] {
-  const todayStr = formatDateToISO(new Date());
-  if (typeof window === "undefined") {
-    return getInitialCalendarEvents(todayStr);
+/** Adds months while clamping the day (31 Jan + 1 month => 28/29 Feb). */
+export function addMonths(d: Date, amount: number): Date {
+  const firstOfTarget = new Date(d.getFullYear(), d.getMonth() + amount, 1);
+  const lastDay = new Date(firstOfTarget.getFullYear(), firstOfTarget.getMonth() + 1, 0).getDate();
+  return new Date(firstOfTarget.getFullYear(), firstOfTarget.getMonth(), Math.min(d.getDate(), lastDay));
+}
+
+/** Monday-first week start. */
+export function startOfWeek(d: Date): Date {
+  const offset = (d.getDay() + 6) % 7;
+  return addDays(startOfDay(d), -offset);
+}
+
+export function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+export function getVisibleDays(anchor: Date, mode: CalendarViewMode): Date[] {
+  if (mode === "day") return [startOfDay(anchor)];
+  const monday = startOfWeek(anchor);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}
+
+/** 6x7 grid (42 days) for a mini month calendar, Monday-first. */
+export function getMonthGrid(monthAnchor: Date): Date[] {
+  const first = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth(), 1);
+  const start = startOfWeek(first);
+  return Array.from({ length: 42 }, (_, i) => addDays(start, i));
+}
+
+const LOCALE = "id-ID";
+
+export function formatMonthYear(d: Date): string {
+  return d.toLocaleDateString(LOCALE, { month: "long", year: "numeric" });
+}
+
+/** "12 – 18 Oktober 2026", "28 Sep – 4 Okt 2026", "29 Des 2026 – 4 Jan 2027". */
+export function formatPeriodLabel(days: Date[]): string {
+  if (days.length === 0) return "";
+  const first = days[0];
+  const last = days[days.length - 1];
+  if (days.length === 1) {
+    return first.toLocaleDateString(LOCALE, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   }
-  try {
-    const raw = window.localStorage.getItem(getCalendarStorageKey(userId));
-    if (!raw) return getInitialCalendarEvents(todayStr);
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      return getInitialCalendarEvents(todayStr);
-    }
-    return parsed.map((ev: any) => ({
-      id: ev.id || `event_${Date.now()}`,
-      title: ev.title || "Tanpa Judul",
-      date: ev.date || todayStr,
-      startTime: ev.startTime || "09:00",
-      endTime: ev.endTime || "10:00",
-      color: ev.color || CALENDAR_COLORS[0].hex,
-      category: ev.category === "task" ? "task" : "event",
-      description: ev.description || "",
-      linkedNoteId: ev.linkedNoteId || undefined,
-      linkedNoteTitle: ev.linkedNoteTitle || undefined,
-    }));
-  } catch {
-    return getInitialCalendarEvents(todayStr);
+  if (first.getFullYear() !== last.getFullYear()) {
+    const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
+    return `${first.toLocaleDateString(LOCALE, opts)} – ${last.toLocaleDateString(LOCALE, opts)}`;
   }
+  if (first.getMonth() !== last.getMonth()) {
+    const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+    return `${first.toLocaleDateString(LOCALE, opts)} – ${last.toLocaleDateString(LOCALE, opts)} ${last.getFullYear()}`;
+  }
+  return `${first.getDate()} – ${last.getDate()} ${formatMonthYear(last)}`;
 }
 
-export function saveCalendarEvents(
-  events: CalendarEvent[],
-  userId?: string | null
-): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(getCalendarStorageKey(userId), JSON.stringify(events));
-  } catch {
-    // Ignore storage quota errors
-  }
+/* ------------------------------------------------------------------ */
+/* Time helpers                                                        */
+/* ------------------------------------------------------------------ */
+
+export function isValidTime(value: string): boolean {
+  return TIME_RE.test(value);
 }
 
-export function timeToMinutes(timeStr: string): number {
-  const [hours, minutes] = timeStr.split(":").map((v) => Number.parseInt(v, 10) || 0);
-  return hours * 60 + minutes;
+export function timeToMinutes(value: string): number {
+  const [h, m] = value.split(":").map((v) => Number.parseInt(v, 10) || 0);
+  return h * 60 + m;
 }
 
 export function minutesToTime(totalMinutes: number): string {
-  const clamped = Math.max(0, Math.min(24 * 60 - 1, totalMinutes));
+  const clamped = Math.max(0, Math.min(MINUTES_PER_DAY - 1, Math.round(totalMinutes)));
   const h = Math.floor(clamped / 60);
   const m = clamped % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-export function calculateEventPosition(
-  startTime: string,
-  endTime: string,
-  gridStartHour = GRID_START_HOUR,
-  hourHeight = HOUR_HEIGHT_PX
-): { top: number; height: number } {
-  const startMins = timeToMinutes(startTime);
-  const endMins = Math.max(startMins + 15, timeToMinutes(endTime));
-  const gridStartMins = gridStartHour * 60;
-
-  const topMins = Math.max(0, startMins - gridStartMins);
-  const durationMins = endMins - startMins;
-
-  const top = (topMins / 60) * hourHeight;
-  const height = Math.max(26, (durationMins / 60) * hourHeight);
-
-  return { top, height };
+export function snapMinutes(minutes: number, step = SLOT_STEP_MINUTES): number {
+  return Math.max(0, Math.min(MINUTES_PER_DAY - step, Math.floor(minutes / step) * step));
 }
 
-export function getCurrentTimeIndicatorPosition(
-  now: Date,
-  gridStartHour = GRID_START_HOUR,
-  hourHeight = HOUR_HEIGHT_PX
-): number | null {
-  const currentMins = now.getHours() * 60 + now.getMinutes();
-  const gridStartMins = gridStartHour * 60;
-  const gridEndMins = (GRID_END_HOUR + 1) * 60;
+export function formatDuration(startTime: string, endTime: string): string {
+  const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
+  if (diff <= 0) return "";
+  const h = Math.floor(diff / 60);
+  const m = diff % 60;
+  if (h && m) return `${h} jam ${m} mnt`;
+  if (h) return `${h} jam`;
+  return `${m} mnt`;
+}
 
-  if (currentMins < gridStartMins || currentMins > gridEndMins) {
-    return null;
+/* ------------------------------------------------------------------ */
+/* Validation                                                          */
+/* ------------------------------------------------------------------ */
+
+export function validateEventDraft(draft: EventDraft): string | null {
+  if (!draft.title.trim()) return "Judul jadwal wajib diisi.";
+  if (!DATE_RE.test(draft.date)) return "Tanggal tidak valid.";
+  if (!isValidTime(draft.startTime) || !isValidTime(draft.endTime)) return "Format jam tidak valid.";
+  if (timeToMinutes(draft.endTime) <= timeToMinutes(draft.startTime)) {
+    return "Jam selesai harus setelah jam mulai.";
   }
-
-  const offsetMins = currentMins - gridStartMins;
-  return (offsetMins / 60) * hourHeight;
+  return null;
 }
 
-export function getEventsForDate(
-  events: CalendarEvent[],
-  dateStr: string
-): CalendarEvent[] {
+/* ------------------------------------------------------------------ */
+/* Layout: overlapping events are placed side-by-side (like GCal)      */
+/* ------------------------------------------------------------------ */
+
+export type PositionedEvent = {
+  event: CalendarEvent;
+  top: number;
+  height: number;
+  column: number;
+  columns: number;
+};
+
+export function layoutDayEvents(events: CalendarEvent[], hourHeight = HOUR_HEIGHT_PX): PositionedEvent[] {
+  const sorted = [...events].sort(
+    (a, b) =>
+      timeToMinutes(a.startTime) - timeToMinutes(b.startTime) ||
+      timeToMinutes(b.endTime) - timeToMinutes(a.endTime),
+  );
+
+  const result: PositionedEvent[] = [];
+  let cluster: { event: CalendarEvent; start: number; end: number; column: number }[] = [];
+  let columnEnds: number[] = [];
+  let clusterEnd = -1;
+
+  const flush = () => {
+    const columns = Math.max(1, columnEnds.length);
+    for (const item of cluster) {
+      result.push({
+        event: item.event,
+        top: (item.start / 60) * hourHeight,
+        height: ((item.end - item.start) / 60) * hourHeight,
+        column: item.column,
+        columns,
+      });
+    }
+    cluster = [];
+    columnEnds = [];
+    clusterEnd = -1;
+  };
+
+  for (const event of sorted) {
+    const start = timeToMinutes(event.startTime);
+    const end = Math.min(MINUTES_PER_DAY, Math.max(timeToMinutes(event.endTime), start + MIN_EVENT_MINUTES));
+
+    if (cluster.length > 0 && start >= clusterEnd) flush();
+
+    let column = columnEnds.findIndex((columnEnd) => columnEnd <= start);
+    if (column === -1) {
+      column = columnEnds.length;
+      columnEnds.push(end);
+    } else {
+      columnEnds[column] = end;
+    }
+
+    cluster.push({ event, start, end, column });
+    clusterEnd = Math.max(clusterEnd, end);
+  }
+  flush();
+
+  return result;
+}
+
+export function getEventsForDate(events: CalendarEvent[], isoDate: string): CalendarEvent[] {
   return events
-    .filter((e) => e.date === dateStr)
+    .filter((e) => e.date === isoDate)
     .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+}
+
+/* ------------------------------------------------------------------ */
+/* Persistence                                                         */
+/* ------------------------------------------------------------------ */
+
+export const EMPTY_EVENTS: CalendarEvent[] = [];
+
+export function getCalendarStorageKey(userId?: string | null): string {
+  return `${CALENDAR_STORAGE_PREFIX}${userId || "guest"}`;
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+export function normalizeEvent(raw: unknown): CalendarEvent | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.id !== "string" || LEGACY_SEED_EVENT_IDS.has(r.id)) return null;
+  if (typeof r.date !== "string" || !DATE_RE.test(r.date)) return null;
+  if (typeof r.startTime !== "string" || !isValidTime(r.startTime)) return null;
+  if (typeof r.endTime !== "string" || !isValidTime(r.endTime)) return null;
+
+  return {
+    id: r.id,
+    title: typeof r.title === "string" && r.title.trim() ? r.title : "(Tanpa judul)",
+    date: r.date,
+    startTime: r.startTime,
+    endTime: r.endTime,
+    color: typeof r.color === "string" && HEX_RE.test(r.color) ? r.color : DEFAULT_EVENT_COLOR,
+    category: r.category === "task" ? "task" : "event",
+    description: optionalString(r.description),
+    linkedNoteId: optionalString(r.linkedNoteId),
+    linkedNoteTitle: optionalString(r.linkedNoteTitle),
+    linkedItemId: optionalString(r.linkedItemId),
+  };
+}
+
+/** Parses the raw localStorage value. Missing/corrupt data => empty calendar. */
+export function parseStoredEvents(raw: string | null): CalendarEvent[] {
+  if (!raw) return EMPTY_EVENTS;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return EMPTY_EVENTS;
+    return parsed.map(normalizeEvent).filter((e): e is CalendarEvent => e !== null);
+  } catch {
+    return EMPTY_EVENTS;
+  }
+}
+
+export function createEventId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `event_${crypto.randomUUID()}`;
+  }
+  return `event_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
