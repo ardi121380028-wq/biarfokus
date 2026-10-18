@@ -118,7 +118,7 @@ export function CalendarMonthView({
                             {event.startTime}
                           </span>
                           <span className="cal-month-event-title">
-                            {event.title}
+                            {event.linkedItemText ? `☑️ ${event.title}` : event.title}
                           </span>
                         </div>
                       ))}

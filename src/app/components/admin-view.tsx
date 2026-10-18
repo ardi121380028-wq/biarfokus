@@ -192,6 +192,11 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
     completedPomodoros: 0,
     totalTasks: 0,
     completedTasks: 0,
+    totalPageViews: 0,
+    pageViewsToday: 0,
+    uniqueVisitorsTotal: 0,
+    uniqueVisitorsToday: 0,
+    dailyVisits: [],
     auditLogs: [],
   };
 
@@ -223,6 +228,64 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
           ✓ {successMessage}
         </p>
       )}
+
+      {/* Website Traffic & Visitor Tracking Section */}
+      <section className="admin-traffic-section" aria-label="Statistik Kunjungan Website">
+        <div className="section-subheading">
+          <h2>🌐 Rekap Kunjungan Website (Traffic Analytics)</h2>
+          <span>Pantau berapa banyak pengunjung & tayangan web yang masuk secara real-time</span>
+        </div>
+
+        <div className="stat-grid admin-traffic-grid">
+          <div className="stat-card">
+            <span>🌐 Total Kunjungan Web</span>
+            <strong>{data.totalPageViews}</strong>
+            <small>Total tayangan halaman (all-time)</small>
+          </div>
+          <div className="stat-card">
+            <span>👥 Pengunjung Unik Hari Ini</span>
+            <strong>{data.uniqueVisitorsToday}</strong>
+            <small>Visitor unik masuk hari ini</small>
+          </div>
+          <div className="stat-card">
+            <span>📈 Kunjungan Hari Ini</span>
+            <strong>{data.pageViewsToday}</strong>
+            <small>Tayangan halaman hari ini</small>
+          </div>
+          <div className="stat-card">
+            <span>👤 Total Pengunjung Unik</span>
+            <strong>{data.uniqueVisitorsTotal}</strong>
+            <small>Visitor unik terlacak</small>
+          </div>
+        </div>
+
+        {/* 7-Day Traffic Trend Table */}
+        {data.dailyVisits && data.dailyVisits.length > 0 && (
+          <div className="admin-traffic-table-card">
+            <strong className="traffic-table-title">Tren Kunjungan 7 Hari Terakhir</strong>
+            <div className="admin-traffic-table-wrapper">
+              <table className="admin-traffic-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Tayangan Halaman (Views)</th>
+                    <th>Pengunjung Unik (Visitors)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.dailyVisits.map((day) => (
+                    <tr key={day.date}>
+                      <td>{day.date}</td>
+                      <td><strong>{day.pageViews}</strong> views</td>
+                      <td><strong>{day.uniqueVisitors}</strong> unik</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </section>
 
       <div className="admin-table">
         <div>

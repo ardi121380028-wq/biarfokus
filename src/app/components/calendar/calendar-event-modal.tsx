@@ -51,13 +51,28 @@ export function CalendarEventModal({
       return;
     }
 
-    // Capture linked note title snapshot
+    // Capture linked note title and specific sub-task snapshot
     let linkedNoteTitle = draft.linkedNoteTitle;
+    let linkedItemText = draft.linkedItemText;
+
     if (selectedNote) {
       linkedNoteTitle = selectedNote.title || "(Catatan)";
+      if (draft.linkedItemId && selectedNote.items) {
+        const found = selectedNote.items.find((it) => it.id === draft.linkedItemId);
+        if (found) {
+          linkedItemText = found.text;
+        } else {
+          linkedItemText = undefined;
+        }
+      } else {
+        linkedItemText = undefined;
+      }
+    } else {
+      linkedNoteTitle = undefined;
+      linkedItemText = undefined;
     }
 
-    onSave({ ...draft, linkedNoteTitle }, editingId);
+    onSave({ ...draft, linkedNoteTitle, linkedItemText }, editingId);
     onClose();
   }
 
@@ -177,6 +192,7 @@ export function CalendarEventModal({
                   ...draft,
                   linkedNoteId: noteId,
                   linkedItemId: undefined,
+                  linkedItemText: undefined,
                 });
               }}
               className="cal-select-note"
@@ -190,31 +206,88 @@ export function CalendarEventModal({
               ))}
             </select>
 
+            {/* If checklist note is chosen, show specific sub-task selector */}
+            {selectedNote && selectedNote.type === "checklist" && selectedNote.items && selectedNote.items.length > 0 && (
+              <div className="cal-subtask-picker-row">
+                <span className="cal-field-label">🎯 Pilih Sub-task / Checklist Spesifik:</span>
+                <select
+                  value={draft.linkedItemId || ""}
+                  onChange={(e) => {
+                    const itemId = e.target.value || undefined;
+                    const item = selectedNote.items?.find((it) => it.id === itemId);
+                    setDraft({
+                      ...draft,
+                      linkedItemId: itemId,
+                      linkedItemText: item?.text,
+                      title: !draft.title.trim() && item?.text ? item.text : draft.title,
+                    });
+                  }}
+                  className="cal-select-note cal-select-subtask"
+                >
+                  <option value="">-- Semua Sub-task (Seluruh Catatan) --</option>
+                  {selectedNote.items.map((it) => (
+                    <option key={it.id} value={it.id}>
+                      {it.done ? "✓ " : "○ "}
+                      {it.text || "(Item tanpa teks)"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Preview of Connected Note */}
             {selectedNote && (
               <div className="cal-linked-preview-box">
                 <div className="preview-header">
-                  <strong>Terhubung: {selectedNote.title}</strong>
-                  <span>{selectedNote.type === "checklist" ? "Checklist" : "Teks"}</span>
+                  <strong>Terhubung: {selectedNote.title || "(Tanpa judul)"}</strong>
+                  <span>{selectedNote.type === "checklist" ? "Checklist / Todo" : "Teks"}</span>
                 </div>
 
-                {selectedNote.type === "checklist" && selectedNote.items && (
-                  <div className="preview-items-list">
-                    {selectedNote.items.slice(0, 4).map((it) => (
-                      <div key={it.id} className="preview-item">
-                        <span>{it.done ? "✓" : "○"}</span>
-                        <span className={it.done ? "preview-done" : ""}>
-                          {it.text}
-                        </span>
-                      </div>
-                    ))}
-                    {selectedNote.items.length > 4 && (
-                      <small className="preview-more">
-                        +{selectedNote.items.length - 4} item lainnya...
-                      </small>
-                    )}
+                {selectedNote.type === "checklist" && selectedNote.items && selectedNote.items.length > 0 ? (
+                  <div className="preview-items-list interactive">
+                    <span className="preview-help-text">
+                      💡 Klik item di bawah untuk langsung menargetkannya ke time-blocking:
+                    </span>
+                    {selectedNote.items.map((it) => {
+                      const isSelected = draft.linkedItemId === it.id;
+                      return (
+                        <div
+                          key={it.id}
+                          className={`preview-item-interactive ${isSelected ? "is-selected-subtask" : ""}`}
+                          onClick={() => {
+                            if (isSelected) {
+                              setDraft({
+                                ...draft,
+                                linkedItemId: undefined,
+                                linkedItemText: undefined,
+                              });
+                            } else {
+                              setDraft({
+                                ...draft,
+                                linkedItemId: it.id,
+                                linkedItemText: it.text,
+                                title: !draft.title.trim() ? it.text : draft.title,
+                              });
+                            }
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          title={isSelected ? "Klik untuk batalkan target spesifik" : "Klik untuk jadikan target jadwal"}
+                        >
+                          <span className="preview-item-check">{it.done ? "✓" : "○"}</span>
+                          <span className={`preview-item-title ${it.done ? "preview-done" : ""}`}>
+                            {it.text || "(Item tanpa teks)"}
+                          </span>
+                          {isSelected && (
+                            <span className="preview-selected-tag">🎯 Terpilih</span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                ) : selectedNote.content ? (
+                  <p className="preview-content-text">{selectedNote.content.slice(0, 160)}</p>
+                ) : null}
               </div>
             )}
           </div>

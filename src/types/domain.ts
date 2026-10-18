@@ -60,12 +60,23 @@ export type AdminUserItem = {
   createdAt: string;
 };
 
+export type DailyVisitStat = {
+  date: string; // YYYY-MM-DD
+  pageViews: number;
+  uniqueVisitors: number;
+};
+
 export type AdminOverview = {
   totalUsers: number;
   activeUsersToday: number;
   completedPomodoros: number;
   totalTasks: number;
   completedTasks: number;
+  totalPageViews: number;
+  pageViewsToday: number;
+  uniqueVisitorsTotal: number;
+  uniqueVisitorsToday: number;
+  dailyVisits: DailyVisitStat[];
   auditLogs: AdminAuditLog[];
 };
 
@@ -118,4 +129,5 @@ export type CalendarEvent = {
   linkedNoteId?: string;
   linkedNoteTitle?: string; // snapshot, used as fallback if the note is deleted
   linkedItemId?: string; // optional specific checklist item inside the linked note
+  linkedItemText?: string; // snapshot of specific checklist item text
 };

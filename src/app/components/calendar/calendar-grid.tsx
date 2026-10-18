@@ -196,7 +196,11 @@ export function CalendarGrid({
   const totalHeight = 24 * HOUR_HEIGHT_PX;
 
   return (
-    <div className={`cal-grid-wrapper ${dragState ? "is-active-dragging" : ""}`}>
+    <div
+      className={`cal-grid-wrapper ${days.length === 1 ? "view-day" : "view-week"} ${
+        dragState ? "is-active-dragging" : ""
+      }`}
+    >
       <div ref={scrollRef} className="cal-main-scroll">
         {/* Sticky Columns Header */}
         <div className="cal-date-columns-header">
@@ -358,14 +362,21 @@ export function CalendarGrid({
                           <span className="cal-event-time">
                             {displayStartTime} – {displayEndTime}
                           </span>
-                          {event.linkedNoteTitle && (
+                          {event.linkedItemText ? (
+                            <span
+                              className="cal-event-linked-badge cal-event-subtask-badge"
+                              title={`Sub-task: ${event.linkedItemText}${event.linkedNoteTitle ? ` (${event.linkedNoteTitle})` : ""}`}
+                            >
+                              ☑️ {event.linkedItemText}
+                            </span>
+                          ) : event.linkedNoteTitle ? (
                             <span
                               className="cal-event-linked-badge"
                               title={`Terhubung dengan catatan: ${event.linkedNoteTitle}`}
                             >
                               📝 {event.linkedNoteTitle}
                             </span>
-                          )}
+                          ) : null}
                         </div>
 
                         {/* Bottom Resize Handle */}

@@ -33,13 +33,19 @@ export function getDayStartIso(now = new Date()): string {
   return start.toISOString();
 }
 
-export function calculateAdminMetrics(input: {
-  totalUsers: number;
-  sessionsToday: Array<{ user_id: string }>;
-  completedPomodoros: number;
-  tasks: Array<{ completed: boolean }>;
-  auditLogs: AdminAuditLog[];
-}): AdminOverview {
+export function calculateAdminMetrics(
+  input: {
+    totalUsers: number;
+    sessionsToday: Array<{ user_id: string }>;
+    completedPomodoros: number;
+    tasks: Array<{ completed: boolean }>;
+    totalPageViews?: number;
+    recentVisits?: Array<{ created_at: string; visitor_id: string }>;
+    allTimeVisitorIds?: string[];
+    auditLogs: AdminAuditLog[];
+  },
+  now = new Date(),
+): AdminOverview {
   const uniqueActiveUsers = new Set(
     input.sessionsToday
       .map((session) => session.user_id)
@@ -47,12 +53,66 @@ export function calculateAdminMetrics(input: {
   );
   const completedTasks = input.tasks.filter((task) => task.completed).length;
 
+  const todayIsoPrefix = now.toISOString().slice(0, 10);
+  const recentVisits = input.recentVisits || [];
+
+  // Group visits over the last 7 days (including today)
+  const dailyVisitsMap = new Map<string, { pageViews: number; visitors: Set<string> }>();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dateKey = d.toISOString().slice(0, 10);
+    dailyVisitsMap.set(dateKey, { pageViews: 0, visitors: new Set() });
+  }
+
+  let pageViewsToday = 0;
+  const visitorsToday = new Set<string>();
+  const allVisitorsInRecent = new Set<string>();
+
+  for (const visit of recentVisits) {
+    if (!visit.created_at) continue;
+    const dateKey = visit.created_at.slice(0, 10);
+    if (visit.visitor_id) {
+      allVisitorsInRecent.add(visit.visitor_id);
+    }
+    if (dateKey === todayIsoPrefix) {
+      pageViewsToday++;
+      if (visit.visitor_id) {
+        visitorsToday.add(visit.visitor_id);
+      }
+    }
+    const bucket = dailyVisitsMap.get(dateKey);
+    if (bucket) {
+      bucket.pageViews++;
+      if (visit.visitor_id) {
+        bucket.visitors.add(visit.visitor_id);
+      }
+    }
+  }
+
+  const dailyVisits = Array.from(dailyVisitsMap.entries()).map(([date, data]) => ({
+    date,
+    pageViews: data.pageViews,
+    uniqueVisitors: data.visitors.size,
+  }));
+
+  const totalPageViews = Math.max(0, input.totalPageViews ?? recentVisits.length);
+  const uniqueVisitorsTotal = Math.max(
+    visitorsToday.size,
+    input.allTimeVisitorIds ? new Set(input.allTimeVisitorIds).size : allVisitorsInRecent.size,
+  );
+
   return {
     totalUsers: Math.max(0, input.totalUsers),
     activeUsersToday: uniqueActiveUsers.size,
     completedPomodoros: Math.max(0, input.completedPomodoros),
     totalTasks: input.tasks.length,
     completedTasks,
+    totalPageViews,
+    pageViewsToday,
+    uniqueVisitorsTotal,
+    uniqueVisitorsToday: visitorsToday.size,
+    dailyVisits,
     auditLogs: input.auditLogs,
   };
 }
@@ -76,8 +136,19 @@ export async function loadAdminOverview(
   now = new Date(),
 ): Promise<AdminOverview> {
   const todayStart = getDayStartIso(now);
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  const [profilesRes, sessionsTodayRes, pomodorosRes, tasksRes, auditLogsRes] = await Promise.all([
+  const [
+    profilesRes,
+    sessionsTodayRes,
+    pomodorosRes,
+    tasksRes,
+    auditLogsRes,
+    siteVisitsCountRes,
+    recentVisitsRes,
+  ] = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase
       .from("pomodoro_sessions")
@@ -93,6 +164,14 @@ export async function loadAdminOverview(
       .select("id, actor_user_id, action, target_type, target_id, metadata, created_at")
       .order("created_at", { ascending: false })
       .limit(15),
+    supabase
+      .from("site_visits")
+      .select("id", { count: "exact", head: true }),
+    supabase
+      .from("site_visits")
+      .select("visitor_id, created_at")
+      .gte("created_at", sevenDaysAgo.toISOString())
+      .order("created_at", { ascending: true }),
   ]);
 
   if (profilesRes.error) throw profilesRes.error;
@@ -101,13 +180,24 @@ export async function loadAdminOverview(
   if (tasksRes.error) throw tasksRes.error;
   if (auditLogsRes.error) throw auditLogsRes.error;
 
-  return calculateAdminMetrics({
-    totalUsers: profilesRes.count ?? 0,
-    sessionsToday: (sessionsTodayRes.data ?? []) as Array<{ user_id: string }>,
-    completedPomodoros: pomodorosRes.count ?? 0,
-    tasks: (tasksRes.data ?? []) as Array<{ completed: boolean }>,
-    auditLogs: (auditLogsRes.data ?? []) as AdminAuditLog[],
-  });
+  // site_visits queries degrade gracefully if the table is freshly migrating
+  const totalPageViews = siteVisitsCountRes.error ? 0 : (siteVisitsCountRes.count ?? 0);
+  const recentVisits = recentVisitsRes.error
+    ? []
+    : ((recentVisitsRes.data ?? []) as Array<{ created_at: string; visitor_id: string }>);
+
+  return calculateAdminMetrics(
+    {
+      totalUsers: profilesRes.count ?? 0,
+      sessionsToday: (sessionsTodayRes.data ?? []) as Array<{ user_id: string }>,
+      completedPomodoros: pomodorosRes.count ?? 0,
+      tasks: (tasksRes.data ?? []) as Array<{ completed: boolean }>,
+      totalPageViews,
+      recentVisits,
+      auditLogs: (auditLogsRes.data ?? []) as AdminAuditLog[],
+    },
+    now,
+  );
 }
 
 export async function createAdminAuditLog(

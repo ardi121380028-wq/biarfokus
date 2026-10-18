@@ -17,6 +17,7 @@ import { AdminView } from "@/app/components/admin-view";
 import { PricingView } from "@/app/components/pricing-view";
 import { NotesModal } from "@/app/components/notes-modal";
 import { CalendarView } from "@/app/components/calendar-view";
+import { trackSiteVisit } from "@/features/analytics/visitor-tracker";
 import { playTickSound } from "@/features/audio/ticking-sound";
 import { isAdminRole, loadUserRole } from "@/features/admin/admin-service";
 import {
@@ -267,6 +268,10 @@ export default function Home() {
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
   }, [soundEnabled]);
+
+  useEffect(() => {
+    void trackSiteVisit(`/${activeView === "timer" ? "" : activeView}`);
+  }, [activeView]);
 
   const completedTasks = useMemo(() => tasks.filter((task) => task.done).length, [tasks]);
   const activeTasksCount = useMemo(() => tasks.filter((task) => !task.done).length, [tasks]);

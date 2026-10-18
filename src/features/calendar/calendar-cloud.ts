@@ -14,6 +14,7 @@ type DbCalendarEvent = {
   linked_note_id: string | null;
   linked_note_title: string | null;
   linked_item_id: string | null;
+  linked_item_text?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -31,6 +32,7 @@ export function mapDbCalendarEvent(row: DbCalendarEvent): CalendarEvent {
     linkedNoteId: row.linked_note_id || undefined,
     linkedNoteTitle: row.linked_note_title || undefined,
     linkedItemId: row.linked_item_id || undefined,
+    linkedItemText: row.linked_item_text || undefined,
   };
 }
 
@@ -67,6 +69,7 @@ export async function upsertCloudEvent(
     linked_note_id: event.linkedNoteId || null,
     linked_note_title: event.linkedNoteTitle || null,
     linked_item_id: event.linkedItemId || null,
+    linked_item_text: event.linkedItemText || null,
     updated_at: new Date().toISOString(),
   };
 

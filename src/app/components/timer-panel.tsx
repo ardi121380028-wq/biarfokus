@@ -2,7 +2,7 @@
 
 import type { AmbientSoundMode, Task, TimerMode } from "@/types/domain";
 import { AMBIENT_SOUND_OPTIONS } from "@/features/audio/ambient-sound";
-import { formatTime, getCycleProgress } from "@/features/timer/timer-utils";
+import { formatTime } from "@/features/timer/timer-utils";
 
 type TimerPanelProps = {
   mode: TimerMode;
@@ -45,7 +45,6 @@ export function TimerPanel({
   onAmbientSoundChange,
   onColorChange,
 }: TimerPanelProps) {
-  const cycle = getCycleProgress(completedPomodoros, longBreakInterval);
   const goalPercentage = dailyGoalPomodoros > 0
     ? Math.min(100, Math.round((completedPomodoros / dailyGoalPomodoros) * 100))
     : 0;
@@ -62,18 +61,6 @@ export function TimerPanel({
             {modeLabels[item]}
           </button>
         ))}
-      </div>
-
-      <div className="cycle-bar" aria-label={`Siklus ${cycle.cycleNumber}, ${cycle.completedInCycle} dari ${cycle.totalInCycle} pomodoro selesai`}>
-        <span className="cycle-label">Siklus #{cycle.cycleNumber}</span>
-        <div className="cycle-dots" aria-hidden="true">
-          {Array.from({ length: cycle.totalInCycle }, (_, index) => (
-            <span
-              key={index}
-              className={index < cycle.completedInCycle ? "cycle-dot filled" : "cycle-dot"}
-            />
-          ))}
-        </div>
       </div>
 
       {dailyGoalPomodoros > 0 && (
