@@ -391,6 +391,33 @@ export function normalizeBoard(raw: unknown): KanbanBoard {
                     })
                   : [],
                 comments: Array.isArray(cardObj.comments) ? cardObj.comments : [],
+                assignees: Array.isArray(cardObj.assignees)
+                  ? cardObj.assignees.map((a: unknown) => {
+                      const aObj = (a && typeof a === "object" ? a : {}) as {
+                        id?: string;
+                        name?: string;
+                        avatarUrl?: string | null;
+                        role?: string;
+                      };
+                      return {
+                        id: typeof aObj.id === "string" ? aObj.id : createId("pic"),
+                        name: typeof aObj.name === "string" ? aObj.name : "Member",
+                        avatarUrl: typeof aObj.avatarUrl === "string" ? aObj.avatarUrl : null,
+                        role: typeof aObj.role === "string" ? aObj.role : undefined,
+                      };
+                    })
+                  : cardObj.assigneeName
+                  ? [
+                      {
+                        id: typeof cardObj.assigneeId === "string" ? cardObj.assigneeId : createId("pic"),
+                        name: cardObj.assigneeName,
+                        avatarUrl: typeof cardObj.assigneeAvatar === "string" ? cardObj.assigneeAvatar : null,
+                      },
+                    ]
+                  : [],
+                assigneeId: typeof cardObj.assigneeId === "string" ? cardObj.assigneeId : null,
+                assigneeName: typeof cardObj.assigneeName === "string" ? cardObj.assigneeName : null,
+                assigneeAvatar: typeof cardObj.assigneeAvatar === "string" ? cardObj.assigneeAvatar : null,
                 order: typeof cardObj.order === "number" ? cardObj.order : cIdx,
                 createdAt: typeof cardObj.createdAt === "string" ? cardObj.createdAt : now,
                 updatedAt: typeof cardObj.updatedAt === "string" ? cardObj.updatedAt : now,

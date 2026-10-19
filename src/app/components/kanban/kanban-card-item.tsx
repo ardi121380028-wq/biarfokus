@@ -130,21 +130,50 @@ export function KanbanCardItem({
           )}
         </div>
 
-        {/* Quick Send to Eat Your Frog button */}
-        {onSendToFrog && (
-          <button
-            type="button"
-            className="kanban-card-frog-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSendToFrog(card);
-            }}
-            title="Kirim ke Eat Your Frog (Target Fokus)"
-            aria-label="Kirim ke Eat Your Frog"
-          >
-            🐸
-          </button>
-        )}
+        <div className="kanban-card-footer-right">
+          {/* Assignees / PIC Avatar Stack */}
+          {card.assignees && card.assignees.length > 0 && (
+            <div
+              className="kanban-card-assignees-stack"
+              title={`PIC: ${card.assignees.map((a) => a.name).join(", ")}`}
+            >
+              {card.assignees.slice(0, 3).map((assignee, idx) =>
+                assignee.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={assignee.id || idx}
+                    src={assignee.avatarUrl}
+                    alt={assignee.name}
+                    className="kanban-card-pic-avatar"
+                  />
+                ) : (
+                  <span key={assignee.id || idx} className="kanban-card-pic-avatar placeholder">
+                    {(assignee.name || "U").charAt(0).toUpperCase()}
+                  </span>
+                ),
+              )}
+              {card.assignees.length > 3 && (
+                <span className="kanban-card-pic-more">+{card.assignees.length - 3}</span>
+              )}
+            </div>
+          )}
+
+          {/* Quick Send to Eat Your Frog button */}
+          {onSendToFrog && (
+            <button
+              type="button"
+              className="kanban-card-frog-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSendToFrog(card);
+              }}
+              title="Kirim ke Eat Your Frog (Target Fokus)"
+              aria-label="Kirim ke Eat Your Frog"
+            >
+              🐸
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

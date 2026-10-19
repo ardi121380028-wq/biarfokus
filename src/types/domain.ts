@@ -169,6 +169,14 @@ export type KanbanComment = {
   createdAt: string;
 };
 
+export type KanbanCardAssignee = {
+  id: string; // userId or unique member id
+  name: string;
+  avatarUrl?: string | null;
+  role?: string;
+  email?: string | null;
+};
+
 export type KanbanCard = {
   id: string;
   title: string;
@@ -182,6 +190,7 @@ export type KanbanCard = {
   comments: KanbanComment[];
   pomodoros?: number;
   frog?: boolean;
+  assignees?: KanbanCardAssignee[];
   assigneeId?: string | null;
   assigneeName?: string | null;
   assigneeAvatar?: string | null;

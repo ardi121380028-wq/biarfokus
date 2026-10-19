@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
-import type { KanbanCard } from "@/types/domain";
+import type { User } from "@supabase/supabase-js";
+import type { KanbanBoardMember, KanbanCard, UserRole } from "@/types/domain";
 import { BOARD_BACKGROUNDS } from "@/features/kanban/kanban-service";
+import { loadBoardMembersApi } from "@/features/kanban/kanban-cloud";
 import { useKanban } from "@/features/kanban/use-kanban";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
+import { KanbanSidebar } from "./kanban-sidebar";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCardDialog } from "./kanban-card-dialog";
 import { KanbanBoardModal } from "./kanban-board-modal";
@@ -13,11 +16,32 @@ import { KanbanJoinModal } from "./kanban-join-modal";
 
 type KanbanViewProps = {
   userId?: string | null;
+  user?: User | null;
+  userName?: string;
+  userAvatar?: string | null;
+  userRole?: UserRole;
+  dark?: boolean;
+  onToggleDark?: () => void;
+  onOpenSettings?: () => void;
+  onOpenProfile?: () => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
   onSendToFrog?: (cardTitle: string, boardTitle: string) => void;
   onRequireLogin?: () => void;
 };
 
-export function KanbanView({ userId, onSendToFrog, onRequireLogin }: KanbanViewProps) {
+export function KanbanView({
+  userId,
+  user,
+  userName,
+  userAvatar,
+  dark,
+  onToggleDark,
+  onOpenSettings,
+  onOpenProfile,
+  onNavigate,
+  onSendToFrog,
+  onRequireLogin,
+}: KanbanViewProps) {
   const {
     boards,
     activeBoard,
@@ -36,20 +60,44 @@ export function KanbanView({ userId, onSendToFrog, onRequireLogin }: KanbanViewP
     joinBoard,
   } = useKanban(userId);
 
+  // Collapsible Sidebar state (persisted)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("biarfokus.kanban.sidebar_collapsed");
+        if (stored !== null) return stored === "true";
+        return window.innerWidth < 1024;
+      } catch {}
+    }
+    return false;
+  });
+
+  function toggleSidebar() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("biarfokus.kanban.sidebar_collapsed", String(next));
+        } catch {}
+      }
+      return next;
+    });
+  }
+
   const [searchQuery, setSearchQuery] = useState("");
   const [boardModalOpen, setBoardModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [boardMembers, setBoardMembers] = useState<KanbanBoardMember[]>([]);
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       try {
         const url = new URL(window.location.href);
         return url.searchParams.get("kanbanInvite") || url.searchParams.get("invite");
-      } catch {
-        // Safe URL check
-      }
+      } catch {}
     }
     return null;
   });
+
   const [activeCardData, setActiveCardData] = useState<{ card: KanbanCard; listId: string } | null>(null);
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
@@ -60,6 +108,18 @@ export function KanbanView({ userId, onSendToFrog, onRequireLogin }: KanbanViewP
   // Outside click dismiss for wallpaper dropdown
   const bgMenuRef = useRef<HTMLDivElement>(null);
   useOutsideClick(bgMenuRef, () => setBgMenuOpen(false), bgMenuOpen);
+
+  // Load board members for team avatar display and task PIC assignment
+  useEffect(() => {
+    if (!activeBoard.id) return;
+    let cancelled = false;
+    loadBoardMembersApi(activeBoard.id).then((members) => {
+      if (!cancelled) setBoardMembers(members);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeBoard.id]);
 
   // Drag-to-scroll canvas state
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -125,6 +185,22 @@ export function KanbanView({ userId, onSendToFrog, onRequireLogin }: KanbanViewP
     currentBg.textColor === "#111111"
   );
 
+  // Month and Year format for Catatan-style headline
+  const currentMonthYear = useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat("id-ID", {
+        month: "long",
+        year: "numeric",
+      }).format(new Date());
+    } catch {
+      return "Bulan Ini";
+    }
+  }, []);
+
+  const totalCardsCount = useMemo(() => {
+    return activeBoard.lists.reduce((acc, l) => acc + (Array.isArray(l.cards) ? l.cards.length : 0), 0);
+  }, [activeBoard.lists]);
+
   // Filtered lists if search query is active
   const displayedLists = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -136,10 +212,11 @@ export function KanbanView({ userId, onSendToFrog, onRequireLogin }: KanbanViewP
         const titleMatch = card.title.toLowerCase().includes(q);
         const descMatch = (card.description ?? "").toLowerCase().includes(q);
         const labelMatch = card.labels.some((l) => l.name.toLowerCase().includes(q));
+        const picMatch = (card.assignees || []).some((a) => a.name.toLowerCase().includes(q));
         const checkMatch = card.checklists.some((c) =>
           c.items.some((i) => i.text.toLowerCase().includes(q)),
         );
-        return titleMatch || descMatch || labelMatch || checkMatch;
+        return titleMatch || descMatch || labelMatch || picMatch || checkMatch;
       }),
     }));
   }, [activeBoard.lists, searchQuery]);
@@ -268,241 +345,318 @@ export function KanbanView({ userId, onSendToFrog, onRequireLogin }: KanbanViewP
   })();
 
   return (
-    <div className={`kanban-container-frame ${isFullscreen ? "is-fullscreen" : ""}`}>
+    <div className={`kanban-app-workspace ${isLightBg ? "kanban-light-theme" : "kanban-dark-theme"} ${isFullscreen ? "is-fullscreen" : ""}`}>
+      {/* Left Collapsible Sidebar */}
+      <KanbanSidebar
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebar}
+        boards={boards}
+        activeBoardId={activeBoardId}
+        onSelectBoard={selectBoard}
+        onCreateBoardModalOpen={() => setBoardModalOpen(true)}
+        onDeleteBoard={deleteBoard}
+        onNavigate={(view) => {
+          if (onNavigate) onNavigate(view);
+        }}
+        onOpenSettings={onOpenSettings}
+        onOpenShare={() => setShareModalOpen(true)}
+        dark={dark}
+        onToggleDark={onToggleDark}
+      />
+
+      {/* Main Kanban Content Area */}
       <div
         ref={viewportRef}
-        className={`kanban-main-viewport ${isLightBg ? "kanban-light-theme" : "kanban-dark-theme"} ${
-          isFullscreen ? "is-fullscreen" : ""
-        }`}
+        className="kanban-workspace-content"
         style={{
           background: currentBg.value,
           color: currentBg.textColor,
         }}
       >
-        {/* Top Header Bar (Screenshot 1) */}
-      <div className="kanban-top-bar">
-        <div className="kanban-left-controls">
-          {/* Board Title */}
-          {isEditingBoardTitle ? (
-            <input
-              type="text"
-              value={boardTitleInput}
-              onChange={(e) => setBoardTitleInput(e.target.value)}
-              onBlur={handleSaveBoardTitle}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSaveBoardTitle();
-                if (e.key === "Escape") {
-                  setBoardTitleInput(activeBoard.title);
-                  setIsEditingBoardTitle(false);
-                }
-              }}
-              className="kanban-board-title-input"
-              autoFocus
-            />
-          ) : (
-            <h1
-              className="kanban-board-title"
-              onClick={() => {
-                setBoardTitleInput(activeBoard.title);
-                setIsEditingBoardTitle(true);
-              }}
-              title="Klik untuk mengubah nama board"
-            >
-              {activeBoard.title}
-            </h1>
-          )}
+        {/* Top Header Bar (with Trello-style Profile on the Right) */}
+        <div className="kanban-top-bar">
+          <div className="kanban-left-controls">
+            {sidebarCollapsed && (
+              <button
+                type="button"
+                className="kanban-bar-btn kanban-sidebar-open-pill"
+                onClick={toggleSidebar}
+                title="Buka menu navigasi & daftar papan"
+              >
+                <span>☰</span>
+                <span className="kanban-sidebar-open-label">Papan</span>
+              </button>
+            )}
 
-          {/* Team / Shared Badge */}
-          {activeBoard.isShared && (
-            <span
-              className="kanban-role-badge editor"
-              title="Papan kolaborasi bersama tim"
-            >
-              👥 Tim
-            </span>
-          )}
-          {activeBoard.role === "viewer" && (
-            <span
-              className="kanban-role-badge viewer"
-              title="Kamu memiliki izin lihat saja (Viewer)"
-            >
-              👁️ Viewer
-            </span>
-          )}
+            {/* Breadcrumb Indicator */}
+            <div className="kanban-breadcrumb-row">
+              <span className="kanban-breadcrumb-root">Project Canban</span>
+              <span className="kanban-breadcrumb-sep">/</span>
+              <span className="kanban-breadcrumb-current">{activeBoard.title}</span>
+            </div>
 
-          {/* Switch Boards Button */}
-          <button
-            type="button"
-            className="kanban-bar-btn"
-            onClick={() => {
-              setBgMenuOpen(false);
-              setBoardModalOpen(true);
-            }}
-            title="Ganti atau buat board baru"
-          >
-            🗂️ Switch boards ({boards.length})
-          </button>
-
-          {/* Background Wallpaper Switcher */}
-          <div style={{ position: "relative" }} ref={bgMenuRef}>
+            {/* Switch Boards Button */}
             <button
               type="button"
               className="kanban-bar-btn"
-              onClick={() => setBgMenuOpen(!bgMenuOpen)}
-              title="Ganti wallpaper background"
+              onClick={() => {
+                setBgMenuOpen(false);
+                setBoardModalOpen(true);
+              }}
+              title="Ganti atau buat board baru"
             >
-              🎨 Wallpaper
+              🗂️ Switch boards ({boards.length})
             </button>
-            {bgMenuOpen && (
-              <div className="kanban-bg-dropdown">
-                {BOARD_BACKGROUNDS.map((bg) => (
-                  <button
-                    key={bg.id}
-                    type="button"
-                    className={`kanban-bg-item ${bg.id === activeBoard.background ? "active" : ""}`}
-                    onClick={() => {
-                      updateBoard(activeBoard.id, { background: bg.id });
-                      setBgMenuOpen(false);
-                    }}
-                  >
-                    <span className="bg-preview-swatch" style={{ background: bg.value }} />
-                    <span>{bg.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Right Search Box & Actions */}
-        <div className="kanban-right-controls">
-          <div className="kanban-search-box">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              placeholder="Cari kartu di board..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="kanban-search-input"
-            />
-            {searchQuery && (
+            {/* Background Wallpaper Switcher */}
+            <div style={{ position: "relative" }} ref={bgMenuRef}>
               <button
                 type="button"
-                className="kanban-clear-search-btn"
-                onClick={() => setSearchQuery("")}
-                aria-label="Bersihkan pencarian"
+                className="kanban-bar-btn"
+                onClick={() => setBgMenuOpen(!bgMenuOpen)}
+                title="Ganti wallpaper background"
               >
-                ✕
+                🎨 Wallpaper
               </button>
-            )}
+              {bgMenuOpen && (
+                <div className="kanban-bg-dropdown">
+                  {BOARD_BACKGROUNDS.map((bg) => (
+                    <button
+                      key={bg.id}
+                      type="button"
+                      className={`kanban-bg-item ${bg.id === activeBoard.background ? "active" : ""}`}
+                      onClick={() => {
+                        updateBoard(activeBoard.id, { background: bg.id });
+                        setBgMenuOpen(false);
+                      }}
+                    >
+                      <span className="bg-preview-swatch" style={{ background: bg.value }} />
+                      <span>{bg.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Share & Invite Button */}
-          <button
-            type="button"
-            className="kanban-bar-btn kanban-share-bar-btn"
-            onClick={() => setShareModalOpen(true)}
-            title="Bagikan papan atau undang teman"
-          >
-            👥 Bagikan
-          </button>
+          {/* Right Search Box, Actions, & Profile (Trello-style) */}
+          <div className="kanban-right-controls">
+            <div className="kanban-search-box">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Cari kartu di board..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="kanban-search-input"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="kanban-clear-search-btn"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Bersihkan pencarian"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-          {/* Fullscreen Button ("ngefulin") */}
-          <button
-            type="button"
-            className="kanban-bar-btn kanban-fullscreen-btn"
-            onClick={toggleFullscreen}
-            title={isFullscreen ? "Keluar layar penuh (Esc)" : "Mode layar penuh"}
-          >
-            {isFullscreen ? "⤓ Perkecil" : "⛶ Layar Penuh"}
-          </button>
+            {/* Share & Invite Button */}
+            <button
+              type="button"
+              className="kanban-bar-btn kanban-share-bar-btn"
+              onClick={() => setShareModalOpen(true)}
+              title="Bagikan papan atau undang teman"
+            >
+              👥 Bagikan
+            </button>
 
-          <button
-            type="button"
-            className="kanban-new-board-btn"
-            onClick={() => setBoardModalOpen(true)}
-          >
-            + Board Baru
-          </button>
-        </div>
-      </div>
+            {/* Fullscreen Button */}
+            <button
+              type="button"
+              className="kanban-bar-btn kanban-fullscreen-btn"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Keluar layar penuh (Esc)" : "Mode layar penuh"}
+            >
+              {isFullscreen ? "⤓ Perkecil" : "⛶ Layar Penuh"}
+            </button>
 
-      {/* Horizontal Kanban Columns Canvas */}
-      <div
-        className={`kanban-canvas-scroll ${isPanning ? "is-panning" : ""}`}
-        ref={scrollContainerRef}
-        onMouseDown={handleMouseDownCanvas}
-        onMouseMove={handleMouseMoveCanvas}
-        onMouseUp={handleMouseUpCanvas}
-        onMouseLeave={handleMouseLeaveCanvas}
-        onWheel={handleWheelCanvas}
-      >
-        <div className="kanban-columns-row">
-          {displayedLists.map((list) => (
-            <KanbanColumn
-              key={list.id}
-              list={list}
-              onCardClick={(card, listId) => setActiveCardData({ card, listId })}
-              onSendToFrog={handleSendCardToFrog}
-              onAddCard={addCard}
-              onUpdateTitle={updateList}
-              onDeleteList={deleteList}
-              onDragStartCard={handleDragStartCard}
-              onDragEndCard={handleDragEndCard}
-              onDropCard={handleDropCard}
-            />
-          ))}
-
-          {/* "+ Add another list" column (Screenshot 1) */}
-          <div className="kanban-add-list-column">
-            {isAddingList ? (
-              <div className="kanban-add-list-composer">
-                <input
-                  type="text"
-                  placeholder="Enter list title..."
-                  value={newListTitle}
-                  onChange={(e) => setNewListTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAddListSubmit();
-                    if (e.key === "Escape") {
-                      setIsAddingList(false);
-                      setNewListTitle("");
-                    }
-                  }}
-                  className="kanban-composer-input"
-                  autoFocus
-                />
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
-                  <button
-                    type="button"
-                    className="kanban-composer-add-btn"
-                    onClick={handleAddListSubmit}
-                    disabled={!newListTitle.trim()}
-                  >
-                    Add list
-                  </button>
-                  <button
-                    type="button"
-                    className="kanban-composer-cancel-btn"
-                    onClick={() => {
-                      setIsAddingList(false);
-                      setNewListTitle("");
-                    }}
-                    aria-label="Batal"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
+            {/* Profile Avatar on Top Right (Trello-style!) */}
+            {user ? (
+              <button
+                type="button"
+                className="kanban-top-profile-avatar-btn"
+                onClick={onOpenProfile}
+                title={`Profil Akun: ${userName || "Pengguna"}`}
+                aria-label="Buka profil akun"
+              >
+                {userAvatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={userAvatar} alt="" className="kanban-avatar-img" />
+                ) : (
+                  <span className="kanban-avatar-fallback">
+                    {(userName || "U").charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="kanban-avatar-status-dot" />
+              </button>
             ) : (
               <button
                 type="button"
-                className="kanban-add-list-prompt-btn"
-                onClick={() => setIsAddingList(true)}
+                className="kanban-bar-btn kanban-signin-pill"
+                onClick={onRequireLogin}
+                title="Masuk ke Akun BiarFokus"
               >
-                + Add another list
+                🔐 Masuk
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Notion / Catatan-Style Headline Section (Image 3) */}
+        <div className="kanban-workspace-headline">
+          <div className="kanban-headline-left">
+            <span className="kanban-headline-emoji">🎯</span>
+            <div className="kanban-headline-titles">
+              <div className="kanban-headline-title-interactive">
+                {isEditingBoardTitle ? (
+                  <input
+                    type="text"
+                    value={boardTitleInput}
+                    onChange={(e) => setBoardTitleInput(e.target.value)}
+                    onBlur={handleSaveBoardTitle}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveBoardTitle();
+                      if (e.key === "Escape") {
+                        setBoardTitleInput(activeBoard.title);
+                        setIsEditingBoardTitle(false);
+                      }
+                    }}
+                    className="kanban-headline-input"
+                    autoFocus
+                  />
+                ) : (
+                  <h1
+                    className="kanban-headline-main-title"
+                    onClick={() => {
+                      setBoardTitleInput(activeBoard.title);
+                      setIsEditingBoardTitle(true);
+                    }}
+                    title="Klik untuk mengubah nama proyek"
+                  >
+                    {activeBoard.title}
+                    <span className="kanban-headline-edit-icon" aria-hidden="true">
+                      ✏️
+                    </span>
+                  </h1>
+                )}
+
+                {activeBoard.isShared && (
+                  <span className="kanban-role-badge editor" title="Papan kolaborasi bersama tim">
+                    👥 Tim
+                  </span>
+                )}
+                {activeBoard.role === "viewer" && (
+                  <span className="kanban-role-badge viewer" title="Izin hanya lihat">
+                    👁️ Viewer
+                  </span>
+                )}
+              </div>
+
+              {/* Subtitle / Month & Year Badge & Stats (Catatan / Notion style) */}
+              <div className="kanban-headline-meta-pills">
+                <span className="kanban-meta-pill date-pill">
+                  📅 {currentMonthYear}
+                </span>
+                <span className="kanban-meta-pill count-pill">
+                  📋 {activeBoard.lists.length} Kolom • 🗂️ {totalCardsCount} Kartu • 👥 {boardMembers.length > 0 ? boardMembers.length : 1} Anggota
+                </span>
+                <span className="kanban-meta-pill updated-pill">
+                  🕒 Diperbarui {activeBoard.updatedAt}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Horizontal Kanban Columns Canvas with internal vertical scroll */}
+        <div
+          className={`kanban-canvas-scroll ${isPanning ? "is-panning" : ""}`}
+          ref={scrollContainerRef}
+          onMouseDown={handleMouseDownCanvas}
+          onMouseMove={handleMouseMoveCanvas}
+          onMouseUp={handleMouseUpCanvas}
+          onMouseLeave={handleMouseLeaveCanvas}
+          onWheel={handleWheelCanvas}
+        >
+          <div className="kanban-columns-row">
+            {displayedLists.map((list) => (
+              <KanbanColumn
+                key={list.id}
+                list={list}
+                onCardClick={(card, listId) => setActiveCardData({ card, listId })}
+                onSendToFrog={handleSendCardToFrog}
+                onAddCard={addCard}
+                onUpdateTitle={updateList}
+                onDeleteList={deleteList}
+                onDragStartCard={handleDragStartCard}
+                onDragEndCard={handleDragEndCard}
+                onDropCard={handleDropCard}
+              />
+            ))}
+
+            {/* Add New List Column */}
+            <div className="kanban-add-list-column">
+              {isAddingList ? (
+                <div className="kanban-add-list-composer">
+                  <input
+                    type="text"
+                    className="kanban-add-list-input"
+                    placeholder="Enter list title..."
+                    value={newListTitle}
+                    onChange={(e) => setNewListTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddListSubmit();
+                      if (e.key === "Escape") {
+                        setIsAddingList(false);
+                        setNewListTitle("");
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <div className="kanban-add-list-actions">
+                    <button
+                      type="button"
+                      className="kanban-add-list-btn"
+                      onClick={handleAddListSubmit}
+                      disabled={!newListTitle.trim()}
+                    >
+                      Add list
+                    </button>
+                    <button
+                      type="button"
+                      className="kanban-cancel-list-btn"
+                      onClick={() => {
+                        setIsAddingList(false);
+                        setNewListTitle("");
+                      }}
+                      aria-label="Batal"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="kanban-add-list-prompt-btn"
+                  onClick={() => setIsAddingList(true)}
+                >
+                  + Add another list
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -512,21 +666,22 @@ export function KanbanView({ userId, onSendToFrog, onRequireLogin }: KanbanViewP
         <KanbanCardDialog
           card={currentCardDetail.card}
           listTitle={currentCardDetail.listTitle}
-          onUpdate={(updates) => updateCard(currentCardDetail.listId, currentCardDetail.card.id, updates)}
-          onDelete={() => {
-            deleteCard(currentCardDetail.listId, currentCardDetail.card.id);
-            setActiveCardData(null);
-          }}
+          boardMembers={boardMembers}
+          currentUserId={userId}
+          onUpdate={(updates) =>
+            updateCard(currentCardDetail.listId, currentCardDetail.card.id, updates)
+          }
+          onDelete={() => deleteCard(currentCardDetail.listId, currentCardDetail.card.id)}
           onClose={() => setActiveCardData(null)}
-          onSendToFrog={handleSendCardToFrog}
+          onSendToFrog={(card) => handleSendCardToFrog(card)}
         />
       )}
 
-      {/* Switch Boards & Templates Modal */}
+      {/* Switch Boards Modal */}
       {boardModalOpen && (
         <KanbanBoardModal
           boards={boards}
-          activeBoardId={activeBoardId}
+          activeBoardId={activeBoard.id}
           onSelectBoard={(id) => {
             selectBoard(id);
             setBoardModalOpen(false);
@@ -560,7 +715,6 @@ export function KanbanView({ userId, onSendToFrog, onRequireLogin }: KanbanViewP
           onRequireLogin={onRequireLogin}
         />
       )}
-      </div>
     </div>
   );
 }

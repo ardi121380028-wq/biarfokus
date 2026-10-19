@@ -1,13 +1,23 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { KanbanCard, KanbanChecklist, KanbanChecklistItem, KanbanComment, KanbanLabel } from "@/types/domain";
+import type {
+  KanbanBoardMember,
+  KanbanCard,
+  KanbanCardAssignee,
+  KanbanChecklist,
+  KanbanChecklistItem,
+  KanbanComment,
+  KanbanLabel,
+} from "@/types/domain";
 import { createId, formatUpdatedAt, LABEL_PALETTE } from "@/features/kanban/kanban-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 
 type KanbanCardDialogProps = {
   card: KanbanCard;
   listTitle: string;
+  boardMembers?: KanbanBoardMember[];
+  currentUserId?: string | null;
   onUpdate: (updates: Partial<KanbanCard>) => void;
   onDelete: () => void;
   onClose: () => void;
@@ -17,6 +27,8 @@ type KanbanCardDialogProps = {
 export function KanbanCardDialog({
   card,
   listTitle,
+  boardMembers = [],
+  currentUserId,
   onUpdate,
   onDelete,
   onClose,
@@ -31,6 +43,8 @@ export function KanbanCardDialog({
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [newCommentText, setNewCommentText] = useState("");
   const [showLabelPicker, setShowLabelPicker] = useState(false);
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+  const [customPicName, setCustomPicName] = useState("");
   const [showCoverPicker, setShowCoverPicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showChecklistPrompt, setShowChecklistPrompt] = useState(false);
@@ -39,6 +53,53 @@ export function KanbanCardDialog({
 
   // Quick cover emojis
   const COVER_EMOJIS = ["🐱", "⭐", "🚀", "💡", "🎯", "🔥", "📌", "🏆", "⚠️", "☕"];
+
+  function handleToggleAssignee(member: { id: string; name: string; avatarUrl?: string | null }) {
+    const currentAssignees = card.assignees || [];
+    const exists = currentAssignees.some((a) => a.id === member.id || a.name.toLowerCase() === member.name.toLowerCase());
+    let next: KanbanCardAssignee[];
+    if (exists) {
+      next = currentAssignees.filter((a) => a.id !== member.id && a.name.toLowerCase() !== member.name.toLowerCase());
+    } else {
+      next = [...currentAssignees, { id: member.id, name: member.name, avatarUrl: member.avatarUrl || null }];
+    }
+    onUpdate({
+      assignees: next,
+      assigneeId: next[0]?.id || null,
+      assigneeName: next[0]?.name || null,
+      assigneeAvatar: next[0]?.avatarUrl || null,
+    });
+  }
+
+  function handleAddCustomPic() {
+    const trimmed = customPicName.trim();
+    if (!trimmed) return;
+    const currentAssignees = card.assignees || [];
+    const newPic: KanbanCardAssignee = {
+      id: createId("pic"),
+      name: trimmed,
+      avatarUrl: null,
+    };
+    const next = [...currentAssignees, newPic];
+    onUpdate({
+      assignees: next,
+      assigneeId: next[0]?.id || null,
+      assigneeName: next[0]?.name || null,
+      assigneeAvatar: next[0]?.avatarUrl || null,
+    });
+    setCustomPicName("");
+  }
+
+  function handleRemoveAssignee(assigneeId: string) {
+    const currentAssignees = card.assignees || [];
+    const next = currentAssignees.filter((a) => a.id !== assigneeId);
+    onUpdate({
+      assignees: next,
+      assigneeId: next[0]?.id || null,
+      assigneeName: next[0]?.name || null,
+      assigneeAvatar: next[0]?.avatarUrl || null,
+    });
+  }
 
   function handleTitleBlur() {
     const trimmed = title.trim();
@@ -195,6 +256,137 @@ export function KanbanCardDialog({
         <div className="kanban-dialog-body">
           {/* Main Left Content */}
           <div className="kanban-dialog-main">
+            {/* PIC / Anggota Row */}
+            {card.assignees && card.assignees.length > 0 && (
+              <div className="kanban-dialog-section">
+                <span className="kanban-section-title">👥 Anggota / PIC</span>
+                <div className="kanban-pic-chips-row">
+                  {card.assignees.map((pic) => (
+                    <span key={pic.id} className="kanban-pic-chip">
+                      {pic.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={pic.avatarUrl} alt={pic.name} className="kanban-pic-chip-img" />
+                      ) : (
+                        <span className="kanban-pic-chip-placeholder">
+                          {(pic.name || "U").charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="kanban-pic-chip-name">{pic.name}</span>
+                      <button
+                        type="button"
+                        className="kanban-pic-remove-btn"
+                        onClick={() => handleRemoveAssignee(pic.id)}
+                        title="Hapus PIC"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    className="kanban-add-mini-btn"
+                    onClick={() => setShowMemberPicker(!showMemberPicker)}
+                    title="Tambah anggota / PIC"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Member / PIC Picker Popover */}
+            {showMemberPicker && (
+              <div className="kanban-popover-box kanban-member-popover">
+                <div className="kanban-popover-head">
+                  <span>Pilih Anggota / PIC</span>
+                  <button type="button" onClick={() => setShowMemberPicker(false)}>✕</button>
+                </div>
+
+                <div className="kanban-member-picker-list">
+                  {boardMembers.length > 0 ? (
+                    boardMembers.map((member) => {
+                      const isAssigned = (card.assignees || []).some(
+                        (a) => a.id === member.userId || a.name.toLowerCase() === (member.displayName || "").toLowerCase(),
+                      );
+                      const name = member.displayName || (member.userId === currentUserId ? "Kamu" : "Anggota Tim");
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          className={`kanban-member-pick-item ${isAssigned ? "selected" : ""}`}
+                          onClick={() =>
+                            handleToggleAssignee({
+                              id: member.userId,
+                              name,
+                              avatarUrl: member.avatarUrl,
+                            })
+                          }
+                        >
+                          <div className="kanban-member-pick-avatar">
+                            {member.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={member.avatarUrl} alt={name} />
+                            ) : (
+                              <span>{name.charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <span className="kanban-member-pick-name">{name}</span>
+                          {isAssigned && <span className="kanban-member-pick-check">✓</span>}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <button
+                      type="button"
+                      className={`kanban-member-pick-item ${(card.assignees || []).some((a) => a.name === "Kamu") ? "selected" : ""}`}
+                      onClick={() =>
+                        handleToggleAssignee({
+                          id: currentUserId || "user-self",
+                          name: "Kamu",
+                        })
+                      }
+                    >
+                      <div className="kanban-member-pick-avatar">
+                        <span>K</span>
+                      </div>
+                      <span className="kanban-member-pick-name">Kamu (Pemilik)</span>
+                      {(card.assignees || []).some((a) => a.name === "Kamu") && (
+                        <span className="kanban-member-pick-check">✓</span>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Custom PIC input */}
+                <div className="kanban-custom-pic-form">
+                  <span className="kanban-custom-pic-label">+ Tambah PIC nama lain</span>
+                  <div className="kanban-custom-pic-row">
+                    <input
+                      type="text"
+                      placeholder="Nama PIC (cth: Dita, Ardi)..."
+                      value={customPicName}
+                      onChange={(e) => setCustomPicName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddCustomPic();
+                        }
+                      }}
+                      className="kanban-subtask-input"
+                    />
+                    <button
+                      type="button"
+                      className="kanban-primary-btn"
+                      onClick={handleAddCustomPic}
+                      disabled={!customPicName.trim()}
+                    >
+                      Pilih
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Labels Row */}
             {card.labels && card.labels.length > 0 && (
               <div className="kanban-dialog-section">
@@ -468,6 +660,14 @@ export function KanbanCardDialog({
               title="Kirim kartu ini langsung ke Eat Your Frog"
             >
               🐸 Jadikan Eat Your Frog
+            </button>
+
+            <button
+              type="button"
+              className={`kanban-sidebar-btn ${showMemberPicker ? "active" : ""}`}
+              onClick={() => setShowMemberPicker(!showMemberPicker)}
+            >
+              👥 Anggota / PIC
             </button>
 
             <button

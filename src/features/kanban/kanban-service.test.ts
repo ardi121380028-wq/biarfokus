@@ -227,7 +227,7 @@ describe("kanban-service", () => {
     const { createBoardInviteApi } = await import("./kanban-cloud.ts");
 
     let capturedUrl = "";
-    let capturedBody: any = null;
+    let capturedBody: Record<string, unknown> | null = null;
     const originalFetch = globalThis.fetch;
 
     globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
@@ -246,11 +246,17 @@ describe("kanban-service", () => {
       assert.equal(res.ok, true);
       assert.equal(res.inviteCode, "bf_inv_test123");
       assert.equal(capturedUrl, "/api/kanban/invite");
-      assert.equal(capturedBody.boardId, board.id);
-      assert.equal(capturedBody.role, "editor");
-      assert.equal(capturedBody.board.title, "Bismillah Project");
-      assert.equal(capturedBody.board.background, "biarfokus-white");
-      assert.ok(Array.isArray(capturedBody.board.lists));
+      assert.ok(capturedBody);
+      const body = capturedBody as {
+        boardId: string;
+        role: string;
+        board: { title: string; background: string; lists: unknown[] };
+      };
+      assert.equal(body.boardId, board.id);
+      assert.equal(body.role, "editor");
+      assert.equal(body.board.title, "Bismillah Project");
+      assert.equal(body.board.background, "biarfokus-white");
+      assert.ok(Array.isArray(body.board.lists));
     } finally {
       globalThis.fetch = originalFetch;
     }

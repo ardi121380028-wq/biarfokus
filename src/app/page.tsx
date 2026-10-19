@@ -718,7 +718,11 @@ export default function Home() {
 
   return (
     <main
-      className={dark ? "app dark" : "app"}
+      className={
+        activeView === "kanban"
+          ? (dark ? "app dark kanban-workspace-mode" : "app kanban-workspace-mode")
+          : (dark ? "app dark" : "app")
+      }
       style={{
         "--accent": selectedColor,
         "--page": dark ? "#111111" : selectedColor,
@@ -727,55 +731,57 @@ export default function Home() {
         "--paper": dark ? "#1d1d1d" : "#ffffff",
       } as CSSProperties}
     >
-      <header className="topbar">
-        <button className="brand" onClick={() => setActiveView("timer")} aria-label="Kembali ke timer">
-          <span className="brand-mark" aria-hidden="true" />
-          <span>biarfokus</span>
-        </button>
-        <nav className="desktop-nav" aria-label="Navigasi utama">
-          {([
-            { view: "timer", label: "Timer" },
-            { view: "notes", label: "Catatan" },
-            { view: "calendar", label: "Kalender" },
-            { view: "kanban", label: "Project Canban" },
-            { view: "stats", label: "Statistik" },
-            { view: "pricing", label: "Pro" },
-          ] as { view: View; label: string }[]).map(({ view, label }) => (
-            <button key={view} className={activeView === view ? "nav-link active" : "nav-link"} onClick={() => setActiveView(view)}>
-              {label}
-            </button>
-          ))}
-        </nav>
-        <div className="top-actions">
-          <button className="icon-button" onClick={() => setDark(!dark)} aria-label="Ganti tema">{dark ? "☀" : "☾"}</button>
-          <button className="icon-button shortcut-button" onClick={() => setShortcutsOpen(true)} aria-label="Keyboard shortcuts">?</button>
-          <button className="settings-button" onClick={() => setShowSettings(true)}>⚙ <span>Settings</span></button>
-          {user ? (
-            <div className="profile-area">
-              <button className="profile-button" onClick={() => setProfileMenuOpen((open) => !open)} aria-label="Buka menu akun" aria-expanded={profileMenuOpen}>
-                {userAvatar ? <Image src={userAvatar} alt="" width={42} height={42} unoptimized /> : <span>{userName.charAt(0).toUpperCase()}</span>}
+      {activeView !== "kanban" && (
+        <header className="topbar">
+          <button className="brand" onClick={() => setActiveView("timer")} aria-label="Kembali ke timer">
+            <span className="brand-mark" aria-hidden="true" />
+            <span>biarfokus</span>
+          </button>
+          <nav className="desktop-nav" aria-label="Navigasi utama">
+            {([
+              { view: "timer", label: "Timer" },
+              { view: "notes", label: "Catatan" },
+              { view: "calendar", label: "Kalender" },
+              { view: "kanban", label: "Project Canban" },
+              { view: "stats", label: "Statistik" },
+              { view: "pricing", label: "Pro" },
+            ] as { view: View; label: string }[]).map(({ view, label }) => (
+              <button key={view} className={activeView === view ? "nav-link active" : "nav-link"} onClick={() => setActiveView(view)}>
+                {label}
               </button>
-              {profileMenuOpen && <ProfileMenu
-                userName={userName}
-                isAdmin={isAdminRole(userRole)}
-                onAccount={() => { setAccountOpen(true); setProfileMenuOpen(false); }}
-                onPremium={() => { setActiveView("pricing"); setProfileMenuOpen(false); }}
-                onAdmin={() => { setActiveView("admin"); setProfileMenuOpen(false); }}
-                onShortcuts={() => { setShortcutsOpen(true); setProfileMenuOpen(false); }}
-                onSignOut={() => {
-                  setProfileMenuOpen(false);
-                  void getSupabaseBrowserClient().auth.signOut().then((result: { error: { message: string } | null }) => {
-                    if (result.error) setAppError(result.error.message);
-                  });
-                }}
-                onDelete={() => { setProfileMenuOpen(false); setDeleteConfirmOpen(true); }}
-              />}
-            </div>
-          ) : <button className="login-button" onClick={() => setLoginOpen(true)}>🔐 Sign In</button>}
-          <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Buka menu" aria-expanded={menuOpen}>☰</button>
-        </div>
-      </header>
-      {menuOpen && <nav className="mobile-nav" aria-label="Navigasi mobile">
+            ))}
+          </nav>
+          <div className="top-actions">
+            <button className="icon-button" onClick={() => setDark(!dark)} aria-label="Ganti tema">{dark ? "☀" : "☾"}</button>
+            <button className="icon-button shortcut-button" onClick={() => setShortcutsOpen(true)} aria-label="Keyboard shortcuts">?</button>
+            <button className="settings-button" onClick={() => setShowSettings(true)}>⚙ <span>Settings</span></button>
+            {user ? (
+              <div className="profile-area">
+                <button className="profile-button" onClick={() => setProfileMenuOpen((open) => !open)} aria-label="Buka menu akun" aria-expanded={profileMenuOpen}>
+                  {userAvatar ? <Image src={userAvatar} alt="" width={42} height={42} unoptimized /> : <span>{userName.charAt(0).toUpperCase()}</span>}
+                </button>
+                {profileMenuOpen && <ProfileMenu
+                  userName={userName}
+                  isAdmin={isAdminRole(userRole)}
+                  onAccount={() => { setAccountOpen(true); setProfileMenuOpen(false); }}
+                  onPremium={() => { setActiveView("pricing"); setProfileMenuOpen(false); }}
+                  onAdmin={() => { setActiveView("admin"); setProfileMenuOpen(false); }}
+                  onShortcuts={() => { setShortcutsOpen(true); setProfileMenuOpen(false); }}
+                  onSignOut={() => {
+                    setProfileMenuOpen(false);
+                    void getSupabaseBrowserClient().auth.signOut().then((result: { error: { message: string } | null }) => {
+                      if (result.error) setAppError(result.error.message);
+                    });
+                  }}
+                  onDelete={() => { setProfileMenuOpen(false); setDeleteConfirmOpen(true); }}
+                />}
+              </div>
+            ) : <button className="login-button" onClick={() => setLoginOpen(true)}>🔐 Sign In</button>}
+            <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Buka menu" aria-expanded={menuOpen}>☰</button>
+          </div>
+        </header>
+      )}
+      {activeView !== "kanban" && menuOpen && <nav className="mobile-nav" aria-label="Navigasi mobile">
         {([
           { view: "timer", label: "Timer" },
           { view: "notes", label: "Catatan" },
@@ -846,6 +852,21 @@ export default function Home() {
       {activeView === "kanban" && (
         <KanbanView
           userId={user?.id ?? null}
+          user={user}
+          userName={userName}
+          userAvatar={userAvatar}
+          userRole={userRole}
+          dark={dark}
+          onToggleDark={() => setDark(!dark)}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenProfile={() => {
+            if (user) {
+              setAccountOpen(true);
+            } else {
+              setLoginOpen(true);
+            }
+          }}
+          onNavigate={(targetView) => setActiveView(targetView as View)}
           onSendToFrog={(cardTitle, boardTitle) => {
             void addTask(cardTitle, {
               linkedNoteTitle: `Kanban: ${boardTitle}`,
@@ -872,33 +893,39 @@ export default function Home() {
       )}
       {activeView === "admin" && <AdminView userId={user?.id ?? null} isAdmin={isAdminRole(userRole)} />}
 
-      <footer className="footer">
-        <div><strong>BiarFokus</strong><span>Bantu kamu fokus selesain setiap pekerjaan.</span></div>
-        <div className="footer-links">
-          <button type="button" onClick={() => setPomodoroModalOpen(true)}>Apa itu Pomodoro?</button>
-          <button type="button" onClick={() => setAboutModalOpen(true)}>Tentang Kami</button>
-          <a
-            href="https://www.instagram.com/biarfokus.id/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="footer-social-link"
-          >
-            📸 Instagram @biarfokus.id
-          </a>
-        </div>
-        <small>© 2025 biarfokus - All rights reserved</small>
-      </footer>
+      {activeView !== "kanban" && (
+        <footer className="footer">
+          <div><strong>BiarFokus</strong><span>Bantu kamu fokus selesain setiap pekerjaan.</span></div>
+          <div className="footer-links">
+            <button type="button" onClick={() => setPomodoroModalOpen(true)}>Apa itu Pomodoro?</button>
+            <button type="button" onClick={() => setAboutModalOpen(true)}>Tentang Kami</button>
+            <a
+              href="https://www.instagram.com/biarfokus.id/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-social-link"
+            >
+              📸 Instagram @biarfokus.id
+            </a>
+          </div>
+          <small>© 2025 biarfokus - All rights reserved</small>
+        </footer>
+      )}
 
       {/* Floating Action Buttons */}
-      <button
-        className="notes-fab"
-        onClick={() => setNotesOpen(true)}
-        aria-label="Catatan Fokus"
-        title="Buka Catatan Fokus (Keep)"
-      >
-        ✏️
-      </button>
-      <button className="settings-fab" onClick={() => setShowSettings(true)} aria-label="Pengaturan">⚙</button>
+      {activeView !== "kanban" && (
+        <>
+          <button
+            className="notes-fab"
+            onClick={() => setNotesOpen(true)}
+            aria-label="Catatan Fokus"
+            title="Buka Catatan Fokus (Keep)"
+          >
+            ✏️
+          </button>
+          <button className="settings-fab" onClick={() => setShowSettings(true)} aria-label="Pengaturan">⚙</button>
+        </>
+      )}
 
       {notesOpen && (
         <NotesModal
