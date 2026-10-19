@@ -182,6 +182,9 @@ export type KanbanCard = {
   comments: KanbanComment[];
   pomodoros?: number;
   frog?: boolean;
+  assigneeId?: string | null;
+  assigneeName?: string | null;
+  assigneeAvatar?: string | null;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -194,13 +197,43 @@ export type KanbanList = {
   order: number;
 };
 
+export type KanbanMemberRole = "owner" | "editor" | "viewer";
+
+export type KanbanBoardMember = {
+  id: string;
+  boardId: string;
+  userId: string;
+  role: KanbanMemberRole;
+  joinedAt: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  email?: string | null;
+};
+
+export type KanbanBoardInvite = {
+  id: string;
+  boardId: string;
+  inviteCode: string;
+  role: "editor" | "viewer";
+  createdBy: string;
+  maxUses?: number | null;
+  usesCount: number;
+  expiresAt: string | null;
+  createdAt: string;
+};
+
 export type KanbanBoard = {
   id: string;
+  userId?: string;
   title: string;
   description?: string;
   background: string; // Preset background key or CSS style
   lists: KanbanList[];
   starred?: boolean;
+  role?: KanbanMemberRole;
+  memberCount?: number;
+  members?: KanbanBoardMember[];
+  isShared?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -215,4 +248,24 @@ export type DbKanbanBoard = {
   starred: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type DbKanbanMember = {
+  id: string;
+  board_id: string;
+  user_id: string;
+  role: KanbanMemberRole;
+  joined_at: string;
+};
+
+export type DbKanbanInvite = {
+  id: string;
+  board_id: string;
+  invite_code: string;
+  role: "editor" | "viewer";
+  created_by: string;
+  max_uses: number | null;
+  uses_count: number;
+  expires_at: string | null;
+  created_at: string;
 };

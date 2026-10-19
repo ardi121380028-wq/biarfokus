@@ -289,6 +289,20 @@ export function useKanban(userId?: string | null) {
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
 
+  const joinBoard = useCallback(
+    (newBoard: KanbanBoard) => {
+      updateBoards((current) => {
+        const exists = current.some((b) => b.id === newBoard.id);
+        if (exists) {
+          return current.map((b) => (b.id === newBoard.id ? newBoard : b));
+        }
+        return [newBoard, ...current];
+      });
+      selectBoard(newBoard.id);
+    },
+    [updateBoards, selectBoard],
+  );
+
   return {
     boards,
     activeBoard,
@@ -306,6 +320,7 @@ export function useKanban(userId?: string | null) {
     updateList,
     deleteList,
     moveList,
+    joinBoard,
   };
 }
 

@@ -8,13 +8,16 @@ import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCardDialog } from "./kanban-card-dialog";
 import { KanbanBoardModal } from "./kanban-board-modal";
+import { KanbanShareModal } from "./kanban-share-modal";
+import { KanbanJoinModal } from "./kanban-join-modal";
 
 type KanbanViewProps = {
   userId?: string | null;
   onSendToFrog?: (cardTitle: string, boardTitle: string) => void;
+  onRequireLogin?: () => void;
 };
 
-export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
+export function KanbanView({ userId, onSendToFrog, onRequireLogin }: KanbanViewProps) {
   const {
     boards,
     activeBoard,
@@ -30,10 +33,23 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
     addList,
     updateList,
     deleteList,
+    joinBoard,
   } = useKanban(userId);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [boardModalOpen, setBoardModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        return url.searchParams.get("kanbanInvite") || url.searchParams.get("invite");
+      } catch {
+        // Safe URL check
+      }
+    }
+    return null;
+  });
   const [activeCardData, setActiveCardData] = useState<{ card: KanbanCard; listId: string } | null>(null);
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
@@ -296,6 +312,24 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
             </h1>
           )}
 
+          {/* Team / Shared Badge */}
+          {activeBoard.isShared && (
+            <span
+              className="kanban-role-badge editor"
+              title="Papan kolaborasi bersama tim"
+            >
+              👥 Tim
+            </span>
+          )}
+          {activeBoard.role === "viewer" && (
+            <span
+              className="kanban-role-badge viewer"
+              title="Kamu memiliki izin lihat saja (Viewer)"
+            >
+              👁️ Viewer
+            </span>
+          )}
+
           {/* Switch Boards Button */}
           <button
             type="button"
@@ -362,6 +396,16 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
               </button>
             )}
           </div>
+
+          {/* Share & Invite Button */}
+          <button
+            type="button"
+            className="kanban-bar-btn kanban-share-bar-btn"
+            onClick={() => setShareModalOpen(true)}
+            title="Bagikan papan atau undang teman"
+          >
+            👥 Bagikan
+          </button>
 
           {/* Fullscreen Button ("ngefulin") */}
           <button
@@ -490,6 +534,30 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
           onCreateBoard={createBoard}
           onDeleteBoard={deleteBoard}
           onClose={() => setBoardModalOpen(false)}
+        />
+      )}
+
+      {/* Share & Invite Modal */}
+      {shareModalOpen && (
+        <KanbanShareModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          board={activeBoard}
+          userId={userId}
+        />
+      )}
+
+      {/* Join Board Modal via Invite Link */}
+      {pendingInviteCode && (
+        <KanbanJoinModal
+          inviteCode={pendingInviteCode}
+          userId={userId}
+          onClose={() => setPendingInviteCode(null)}
+          onJoined={(joinedBoard) => {
+            joinBoard(joinedBoard);
+            setPendingInviteCode(null);
+          }}
+          onRequireLogin={onRequireLogin}
         />
       )}
       </div>

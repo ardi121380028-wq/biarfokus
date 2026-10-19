@@ -113,7 +113,19 @@ export default function Home() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [ambientSound, setAmbientSound] = useState<AmbientSoundMode>("off");
   const [dark, setDark] = useState(false);
-  const [activeView, setActiveView] = useState<View>("timer");
+  const [activeView, setActiveView] = useState<View>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has("kanbanInvite") || url.searchParams.has("invite")) {
+          return "kanban";
+        }
+      } catch {
+        // Safe URL check
+      }
+    }
+    return "timer";
+  });
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [tasksHydrated, setTasksHydrated] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -840,6 +852,7 @@ export default function Home() {
             });
             setInfoOpen(`Kartu "${cardTitle}" berhasil dijadikan target Eat Your Frog!`);
           }}
+          onRequireLogin={() => setLoginOpen(true)}
         />
       )}
 

@@ -198,4 +198,29 @@ describe("kanban-service", () => {
     assert.ok(Array.isArray(normalized.lists[0].cards[0].labels));
     assert.ok(Array.isArray(normalized.lists[0].cards[0].comments));
   });
+
+  it("maps database board with collaborative owner and shared role properly", async () => {
+    const { mapDbKanbanBoard } = await import("./kanban-cloud.ts");
+    const rawDbBoard = {
+      id: "board-1",
+      user_id: "user-owner-123",
+      title: "Shared Project",
+      description: "Tim project",
+      background: "wave-blue",
+      lists: [],
+      starred: true,
+      created_at: "2026-10-19T10:00:00.000Z",
+      updated_at: "2026-10-19T11:00:00.000Z",
+    };
+
+    const ownedBoard = mapDbKanbanBoard(rawDbBoard, "user-owner-123");
+    assert.equal(ownedBoard.role, "owner");
+    assert.equal(ownedBoard.isShared, false);
+    assert.equal(ownedBoard.userId, "user-owner-123");
+
+    const sharedBoard = mapDbKanbanBoard(rawDbBoard, "user-teammate-456");
+    assert.equal(sharedBoard.role, "editor");
+    assert.equal(sharedBoard.isShared, true);
+  });
 });
+

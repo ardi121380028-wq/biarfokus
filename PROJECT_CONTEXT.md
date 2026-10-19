@@ -245,9 +245,14 @@ All tables have Row Level Security (RLS) enabled.
       - **Modal Dialog Pop-In:** Animasi pop-in skala lembut pada semua modal (Settings, Akun, Auth, Shortcuts, Card Dialog, Board Switcher).
       - **Focus Breathing Rhythm:** Efek denyut napas fokus lembut pada display timer saat Pomodoro sedang berjalan aktif.
       - **Task Checkbox Bounce:** Animasi celebratory bounce saat task checklist diselesaikan.
-      - **Cards & Pills Lift:** Efek elevasi melayang halus pada kartu statistik, template, notes card, kanban cards, dan ambient pills.
       - **Buttery-Smooth Note Composer Accordion Transition:** Transisi buka-tutup kotak pembuatan catatan & to-do list (Google Keep style) dirombak dari pergantian DOM instan menjadi CSS Grid 0fr/1fr height accordion halus dengan cubic-bezier(0.16, 1, 0.3, 1), transform fade slide, delayed draft reset agar teks tidak hilang mendadak saat collapse, dan overflow visible dinamis saat expanded penuh.
-    - **Test Coverage:** Suite unit test `kanban-service.test.ts` (11 test cases) terverifikasi lulus bersama total 83 test suite di seluruh project dengan 0 lint error dan 0 warning.
+      - **Collaborative Project Canban (Multi-User Sharing & Invites):**
+        - Skema database kolaboratif khusus: `kanban_board_members` (peran `owner`, `editor`, `viewer`) dan `kanban_board_invites` (kode token invite cepat).
+        - RLS Policies kolaboratif di Supabase menggunakan helper function `is_board_member()` dan `get_board_role()`.
+        - Endpoints API: `POST/GET /api/kanban/invite` dan `POST /api/kanban/join`.
+        - UI Tombol `👥 Bagikan` di bar atas Project Canban yang membuka `KanbanShareModal` untuk menyalin link instan dengan role switcher (Editor vs Viewer) dan melihat daftar anggota papan.
+        - Deteksi otomatis link undangan via URL query parameter (`?kanbanInvite=...`), memicu `KanbanJoinModal` yang menyambut pengguna baru untuk bergabung langsung ke papan tim.
+    - **Test Coverage:** Suite unit test `kanban-service.test.ts` (12 test cases) terverifikasi lulus bersama total 84 test suite di seluruh project dengan 0 lint error dan 0 warning.
 
 ---
 
