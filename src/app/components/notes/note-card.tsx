@@ -49,15 +49,39 @@ export function NoteCard({
       {isChecklist ? (
         <div className="keep-card-checklist" onClick={(e) => e.stopPropagation()}>
           {activeItems.map((item) => (
-            <label key={item.id} className="keep-card-item">
-              <input
-                type="checkbox"
-                checked={false}
-                onChange={() => onToggleItem(note.id, item.id)}
-                className="keep-checkbox"
-              />
-              <span className="keep-card-item-text">{item.text}</span>
-            </label>
+            <div key={item.id} className="keep-card-item-row">
+              <label className="keep-card-item">
+                <input
+                  type="checkbox"
+                  checked={false}
+                  onChange={() => onToggleItem(note.id, item.id)}
+                  className="keep-checkbox"
+                />
+                <span className="keep-card-item-text">{item.text}</span>
+              </label>
+              <button
+                type="button"
+                className="keep-frog-pill-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(
+                    new CustomEvent("biarfokus:add-task-from-note", {
+                      detail: {
+                        title: item.text,
+                        linkedNoteId: note.id,
+                        linkedNoteTitle: note.title || "(Catatan)",
+                        linkedItemId: item.id,
+                        linkedItemText: item.text,
+                      },
+                    })
+                  );
+                }}
+                title="Jadikan target Eat Your Frog (Fokus)"
+                aria-label="Jadikan Eat Your Frog"
+              >
+                🐸 Frog
+              </button>
+            </div>
           ))}
 
           {doneItems.length > 0 && (

@@ -1,17 +1,21 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-import type { Task } from "@/types/domain";
+import type { KeepNote, Task } from "@/types/domain";
+import type { LinkedNoteMeta } from "@/features/tasks/task-service";
+import { NoteTaskPickerModal } from "./notes/note-task-picker-modal";
 
 type TaskManagementProps = {
   tasks: Task[];
   focusedTaskId: string | null;
   onSelectTask: (taskId: string) => void;
-  onAdd: (title: string) => Promise<void>;
+  onAdd: (title: string, linkedMeta?: LinkedNoteMeta) => Promise<void>;
   onToggle: (task: Task) => Promise<void>;
   onDelete: (task: Task) => Promise<void>;
   onDeleteCompleted: () => Promise<void>;
   onDeleteAll: () => Promise<void>;
+  notes?: KeepNote[];
+  onOpenNotes?: () => void;
 };
 
 export function TaskManagement({
@@ -23,6 +27,8 @@ export function TaskManagement({
   onDelete,
   onDeleteCompleted,
   onDeleteAll,
+  notes,
+  onOpenNotes,
 }: TaskManagementProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [newTask, setNewTask] = useState("");
@@ -31,6 +37,7 @@ export function TaskManagement({
   const [error, setError] = useState<string | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notePickerOpen, setNotePickerOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<"task" | "completed" | "all" | null>(null);
   const completedTasks = tasks.filter((task) => task.done).length;
   const activeTasks = tasks.filter((task) => !task.done);
@@ -127,6 +134,15 @@ export function TaskManagement({
         <button type="submit" disabled={submitting || !newTask.trim()}>
           {submitting ? "..." : "Tambah"}
         </button>
+        <button
+          type="button"
+          className="task-import-notes-btn"
+          onClick={() => setNotePickerOpen(true)}
+          title="Ambil tugas dari Catatan"
+          aria-label="Ambil tugas dari Catatan"
+        >
+          📝 Catatan
+        </button>
       </form>
       {error && <p className="task-error" role="alert">{error}</p>}
       <div className="task-list">
@@ -143,7 +159,23 @@ export function TaskManagement({
                   disabled={activeTaskId !== null}
                 />
                 <span className="checkmark" />
-                <span className="task-title">{task.title}</span>
+                <div className="task-title-group">
+                  <span className="task-title">{task.title}</span>
+                  {task.linkedNoteTitle && (
+                    <span
+                      className="task-linked-badge"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        onOpenNotes?.();
+                      }}
+                      title={`Terhubung dengan Catatan "${task.linkedNoteTitle}". Klik untuk membuka Catatan.`}
+                    >
+                      📝 {task.linkedNoteTitle}
+                      {task.linkedItemText && task.linkedItemText !== task.title ? ` · ${task.linkedItemText}` : ""}
+                    </span>
+                  )}
+                </div>
               </label>
               <button
                 type="button"
@@ -177,7 +209,22 @@ export function TaskManagement({
               <label className="task-check">
                 <input type="checkbox" checked={task.done} onChange={() => void handleToggle(task)} disabled={activeTaskId !== null} />
                 <span className="checkmark" />
-                <span className="task-title">{task.title}</span>
+                <div className="task-title-group">
+                  <span className="task-title">{task.title}</span>
+                  {task.linkedNoteTitle && (
+                    <span
+                      className="task-linked-badge"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        onOpenNotes?.();
+                      }}
+                      title={`Terhubung dengan Catatan "${task.linkedNoteTitle}". Klik untuk membuka Catatan.`}
+                    >
+                      📝 {task.linkedNoteTitle}
+                    </span>
+                  )}
+                </div>
               </label>
               <span className="task-pomos">🍅 {task.pomodoros}</span>
               <button type="button" className="task-delete" onClick={() => void handleDelete(task)} disabled={activeTaskId !== null} aria-label={`Hapus task ${task.title}`} title="Hapus task">×</button>
@@ -195,6 +242,22 @@ export function TaskManagement({
           </div>
         </section>
       </div>}
+      {notePickerOpen && (
+        <NoteTaskPickerModal
+          notes={notes ?? []}
+          tasks={tasks}
+          onSelect={(item) => {
+            void onAdd(item.title, {
+              linkedNoteId: item.linkedNoteId,
+              linkedNoteTitle: item.linkedNoteTitle,
+              linkedItemId: item.linkedItemId,
+              linkedItemText: item.linkedItemText,
+            });
+          }}
+          onClose={() => setNotePickerOpen(false)}
+          onOpenNotes={onOpenNotes}
+        />
+      )}
     </section>
   );
 }

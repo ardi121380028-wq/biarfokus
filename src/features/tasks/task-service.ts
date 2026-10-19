@@ -35,12 +35,23 @@ export function resolveFocusedTask(
   return activeTasks[0];
 }
 
+export type LinkedNoteMeta = {
+  linkedNoteId?: string;
+  linkedNoteTitle?: string;
+  linkedItemId?: string;
+  linkedItemText?: string;
+};
+
 export function mapDbTask(task: DbTask): Task {
   return {
     id: task.id,
     title: task.title,
     done: task.completed,
     pomodoros: task.pomodoros,
+    ...(task.linked_note_id ? { linkedNoteId: task.linked_note_id } : {}),
+    ...(task.linked_note_title ? { linkedNoteTitle: task.linked_note_title } : {}),
+    ...(task.linked_item_id ? { linkedItemId: task.linked_item_id } : {}),
+    ...(task.linked_item_text ? { linkedItemText: task.linked_item_text } : {}),
   };
 }
 
@@ -84,11 +95,27 @@ export async function loadTasks(
 ): Promise<Task[]> {
   const { data, error } = await supabase
     .from("tasks")
-    .select("id, title, completed, pomodoros")
+    .select("id, title, completed, pomodoros, linked_note_id, linked_note_title, linked_item_id, linked_item_text")
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
-  if (error) throw error;
-  if (data.length > 0) return data.map(mapDbTask);
+
+  if (!error && data && data.length > 0) {
+    return (data as unknown as DbTask[]).map(mapDbTask);
+  }
+
+  if (error && (error.message.includes("column") || error.code === "PGRST204" || error.code === "42703")) {
+    const fallback = await supabase
+      .from("tasks")
+      .select("id, title, completed, pomodoros")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (fallback.error) throw fallback.error;
+    if (fallback.data && fallback.data.length > 0) {
+      return (fallback.data as unknown as DbTask[]).map(mapDbTask);
+    }
+  } else if (error) {
+    throw error;
+  }
 
   const localTasks = loadLocalTasks();
   if (localTasks.length === 0) return [];
@@ -101,7 +128,7 @@ export async function loadTasks(
     { p_tasks: buildLocalTaskMigrationPayload(localTasks) },
   );
   if (migrationError) throw migrationError;
-  const rows: DbTask[] = migratedTasks ?? [];
+  const rows: DbTask[] = (migratedTasks as unknown as DbTask[]) ?? [];
   return rows.map(mapDbTask);
 }
 
@@ -109,14 +136,36 @@ export async function createTask(
   supabase: SupabaseClient,
   userId: string,
   title: string,
+  linkedMeta?: LinkedNoteMeta,
 ): Promise<Task> {
+  const insertPayload: Record<string, unknown> = {
+    user_id: userId,
+    title,
+    completed: false,
+    pomodoros: 1,
+  };
+  if (linkedMeta?.linkedNoteId) insertPayload.linked_note_id = linkedMeta.linkedNoteId;
+  if (linkedMeta?.linkedNoteTitle) insertPayload.linked_note_title = linkedMeta.linkedNoteTitle;
+  if (linkedMeta?.linkedItemId) insertPayload.linked_item_id = linkedMeta.linkedItemId;
+  if (linkedMeta?.linkedItemText) insertPayload.linked_item_text = linkedMeta.linkedItemText;
+
   const { data, error } = await supabase
     .from("tasks")
-    .insert({ user_id: userId, title, completed: false, pomodoros: 1 })
-    .select("id, title, completed, pomodoros")
+    .insert(insertPayload)
+    .select("id, title, completed, pomodoros, linked_note_id, linked_note_title, linked_item_id, linked_item_text")
     .single();
+
+  if (error && (error.message.includes("column") || error.code === "PGRST204" || error.code === "42703")) {
+    const fallback = await supabase
+      .from("tasks")
+      .insert({ user_id: userId, title, completed: false, pomodoros: 1 })
+      .select("id, title, completed, pomodoros")
+      .single();
+    if (fallback.error) throw fallback.error;
+    return mapDbTask(fallback.data as unknown as DbTask);
+  }
   if (error) throw error;
-  return mapDbTask(data);
+  return mapDbTask(data as unknown as DbTask);
 }
 
 export async function setTaskCompleted(

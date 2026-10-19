@@ -59,7 +59,7 @@ export function CalendarGrid({
   // Scroll to ~07:00 on first mount
   useEffect(() => {
     if (!scrollRef.current) return;
-    const initialHour = Math.max(0, Math.min(20, today.getHours() - 1 || 7));
+    const initialHour = Math.max(0, Math.min(20, new Date().getHours() - 1 || 7));
     scrollRef.current.scrollTop = initialHour * HOUR_HEIGHT_PX;
   }, []);
 

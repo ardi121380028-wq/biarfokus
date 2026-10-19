@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import type { CalendarEvent, KeepNote } from "@/types/domain";
+import type { KeepNote } from "@/types/domain";
 import {
   CALENDAR_COLORS,
   formatDuration,

@@ -35,7 +35,6 @@ export function TimerPanel({
   selectedColor,
   colorThemes,
   modeLabels,
-  longBreakInterval,
   dailyGoalPomodoros = 8,
   onModeChange,
   onToggleRunning,

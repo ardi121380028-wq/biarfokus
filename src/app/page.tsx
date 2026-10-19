@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { getSafeAvatarUrl } from "@/features/profile/profile-service";
@@ -51,7 +51,9 @@ import {
   resolveFocusedTask,
   setTaskCompleted,
   updateTaskPomodoros,
+  type LinkedNoteMeta,
 } from "@/features/tasks/task-service";
+import { useKeepNotes } from "@/features/notes/use-keep-notes";
 import {
   formatTime,
   getNextTimerMode,
@@ -141,6 +143,7 @@ export default function Home() {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [appError, setAppError] = useState<string | null>(null);
+  const { notes, toggleItem } = useKeepNotes(user?.id);
   const timerEndAtRef = useRef<number | null>(null);
   const lastTickedSecondRef = useRef<number | null>(null);
   const settingsHydratedRef = useRef(false);
@@ -507,23 +510,74 @@ export default function Home() {
     setRunning(true);
   }
 
-  async function addTask(title: string) {
-    assertTaskLimitAllowed(activeTasksCount, isPro);
-    if (user) {
-      try {
-        const task = await createTask(getSupabaseBrowserClient(), user.id, title);
-        setTasks((current) => [...current, task]);
-        setSelectedTaskId((current) => current ?? task.id);
-        return;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Gagal menyimpan task.";
-        throw new Error(message);
+  const addTask = useCallback(
+    async (title: string, linkedMeta?: LinkedNoteMeta) => {
+      assertTaskLimitAllowed(activeTasksCount, isPro);
+      if (user) {
+        try {
+          const task = await createTask(getSupabaseBrowserClient(), user.id, title, linkedMeta);
+          setTasks((current) => [...current, task]);
+          setSelectedTaskId((current) => current ?? task.id);
+          return;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Gagal menyimpan task.";
+          throw new Error(message);
+        }
       }
+      const localTask: Task = {
+        id: crypto.randomUUID(),
+        title,
+        done: false,
+        pomodoros: 1,
+        ...linkedMeta,
+      };
+      setTasks((current) => [...current, localTask]);
+      setSelectedTaskId((current) => current ?? localTask.id);
+    },
+    [activeTasksCount, isPro, user],
+  );
+
+  // Two-way sync: When notes checklist items are updated in Catatan, reflect in linked tasks
+  useEffect(() => {
+    function handleNoteItemToggled(event: Event) {
+      const customEvent = event as CustomEvent<{ noteId: string; itemId: string }>;
+      if (!customEvent.detail) return;
+      const { noteId, itemId } = customEvent.detail;
+      setTasks((prevTasks) => {
+        const matching = prevTasks.find((t) => t.linkedNoteId === noteId && t.linkedItemId === itemId);
+        if (!matching) return prevTasks;
+        const newDone = !matching.done;
+        if (user) {
+          void setTaskCompleted(getSupabaseBrowserClient(), user.id, matching.id, newDone).catch(() => {});
+        }
+        return prevTasks.map((t) => (t.id === matching.id ? { ...t, done: newDone } : t));
+      });
     }
-    const localTask: Task = { id: crypto.randomUUID(), title, done: false, pomodoros: 1 };
-    setTasks((current) => [...current, localTask]);
-    setSelectedTaskId((current) => current ?? localTask.id);
-  }
+    window.addEventListener("biarfokus:note-item-toggled", handleNoteItemToggled);
+    return () => window.removeEventListener("biarfokus:note-item-toggled", handleNoteItemToggled);
+  }, [user]);
+
+  useEffect(() => {
+    function handleAddFromNote(event: Event) {
+      const customEvent = event as CustomEvent<{
+        title: string;
+        linkedNoteId: string;
+        linkedNoteTitle: string;
+        linkedItemId?: string;
+        linkedItemText?: string;
+      }>;
+      if (!customEvent.detail) return;
+      void addTask(customEvent.detail.title, {
+        linkedNoteId: customEvent.detail.linkedNoteId,
+        linkedNoteTitle: customEvent.detail.linkedNoteTitle,
+        linkedItemId: customEvent.detail.linkedItemId,
+        linkedItemText: customEvent.detail.linkedItemText,
+      });
+      setInfoOpen(`Tugas "${customEvent.detail.title}" berhasil dijadikan target Eat Your Frog!`);
+    }
+    window.addEventListener("biarfokus:add-task-from-note", handleAddFromNote);
+    return () => window.removeEventListener("biarfokus:add-task-from-note", handleAddFromNote);
+  }, [addTask]);
 
   async function toggleTask(task: Task) {
     const completed = !task.done;
@@ -536,6 +590,15 @@ export default function Home() {
       }
     }
     setTasks((current) => current.map((item) => item.id === task.id ? { ...item, done: completed } : item));
+
+    // Two-way connection: Sync with Catatan checklist item
+    if (task.linkedNoteId && task.linkedItemId) {
+      const targetNote = notes.find((n) => n.id === task.linkedNoteId);
+      const targetItem = targetNote?.items?.find((i) => i.id === task.linkedItemId);
+      if (targetItem && targetItem.done !== completed) {
+        toggleItem(task.linkedNoteId, task.linkedItemId);
+      }
+    }
   }
 
   async function deleteTask(task: Task) {
@@ -705,6 +768,8 @@ export default function Home() {
             onDelete={deleteTask}
             onDeleteCompleted={deleteCompletedTasks}
             onDeleteAll={deleteAllTasks}
+            notes={notes}
+            onOpenNotes={() => setNotesOpen(true)}
           />
         </div>
       )}

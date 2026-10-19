@@ -9,6 +9,10 @@ export type Task = {
   title: string;
   done: boolean;
   pomodoros: number;
+  linkedNoteId?: string;
+  linkedNoteTitle?: string;
+  linkedItemId?: string;
+  linkedItemText?: string;
 };
 
 export type DbTask = {
@@ -16,6 +20,10 @@ export type DbTask = {
   title: string;
   completed: boolean;
   pomodoros: number;
+  linked_note_id?: string | null;
+  linked_note_title?: string | null;
+  linked_item_id?: string | null;
+  linked_item_text?: string | null;
 };
 
 export type PomodoroSession = {

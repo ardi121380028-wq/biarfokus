@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import type { CalendarEvent } from "@/types/domain";
 import {
-  formatDuration,
   getEventsForDate,
   getMonthCalendarWeeks,
   isSameDay,

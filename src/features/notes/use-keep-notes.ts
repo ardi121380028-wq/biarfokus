@@ -169,6 +169,11 @@ export function useKeepNotes(userId?: string | null) {
           );
         } catch {}
       }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("biarfokus:note-item-toggled", { detail: { noteId, itemId } }),
+        );
+      }
     },
     [userId, updateNotes],
   );

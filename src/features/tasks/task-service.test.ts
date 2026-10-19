@@ -21,6 +21,28 @@ describe("mapDbTask", () => {
       pomodoros: 3,
     });
   });
+
+  it("maps linked note metadata correctly", () => {
+    assert.deepEqual(mapDbTask({
+      id: "task-2",
+      title: "Kerjakan Bab 2",
+      completed: false,
+      pomodoros: 2,
+      linked_note_id: "note-123",
+      linked_note_title: "Skripsi",
+      linked_item_id: "item-456",
+      linked_item_text: "Sub bab 2.1",
+    }), {
+      id: "task-2",
+      title: "Kerjakan Bab 2",
+      done: false,
+      pomodoros: 2,
+      linkedNoteId: "note-123",
+      linkedNoteTitle: "Skripsi",
+      linkedItemId: "item-456",
+      linkedItemText: "Sub bab 2.1",
+    });
+  });
 });
 
 describe("buildLocalTaskMigrationPayload", () => {

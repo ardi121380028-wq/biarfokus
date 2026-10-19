@@ -177,7 +177,7 @@ export function formatMonthYear(d: Date): string {
   return d.toLocaleDateString(LOCALE, { month: "long", year: "numeric" });
 }
 
-export function formatViewTitle(anchor: Date, mode: CalendarViewMode, startOnSunday = true): string {
+export function formatViewTitle(anchor: Date, mode: CalendarViewMode): string {
   if (mode === "year") {
     return String(anchor.getFullYear());
   }

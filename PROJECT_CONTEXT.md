@@ -38,7 +38,8 @@ This file serves as a single-source handoff for any developer or AI assistant co
 │       ├── 20261017143000_add_subscriptions.sql               # Subscriptions, is_pro_user(), free-tier task limit trigger
 │       ├── 20261018000000_mvp6_scale_and_reliability.sql      # Task migration RPC, daily focus RPC, indexes
 │       ├── 20261018223000_add_notes_and_calendar_events.sql   # keep_notes, keep_labels, calendar_events + RLS
-│       └── 20261018233000_add_linked_item_text_and_site_visits.sql # Sub-task linking & site_visits analytics table
+│       ├── 20261018233000_add_linked_item_text_and_site_visits.sql # Sub-task linking & site_visits analytics table
+│       └── 20261019090000_add_linked_note_to_tasks.sql        # Eat Your Frog linked note & checklist item columns
 └── src/
     ├── proxy.ts                # Next.js 16 request proxy refreshing Supabase auth cookies
     ├── types/
@@ -137,6 +138,7 @@ Defined in `supabase/migrations/`:
    - `id uuid primary key default gen_random_uuid()`
    - `user_id uuid not null references auth.users(id) on delete cascade`
    - `title text not null`, `completed boolean not null default false`, `pomodoros int not null default 1`
+   - `linked_note_id text`, `linked_note_title text`, `linked_item_id text`, `linked_item_text text` (links Eat Your Frog tasks to Google Keep notes and specific checklist items)
    - Trigger `tasks_enforce_plan_limit` (`public.enforce_task_plan_limit()`) enforces the Free plan limit of 10 active (incomplete) tasks on insert.
    - RPC `public.migrate_local_tasks(p_tasks jsonb)` atomically migrates guest `localStorage` tasks at most once per user using `pg_advisory_xact_lock` and `profiles.tasks_migrated_at`.
 3. **`public.pomodoro_sessions`**
@@ -204,6 +206,12 @@ All tables have Row Level Security (RLS) enabled.
   - **Dark Mode & Contrast Polish:** Fixed dark mode pastel note text contrast using theme ink variables, cleaned redundant footer links, and resolved profile popup z-index stacking layers.
 - **MVP10 — Revenue Strategy & Monetization Architecture (In Planning):**
   - Multi-stream revenue model: B2C Pro Subscriptions (Midtrans/Xendit/Stripe), Founder's Lifetime Deal (LTD), digital focus add-ons (binaural sound packs, productivity templates), and B2B Team Focus / Study Squad rooms.
+- **MVP11 — Eat Your Frog & Catatan Two-Way Integration (Completed):**
+  - **Import Task dari Catatan (`NoteTaskPickerModal`):** Pengguna dapat mengambil task langsung dari catatan Google Keep atau checklist sub-task tertentu ke dalam daftar fokus Eat Your Frog.
+  - **Direct Note-to-Frog Action:** Tombol `🐸 Frog` di setiap baris checklist catatan untuk langsung menjadikannya target fokus Eat Your Frog tanpa perlu berpindah layar.
+  - **Live Two-Way Sync:** Menyelesaikan task di Eat Your Frog otomatis menandai centang `[✓]` di checklist catatan, dan mencentang di catatan otomatis menyinkronkan task di Eat Your Frog secara real-time.
+  - **Visual Origin Badge:** Task yang terhubung menampilkan badge link `📝 [Judul Catatan]` yang dapat diklik langsung untuk membuka catatan sumber.
+  - **Database Migration:** Migration `20261019090000_add_linked_note_to_tasks.sql` dengan RLS dan fallback graceful saat offline/guest.
 
 ---
 

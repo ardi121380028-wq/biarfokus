@@ -630,3 +630,39 @@ button:active:not(:disabled) { transform:translateY(2px) scale(.985); }
   .info-action-btn { width:100%; text-align:center; }
 }
 
+/* Eat Your Frog & Notes Integration */
+.task-import-notes-btn { border:1px solid color-mix(in srgb,var(--ink) 18%,transparent); border-radius:10px; background:color-mix(in srgb,var(--ink) 4%,var(--paper)); color:var(--ink); padding:0 14px; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all .15s ease; white-space:nowrap; }
+.task-import-notes-btn:hover { background:color-mix(in srgb,var(--blue) 12%,var(--paper)); border-color:var(--blue); color:var(--blue); }
+.task-title-group { display:flex; flex-direction:column; gap:3px; flex:1 1 0%; min-width:0; }
+.task-linked-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--blue); background:color-mix(in srgb,var(--blue) 12%,transparent); border:1px solid color-mix(in srgb,var(--blue) 25%,transparent); padding:2px 8px; border-radius:8px; width:fit-content; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; transition:background-color .15s ease; }
+.task-linked-badge:hover { background:color-mix(in srgb,var(--blue) 22%,transparent); text-decoration:underline; }
+.task.done .task-linked-badge { opacity:0.6; text-decoration:none; }
+
+/* Note Task Picker Modal */
+.note-picker-backdrop { position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:16px; background:rgba(0,0,0,0.55); backdrop-filter:blur(3px); }
+.note-picker-modal { position:relative; width:min(560px,94vw); max-height:85vh; border-radius:22px; background:var(--paper); color:var(--ink); padding:24px; box-shadow:0 25px 80px rgba(0,0,0,0.45); display:flex; flex-direction:column; gap:16px; overflow:hidden; box-sizing:border-box; }
+.note-picker-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.note-picker-header h3 { margin:0; font:20px Georgia,serif; color:var(--ink); }
+.note-picker-header p { margin:3px 0 0; font-size:12px; color:var(--muted); }
+.note-picker-close { border:none; background:transparent; color:var(--muted); font-size:20px; cursor:pointer; padding:2px 6px; line-height:1; }
+.note-picker-close:hover { color:var(--ink); }
+.note-picker-search { width:100%; padding:9px 14px; border-radius:12px; border:1px solid color-mix(in srgb,var(--ink) 18%,transparent); background:color-mix(in srgb,var(--ink) 4%,transparent); color:var(--ink); font-size:13px; outline:none; box-sizing:border-box; }
+.note-picker-search:focus { border-color:var(--blue); }
+.note-picker-list { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px; padding-right:4px; max-height:52vh; }
+.note-picker-card { border:1px solid color-mix(in srgb,var(--ink) 14%,transparent); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; transition:border-color .15s ease; }
+.note-picker-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.note-picker-card-title { font-size:14px; font-weight:700; color:var(--ink); margin:0; }
+.note-picker-items { display:flex; flex-direction:column; gap:4px; }
+.note-picker-item-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 10px; border-radius:8px; background:color-mix(in srgb,var(--ink) 4%,transparent); font-size:13px; cursor:pointer; transition:background-color .12s ease; }
+.note-picker-item-row:hover { background:color-mix(in srgb,var(--blue) 14%,transparent); }
+.note-picker-item-text { flex:1; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.note-picker-add-btn { border:none; border-radius:6px; background:var(--blue); color:#fff; font-size:11px; font-weight:700; padding:4px 10px; cursor:pointer; white-space:nowrap; flex:none; transition:transform .1s ease; }
+.note-picker-add-btn:hover { transform:scale(1.05); }
+.note-picker-already-added { font-size:11px; color:#008a5b; font-weight:600; background:rgba(0,176,116,0.12); padding:3px 8px; border-radius:6px; flex:none; }
+.note-picker-empty { text-align:center; padding:24px; color:var(--muted); font-size:13px; }
+.keep-card-item-row { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.keep-card-item-row .keep-card-item { flex:1; min-width:0; }
+.keep-frog-pill-btn { border:1px solid color-mix(in srgb,var(--ink) 14%,transparent); border-radius:6px; background:color-mix(in srgb,var(--paper) 80%,transparent); color:var(--ink); font-size:10px; font-weight:700; padding:2px 6px; cursor:pointer; opacity:0.65; transition:all .15s ease; white-space:nowrap; flex:none; }
+.keep-card-item-row:hover .keep-frog-pill-btn, .keep-frog-pill-btn:hover { opacity:1; background:color-mix(in srgb,var(--blue) 18%,var(--paper)); border-color:var(--blue); color:var(--blue); }
+
+
