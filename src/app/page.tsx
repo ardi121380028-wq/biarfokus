@@ -939,7 +939,7 @@ export default function Home() {
       )}
       {activeView === "admin" && <AdminView userId={user?.id ?? null} isAdmin={isAdminRole(userRole)} />}
 
-      {activeView !== "kanban" && (
+      {activeView !== "kanban" && activeView !== "calendar" && (
         <footer className="footer">
           <div><strong>BiarFokus</strong><span>Bantu kamu fokus selesain setiap pekerjaan.</span></div>
           <div className="footer-links">

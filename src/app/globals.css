@@ -1081,6 +1081,12 @@ button:active:not(:disabled) {
   background: color-mix(in srgb, var(--ink) 6%, transparent);
 }
 
+.kanban-sidebar-nav-item.active {
+  background: color-mix(in srgb, var(--blue) 12%, transparent);
+  color: var(--blue);
+  font-weight: 700;
+}
+
 .kanban-sidebar-nav-item .nav-icon {
   font-size: 15px;
   flex-shrink: 0;
@@ -5227,14 +5233,18 @@ button:active:not(:disabled) {
 .cal-workspace-content .cal-grid-wrapper {
   border-radius: 0;
   border: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-  height: 100%;
-  max-height: 100%;
+  min-height: 0 !important;
+  flex: 1 1 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  box-shadow: none !important;
 }
 
 .cal-workspace-content .cal-main-scroll {
-  height: 100%;
-  max-height: 100%;
+  min-height: 0 !important;
+  flex: 1 1 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
 }
 
 /* Recurrence in Event Modal */

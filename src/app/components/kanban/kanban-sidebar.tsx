@@ -116,6 +116,14 @@ export function KanbanSidebar({
           </button>
           <button
             type="button"
+            className="kanban-sidebar-nav-item active"
+            title="Project Kanban (Aktif)"
+          >
+            <span className="nav-icon">📋</span>
+            {!isCollapsed && <span className="nav-label">Project Kanban</span>}
+          </button>
+          <button
+            type="button"
             className="kanban-sidebar-nav-item"
             onClick={() => onNavigate("stats")}
             title="Statistik Produktivitas"
