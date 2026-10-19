@@ -93,16 +93,16 @@ function playClickSound() {
   const context = new AudioContextClass();
   const oscillator = context.createOscillator();
   const gain = context.createGain();
-  oscillator.frequency.value = 520;
+  oscillator.frequency.value = 587.33; // D5 tone - gentle, focused start chime
   oscillator.type = "sine";
   gain.gain.setValueAtTime(0.001, context.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.035, context.currentTime + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.06, context.currentTime + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.12);
   oscillator.connect(gain);
   gain.connect(context.destination);
   oscillator.start();
-  oscillator.stop(context.currentTime + 0.08);
-  window.setTimeout(() => void context.close(), 150);
+  oscillator.stop(context.currentTime + 0.12);
+  window.setTimeout(() => void context.close(), 200);
 }
 
 export default function Home() {
@@ -269,14 +269,6 @@ export default function Home() {
     void loadCloudTasks();
     return () => { cancelled = true; };
   }, [user]);
-
-  useEffect(() => {
-    const handleClick = () => {
-      if (soundEnabled) playClickSound();
-    };
-    document.addEventListener("click", handleClick, true);
-    return () => document.removeEventListener("click", handleClick, true);
-  }, [soundEnabled]);
 
   useEffect(() => {
     void trackSiteVisit(`/${activeView === "timer" ? "" : activeView}`);
@@ -508,6 +500,9 @@ export default function Home() {
       timerEndAtRef.current = null;
       setRunning(false);
       return;
+    }
+    if (soundEnabled) {
+      playClickSound();
     }
     timerEndAtRef.current = getTimerEndTime(seconds);
     setRunning(true);

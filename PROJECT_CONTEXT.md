@@ -238,7 +238,14 @@ All tables have Row Level Security (RLS) enabled.
     - **Default Clean White Background (`biarfokus-white`):** Menjadikan background putih bersih sebagai preset default (`#ffffff`) yang selaras dengan tema BiarFokus, dilengkapi styling `.kanban-light-theme` untuk kolom soft slate (`#f1f2f4`), kartu putih murni (`#ffffff`), border halus, dan kontras teks ink (`#0f172a`).
     - **Framed Outer Container & Navbar Spacing:** Membungkus kanvas Kanban dengan `.kanban-container-frame` yang memberikan spacing proporsional dari navbar (`padding: 16px 24px 28px`) serta sudut rounded luar (`border-radius: 24px`) dan bayangan lembut.
     - **Mode Layar Penuh ("Ngefulin"):** Fitur tombol `⛶ Layar Penuh` / `⤓ Perkecil` di bar atas yang dapat memperluas tampilan kanban ke seluruh layar (edge-to-edge 100vw/100vh tanpa navbar) untuk fokus maksimal, lengkap dengan shortcut tombol `Esc` dan sinkronisasi Fullscreen API browser.
-    - **Wallpaper Popover Stacking Context Fix:** Memberikan `position: relative; z-index: 60;` pada top bar dan `z-index: 100;` pada dropdown wallpaper agar popover selalu tampil di atas seluruh kolom kanban tanpa tertutup kartu.
+    - **Dedicated Start Pomodoro Audio Trigger:** Menghapus global click listener pada seluruh dokumen sehingga klik UI biasa tidak lagi mengeluarkan suara; audio klik/chime lembut kini terisolasi secara eksklusif hanya saat pengguna mengklik tombol START Pomodoro untuk memulai sesi fokus.
+    - **Smooth Interactive Micro-Animations:** Menghadirkan rangkaian animasi mikro halus dan responsif di seluruh aplikasi:
+      - **View Fade-Slide:** Transisi pergantian view halaman (Timer, Catatan, Kalender, Project Canban, Statistik, Pro) dengan easing `cubic-bezier(0.16, 1, 0.3, 1)`.
+      - **Tactile Button Press:** Efek tekan fisik tombol dengan scale `0.965` dan hover lift.
+      - **Modal Dialog Pop-In:** Animasi pop-in skala lembut pada semua modal (Settings, Akun, Auth, Shortcuts, Card Dialog, Board Switcher).
+      - **Focus Breathing Rhythm:** Efek denyut napas fokus lembut pada display timer saat Pomodoro sedang berjalan aktif.
+      - **Task Checkbox Bounce:** Animasi celebratory bounce saat task checklist diselesaikan.
+      - **Cards & Pills Lift:** Efek elevasi melayang halus pada kartu statistik, template, notes card, kanban cards, dan ambient pills.
     - **Test Coverage:** Suite unit test `kanban-service.test.ts` (11 test cases) terverifikasi lulus bersama total 83 test suite di seluruh project dengan 0 lint error dan 0 warning.
 
 ---

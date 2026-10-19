@@ -49,7 +49,7 @@ export function TimerPanel({
     : 0;
 
   return (
-    <section className="timer-card card">
+    <section className={`timer-card card ${running ? "is-running" : ""}`}>
       <div className="mode-tabs">
         {(Object.keys(modeLabels) as TimerMode[]).map((item) => (
           <button
@@ -115,7 +115,7 @@ export function TimerPanel({
         >
           ↺
         </button>
-        <button className="start-button" onClick={onToggleRunning}>
+        <button className={`start-button ${running ? "running" : ""}`} onClick={onToggleRunning}>
           {running ? "PAUSE" : "START"}
         </button>
         <button
