@@ -13,10 +13,10 @@ export function PomodoroModal({ onClose }: PomodoroModalProps) {
   useOutsideClick(modalRef, onClose);
 
   return (
-    <div className="modal-backdrop" role="presentation">
+    <div className="modal-backdrop pomodoro-modal-backdrop" role="presentation">
       <div
         ref={modalRef}
-        className="info-modal-card"
+        className="info-modal-card pomodoro-modal-card"
         role="dialog"
         aria-modal="true"
         aria-labelledby="pomodoro-modal-title"

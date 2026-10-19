@@ -16,6 +16,9 @@ import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 type KanbanCardDialogProps = {
   card: KanbanCard;
   listTitle: string;
+  currentListId?: string;
+  boardLists?: { id: string; title: string }[];
+  onMoveToList?: (destListId: string) => void;
   boardMembers?: KanbanBoardMember[];
   currentUserId?: string | null;
   boardLabels?: KanbanLabel[];
@@ -43,6 +46,9 @@ const DEFAULT_LABEL_COLORS = [
 export function KanbanCardDialog({
   card,
   listTitle,
+  currentListId,
+  boardLists,
+  onMoveToList,
   boardMembers = [],
   currentUserId,
   boardLabels,
@@ -437,6 +443,47 @@ export function KanbanCardDialog({
             ✕
           </button>
         </div>
+
+        {/* Quick Toolbar for Mobile & Fast Access */}
+        {!readOnly && (
+          <div className="kanban-dialog-quick-toolbar">
+            <button
+              type="button"
+              className={`kanban-quick-btn ${showMemberPicker ? "active" : ""}`}
+              onClick={() => setShowMemberPicker(!showMemberPicker)}
+            >
+              👥 PIC
+            </button>
+            <button
+              type="button"
+              className={`kanban-quick-btn ${showLabelPicker ? "active" : ""}`}
+              onClick={() => setShowLabelPicker(!showLabelPicker)}
+            >
+              🏷️ Label
+            </button>
+            <button
+              type="button"
+              className="kanban-quick-btn"
+              onClick={() => setShowChecklistPrompt(!showChecklistPrompt)}
+            >
+              ☑️ Checklist
+            </button>
+            <button
+              type="button"
+              className={`kanban-quick-btn ${showDatePicker ? "active" : ""}`}
+              onClick={() => setShowDatePicker(!showDatePicker)}
+            >
+              🕒 Tenggat
+            </button>
+            <button
+              type="button"
+              className={`kanban-quick-btn ${showCoverPicker ? "active" : ""}`}
+              onClick={() => setShowCoverPicker(!showCoverPicker)}
+            >
+              🎨 Cover
+            </button>
+          </div>
+        )}
 
         {frogFeedback && (
           <div className="daily-goal-badge" style={{ animation: "none", margin: "0 24px 12px" }}>
@@ -958,7 +1005,26 @@ export function KanbanCardDialog({
           {/* Right Sidebar Actions */}
           {!readOnly && (
             <div className="kanban-dialog-sidebar">
-              <span className="kanban-sidebar-heading">Tambahkan ke Kartu</span>
+              {/* Move to another list selector (Crucial for mobile users!) */}
+              {onMoveToList && boardLists && boardLists.length > 1 && (
+                <div className="kanban-move-card-box">
+                  <span className="kanban-sidebar-heading">📍 Pindahkan ke Kolom</span>
+                  <select
+                    value={currentListId || ""}
+                    onChange={(e) => onMoveToList(e.target.value)}
+                    className="kanban-select-list"
+                    aria-label="Pindahkan kartu ke kolom lain"
+                  >
+                    {boardLists.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.title} {l.id === currentListId ? "(Saat Ini)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <span className="kanban-sidebar-heading" style={{ marginTop: 8 }}>Tambahkan ke Kartu</span>
 
               {/* Frog Action */}
               <button

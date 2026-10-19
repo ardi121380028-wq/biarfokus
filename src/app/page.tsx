@@ -772,7 +772,7 @@ export default function Home() {
               { view: "timer", label: "Timer" },
               { view: "notes", label: "Catatan" },
               { view: "calendar", label: "Kalender" },
-              { view: "kanban", label: "Project Canban" },
+              { view: "kanban", label: "Project Kanban" },
               { view: "stats", label: "Statistik" },
               { view: "pricing", label: "Pro" },
             ] as { view: View; label: string }[]).map(({ view, label }) => (
@@ -816,7 +816,7 @@ export default function Home() {
           { view: "timer", label: "Timer" },
           { view: "notes", label: "Catatan" },
           { view: "calendar", label: "Kalender" },
-          { view: "kanban", label: "Project Canban" },
+          { view: "kanban", label: "Project Kanban" },
           { view: "stats", label: "Statistik" },
           { view: "pricing", label: "Pro" },
         ] as { view: View; label: string }[]).map(({ view, label }) => (

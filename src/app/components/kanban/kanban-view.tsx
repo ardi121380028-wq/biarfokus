@@ -85,6 +85,7 @@ export function KanbanView({
   }
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [boardModalOpen, setBoardModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [boardMembers, setBoardMembers] = useState<KanbanBoardMember[]>([]);
@@ -413,9 +414,9 @@ export function KanbanView({
               </button>
             )}
 
-            {/* Breadcrumb Indicator */}
+            {/* Breadcrumb Indicator (Desktop) */}
             <div className="kanban-breadcrumb-row">
-              <span className="kanban-breadcrumb-root">Project Canban</span>
+              <span className="kanban-breadcrumb-root">Project Kanban</span>
               {boards.length > 0 && (
                 <>
                   <span className="kanban-breadcrumb-sep">/</span>
@@ -424,10 +425,23 @@ export function KanbanView({
               )}
             </div>
 
-            {/* Switch Boards Button */}
+            {/* Mobile Board Title Pill (Click to open boards modal) */}
+            {boards.length > 0 && (
+              <button
+                type="button"
+                className="kanban-mobile-board-pill"
+                onClick={() => setBoardModalOpen(true)}
+                title="Ganti atau kelola papan"
+              >
+                <span className="mobile-board-title">🎯 {activeBoard.title}</span>
+                <span className="mobile-board-caret">▾</span>
+              </button>
+            )}
+
+            {/* Switch Boards Button (Desktop) */}
             <button
               type="button"
-              className="kanban-bar-btn"
+              className="kanban-bar-btn kanban-desktop-only-btn"
               onClick={() => {
                 setBgMenuOpen(false);
                 setBoardModalOpen(true);
@@ -441,7 +455,7 @@ export function KanbanView({
             <div style={{ position: "relative" }} ref={bgMenuRef}>
               <button
                 type="button"
-                className="kanban-bar-btn"
+                className="kanban-bar-btn kanban-desktop-only-btn"
                 onClick={() => setBgMenuOpen(!bgMenuOpen)}
                 title="Ganti wallpaper background"
               >
@@ -470,11 +484,12 @@ export function KanbanView({
 
           {/* Right Search Box, Actions, & Profile (Trello-style) */}
           <div className="kanban-right-controls">
-            <div className="kanban-search-box">
+            {/* Desktop Search Box */}
+            <div className="kanban-search-box kanban-desktop-search">
               <span className="search-icon">🔍</span>
               <input
                 type="text"
-                placeholder="Cari kartu di board..."
+                placeholder="Cari kartu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="kanban-search-input"
@@ -491,6 +506,17 @@ export function KanbanView({
               )}
             </div>
 
+            {/* Mobile Search Toggle Button */}
+            <button
+              type="button"
+              className={`kanban-bar-btn kanban-mobile-search-toggle ${mobileSearchOpen ? "active" : ""}`}
+              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+              title="Cari kartu"
+              aria-label="Cari kartu"
+            >
+              🔍
+            </button>
+
             {/* Share & Invite Button */}
             <button
               type="button"
@@ -498,17 +524,18 @@ export function KanbanView({
               onClick={() => setShareModalOpen(true)}
               title="Bagikan papan atau undang teman"
             >
-              👥 Bagikan
+              <span className="share-btn-icon">👥</span>
+              <span className="share-btn-text">Bagikan</span>
             </button>
 
             {/* Fullscreen Button */}
             <button
               type="button"
-              className="kanban-bar-btn kanban-fullscreen-btn"
+              className="kanban-bar-btn kanban-fullscreen-btn kanban-desktop-only-btn"
               onClick={toggleFullscreen}
               title={isFullscreen ? "Keluar layar penuh (Esc)" : "Mode layar penuh"}
             >
-              {isFullscreen ? "⤓ Perkecil" : "⛶ Layar Penuh"}
+              {isFullscreen ? "⤓" : "⛶"}
             </button>
 
             {/* Profile Avatar on Top Right (Trello-style!) */}
@@ -543,6 +570,32 @@ export function KanbanView({
           </div>
         </div>
 
+        {/* Mobile Search Input Bar */}
+        {mobileSearchOpen && (
+          <div className="kanban-mobile-search-bar">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              placeholder="Cari kartu di board..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="kanban-search-input"
+              autoFocus
+            />
+            <button
+              type="button"
+              className="kanban-clear-search-btn"
+              onClick={() => {
+                setSearchQuery("");
+                setMobileSearchOpen(false);
+              }}
+              aria-label="Tutup pencarian"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* If no boards exist yet: show onboarding empty state */}
         {boards.length === 0 ? (
           <div className="kanban-empty-workspace-state">
@@ -565,7 +618,7 @@ export function KanbanView({
           </div>
         ) : (
           <>
-            {/* Notion / Catatan-Style Headline Section (Image 3) */}
+            {/* Notion / Catatan-Style Headline Section (Streamlined & Ramping) */}
             <div className="kanban-workspace-headline">
               <div className="kanban-headline-left">
                 <span className="kanban-headline-emoji">🎯</span>
@@ -615,21 +668,18 @@ export function KanbanView({
                     )}
                     {(!canEdit || activeBoard.role === "viewer") && (
                       <span className="kanban-role-badge viewer" title="Izin hanya lihat">
-                        👁️ Viewer / Read Only
+                        👁️ Viewer
                       </span>
                     )}
                   </div>
 
-                  {/* Subtitle / Month & Year Badge & Stats (Catatan / Notion style) */}
+                  {/* Subtitle / Month & Year Badge & Stats (Catatan / Notion style, single line) */}
                   <div className="kanban-headline-meta-pills">
                     <span className="kanban-meta-pill date-pill">
                       📅 {currentMonthYear}
                     </span>
                     <span className="kanban-meta-pill count-pill">
                       📋 {activeBoard.lists.length} Kolom • 🗂️ {totalCardsCount} Kartu • 👥 {boardMembers.length > 0 ? boardMembers.length : 1} Anggota
-                    </span>
-                    <span className="kanban-meta-pill updated-pill">
-                      🕒 Diperbarui {activeBoard.updatedAt}
                     </span>
                   </div>
                 </div>
@@ -751,6 +801,17 @@ export function KanbanView({
         <KanbanCardDialog
           card={currentCardDetail.card}
           listTitle={currentCardDetail.listTitle}
+          currentListId={currentCardDetail.listId}
+          boardLists={activeBoard.lists.map((l) => ({ id: l.id, title: l.title }))}
+          onMoveToList={(destListId) => {
+            if (destListId !== currentCardDetail.listId) {
+              const cardId = currentCardDetail.card.id;
+              const sourceList = activeBoard.lists.find((l) => l.id === currentCardDetail.listId);
+              const sourceIndex = sourceList ? sourceList.cards.findIndex((c) => c.id === cardId) : 0;
+              moveCard(currentCardDetail.listId, destListId, sourceIndex, 9999);
+              setActiveCardData({ card: currentCardDetail.card, listId: destListId });
+            }
+          }}
           boardMembers={boardMembers}
           currentUserId={userId}
           boardLabels={activeBoard.labels}

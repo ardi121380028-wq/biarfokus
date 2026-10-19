@@ -29,7 +29,7 @@ export function KanbanJoinModal({
       : "editor";
 
   const [role, setRole] = useState<"editor" | "viewer">(initialRole);
-  const [boardTitle, setBoardTitle] = useState<string>("Project Canban");
+  const [boardTitle, setBoardTitle] = useState<string>("Project Kanban");
   const [loadingInfo, setLoadingInfo] = useState<boolean>(true);
 
   // Inspect invite details from server on mount

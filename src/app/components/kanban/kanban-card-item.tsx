@@ -1,6 +1,6 @@
 "use client";
 
-import type { DragEvent } from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import type { KanbanCard } from "@/types/domain";
 
 type KanbanCardItemProps = {
@@ -24,6 +24,13 @@ export function KanbanCardItem({
   onDragStart,
   onDragEnd,
 }: KanbanCardItemProps) {
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
+    }
+  }, []);
+
   // Compute checklist stats defensively
   const checklists = Array.isArray(card.checklists) ? card.checklists : [];
   const totalItems = checklists.reduce((acc, c) => acc + (Array.isArray(c?.items) ? c.items.length : 0), 0);
@@ -97,7 +104,7 @@ export function KanbanCardItem({
   return (
     <div
       className={`kanban-card-item ${readOnly ? "is-readonly" : ""}`}
-      draggable={!readOnly}
+      draggable={!readOnly && !isTouchDevice}
       onDragStart={(e) => {
         if (!readOnly) onDragStart(e, card.id, listId, index);
       }}

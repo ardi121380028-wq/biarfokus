@@ -55,7 +55,7 @@ export function KanbanSidebar({
             >
               <span className="brand-mark" aria-hidden="true" />
               <span className="kanban-sidebar-brand-name">biarfokus</span>
-              <span className="kanban-sidebar-badge">Canban</span>
+              <span className="kanban-sidebar-badge">Kanban</span>
             </button>
             <button
               type="button"
