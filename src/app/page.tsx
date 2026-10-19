@@ -942,19 +942,16 @@ export default function Home() {
         </footer>
       )}
 
-      {/* Floating Action Buttons */}
+      {/* Quick Notes Floating Action Button (Bottom-Right) */}
       {activeView !== "kanban" && (
-        <>
-          <button
-            className="notes-fab"
-            onClick={() => setNotesOpen(true)}
-            aria-label="Catatan Fokus"
-            title="Buka Catatan Fokus (Keep)"
-          >
-            ✏️
-          </button>
-          <button className="settings-fab" onClick={() => setShowSettings(true)} aria-label="Pengaturan">⚙</button>
-        </>
+        <button
+          className="notes-fab"
+          onClick={() => setNotesOpen(true)}
+          aria-label="Catatan Fokus Cepat"
+          title="Buka Catatan Fokus Cepat (Keep)"
+        >
+          ✏️
+        </button>
       )}
 
       {notesOpen && (

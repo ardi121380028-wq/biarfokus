@@ -150,10 +150,11 @@ describe("kanban-service", () => {
   it("parses stored boards safely with fallback on corrupt JSON", () => {
     const parsedNull = parseStoredBoards(null);
     assert.ok(Array.isArray(parsedNull));
-    assert.equal(parsedNull[0].id, "board-gt-growth");
+    assert.equal(parsedNull.length, 0);
 
     const parsedCorrupt = parseStoredBoards("not-json-at-all");
-    assert.equal(parsedCorrupt[0].id, "board-gt-growth");
+    assert.ok(Array.isArray(parsedCorrupt));
+    assert.equal(parsedCorrupt.length, 0);
 
     const customBoard = createNewBoard("Saved Board");
     const parsedValid = parseStoredBoards(JSON.stringify([customBoard]));

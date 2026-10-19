@@ -22,25 +22,46 @@ export function KanbanJoinModal({
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Parse token info if available (e.g. from fallback code)
-  const isEditorRole = !inviteCode || !inviteCode.includes("viewer");
+  // Initial inferred role from code prefix
+  const initialRole: "editor" | "viewer" =
+    inviteCode && (inviteCode.includes("viewer") || inviteCode.includes("_v_"))
+      ? "viewer"
+      : "editor";
 
+  const [role, setRole] = useState<"editor" | "viewer">(initialRole);
+  const [boardTitle, setBoardTitle] = useState<string>("Project Canban");
+  const [loadingInfo, setLoadingInfo] = useState<boolean>(true);
+
+  // Inspect invite details from server on mount
   useEffect(() => {
-    // If not logged in, prompt gently
-    if (inviteCode && !userId && onRequireLogin) {
-      // Keep notice ready
-    }
-  }, [inviteCode, userId, onRequireLogin]);
+    if (!inviteCode) return;
+    let cancelled = false;
+
+    fetch(`/api/kanban/join?inviteCode=${encodeURIComponent(inviteCode)}`)
+      .then((res) => res.json())
+      .then((data: { ok?: boolean; role?: "editor" | "viewer"; boardTitle?: string }) => {
+        if (cancelled) return;
+        if (data.ok) {
+          if (data.role) setRole(data.role);
+          if (data.boardTitle) setBoardTitle(data.boardTitle);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingInfo(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [inviteCode]);
 
   if (!inviteCode) return null;
 
+  const isEditorRole = role === "editor";
+
   async function handleJoin() {
     if (!inviteCode) return;
-    if (!userId) {
-      if (onRequireLogin) onRequireLogin();
-      setError("Silakan masuk dengan akun BiarFokus kamu terlebih dahulu.");
-      return;
-    }
 
     setJoining(true);
     setError(null);
@@ -84,14 +105,14 @@ export function KanbanJoinModal({
             Undangan Kolaborasi Papan Proyek
           </h3>
           <p className="kanban-modal-sub" style={{ fontSize: 13, color: "var(--muted)", maxWidth: 380 }}>
-            Kamu diundang untuk bergabung dan berkolaborasi di ruang kerja <strong>Project Canban</strong>.
+            Kamu diundang untuk bergabung ke papan <strong>{loadingInfo ? "memuat..." : boardTitle}</strong>.
           </p>
         </div>
 
         {/* Role Privileges Card */}
         <div className="kanban-join-role-card">
           <div className="join-role-badge-row">
-            <span className="join-role-badge">
+            <span className={`join-role-badge ${isEditorRole ? "editor" : "viewer"}`}>
               {isEditorRole ? "✏️ Peran: Editor Kolaborator" : "👁️ Peran: Viewer (Hanya Lihat)"}
             </span>
           </div>
@@ -109,8 +130,18 @@ export function KanbanJoinModal({
         )}
 
         {!userId && (
-          <div className="kanban-join-login-notice">
-            <span>💡 <strong>Login Diperlukan:</strong> Masuk dengan akun BiarFokus kamu agar papan proyek ini otomatis tersinkronisasi di profilmu.</span>
+          <div className="kanban-join-login-notice" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span>💡 Masuk untuk sinkronisasi otomatis ke akun cloud BiarFokus kamu.</span>
+            {onRequireLogin && (
+              <button
+                type="button"
+                className="kanban-text-btn"
+                onClick={onRequireLogin}
+                style={{ fontWeight: 700, color: "var(--blue)", flexShrink: 0 }}
+              >
+                Masuk
+              </button>
+            )}
           </div>
         )}
 
@@ -130,7 +161,7 @@ export function KanbanJoinModal({
             disabled={joining}
             style={{ padding: "8px 22px", fontWeight: 700 }}
           >
-            {joining ? "Bergabung..." : (userId ? "✓ Setuju & Gabung ke Papan" : "🔐 Masuk & Gabung")}
+            {joining ? "Bergabung..." : (isEditorRole ? "✓ Setuju & Gabung sebagai Editor" : "✓ Masuk sebagai Viewer")}
           </button>
         </div>
       </div>

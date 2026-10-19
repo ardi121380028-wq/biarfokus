@@ -109,6 +109,15 @@ export function KanbanView({
   const bgMenuRef = useRef<HTMLDivElement>(null);
   useOutsideClick(bgMenuRef, () => setBgMenuOpen(false), bgMenuOpen);
 
+  // Auto open create board modal if user has 0 boards and no pending invite
+  const hasAutoOpenedModal = useRef(false);
+  useEffect(() => {
+    if (boards.length === 0 && !pendingInviteCode && !hasAutoOpenedModal.current) {
+      hasAutoOpenedModal.current = true;
+      setBoardModalOpen(true);
+    }
+  }, [boards.length, pendingInviteCode]);
+
   // Load board members for team avatar display and task PIC assignment
   useEffect(() => {
     if (!activeBoard.id) return;
@@ -371,6 +380,15 @@ export function KanbanView({
         onToggleDark={onToggleDark}
       />
 
+      {/* Mobile Backdrop for Expanded Sidebar */}
+      {!sidebarCollapsed && (
+        <div
+          className="kanban-sidebar-mobile-backdrop"
+          onClick={toggleSidebar}
+          aria-label="Tutup menu navigasi"
+        />
+      )}
+
       {/* Main Kanban Content Area */}
       <div
         ref={viewportRef}
@@ -398,8 +416,12 @@ export function KanbanView({
             {/* Breadcrumb Indicator */}
             <div className="kanban-breadcrumb-row">
               <span className="kanban-breadcrumb-root">Project Canban</span>
-              <span className="kanban-breadcrumb-sep">/</span>
-              <span className="kanban-breadcrumb-current">{activeBoard.title}</span>
+              {boards.length > 0 && (
+                <>
+                  <span className="kanban-breadcrumb-sep">/</span>
+                  <span className="kanban-breadcrumb-current">{activeBoard.title}</span>
+                </>
+              )}
             </div>
 
             {/* Switch Boards Button */}
@@ -521,183 +543,207 @@ export function KanbanView({
           </div>
         </div>
 
-        {/* Notion / Catatan-Style Headline Section (Image 3) */}
-        <div className="kanban-workspace-headline">
-          <div className="kanban-headline-left">
-            <span className="kanban-headline-emoji">🎯</span>
-            <div className="kanban-headline-titles">
-              <div className="kanban-headline-title-interactive">
-                {canEdit && isEditingBoardTitle ? (
-                  <input
-                    type="text"
-                    value={boardTitleInput}
-                    onChange={(e) => setBoardTitleInput(e.target.value)}
-                    onBlur={handleSaveBoardTitle}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSaveBoardTitle();
-                      if (e.key === "Escape") {
-                        setBoardTitleInput(activeBoard.title);
-                        setIsEditingBoardTitle(false);
-                      }
-                    }}
-                    className="kanban-headline-input"
-                    autoFocus
-                  />
-                ) : (
-                  <h1
-                    className="kanban-headline-main-title"
-                    onClick={() => {
-                      if (canEdit) {
-                        setBoardTitleInput(activeBoard.title);
-                        setIsEditingBoardTitle(true);
-                      }
-                    }}
-                    title={canEdit ? "Klik untuk mengubah nama proyek" : activeBoard.title}
-                    style={{ cursor: canEdit ? "pointer" : "default" }}
-                  >
-                    {activeBoard.title}
-                    {canEdit && (
-                      <span className="kanban-headline-edit-icon" aria-hidden="true">
-                        ✏️
-                      </span>
-                    )}
-                  </h1>
-                )}
-
-                {activeBoard.isShared && (
-                  <span className="kanban-role-badge editor" title="Papan kolaborasi bersama tim">
-                    👥 Tim
-                  </span>
-                )}
-                {(!canEdit || activeBoard.role === "viewer") && (
-                  <span className="kanban-role-badge viewer" title="Izin hanya lihat">
-                    👁️ Viewer / Read Only
-                  </span>
-                )}
-              </div>
-
-              {/* Subtitle / Month & Year Badge & Stats (Catatan / Notion style) */}
-              <div className="kanban-headline-meta-pills">
-                <span className="kanban-meta-pill date-pill">
-                  📅 {currentMonthYear}
-                </span>
-                <span className="kanban-meta-pill count-pill">
-                  📋 {activeBoard.lists.length} Kolom • 🗂️ {totalCardsCount} Kartu • 👥 {boardMembers.length > 0 ? boardMembers.length : 1} Anggota
-                </span>
-                <span className="kanban-meta-pill updated-pill">
-                  🕒 Diperbarui {activeBoard.updatedAt}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Read-Only Mode Banner */}
-        {!canEdit && (
-          <div className="kanban-readonly-notice-banner">
-            <div className="readonly-banner-info">
-              <span className="readonly-banner-icon">🔒</span>
-              <span>
-                <strong>Mode Hanya Lihat:</strong>{" "}
-                {pendingInviteCode
-                  ? "Kamu memiliki undangan untuk berkolaborasi di papan ini. Konfirmasi bergabung untuk mengedit tugas."
-                  : "Papan ini sedang dalam mode hanya lihat. Kamu belum menjadi editor pada papan ini."}
+        {/* If no boards exist yet: show onboarding empty state */}
+        {boards.length === 0 ? (
+          <div className="kanban-empty-workspace-state">
+            <div className="kanban-empty-workspace-card">
+              <span className="kanban-empty-workspace-icon" aria-hidden="true">
+                📋
               </span>
-            </div>
-            {pendingInviteCode ? (
+              <h2 className="kanban-empty-workspace-title">Belum Ada Ruang Kerja / Papan Kanban</h2>
+              <p className="kanban-empty-workspace-desc">
+                Mulai atur pekerjaan, tugas harian, dan kolaborasi tim dengan membuat ruang kerja atau papan proyek pertamamu.
+              </p>
               <button
                 type="button"
-                className="kanban-bar-btn kanban-share-bar-btn"
-                onClick={() => setPendingInviteCode(pendingInviteCode)}
+                className="kanban-primary-btn kanban-empty-create-btn"
+                onClick={() => setBoardModalOpen(true)}
               >
-                🤝 Konfirmasi &amp; Gabung
+                ✨ + Buat Workspace / Papan Baru
               </button>
-            ) : null}
+            </div>
           </div>
-        )}
-
-        {/* Horizontal Kanban Columns Canvas with internal vertical scroll */}
-        <div
-          className={`kanban-canvas-scroll ${isPanning ? "is-panning" : ""}`}
-          ref={scrollContainerRef}
-          onMouseDown={handleMouseDownCanvas}
-          onMouseMove={handleMouseMoveCanvas}
-          onMouseUp={handleMouseUpCanvas}
-          onMouseLeave={handleMouseLeaveCanvas}
-          onWheel={handleWheelCanvas}
-        >
-          <div className="kanban-columns-row">
-            {displayedLists.map((list) => (
-              <KanbanColumn
-                key={list.id}
-                list={list}
-                readOnly={!canEdit}
-                onCardClick={(card, listId) => setActiveCardData({ card, listId })}
-                onSendToFrog={handleSendCardToFrog}
-                onAddCard={addCard}
-                onUpdateTitle={updateList}
-                onDeleteList={deleteList}
-                onDragStartCard={handleDragStartCard}
-                onDragEndCard={handleDragEndCard}
-                onDropCard={handleDropCard}
-              />
-            ))}
-
-            {/* Add New List Column (Only for Editors/Owners) */}
-            {canEdit && (
-              <div className="kanban-add-list-column">
-                {isAddingList ? (
-                  <div className="kanban-add-list-composer">
-                    <input
-                      type="text"
-                      className="kanban-add-list-input"
-                      placeholder="Enter list title..."
-                      value={newListTitle}
-                      onChange={(e) => setNewListTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddListSubmit();
-                        if (e.key === "Escape") {
-                          setIsAddingList(false);
-                          setNewListTitle("");
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <div className="kanban-add-list-actions">
-                      <button
-                        type="button"
-                        className="kanban-add-list-btn"
-                        onClick={handleAddListSubmit}
-                        disabled={!newListTitle.trim()}
-                      >
-                        Add list
-                      </button>
-                      <button
-                        type="button"
-                        className="kanban-cancel-list-btn"
-                        onClick={() => {
-                          setIsAddingList(false);
-                          setNewListTitle("");
+        ) : (
+          <>
+            {/* Notion / Catatan-Style Headline Section (Image 3) */}
+            <div className="kanban-workspace-headline">
+              <div className="kanban-headline-left">
+                <span className="kanban-headline-emoji">🎯</span>
+                <div className="kanban-headline-titles">
+                  <div className="kanban-headline-title-interactive">
+                    {canEdit && isEditingBoardTitle ? (
+                      <input
+                        type="text"
+                        value={boardTitleInput}
+                        onChange={(e) => setBoardTitleInput(e.target.value)}
+                        onBlur={handleSaveBoardTitle}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveBoardTitle();
+                          if (e.key === "Escape") {
+                            setBoardTitleInput(activeBoard.title);
+                            setIsEditingBoardTitle(false);
+                          }
                         }}
-                        aria-label="Batal"
+                        className="kanban-headline-input"
+                        autoFocus
+                      />
+                    ) : (
+                      <h1
+                        className="kanban-headline-main-title"
+                        onClick={() => {
+                          if (canEdit) {
+                            setBoardTitleInput(activeBoard.title);
+                            setIsEditingBoardTitle(true);
+                          }
+                        }}
+                        title={canEdit ? "Klik untuk mengubah nama proyek" : activeBoard.title}
+                        style={{ cursor: canEdit ? "pointer" : "default" }}
                       >
-                        ✕
-                      </button>
-                    </div>
+                        {activeBoard.title}
+                        {canEdit && (
+                          <span className="kanban-headline-edit-icon" aria-hidden="true">
+                            ✏️
+                          </span>
+                        )}
+                      </h1>
+                    )}
+
+                    {activeBoard.isShared && (
+                      <span className="kanban-role-badge editor" title="Papan kolaborasi bersama tim">
+                        👥 Tim
+                      </span>
+                    )}
+                    {(!canEdit || activeBoard.role === "viewer") && (
+                      <span className="kanban-role-badge viewer" title="Izin hanya lihat">
+                        👁️ Viewer / Read Only
+                      </span>
+                    )}
                   </div>
-                ) : (
+
+                  {/* Subtitle / Month & Year Badge & Stats (Catatan / Notion style) */}
+                  <div className="kanban-headline-meta-pills">
+                    <span className="kanban-meta-pill date-pill">
+                      📅 {currentMonthYear}
+                    </span>
+                    <span className="kanban-meta-pill count-pill">
+                      📋 {activeBoard.lists.length} Kolom • 🗂️ {totalCardsCount} Kartu • 👥 {boardMembers.length > 0 ? boardMembers.length : 1} Anggota
+                    </span>
+                    <span className="kanban-meta-pill updated-pill">
+                      🕒 Diperbarui {activeBoard.updatedAt}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Read-Only Mode Banner */}
+            {!canEdit && (
+              <div className="kanban-readonly-notice-banner">
+                <div className="readonly-banner-info">
+                  <span className="readonly-banner-icon">🔒</span>
+                  <span>
+                    <strong>Mode Hanya Lihat:</strong>{" "}
+                    {pendingInviteCode
+                      ? "Kamu memiliki undangan untuk berkolaborasi di papan ini. Konfirmasi bergabung untuk mengedit tugas."
+                      : "Papan ini sedang dalam mode hanya lihat. Kamu belum menjadi editor pada papan ini."}
+                  </span>
+                </div>
+                {pendingInviteCode ? (
                   <button
                     type="button"
-                    className="kanban-add-list-prompt-btn"
-                    onClick={() => setIsAddingList(true)}
+                    className="kanban-bar-btn kanban-share-bar-btn"
+                    onClick={() => setPendingInviteCode(pendingInviteCode)}
                   >
-                    + Add another list
+                    🤝 Konfirmasi &amp; Gabung
                   </button>
-                )}
+                ) : null}
               </div>
             )}
-          </div>
-        </div>
+
+            {/* Horizontal Kanban Columns Canvas with internal vertical scroll */}
+            <div
+              className={`kanban-canvas-scroll ${isPanning ? "is-panning" : ""}`}
+              ref={scrollContainerRef}
+              onMouseDown={handleMouseDownCanvas}
+              onMouseMove={handleMouseMoveCanvas}
+              onMouseUp={handleMouseUpCanvas}
+              onMouseLeave={handleMouseLeaveCanvas}
+              onWheel={handleWheelCanvas}
+            >
+              <div className="kanban-columns-row">
+                {displayedLists.map((list) => (
+                  <KanbanColumn
+                    key={list.id}
+                    list={list}
+                    readOnly={!canEdit}
+                    onCardClick={(card, listId) => setActiveCardData({ card, listId })}
+                    onSendToFrog={handleSendCardToFrog}
+                    onAddCard={addCard}
+                    onUpdateTitle={updateList}
+                    onDeleteList={deleteList}
+                    onDragStartCard={handleDragStartCard}
+                    onDragEndCard={handleDragEndCard}
+                    onDropCard={handleDropCard}
+                  />
+                ))}
+
+                {/* Add New List Column (Only for Editors/Owners) */}
+                {canEdit && (
+                  <div className="kanban-add-list-column">
+                    {isAddingList ? (
+                      <div className="kanban-add-list-composer">
+                        <input
+                          type="text"
+                          className="kanban-add-list-input"
+                          placeholder="Enter list title..."
+                          value={newListTitle}
+                          onChange={(e) => setNewListTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddListSubmit();
+                            if (e.key === "Escape") {
+                              setIsAddingList(false);
+                              setNewListTitle("");
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <div className="kanban-add-list-actions">
+                          <button
+                            type="button"
+                            className="kanban-add-list-btn"
+                            onClick={handleAddListSubmit}
+                            disabled={!newListTitle.trim()}
+                          >
+                            Add list
+                          </button>
+                          <button
+                            type="button"
+                            className="kanban-cancel-list-btn"
+                            onClick={() => {
+                              setIsAddingList(false);
+                              setNewListTitle("");
+                            }}
+                            aria-label="Batal"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="kanban-add-list-prompt-btn"
+                        onClick={() => setIsAddingList(true)}
+                      >
+                        + Add another list
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Card Detail Dialog Modal */}

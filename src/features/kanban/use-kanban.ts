@@ -22,6 +22,17 @@ import {
 } from "./kanban-service";
 import { deleteCloudBoard, loadCloudBoards, upsertCloudBoard } from "./kanban-cloud";
 
+const EMPTY_FALLBACK_BOARD: KanbanBoard = {
+  id: "",
+  title: "Ruang Kerja Baru",
+  description: "",
+  background: "biarfokus-white",
+  starred: false,
+  createdAt: "",
+  updatedAt: "",
+  lists: [],
+};
+
 export function useKanban(userId?: string | null) {
   const [boards, updateBoards] = useLocalStoreValue<KanbanBoard[]>(
     getStorageKey(userId),
@@ -32,12 +43,12 @@ export function useKanban(userId?: string | null) {
   const [activeBoardIdRaw, setActiveBoardIdRaw] = useLocalStoreValue<string>(
     getActiveBoardStorageKey(userId),
     parseStoredBoardId,
-    INITIAL_BOARDS[0].id,
+    "",
   );
 
   const activeBoardId = useMemo(() => {
     const clean = parseStoredBoardId(activeBoardIdRaw);
-    return clean || (boards[0]?.id ?? INITIAL_BOARDS[0].id);
+    return clean || (boards[0]?.id ?? "");
   }, [activeBoardIdRaw, boards]);
 
   const selectBoard = useCallback(
@@ -100,7 +111,7 @@ export function useKanban(userId?: string | null) {
   // Resolve current active board safely
   const activeBoard = useMemo(() => {
     const found = boards.find((b) => b.id === activeBoardId);
-    return found || boards[0] || INITIAL_BOARDS[0];
+    return found || boards[0] || EMPTY_FALLBACK_BOARD;
   }, [boards, activeBoardId]);
 
   const syncBoardToCloud = useCallback(
@@ -152,16 +163,13 @@ export function useKanban(userId?: string | null) {
     (boardId: string) => {
       updateBoards((current) => {
         const next = current.filter((b) => b.id !== boardId);
-        if (next.length === 0) {
-          return INITIAL_BOARDS;
-        }
         return next;
       });
 
       if (activeBoardId === boardId) {
         selectBoard(() => {
           const remaining = boards.filter((b) => b.id !== boardId);
-          return remaining[0]?.id || INITIAL_BOARDS[0].id;
+          return remaining[0]?.id || "";
         });
       }
 

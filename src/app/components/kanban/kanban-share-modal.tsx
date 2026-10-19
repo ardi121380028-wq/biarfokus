@@ -236,11 +236,12 @@ export function KanbanShareModal({
           </div>
         </div>
 
-        <div className="kanban-modal-footer">
+        <div className="kanban-modal-footer" style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
           <button
             type="button"
-            className="kanban-btn-primary"
+            className="kanban-primary-btn"
             onClick={onClose}
+            style={{ padding: "8px 24px", minWidth: 100, textAlign: "center" }}
           >
             Selesai
           </button>

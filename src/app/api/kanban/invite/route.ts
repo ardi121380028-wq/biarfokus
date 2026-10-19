@@ -12,10 +12,11 @@ import type { KanbanMemberRole } from "@/types/domain";
 const ROUTE = "/api/kanban/invite";
 const limiter = createRateLimiter({ limit: 30, windowMs: 60_000 });
 
-function generateInviteCode(): string {
+function generateInviteCode(role: "editor" | "viewer"): string {
   const chars = "abcdefghjkmnpqrstuvwxyz23456789";
-  let code = "bf_inv_";
-  for (let i = 0; i < 9; i++) {
+  const prefix = role === "viewer" ? "bf_inv_viewer_" : "bf_inv_editor_";
+  let code = prefix;
+  for (let i = 0; i < 8; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
@@ -27,16 +28,6 @@ export async function POST(request: Request) {
   if (!limit.allowed) return rateLimitResponse(limit, correlationId);
 
   try {
-    const supabase = await getSupabaseServerClient();
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !authData.user) {
-      return apiJson(
-        { error: "Sesi login diperlukan untuk membuat undangan papan proyek." },
-        { status: 401, correlationId },
-      );
-    }
-
     const body = (await request.json().catch(() => ({}))) as {
       boardId?: unknown;
       role?: unknown;
@@ -54,6 +45,30 @@ export async function POST(request: Request) {
 
     if (!boardId) {
       return apiJson({ error: "boardId diperlukan." }, { status: 400, correlationId });
+    }
+
+    const supabase = await getSupabaseServerClient();
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+
+    // If user is guest/unauthenticated, produce a self-contained fallback token so they can still share
+    if (authError || !authData.user) {
+      const fallbackPayload = {
+        b: boardId,
+        r: requestedRole,
+        u: "guest",
+        t: Date.now(),
+        board: body.board,
+      };
+      const fallbackCode = `bf_inv_${requestedRole}_${Buffer.from(JSON.stringify(fallbackPayload)).toString("base64url")}`;
+      return apiJson(
+        {
+          ok: true,
+          inviteCode: fallbackCode,
+          role: requestedRole,
+          isGuestToken: true,
+        },
+        { correlationId },
+      );
     }
 
     let board: { id: string; user_id: string; title: string } | null = null;
@@ -163,8 +178,8 @@ export async function POST(request: Request) {
         );
       }
 
-      // Generate new invite code
-      const inviteCode = generateInviteCode();
+      // Generate new invite code with explicit role prefix
+      const inviteCode = generateInviteCode(requestedRole);
       const { error: insertError } = await supabase
         .from("kanban_board_invites")
         .insert({
@@ -195,7 +210,7 @@ export async function POST(request: Request) {
       u: authData.user.id,
       t: Date.now(),
     };
-    const fallbackCode = `bf_inv_${Buffer.from(JSON.stringify(fallbackPayload)).toString("base64url")}`;
+    const fallbackCode = `bf_inv_${requestedRole}_${Buffer.from(JSON.stringify(fallbackPayload)).toString("base64url")}`;
 
     return apiJson(
       {

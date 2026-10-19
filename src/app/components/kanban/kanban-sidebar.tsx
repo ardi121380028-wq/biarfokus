@@ -227,6 +227,19 @@ export function KanbanSidebar({
               </div>
             );
           })}
+
+          {filteredBoards.length === 0 && !isCollapsed && (
+            <div className="kanban-empty-sidebar-boards">
+              <p>Belum ada papan proyek.</p>
+              <button
+                type="button"
+                className="kanban-sidebar-create-empty-btn"
+                onClick={onCreateBoardModalOpen}
+              >
+                + Buat Papan Baru
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

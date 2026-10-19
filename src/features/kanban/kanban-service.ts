@@ -338,7 +338,7 @@ export const TEMPLATES: { key: string; name: string; description: string; icon: 
   },
 ];
 
-export const INITIAL_BOARDS: KanbanBoard[] = [createDefaultGrowthBoard()];
+export const INITIAL_BOARDS: KanbanBoard[] = [];
 
 /* ------------------------------------------------------------------ */
 /* Storage Parser                                                     */
@@ -468,16 +468,18 @@ export function parseStoredBoardId(raw: string | null): string {
 }
 
 export function parseStoredBoards(raw: string | null): KanbanBoard[] {
-  if (!raw) return INITIAL_BOARDS;
+  if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].id === "string") {
-      return parsed.map((item) => normalizeBoard(item));
+    if (Array.isArray(parsed)) {
+      return parsed
+        .filter((item): item is KanbanBoard => Boolean(item && typeof item === "object" && typeof item.id === "string"))
+        .map((item) => normalizeBoard(item));
     }
   } catch {
-    // Malformed JSON: return defaults
+    // Malformed JSON: return empty
   }
-  return INITIAL_BOARDS;
+  return [];
 }
 
 /* ------------------------------------------------------------------ */

@@ -26,7 +26,9 @@ export function KanbanBoardModal({
   useOutsideClick(modalRef, onClose);
   useEscapeKey(onClose);
 
-  const [activeTab, setActiveTab] = useState<"boards" | "templates" | "create">("boards");
+  const [activeTab, setActiveTab] = useState<"boards" | "templates" | "create">(() => {
+    return boards.length === 0 ? "create" : "boards";
+  });
   const [newBoardTitle, setNewBoardTitle] = useState("");
   const [selectedBg, setSelectedBg] = useState("wave-blue");
 
@@ -97,8 +99,20 @@ export function KanbanBoardModal({
 
         {/* Tab 1: Existing Boards (Screenshot 4) */}
         {activeTab === "boards" && (
-          <div className="kanban-boards-grid">
-            {boards.map((b) => {
+          boards.length === 0 ? (
+            <div className="kanban-empty-boards-modal-state">
+              <p>Belum ada board yang tersimpan.</p>
+              <button
+                type="button"
+                className="kanban-primary-btn"
+                onClick={() => setActiveTab("create")}
+              >
+                + Buat Board Pertama
+              </button>
+            </div>
+          ) : (
+            <div className="kanban-boards-grid">
+              {boards.map((b) => {
               const bg = BOARD_BACKGROUNDS.find((bgItem) => bgItem.id === b.background) || BOARD_BACKGROUNDS[0];
               const cleanBoardId = b.id.replace(/^["']|["']$/g, "");
               const cleanActiveId = activeBoardId.replace(/^["']|["']$/g, "");
@@ -156,6 +170,7 @@ export function KanbanBoardModal({
               <span>+ Buat Board Baru</span>
             </div>
           </div>
+          )
         )}
 
         {/* Tab 2: Templates Library (Screenshot 4) */}
