@@ -39,11 +39,12 @@ This file serves as a single-source handoff for any developer or AI assistant co
 │       ├── 20261018000000_mvp6_scale_and_reliability.sql      # Task migration RPC, daily focus RPC, indexes
 │       ├── 20261018223000_add_notes_and_calendar_events.sql   # keep_notes, keep_labels, calendar_events + RLS
 │       ├── 20261018233000_add_linked_item_text_and_site_visits.sql # Sub-task linking & site_visits analytics table
-│       └── 20261019090000_add_linked_note_to_tasks.sql        # Eat Your Frog linked note & checklist item columns
+│       ├── 20261019090000_add_linked_note_to_tasks.sql        # Eat Your Frog linked note & checklist item columns
+│       └── 20261019100000_add_kanban_boards.sql               # Project Canban boards table + RLS
 └── src/
     ├── proxy.ts                # Next.js 16 request proxy refreshing Supabase auth cookies
     ├── types/
-    │   └── domain.ts           # Shared domain types (Timer, Task, Stats, Profile, Admin, Billing, Notes, Calendar)
+    │   └── domain.ts           # Shared domain types (Timer, Task, Stats, Profile, Admin, Billing, Notes, Calendar, Kanban)
     ├── lib/
     │   ├── api/
     │   │   ├── request-guard.ts      # Rate limiting, correlation IDs, structured API logs
@@ -65,6 +66,11 @@ This file serves as a single-source handoff for any developer or AI assistant co
     │   ├── calendar/
     │   │   ├── calendar-service.ts      # Day/Week/Month/Year calculations, drag-and-drop & resize logic
     │   │   └── calendar-service.test.ts # Unit tests for calendar service
+    │   ├── kanban/
+    │   │   ├── kanban-service.ts      # Pure domain operations, board templates, wallpapers, search & drag-and-drop
+    │   │   ├── kanban-service.test.ts # Unit tests for kanban operations (81 passing tests total)
+    │   │   ├── kanban-cloud.ts        # Supabase persistence with schema check & fallback
+    │   │   └── use-kanban.ts          # Cross-tab reactive store and auto-cloud synchronization
     │   ├── notes/
     │   │   ├── note-service.ts          # Google Keep style notes CRUD, checklist & pin logic
     │   │   └── note-service.test.ts     # Unit tests for note service
@@ -104,6 +110,7 @@ This file serves as a single-source handoff for any developer or AI assistant co
         │   ├── auth-modal.tsx      # Login / register / Google OAuth modal
         │   ├── calendar/           # Calendar sub-views (Day, Week, Month, Year, Event Modal)
         │   ├── calendar-view.tsx   # Google Calendar view with drag-and-drop & resize time-blocking
+        │   ├── kanban/             # Trello-style Kanban components (Canvas, Columns, Cards, Dialog, Modal)
         │   ├── notes/              # Notes sub-components (Card, Edit Modal, Checklist items)
         │   ├── notes-modal.tsx     # Google Keep-style Notes drawer/modal
         │   ├── pomodoro-modal.tsx  # Interactive educational Pomodoro technique & science modal
@@ -213,6 +220,19 @@ All tables have Row Level Security (RLS) enabled.
   - **Client-Side Task Link Resilience:** Penyimpanan mapping link task (`LOCAL_TASK_LINKS_KEY = "biarfokus.task_links"`) yang otomatis di-rehidrasi saat fallback schema Supabase terjadi, ditambah fallback pencocokan teks pintar untuk task lama.
   - **Visual Origin Badge:** Task yang terhubung menampilkan badge link `📝 [Judul Catatan]` yang dapat diklik langsung untuk membuka catatan sumber.
   - **Database Migration:** Migration `20261019090000_add_linked_note_to_tasks.sql` dengan RLS dan fallback graceful saat offline/guest.
+- **MVP12 — Project Canban (Trello-Style Architecture) (Completed):**
+  - **Top Bar & Mobile Navigation:** Menu utama berlabel tepat `"Project Canban"` yang mudah diakses dari header desktop maupun mobile navigation drawer.
+  - **Scalable Architecture & Clean Domain Separation:** Dibangun dengan arsitektur jangka panjang (`KanbanBoard`, `KanbanList`, `KanbanCard`, `KanbanLabel`, `KanbanChecklist`, `KanbanComment`), pure domain operations di `kanban-service.ts`, dan reactive store syncing (`useKanban`) dengan `useSyncExternalStore`.
+  - **Dual-Layer Persistence:** Sinkronisasi otomatis ke Supabase database (`kanban_boards` table dengan Row-Level Security) jika user login, dan fallback tanpa batas ke `localStorage` (`biarfokus.kanban_boards`) untuk guest mode atau offline, dilengkapi graceful schema fallback jika database remote belum dimigrasi.
+  - **Full Trello Feature Parity (Ref: 4 User Screenshots):**
+    - **Horizontal Board Canvas:** Layout kolom horizontal fleksibel dengan auto-scroll halus dan composer inline "+ Add another list".
+    - **Native Drag & Drop:** Pindah kartu antar list/kolom secara responsif dengan update posisi instan dan penyesuaian urutan indeks.
+    - **Inline Card Composer:** Form penambahan kartu instan di setiap kolom dengan tombol "+ Add card", cancel `✕`, dan generator template kartu `💡 Tip`.
+    - **Rich Card Detail Modal (`KanbanCardDialog`):** Modal komprehensif menampilkan breadcrumb list asal, label warna (6 palette preset), tanggal jatuh tempo (due date), deskripsi multiline dengan preview, multi-checklist dengan dynamic percentage progress bar, timeline komentar/aktivitas, serta action sidebar.
+    - **Board Switcher & Workspace Modal (`KanbanBoardModal`):** Pemilihan board aktif, template instan (Growth Marketing, Sprint Scrum, Bug Tracking, Personal Board), dan pembuat board baru dengan pratinjau wallpaper.
+    - **Theming & Wallpaper Support:** Koleksi background gradient dinamis (Ocean Wave, Sunset Ember, Northern Aurora, Midnight Deep) dan warna solid Trello dengan kontras teks otomatis.
+    - **Deep Ecosystem Bridge (`🐸 Eat Your Frog`):** Tombol integrasi langsung di setiap kartu kanban dan dialog detail untuk mengirimkan card kanban langsung menjadi target fokus Pomodoro aktif di Eat Your Frog.
+    - **Test Coverage:** Suite unit test `kanban-service.test.ts` (9 test cases) terverifikasi lulus bersama total 81 test suite di seluruh project.
 
 ---
 

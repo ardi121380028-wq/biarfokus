@@ -139,3 +139,80 @@ export type CalendarEvent = {
   linkedItemId?: string; // optional specific checklist item inside the linked note
   linkedItemText?: string; // snapshot of specific checklist item text
 };
+
+/* ------------------------------------------------------------------ */
+/* Kanban (Trello-style) domain types                                  */
+/* ------------------------------------------------------------------ */
+
+export type KanbanLabel = {
+  id: string;
+  name: string;
+  color: string; // Hex color (e.g. #61bd4f, #0079bf, #eb5a46, etc.)
+};
+
+export type KanbanChecklistItem = {
+  id: string;
+  text: string;
+  done: boolean;
+};
+
+export type KanbanChecklist = {
+  id: string;
+  title: string;
+  items: KanbanChecklistItem[];
+};
+
+export type KanbanComment = {
+  id: string;
+  authorName: string;
+  text: string;
+  createdAt: string;
+};
+
+export type KanbanCard = {
+  id: string;
+  title: string;
+  description?: string;
+  coverColor?: string;
+  coverEmoji?: string;
+  labels: KanbanLabel[];
+  dueDate?: string; // YYYY-MM-DD
+  dueCompleted?: boolean;
+  checklists: KanbanChecklist[];
+  comments: KanbanComment[];
+  pomodoros?: number;
+  frog?: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type KanbanList = {
+  id: string;
+  title: string;
+  cards: KanbanCard[];
+  order: number;
+};
+
+export type KanbanBoard = {
+  id: string;
+  title: string;
+  description?: string;
+  background: string; // Preset background key or CSS style
+  lists: KanbanList[];
+  starred?: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DbKanbanBoard = {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  background: string;
+  lists: unknown;
+  starred: boolean;
+  created_at: string;
+  updated_at: string;
+};

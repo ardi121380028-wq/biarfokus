@@ -1,0 +1,546 @@
+import type {
+  KanbanBoard,
+  KanbanCard,
+  KanbanList,
+} from "@/types/domain";
+
+export const KANBAN_STORAGE_PREFIX = "biarfokus.kanban";
+
+export function getStorageKey(userId?: string | null): string {
+  return userId ? `${KANBAN_STORAGE_PREFIX}.${userId}.boards` : `${KANBAN_STORAGE_PREFIX}.guest.boards`;
+}
+
+export function getActiveBoardStorageKey(userId?: string | null): string {
+  return userId ? `${KANBAN_STORAGE_PREFIX}.${userId}.active` : `${KANBAN_STORAGE_PREFIX}.guest.active`;
+}
+
+export function createId(prefix: string): string {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function formatUpdatedAt(date: Date): string {
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export const LABEL_PALETTE: { color: string; defaultName: string }[] = [
+  { color: "#61bd4f", defaultName: "Done / Low Risk" },
+  { color: "#f2d600", defaultName: "Medium Priority" },
+  { color: "#ff9f1a", defaultName: "High Priority" },
+  { color: "#eb5a46", defaultName: "Urgent / Blocker" },
+  { color: "#c377e0", defaultName: "Design / Creative" },
+  { color: "#0079bf", defaultName: "Dev / Tech" },
+  { color: "#00c2e0", defaultName: "Trello Tip" },
+  { color: "#ff78cb", defaultName: "Marketing / Growth" },
+];
+
+export const BOARD_BACKGROUNDS: { id: string; name: string; value: string; textColor: string }[] = [
+  {
+    id: "wave-blue",
+    name: "Wave Paper Blue",
+    value: "radial-gradient(ellipse at bottom, #1b3a57 0%, #0a192f 100%)",
+    textColor: "#ffffff",
+  },
+  {
+    id: "purple-haze",
+    name: "Purple Gradient",
+    value: "linear-gradient(135deg, #7928ca 0%, #4c1d95 100%)",
+    textColor: "#ffffff",
+  },
+  {
+    id: "emerald-forest",
+    name: "Emerald Forest",
+    value: "linear-gradient(135deg, #065f46 0%, #022c22 100%)",
+    textColor: "#ffffff",
+  },
+  {
+    id: "sunset-glow",
+    name: "Sunset Glow",
+    value: "linear-gradient(135deg, #9d174d 0%, #4c0519 100%)",
+    textColor: "#ffffff",
+  },
+  {
+    id: "ocean-breeze",
+    name: "Ocean Breeze",
+    value: "linear-gradient(135deg, #0284c7 0%, #0c4a6e 100%)",
+    textColor: "#ffffff",
+  },
+  {
+    id: "slate-clean",
+    name: "Clean Slate",
+    value: "linear-gradient(135deg, #334155 0%, #0f172a 100%)",
+    textColor: "#ffffff",
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/* Templates                                                          */
+/* ------------------------------------------------------------------ */
+
+export function createDefaultGrowthBoard(): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+
+  const resourcesCards: KanbanCard[] = [
+    {
+      id: "card-res-1",
+      title: "Trello Tip: Card labels! What do they mean? (Click for more info)",
+      description: "Labels help you quickly scan and prioritize cards across columns.",
+      labels: [{ id: "lbl-1", name: "Trello Tip", color: "#00c2e0" }],
+      checklists: [],
+      comments: [],
+      order: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "card-res-2",
+      title: "Stakeholders & Key Contacts",
+      description: "Internal team members and external client points of contact.",
+      labels: [{ id: "lbl-2", name: "Design / Creative", color: "#c377e0" }],
+      checklists: [],
+      comments: [],
+      order: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "card-res-3",
+      title: "Weekly Updates & Team Standup Notes",
+      description: "Archive of weekly sprint recaps.",
+      labels: [],
+      checklists: [],
+      comments: [],
+      order: 2,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const questionsCards: KanbanCard[] = [
+    {
+      id: "card-q-1",
+      title: "Meet 1 - 6/10/2026",
+      description: "Diskusi target peluncuran Q4 dan alokasi budget fokus.",
+      labels: [],
+      checklists: [],
+      comments: [{ id: "cmt-1", authorName: "Founder", text: "Siapkan deck presentasi sebelum jam 10 pagi.", createdAt: now }],
+      order: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const crucialCards: KanbanCard[] = [
+    { id: "card-cru-1", title: "Alur Client", labels: [], checklists: [], comments: [], order: 0, createdAt: now, updatedAt: now },
+    { id: "card-cru-2", title: "Nomor Usaha", labels: [], checklists: [], comments: [], order: 1, createdAt: now, updatedAt: now },
+    { id: "card-cru-3", title: "Managemen Client", labels: [], checklists: [], comments: [], order: 2, createdAt: now, updatedAt: now },
+    { id: "card-cru-4", title: "Personal Branding Plan", labels: [], checklists: [], comments: [], order: 3, createdAt: now, updatedAt: now },
+  ];
+
+  const todoCards: KanbanCard[] = [
+    {
+      id: "card-todo-1",
+      title: "Name Company",
+      description: "Finalisasi nama brand resmi, domain .id, dan social media handles.",
+      labels: [{ id: "lbl-3", name: "Trello Tip", color: "#00c2e0" }],
+      dueDate: "2026-10-31",
+      dueCompleted: false,
+      checklists: [
+        {
+          id: "chk-1",
+          title: "Legal & Identitas",
+          items: [
+            { id: "item-1", text: "Cek ketersediaan nama di AHU", done: true },
+            { id: "item-2", text: "Beli domain biarfokus.id", done: true },
+            { id: "item-3", text: "Daftarkan merk HKI", done: false },
+          ],
+        },
+      ],
+      comments: [],
+      pomodoros: 2,
+      order: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+    { id: "card-todo-2", title: "Visi and Mission", labels: [], checklists: [], comments: [], order: 1, createdAt: now, updatedAt: now },
+    { id: "card-todo-3", title: "Progress Menambah Kapasitas Diri", labels: [], checklists: [], comments: [], order: 2, createdAt: now, updatedAt: now },
+    { id: "card-todo-4", title: "Management", labels: [], checklists: [], comments: [], order: 3, createdAt: now, updatedAt: now },
+  ];
+
+  const blockedCards: KanbanCard[] = [
+    {
+      id: "card-blk-1",
+      title: "Splash those redtape-heavy issues that are slowing your team down here.",
+      description: "Tugas atau proses yang tertahan menunggu persetujuan legalitas atau integrasi pihak ketiga.",
+      coverEmoji: "🐱",
+      labels: [{ id: "lbl-4", name: "Urgent / Blocker", color: "#eb5a46" }],
+      checklists: [],
+      comments: [{ id: "cmt-2", authorName: "Product Lead", text: "Menunggu approval dokumen.", createdAt: now }],
+      order: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const doneCards: KanbanCard[] = [
+    {
+      id: "card-done-1",
+      title: "Trello Tip: Be proud! You're done! For all your finished tasks that your team has hustled on.",
+      description: "Rayakan setiap pencapaian fokus kamu!",
+      coverEmoji: "⭐",
+      labels: [{ id: "lbl-5", name: "Done / Low Risk", color: "#61bd4f" }],
+      checklists: [],
+      comments: [],
+      order: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  return {
+    id: "board-gt-growth",
+    title: "GT - Growth",
+    description: "Pertumbuhan bisnis, manajemen klien, dan target 101 crucial.",
+    background: "wave-blue",
+    starred: true,
+    createdAt: now,
+    updatedAt: now,
+    lists: [
+      { id: "list-res", title: "Project Resources", order: 0, cards: resourcesCards },
+      { id: "list-q", title: "Questions For Next Meeting", order: 1, cards: questionsCards },
+      { id: "list-cru", title: "101 Crucial", order: 2, cards: crucialCards },
+      { id: "list-todo", title: "To Do", order: 3, cards: todoCards },
+      { id: "list-blk", title: "Blocked", order: 4, cards: blockedCards },
+      { id: "list-done", title: "Done", order: 5, cards: doneCards },
+    ],
+  };
+}
+
+export function createScrumBoard(): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    id: createId("board"),
+    title: "Project Management (Scrum)",
+    description: "Siklus sprint produk dari backlog hingga QA dan rilis.",
+    background: "purple-haze",
+    starred: false,
+    createdAt: now,
+    updatedAt: now,
+    lists: [
+      { id: createId("list"), title: "Backlog", order: 0, cards: [
+        { id: createId("card"), title: "Riset kebutuhan user", labels: [{ id: "l-1", name: "Dev / Tech", color: "#0079bf" }], checklists: [], comments: [], order: 0, createdAt: now, updatedAt: now },
+      ] },
+      { id: createId("list"), title: "Sprint To Do", order: 1, cards: [] },
+      { id: createId("list"), title: "In Progress", order: 2, cards: [] },
+      { id: createId("list"), title: "Code Review / QA", order: 3, cards: [] },
+      { id: createId("list"), title: "Done", order: 4, cards: [] },
+    ],
+  };
+}
+
+export function createBugTrackingBoard(): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    id: createId("board"),
+    title: "Bug Tracking & Issues",
+    description: "Pelacakan issue dan perbaikan bug sistem.",
+    background: "sunset-glow",
+    starred: false,
+    createdAt: now,
+    updatedAt: now,
+    lists: [
+      { id: createId("list"), title: "Reported Bugs", order: 0, cards: [] },
+      { id: createId("list"), title: "Triaged / Investigating", order: 1, cards: [] },
+      { id: createId("list"), title: "Fix in Progress", order: 2, cards: [] },
+      { id: createId("list"), title: "Testing / Verified", order: 3, cards: [] },
+      { id: createId("list"), title: "Resolved", order: 4, cards: [] },
+    ],
+  };
+}
+
+export function createPersonalKanbanBoard(): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    id: createId("board"),
+    title: "Personal Focus Kanban",
+    description: "Manajemen prioritas pribadi harian dan mingguan.",
+    background: "emerald-forest",
+    starred: false,
+    createdAt: now,
+    updatedAt: now,
+    lists: [
+      { id: createId("list"), title: "Ide & Brainstorm", order: 0, cards: [] },
+      { id: createId("list"), title: "To Do Hari Ini", order: 1, cards: [] },
+      { id: createId("list"), title: "Sedang Dikerjakan", order: 2, cards: [] },
+      { id: createId("list"), title: "Selesai", order: 3, cards: [] },
+    ],
+  };
+}
+
+export const TEMPLATES: { key: string; name: string; description: string; icon: string; builder: () => KanbanBoard }[] = [
+  {
+    key: "growth",
+    name: "GT - Growth",
+    description: "Board pertumbuhan bisnis, manajemen klien, dan target 101 crucial.",
+    icon: "🚀",
+    builder: createDefaultGrowthBoard,
+  },
+  {
+    key: "scrum",
+    name: "Project Management (Scrum)",
+    description: "Manajemen backlog, sprint aktif, code review, dan rilis.",
+    icon: "⚡",
+    builder: createScrumBoard,
+  },
+  {
+    key: "bugs",
+    name: "Bug Tracking",
+    description: "Pelacakan isu kritis, triase bug, dan verifikasi perbaikan.",
+    icon: "🐛",
+    builder: createBugTrackingBoard,
+  },
+  {
+    key: "personal",
+    name: "Personal Productivity",
+    description: "Alur fokus pribadi sederhana: Ide, To Do, Doing, Selesai.",
+    icon: "🎯",
+    builder: createPersonalKanbanBoard,
+  },
+];
+
+export const INITIAL_BOARDS: KanbanBoard[] = [createDefaultGrowthBoard()];
+
+/* ------------------------------------------------------------------ */
+/* Storage Parser                                                     */
+/* ------------------------------------------------------------------ */
+
+export function parseStoredBoards(raw: string | null): KanbanBoard[] {
+  if (!raw) return INITIAL_BOARDS;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].id === "string") {
+      return parsed as KanbanBoard[];
+    }
+  } catch {
+    // Malformed JSON: return defaults
+  }
+  return INITIAL_BOARDS;
+}
+
+/* ------------------------------------------------------------------ */
+/* Immutable Pure Board Operations                                     */
+/* ------------------------------------------------------------------ */
+
+export function moveCard(
+  board: KanbanBoard,
+  sourceListId: string,
+  destListId: string,
+  sourceIndex: number,
+  destIndex: number,
+): KanbanBoard {
+  const sourceList = board.lists.find((l) => l.id === sourceListId);
+  const destList = board.lists.find((l) => l.id === destListId);
+  if (!sourceList || !destList) return board;
+
+  const cardToMove = sourceList.cards[sourceIndex];
+  if (!cardToMove) return board;
+
+  const now = formatUpdatedAt(new Date());
+
+  if (sourceListId === destListId) {
+    // Reorder within the same list
+    const newCards = [...sourceList.cards];
+    newCards.splice(sourceIndex, 1);
+    newCards.splice(destIndex, 0, { ...cardToMove, updatedAt: now });
+
+    return {
+      ...board,
+      updatedAt: now,
+      lists: board.lists.map((l) => (l.id === sourceListId ? { ...l, cards: newCards } : l)),
+    };
+  }
+
+  // Move across different lists
+  const newSourceCards = [...sourceList.cards];
+  newSourceCards.splice(sourceIndex, 1);
+
+  const newDestCards = [...destList.cards];
+  newDestCards.splice(destIndex, 0, { ...cardToMove, updatedAt: now });
+
+  return {
+    ...board,
+    updatedAt: now,
+    lists: board.lists.map((l) => {
+      if (l.id === sourceListId) return { ...l, cards: newSourceCards };
+      if (l.id === destListId) return { ...l, cards: newDestCards };
+      return l;
+    }),
+  };
+}
+
+export function moveList(board: KanbanBoard, sourceIndex: number, destIndex: number): KanbanBoard {
+  if (sourceIndex === destIndex) return board;
+  const newLists = [...board.lists];
+  const [removed] = newLists.splice(sourceIndex, 1);
+  if (!removed) return board;
+  newLists.splice(destIndex, 0, removed);
+
+  const reindexed = newLists.map((l, idx) => ({ ...l, order: idx }));
+  return {
+    ...board,
+    updatedAt: formatUpdatedAt(new Date()),
+    lists: reindexed,
+  };
+}
+
+export function addCardToList(
+  board: KanbanBoard,
+  listId: string,
+  title: string,
+  meta?: Partial<KanbanCard>,
+): KanbanBoard {
+  const cleanTitle = title.trim();
+  if (!cleanTitle) return board;
+
+  const now = formatUpdatedAt(new Date());
+  const newCard: KanbanCard = {
+    id: createId("card"),
+    title: cleanTitle,
+    labels: [],
+    checklists: [],
+    comments: [],
+    order: 0,
+    createdAt: now,
+    updatedAt: now,
+    ...meta,
+  };
+
+  return {
+    ...board,
+    updatedAt: now,
+    lists: board.lists.map((l) => {
+      if (l.id !== listId) return l;
+      return {
+        ...l,
+        cards: [...l.cards, { ...newCard, order: l.cards.length }],
+      };
+    }),
+  };
+}
+
+export function updateCard(
+  board: KanbanBoard,
+  listId: string,
+  cardId: string,
+  updates: Partial<KanbanCard>,
+): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    ...board,
+    updatedAt: now,
+    lists: board.lists.map((l) => {
+      if (l.id !== listId) return l;
+      return {
+        ...l,
+        cards: l.cards.map((c) => (c.id === cardId ? { ...c, ...updates, updatedAt: now } : c)),
+      };
+    }),
+  };
+}
+
+export function deleteCard(board: KanbanBoard, listId: string, cardId: string): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    ...board,
+    updatedAt: now,
+    lists: board.lists.map((l) => {
+      if (l.id !== listId) return l;
+      return {
+        ...l,
+        cards: l.cards.filter((c) => c.id !== cardId),
+      };
+    }),
+  };
+}
+
+export function addList(board: KanbanBoard, title: string): KanbanBoard {
+  const cleanTitle = title.trim();
+  if (!cleanTitle) return board;
+
+  const now = formatUpdatedAt(new Date());
+  const newList: KanbanList = {
+    id: createId("list"),
+    title: cleanTitle,
+    cards: [],
+    order: board.lists.length,
+  };
+
+  return {
+    ...board,
+    updatedAt: now,
+    lists: [...board.lists, newList],
+  };
+}
+
+export function updateListTitle(board: KanbanBoard, listId: string, title: string): KanbanBoard {
+  const cleanTitle = title.trim();
+  if (!cleanTitle) return board;
+  const now = formatUpdatedAt(new Date());
+
+  return {
+    ...board,
+    updatedAt: now,
+    lists: board.lists.map((l) => (l.id === listId ? { ...l, title: cleanTitle } : l)),
+  };
+}
+
+export function deleteList(board: KanbanBoard, listId: string): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    ...board,
+    updatedAt: now,
+    lists: board.lists.filter((l) => l.id !== listId),
+  };
+}
+
+export function createNewBoard(
+  title: string,
+  background: string = "wave-blue",
+  templateKey?: string,
+): KanbanBoard {
+  const cleanTitle = title.trim() || "Proyek Baru";
+  const now = formatUpdatedAt(new Date());
+
+  if (templateKey) {
+    const template = TEMPLATES.find((t) => t.key === templateKey);
+    if (template) {
+      const built = template.builder();
+      return {
+        ...built,
+        id: createId("board"),
+        title: cleanTitle,
+        background: background || built.background,
+        createdAt: now,
+        updatedAt: now,
+      };
+    }
+  }
+
+  return {
+    id: createId("board"),
+    title: cleanTitle,
+    background,
+    starred: false,
+    createdAt: now,
+    updatedAt: now,
+    lists: [
+      { id: createId("list"), title: "To Do", order: 0, cards: [] },
+      { id: createId("list"), title: "In Progress", order: 1, cards: [] },
+      { id: createId("list"), title: "Done", order: 2, cards: [] },
+    ],
+  };
+}

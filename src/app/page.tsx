@@ -19,6 +19,7 @@ import { NotesModal } from "@/app/components/notes-modal";
 import { CalendarView } from "@/app/components/calendar-view";
 import { AboutModal } from "@/app/components/about-modal";
 import { PomodoroModal } from "@/app/components/pomodoro-modal";
+import { KanbanView } from "@/app/components/kanban/kanban-view";
 import { trackSiteVisit } from "@/features/analytics/visitor-tracker";
 import { playTickSound } from "@/features/audio/ticking-sound";
 import { isAdminRole, loadUserRole } from "@/features/admin/admin-service";
@@ -63,7 +64,7 @@ import {
   getTimerEndTime,
 } from "@/features/timer/timer-utils";
 
-type View = "timer" | "notes" | "calendar" | "stats" | "pricing" | "admin";
+type View = "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin";
 const durations: Record<TimerMode, number> = {
   pomodoro: 25 * 60,
   short: 5 * 60,
@@ -729,6 +730,7 @@ export default function Home() {
             { view: "timer", label: "Timer" },
             { view: "notes", label: "Catatan" },
             { view: "calendar", label: "Kalender" },
+            { view: "kanban", label: "Project Canban" },
             { view: "stats", label: "Statistik" },
             { view: "pricing", label: "Pro" },
           ] as { view: View; label: string }[]).map(({ view, label }) => (
@@ -771,6 +773,7 @@ export default function Home() {
           { view: "timer", label: "Timer" },
           { view: "notes", label: "Catatan" },
           { view: "calendar", label: "Kalender" },
+          { view: "kanban", label: "Project Canban" },
           { view: "stats", label: "Statistik" },
           { view: "pricing", label: "Pro" },
         ] as { view: View; label: string }[]).map(({ view, label }) => (
@@ -830,6 +833,18 @@ export default function Home() {
         <CalendarView
           userId={user?.id ?? null}
           onNavigateToNotes={() => setActiveView("notes")}
+        />
+      )}
+
+      {activeView === "kanban" && (
+        <KanbanView
+          userId={user?.id ?? null}
+          onSendToFrog={(cardTitle, boardTitle) => {
+            void addTask(cardTitle, {
+              linkedNoteTitle: `Kanban: ${boardTitle}`,
+            });
+            setInfoOpen(`Kartu "${cardTitle}" berhasil dijadikan target Eat Your Frog!`);
+          }}
         />
       )}
 
