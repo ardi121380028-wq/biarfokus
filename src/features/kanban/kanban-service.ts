@@ -38,42 +38,68 @@ export const LABEL_PALETTE: { color: string; defaultName: string }[] = [
   { color: "#ff78cb", defaultName: "Marketing / Growth" },
 ];
 
-export const BOARD_BACKGROUNDS: { id: string; name: string; value: string; textColor: string }[] = [
+export const BOARD_BACKGROUNDS: {
+  id: string;
+  name: string;
+  value: string;
+  textColor: string;
+  isLight?: boolean;
+}[] = [
   {
-    id: "wave-blue",
-    name: "Ocean Navy",
-    value: "radial-gradient(ellipse at 50% 20%, #15324e 0%, #0b1a29 60%, #060e17 100%)",
-    textColor: "#ffffff",
+    id: "biarfokus-white",
+    name: "Putih BiarFokus (Default)",
+    value: "#ffffff",
+    textColor: "#0f172a",
+    isLight: true,
   },
   {
-    id: "purple-haze",
-    name: "Velvet Violet",
-    value: "radial-gradient(ellipse at 50% 20%, #311855 0%, #1c0a34 60%, #0d0319 100%)",
-    textColor: "#ffffff",
-  },
-  {
-    id: "emerald-forest",
-    name: "Emerald Forest",
-    value: "radial-gradient(ellipse at 50% 20%, #0e442c 0%, #072718 60%, #02120b 100%)",
-    textColor: "#ffffff",
-  },
-  {
-    id: "sunset-glow",
-    name: "Sunset Ember",
-    value: "radial-gradient(ellipse at 50% 20%, #4c1825 0%, #290a12 60%, #140307 100%)",
-    textColor: "#ffffff",
-  },
-  {
-    id: "ocean-breeze",
-    name: "Deep Azure",
-    value: "radial-gradient(ellipse at 50% 20%, #035380 0%, #08334e 60%, #041c2c 100%)",
-    textColor: "#ffffff",
+    id: "slate-light",
+    name: "Soft Slate",
+    value: "#f8fafc",
+    textColor: "#0f172a",
+    isLight: true,
   },
   {
     id: "slate-clean",
     name: "Clean Slate",
     value: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
     textColor: "#ffffff",
+    isLight: false,
+  },
+  {
+    id: "wave-blue",
+    name: "Ocean Navy",
+    value: "radial-gradient(ellipse at 50% 20%, #15324e 0%, #0b1a29 60%, #060e17 100%)",
+    textColor: "#ffffff",
+    isLight: false,
+  },
+  {
+    id: "purple-haze",
+    name: "Velvet Violet",
+    value: "radial-gradient(ellipse at 50% 20%, #311855 0%, #1c0a34 60%, #0d0319 100%)",
+    textColor: "#ffffff",
+    isLight: false,
+  },
+  {
+    id: "emerald-forest",
+    name: "Emerald Forest",
+    value: "radial-gradient(ellipse at 50% 20%, #0e442c 0%, #072718 60%, #02120b 100%)",
+    textColor: "#ffffff",
+    isLight: false,
+  },
+  {
+    id: "sunset-glow",
+    name: "Sunset Ember",
+    value: "radial-gradient(ellipse at 50% 20%, #4c1825 0%, #290a12 60%, #140307 100%)",
+    textColor: "#ffffff",
+    isLight: false,
+  },
+  {
+    id: "ocean-breeze",
+    name: "Deep Azure",
+    value: "radial-gradient(ellipse at 50% 20%, #035380 0%, #08334e 60%, #041c2c 100%)",
+    textColor: "#ffffff",
+    isLight: false,
   },
 ];
 
@@ -205,7 +231,7 @@ export function createDefaultGrowthBoard(): KanbanBoard {
     id: "board-gt-growth",
     title: "GT - Growth",
     description: "Pertumbuhan bisnis, manajemen klien, dan target 101 crucial.",
-    background: "wave-blue",
+    background: "biarfokus-white",
     starred: true,
     createdAt: now,
     updatedAt: now,
@@ -385,7 +411,12 @@ export function normalizeBoard(raw: unknown): KanbanBoard {
     id: typeof b.id === "string" && b.id ? b.id : createId("board"),
     title: typeof b.title === "string" && b.title ? b.title : "Board Baru",
     description: typeof b.description === "string" ? b.description : "",
-    background: typeof b.background === "string" ? b.background : "wave-blue",
+    background:
+      typeof b.background === "string" && b.background
+        ? (b.id === "board-gt-growth" && b.background === "wave-blue"
+            ? "biarfokus-white"
+            : b.background)
+        : "biarfokus-white",
     starred: Boolean(b.starred),
     createdAt: typeof b.createdAt === "string" ? b.createdAt : now,
     updatedAt: typeof b.updatedAt === "string" ? b.updatedAt : now,
@@ -596,7 +627,7 @@ export function deleteList(board: KanbanBoard, listId: string): KanbanBoard {
 
 export function createNewBoard(
   title: string,
-  background: string = "wave-blue",
+  background: string = "biarfokus-white",
   templateKey?: string,
 ): KanbanBoard {
   const cleanTitle = title.trim() || "Proyek Baru";

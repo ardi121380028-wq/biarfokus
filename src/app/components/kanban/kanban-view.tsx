@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import type { KanbanCard } from "@/types/domain";
 import { BOARD_BACKGROUNDS } from "@/features/kanban/kanban-service";
 import { useKanban } from "@/features/kanban/use-kanban";
@@ -59,12 +59,55 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
     sourceIndex: number;
   } | null>(null);
 
+  // Fullscreen container mode state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  function toggleFullscreen() {
+    if (!isFullscreen) {
+      setIsFullscreen(true);
+      if (viewportRef.current?.requestFullscreen && !document.fullscreenElement) {
+        viewportRef.current.requestFullscreen().catch(() => {});
+      }
+    } else {
+      setIsFullscreen(false);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  }
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      if (!document.fullscreenElement && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isFullscreen]);
+
   // Current background
   const currentBg = useMemo(() => {
     return (
       BOARD_BACKGROUNDS.find((b) => b.id === activeBoard.background) || BOARD_BACKGROUNDS[0]
     );
   }, [activeBoard.background]);
+
+  const isLightBg = Boolean(
+    currentBg.isLight ||
+    currentBg.textColor === "#0f172a" ||
+    currentBg.textColor === "#111111"
+  );
 
   // Filtered lists if search query is active
   const displayedLists = useMemo(() => {
@@ -209,14 +252,18 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
   })();
 
   return (
-    <div
-      className="kanban-main-viewport"
-      style={{
-        background: currentBg.value,
-        color: currentBg.textColor,
-      }}
-    >
-      {/* Top Header Bar (Screenshot 1) */}
+    <div className={`kanban-container-frame ${isFullscreen ? "is-fullscreen" : ""}`}>
+      <div
+        ref={viewportRef}
+        className={`kanban-main-viewport ${isLightBg ? "kanban-light-theme" : "kanban-dark-theme"} ${
+          isFullscreen ? "is-fullscreen" : ""
+        }`}
+        style={{
+          background: currentBg.value,
+          color: currentBg.textColor,
+        }}
+      >
+        {/* Top Header Bar (Screenshot 1) */}
       <div className="kanban-top-bar">
         <div className="kanban-left-controls">
           {/* Board Title */}
@@ -315,6 +362,16 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
               </button>
             )}
           </div>
+
+          {/* Fullscreen Button ("ngefulin") */}
+          <button
+            type="button"
+            className="kanban-bar-btn kanban-fullscreen-btn"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Keluar layar penuh (Esc)" : "Mode layar penuh"}
+          >
+            {isFullscreen ? "⤓ Perkecil" : "⛶ Layar Penuh"}
+          </button>
 
           <button
             type="button"
@@ -435,6 +492,7 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
           onClose={() => setBoardModalOpen(false)}
         />
       )}
+      </div>
     </div>
   );
 }
