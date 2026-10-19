@@ -40,9 +40,5 @@ drop policy if exists "Admins can view site visits" on public.site_visits;
 create policy "Admins can view site visits"
   on public.site_visits for select
   using (
-    exists (
-      select 1 from public.user_roles
-      where user_roles.user_id = auth.uid()
-      and user_roles.role = 'admin'
-    )
+    public.is_admin()
   );

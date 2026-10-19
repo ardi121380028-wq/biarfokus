@@ -48,8 +48,8 @@ export async function POST(request: Request) {
     });
 
     if (insertError) {
-      // If table does not exist yet or minor DB error, log and return graceful ok
       logApiEvent("warn", ROUTE, correlationId, "Could not insert site visit record", insertError);
+      return apiJson({ ok: false, error: insertError.message }, { status: 500, correlationId });
     }
 
     return apiJson({ ok: true }, { correlationId });

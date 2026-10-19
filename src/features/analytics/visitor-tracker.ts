@@ -45,9 +45,7 @@ export async function trackSiteVisit(path = "/"): Promise<void> {
     const visitorId = getOrCreateVisitorId();
     if (!visitorId) return;
 
-    sessionStorage.setItem(sessionKey, String(now));
-
-    await fetch("/api/track/visit", {
+    const res = await fetch("/api/track/visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -57,6 +55,10 @@ export async function trackSiteVisit(path = "/"): Promise<void> {
       }),
       keepalive: true,
     });
+
+    if (res.ok) {
+      sessionStorage.setItem(sessionKey, String(now));
+    }
   } catch {
     // Analytics tracking failures must never disrupt the user application
   }
