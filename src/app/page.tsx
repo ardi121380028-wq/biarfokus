@@ -46,9 +46,11 @@ import {
   deleteTasksByIds,
   initialTasks,
   loadLocalTasks,
+  loadTaskLinks,
   loadTasks,
   recordCompletedSession,
   resolveFocusedTask,
+  saveTaskLink,
   setTaskCompleted,
   updateTaskPomodoros,
   type LinkedNoteMeta,
@@ -143,7 +145,7 @@ export default function Home() {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [appError, setAppError] = useState<string | null>(null);
-  const { notes, toggleItem } = useKeepNotes(user?.id);
+  const { notes, setItemDone } = useKeepNotes(user?.id);
   const timerEndAtRef = useRef<number | null>(null);
   const lastTickedSecondRef = useRef<number | null>(null);
   const settingsHydratedRef = useRef(false);
@@ -531,6 +533,9 @@ export default function Home() {
         pomodoros: 1,
         ...linkedMeta,
       };
+      if (linkedMeta) {
+        saveTaskLink(localTask.id, linkedMeta);
+      }
       setTasks((current) => [...current, localTask]);
       setSelectedTaskId((current) => current ?? localTask.id);
     },
@@ -540,13 +545,25 @@ export default function Home() {
   // Two-way sync: When notes checklist items are updated in Catatan, reflect in linked tasks
   useEffect(() => {
     function handleNoteItemToggled(event: Event) {
-      const customEvent = event as CustomEvent<{ noteId: string; itemId: string }>;
+      const customEvent = event as CustomEvent<{
+        noteId: string;
+        itemId: string;
+        done?: boolean;
+        source?: string;
+      }>;
       if (!customEvent.detail) return;
-      const { noteId, itemId } = customEvent.detail;
+      if (customEvent.detail.source === "eat-your-frog") return; // Ignore self-triggered events
+      const { noteId, itemId, done } = customEvent.detail;
       setTasks((prevTasks) => {
-        const matching = prevTasks.find((t) => t.linkedNoteId === noteId && t.linkedItemId === itemId);
+        const taskLinks = loadTaskLinks();
+        const matching = prevTasks.find(
+          (t) =>
+            (t.linkedNoteId === noteId && t.linkedItemId === itemId) ||
+            (taskLinks[t.id]?.linkedNoteId === noteId && taskLinks[t.id]?.linkedItemId === itemId),
+        );
         if (!matching) return prevTasks;
-        const newDone = !matching.done;
+        const newDone = typeof done === "boolean" ? done : !matching.done;
+        if (matching.done === newDone) return prevTasks;
         if (user) {
           void setTaskCompleted(getSupabaseBrowserClient(), user.id, matching.id, newDone).catch(() => {});
         }
@@ -589,15 +606,43 @@ export default function Home() {
         throw new Error(message);
       }
     }
-    setTasks((current) => current.map((item) => item.id === task.id ? { ...item, done: completed } : item));
+    setTasks((current) => current.map((item) => (item.id === task.id ? { ...item, done: completed } : item)));
 
     // Two-way connection: Sync with Catatan checklist item
-    if (task.linkedNoteId && task.linkedItemId) {
-      const targetNote = notes.find((n) => n.id === task.linkedNoteId);
-      const targetItem = targetNote?.items?.find((i) => i.id === task.linkedItemId);
-      if (targetItem && targetItem.done !== completed) {
-        toggleItem(task.linkedNoteId, task.linkedItemId);
+    let targetNoteId = task.linkedNoteId;
+    let targetItemId = task.linkedItemId;
+
+    if (!targetNoteId || !targetItemId) {
+      const taskLinks = loadTaskLinks();
+      const meta = taskLinks[task.id];
+      if (meta?.linkedNoteId && meta?.linkedItemId) {
+        targetNoteId = meta.linkedNoteId;
+        targetItemId = meta.linkedItemId;
       }
+    }
+
+    if (!targetNoteId || !targetItemId) {
+      // Fallback matching: If task was created before the link persistence fix,
+      // match by note and checklist item text across available notes
+      for (const n of notes) {
+        if (targetNoteId && n.id !== targetNoteId) continue;
+        const matchingItem = n.items?.find((i) => i.text.trim() === task.title.trim());
+        if (matchingItem) {
+          targetNoteId = n.id;
+          targetItemId = matchingItem.id;
+          saveTaskLink(task.id, {
+            linkedNoteId: n.id,
+            linkedNoteTitle: n.title || "(Catatan)",
+            linkedItemId: matchingItem.id,
+            linkedItemText: matchingItem.text,
+          });
+          break;
+        }
+      }
+    }
+
+    if (targetNoteId && targetItemId) {
+      setItemDone(targetNoteId, targetItemId, completed);
     }
   }
 

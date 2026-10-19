@@ -26,6 +26,7 @@ import {
   parseStoredLabels,
   parseStoredNotes,
   removeLabelFromNotes,
+  setChecklistItemStatus,
   toggleChecklistItem,
   type NoteDraft,
 } from "@/features/notes/notes-service";
@@ -113,6 +114,18 @@ export function useKeepNotes(userId?: string | null) {
           );
         } catch {}
       }
+      if (typeof window !== "undefined" && updatedNote) {
+        const noteWithItems = updatedNote as KeepNote;
+        if (Array.isArray(noteWithItems.items)) {
+          for (const item of noteWithItems.items) {
+            window.dispatchEvent(
+              new CustomEvent("biarfokus:note-item-toggled", {
+                detail: { noteId: id, itemId: item.id, done: item.done, source: "notes" },
+              }),
+            );
+          }
+        }
+      }
     },
     [userId, updateNotes],
   );
@@ -157,9 +170,11 @@ export function useKeepNotes(userId?: string | null) {
   const toggleItem = useCallback(
     (noteId: string, itemId: string) => {
       let updatedNote: KeepNote | null = null;
+      let newDoneStatus: boolean | undefined;
       updateNotes((current) => {
         const next = toggleChecklistItem(current, noteId, itemId);
         updatedNote = next.find((n) => n.id === noteId) || null;
+        newDoneStatus = updatedNote?.items?.find((i) => i.id === itemId)?.done;
         return next;
       });
       if (userId && updatedNote) {
@@ -171,7 +186,35 @@ export function useKeepNotes(userId?: string | null) {
       }
       if (typeof window !== "undefined") {
         window.dispatchEvent(
-          new CustomEvent("biarfokus:note-item-toggled", { detail: { noteId, itemId } }),
+          new CustomEvent("biarfokus:note-item-toggled", {
+            detail: { noteId, itemId, done: newDoneStatus, source: "notes" },
+          }),
+        );
+      }
+    },
+    [userId, updateNotes],
+  );
+
+  const setItemDone = useCallback(
+    (noteId: string, itemId: string, done: boolean) => {
+      let updatedNote: KeepNote | null = null;
+      updateNotes((current) => {
+        const next = setChecklistItemStatus(current, noteId, itemId, done);
+        updatedNote = next.find((n) => n.id === noteId) || null;
+        return next;
+      });
+      if (userId && updatedNote) {
+        try {
+          upsertCloudNote(getSupabaseBrowserClient(), userId, updatedNote).catch((err) =>
+            console.warn("Failed to sync checklist status to cloud:", err),
+          );
+        } catch {}
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("biarfokus:note-item-toggled", {
+            detail: { noteId, itemId, done, source: "eat-your-frog" },
+          }),
         );
       }
     },
@@ -213,7 +256,18 @@ export function useKeepNotes(userId?: string | null) {
     [userId, updateLabels, updateNotes],
   );
 
-  return { notes, labels, createNote, updateNote, deleteNote, togglePin, toggleItem, createLabel, deleteLabel };
+  return {
+    notes,
+    labels,
+    createNote,
+    updateNote,
+    deleteNote,
+    togglePin,
+    toggleItem,
+    setItemDone,
+    createLabel,
+    deleteLabel,
+  };
 }
 
 export type KeepNotesApi = ReturnType<typeof useKeepNotes>;

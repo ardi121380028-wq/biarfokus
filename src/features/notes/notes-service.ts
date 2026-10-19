@@ -100,6 +100,21 @@ export function toggleChecklistItem(notes: KeepNote[], noteId: string, itemId: s
   });
 }
 
+export function setChecklistItemStatus(
+  notes: KeepNote[],
+  noteId: string,
+  itemId: string,
+  done: boolean,
+): KeepNote[] {
+  return notes.map((note) => {
+    if (note.id !== noteId || !note.items) return note;
+    return {
+      ...note,
+      items: note.items.map((item) => (item.id === itemId ? { ...item, done } : item)),
+    };
+  });
+}
+
 /** Converts a note between text and checklist without losing content. */
 export function convertDraftType(draft: NoteDraft, type: KeepNote["type"]): NoteDraft {
   if (draft.type === type) return draft;

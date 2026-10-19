@@ -209,7 +209,8 @@ All tables have Row Level Security (RLS) enabled.
 - **MVP11 — Eat Your Frog & Catatan Two-Way Integration (Completed):**
   - **Import Task dari Catatan (`NoteTaskPickerModal`):** Pengguna dapat mengambil task langsung dari catatan Google Keep atau checklist sub-task tertentu ke dalam daftar fokus Eat Your Frog.
   - **Direct Note-to-Frog Action:** Tombol `🐸 Frog` di setiap baris checklist catatan untuk langsung menjadikannya target fokus Eat Your Frog tanpa perlu berpindah layar.
-  - **Live Two-Way Sync:** Menyelesaikan task di Eat Your Frog otomatis menandai centang `[✓]` di checklist catatan, dan mencentang di catatan otomatis menyinkronkan task di Eat Your Frog secara real-time.
+  - **Live Bidirectional Synchronization:** Menyelesaikan task di Eat Your Frog otomatis menandai centang `[✓]` di checklist catatan secara real-time via `setItemDone` dan reactive store events, dan mencentang di catatan otomatis menyinkronkan status task di Eat Your Frog. Dilengkapi filter `source: "eat-your-frog"` untuk mencegah recursive event echo loops.
+  - **Client-Side Task Link Resilience:** Penyimpanan mapping link task (`LOCAL_TASK_LINKS_KEY = "biarfokus.task_links"`) yang otomatis di-rehidrasi saat fallback schema Supabase terjadi, ditambah fallback pencocokan teks pintar untuk task lama.
   - **Visual Origin Badge:** Task yang terhubung menampilkan badge link `📝 [Judul Catatan]` yang dapat diklik langsung untuk membuka catatan sumber.
   - **Database Migration:** Migration `20261019090000_add_linked_note_to_tasks.sql` dengan RLS dan fallback graceful saat offline/guest.
 

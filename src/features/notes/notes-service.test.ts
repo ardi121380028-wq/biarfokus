@@ -9,6 +9,7 @@ import {
   parseStoredLabels,
   parseStoredNotes,
   removeLabelFromNotes,
+  setChecklistItemStatus,
   toggleChecklistItem,
 } from "./notes-service.ts";
 import type { KeepNote } from "../../types/domain.ts";
@@ -89,6 +90,18 @@ describe("notes-service", () => {
 
     const toggledBack = toggleChecklistItem(toggled, "note-1", "item-1");
     assert.equal(toggledBack[0].items?.[0].done, false);
+  });
+
+  it("sets checklist item status explicitly without toggling inversion", () => {
+    const setDone = setChecklistItemStatus(sampleNotes, "note-1", "item-1", true);
+    assert.equal(setDone[0].items?.[0].done, true);
+
+    // Idempotent: setting it again to true stays true
+    const setDoneAgain = setChecklistItemStatus(setDone, "note-1", "item-1", true);
+    assert.equal(setDoneAgain[0].items?.[0].done, true);
+
+    const setUndone = setChecklistItemStatus(setDoneAgain, "note-1", "item-1", false);
+    assert.equal(setUndone[0].items?.[0].done, false);
   });
 
   it("defaults to empty array on empty or corrupt storage", () => {

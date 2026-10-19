@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   buildLocalTaskMigrationPayload,
+  deleteTaskLink,
   isUuid,
+  loadTaskLinks,
   mapDbTask,
   resolveFocusedTask,
+  saveTaskLink,
 } from "./task-service.ts";
 
 describe("mapDbTask", () => {
@@ -76,5 +79,39 @@ describe("resolveFocusedTask and isUuid", () => {
     assert.equal(isUuid("550e8400-e29b-41d4-a716-446655440000"), true);
     assert.equal(isUuid("demo-1"), false);
     assert.equal(isUuid(null), false);
+  });
+});
+
+describe("task link storage", () => {
+  it("safely handles environments without window", () => {
+    assert.deepEqual(loadTaskLinks(), {});
+  });
+
+  it("saves, loads and deletes task links in localStorage when window exists", () => {
+    const store = new Map<string, string>();
+    const mockWindow = {
+      localStorage: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => store.set(k, v),
+        removeItem: (k: string) => store.delete(k),
+      },
+    };
+    (globalThis as unknown as { window?: unknown }).window = mockWindow;
+    try {
+      assert.deepEqual(loadTaskLinks(), {});
+      saveTaskLink("task-123", {
+        linkedNoteId: "note-1",
+        linkedItemId: "item-1",
+        linkedNoteTitle: "Test Note",
+      });
+      const loaded = loadTaskLinks();
+      assert.equal(loaded["task-123"]?.linkedNoteId, "note-1");
+      assert.equal(loaded["task-123"]?.linkedItemId, "item-1");
+
+      deleteTaskLink("task-123");
+      assert.deepEqual(loadTaskLinks(), {});
+    } finally {
+      delete (globalThis as unknown as { window?: unknown }).window;
+    }
   });
 });

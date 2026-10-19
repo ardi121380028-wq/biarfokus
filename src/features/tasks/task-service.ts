@@ -42,6 +42,40 @@ export type LinkedNoteMeta = {
   linkedItemText?: string;
 };
 
+export const LOCAL_TASK_LINKS_KEY = "biarfokus.task_links";
+
+export function loadTaskLinks(): Record<string, LinkedNoteMeta> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(LOCAL_TASK_LINKS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return typeof parsed === "object" && parsed !== null ? (parsed as Record<string, LinkedNoteMeta>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveTaskLink(taskId: string, meta: LinkedNoteMeta): void {
+  if (typeof window === "undefined") return;
+  try {
+    const links = loadTaskLinks();
+    links[taskId] = meta;
+    window.localStorage.setItem(LOCAL_TASK_LINKS_KEY, JSON.stringify(links));
+  } catch {}
+}
+
+export function deleteTaskLink(taskId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const links = loadTaskLinks();
+    if (taskId in links) {
+      delete links[taskId];
+      window.localStorage.setItem(LOCAL_TASK_LINKS_KEY, JSON.stringify(links));
+    }
+  } catch {}
+}
+
 export function mapDbTask(task: DbTask): Task {
   return {
     id: task.id,
@@ -63,7 +97,18 @@ export function loadLocalTasks(): Task[] {
   try {
     const parsedTasks: unknown = JSON.parse(savedTasks);
     if (Array.isArray(parsedTasks) && parsedTasks.every(isTask)) {
-      return parsedTasks;
+      const links = loadTaskLinks();
+      return parsedTasks.map((t) => {
+        const link = links[t.id];
+        if (!link) return t;
+        return {
+          ...t,
+          linkedNoteId: t.linkedNoteId || link.linkedNoteId,
+          linkedNoteTitle: t.linkedNoteTitle || link.linkedNoteTitle,
+          linkedItemId: t.linkedItemId || link.linkedItemId,
+          linkedItemText: t.linkedItemText || link.linkedItemText,
+        };
+      });
     }
   } catch (error) {
     if (!(error instanceof SyntaxError)) throw error;
@@ -99,11 +144,11 @@ export async function loadTasks(
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
 
-  if (!error && data && data.length > 0) {
-    return (data as unknown as DbTask[]).map(mapDbTask);
-  }
+  let loadedTasks: Task[] | null = null;
 
-  if (error && (error.message.includes("column") || error.code === "PGRST204" || error.code === "42703")) {
+  if (!error && data && data.length > 0) {
+    loadedTasks = (data as unknown as DbTask[]).map(mapDbTask);
+  } else if (error && (error.message.includes("column") || error.code === "PGRST204" || error.code === "42703")) {
     const fallback = await supabase
       .from("tasks")
       .select("id, title, completed, pomodoros")
@@ -111,10 +156,25 @@ export async function loadTasks(
       .order("created_at", { ascending: true });
     if (fallback.error) throw fallback.error;
     if (fallback.data && fallback.data.length > 0) {
-      return (fallback.data as unknown as DbTask[]).map(mapDbTask);
+      loadedTasks = (fallback.data as unknown as DbTask[]).map(mapDbTask);
     }
   } else if (error) {
     throw error;
+  }
+
+  if (loadedTasks) {
+    const links = loadTaskLinks();
+    return loadedTasks.map((t) => {
+      const link = links[t.id];
+      if (!link) return t;
+      return {
+        ...t,
+        linkedNoteId: t.linkedNoteId || link.linkedNoteId,
+        linkedNoteTitle: t.linkedNoteTitle || link.linkedNoteTitle,
+        linkedItemId: t.linkedItemId || link.linkedItemId,
+        linkedItemText: t.linkedItemText || link.linkedItemText,
+      };
+    });
   }
 
   const localTasks = loadLocalTasks();
@@ -129,7 +189,19 @@ export async function loadTasks(
   );
   if (migrationError) throw migrationError;
   const rows: DbTask[] = (migratedTasks as unknown as DbTask[]) ?? [];
-  return rows.map(mapDbTask);
+  const mapped = rows.map(mapDbTask);
+  const links = loadTaskLinks();
+  return mapped.map((t) => {
+    const link = links[t.id];
+    if (!link) return t;
+    return {
+      ...t,
+      linkedNoteId: t.linkedNoteId || link.linkedNoteId,
+      linkedNoteTitle: t.linkedNoteTitle || link.linkedNoteTitle,
+      linkedItemId: t.linkedItemId || link.linkedItemId,
+      linkedItemText: t.linkedItemText || link.linkedItemText,
+    };
+  });
 }
 
 export async function createTask(
@@ -162,10 +234,22 @@ export async function createTask(
       .select("id, title, completed, pomodoros")
       .single();
     if (fallback.error) throw fallback.error;
-    return mapDbTask(fallback.data as unknown as DbTask);
+    const task = mapDbTask(fallback.data as unknown as DbTask);
+    if (linkedMeta) {
+      if (linkedMeta.linkedNoteId) task.linkedNoteId = linkedMeta.linkedNoteId;
+      if (linkedMeta.linkedNoteTitle) task.linkedNoteTitle = linkedMeta.linkedNoteTitle;
+      if (linkedMeta.linkedItemId) task.linkedItemId = linkedMeta.linkedItemId;
+      if (linkedMeta.linkedItemText) task.linkedItemText = linkedMeta.linkedItemText;
+      saveTaskLink(task.id, linkedMeta);
+    }
+    return task;
   }
   if (error) throw error;
-  return mapDbTask(data as unknown as DbTask);
+  const task = mapDbTask(data as unknown as DbTask);
+  if (linkedMeta) {
+    saveTaskLink(task.id, linkedMeta);
+  }
+  return task;
 }
 
 export async function setTaskCompleted(
@@ -202,6 +286,7 @@ export async function deleteTaskById(
   userId: string,
   taskId: string,
 ) {
+  deleteTaskLink(taskId);
   const { error } = await supabase
     .from("tasks")
     .delete()
@@ -216,6 +301,9 @@ export async function deleteTasksByIds(
   taskIds: string[],
 ) {
   if (taskIds.length === 0) return;
+  for (const id of taskIds) {
+    deleteTaskLink(id);
+  }
   const { error } = await supabase
     .from("tasks")
     .delete()
@@ -228,6 +316,11 @@ export async function deleteAllTasks(
   supabase: SupabaseClient,
   userId: string,
 ) {
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(LOCAL_TASK_LINKS_KEY);
+    } catch {}
+  }
   const { error } = await supabase
     .from("tasks")
     .delete()
