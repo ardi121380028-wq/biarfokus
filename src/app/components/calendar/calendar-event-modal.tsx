@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import type { KeepNote } from "@/types/domain";
+import type { KeepNote, RecurrenceFrequency } from "@/types/domain";
 import {
   CALENDAR_COLORS,
   formatDuration,
@@ -9,6 +9,16 @@ import {
   type EventDraft,
 } from "@/features/calendar/calendar-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
+
+const DAYS_OF_WEEK = [
+  { day: 1, label: "Senin", shortName: "Sen" },
+  { day: 2, label: "Selasa", shortName: "Sel" },
+  { day: 3, label: "Rabu", shortName: "Rab" },
+  { day: 4, label: "Kamis", shortName: "Kam" },
+  { day: 5, label: "Jumat", shortName: "Jum" },
+  { day: 6, label: "Sabtu", shortName: "Sab" },
+  { day: 0, label: "Minggu", shortName: "Min" },
+] as const;
 
 type CalendarEventModalProps = {
   initialDraft: EventDraft;
@@ -174,6 +184,201 @@ export function CalendarEventModal({
               />
               {durationText && (
                 <span className="cal-duration-badge">({durationText})</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Repeat / Recurrence Row */}
+        <div className="cal-recurrence-row">
+          <span className="cal-field-icon">🔁</span>
+          <div className="cal-field-content">
+            <span className="cal-field-label">Pengulangan Jadwal:</span>
+            <div className="cal-recurrence-controls">
+              <select
+                value={draft.recurrence?.frequency || "none"}
+                onChange={(e) => {
+                  const freq = e.target.value as RecurrenceFrequency;
+                  if (freq === "none") {
+                    setDraft({ ...draft, recurrence: undefined });
+                  } else if (freq === "daily") {
+                    setDraft({
+                      ...draft,
+                      recurrence: { frequency: "daily", untilDate: draft.recurrence?.untilDate },
+                    });
+                  } else if (freq === "weekdays") {
+                    setDraft({
+                      ...draft,
+                      recurrence: {
+                        frequency: "weekdays",
+                        daysOfWeek: [1, 2, 3, 4, 5],
+                        untilDate: draft.recurrence?.untilDate,
+                      },
+                    });
+                  } else if (freq === "custom") {
+                    const initialDays =
+                      draft.recurrence?.daysOfWeek && draft.recurrence.daysOfWeek.length > 0
+                        ? draft.recurrence.daysOfWeek
+                        : [1, 2, 3, 4, 5];
+                    setDraft({
+                      ...draft,
+                      recurrence: {
+                        frequency: "custom",
+                        daysOfWeek: initialDays,
+                        untilDate: draft.recurrence?.untilDate,
+                      },
+                    });
+                  }
+                  if (error) setError(null);
+                }}
+                className="cal-select-recurrence"
+              >
+                <option value="none">Tidak berulang</option>
+                <option value="daily">Setiap hari</option>
+                <option value="weekdays">Setiap hari kerja (Senin – Jumat)</option>
+                <option value="custom">Kustom (Pilih hari sendiri)...</option>
+              </select>
+
+              {/* Custom 7-day checkboxes / pills */}
+              {draft.recurrence?.frequency === "custom" && (
+                <div className="cal-custom-days-box">
+                  <div className="cal-days-pills-row">
+                    {DAYS_OF_WEEK.map(({ day, label, shortName }) => {
+                      const isSelected = draft.recurrence?.daysOfWeek?.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          className={`cal-day-toggle-pill ${isSelected ? "selected" : ""}`}
+                          onClick={() => {
+                            const currentDays = draft.recurrence?.daysOfWeek || [];
+                            let newDays: number[];
+                            if (isSelected) {
+                              newDays = currentDays.filter((d) => d !== day);
+                            } else {
+                              newDays = [...currentDays, day].sort((a, b) => a - b);
+                            }
+                            setDraft({
+                              ...draft,
+                              recurrence: {
+                                frequency: "custom",
+                                daysOfWeek: newDays,
+                                untilDate: draft.recurrence?.untilDate,
+                              },
+                            });
+                            if (error) setError(null);
+                          }}
+                          title={`Klik untuk ${isSelected ? "kecualikan" : "aktifkan"} hari ${label}`}
+                        >
+                          <span className="cal-day-pill-check">{isSelected ? "✓" : "○"}</span>
+                          <span>{shortName}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quick preset buttons */}
+                  <div className="cal-days-presets-row">
+                    <span className="cal-presets-label">Pilihan Cepat:</span>
+                    <button
+                      type="button"
+                      className="cal-preset-btn"
+                      onClick={() => {
+                        setDraft({
+                          ...draft,
+                          recurrence: {
+                            frequency: "custom",
+                            daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+                            untilDate: draft.recurrence?.untilDate,
+                          },
+                        });
+                        if (error) setError(null);
+                      }}
+                    >
+                      Semua Hari
+                    </button>
+                    <button
+                      type="button"
+                      className="cal-preset-btn"
+                      onClick={() => {
+                        setDraft({
+                          ...draft,
+                          recurrence: {
+                            frequency: "custom",
+                            daysOfWeek: [1, 2, 3, 4, 5],
+                            untilDate: draft.recurrence?.untilDate,
+                          },
+                        });
+                        if (error) setError(null);
+                      }}
+                    >
+                      Hari Kerja (Sen–Jum)
+                    </button>
+                    <button
+                      type="button"
+                      className="cal-preset-btn"
+                      onClick={() => {
+                        setDraft({
+                          ...draft,
+                          recurrence: {
+                            frequency: "custom",
+                            daysOfWeek: [0, 6],
+                            untilDate: draft.recurrence?.untilDate,
+                          },
+                        });
+                        if (error) setError(null);
+                      }}
+                    >
+                      Akhir Pekan (Sab–Min)
+                    </button>
+                  </div>
+                  <p className="cal-custom-days-hint">
+                    💡 <em>Klik hari yang ingin kamu kecualikan (misal: uncheck Rabu atau Minggu).</em>
+                  </p>
+                </div>
+              )}
+
+              {/* Optional End Date */}
+              {draft.recurrence && draft.recurrence.frequency !== "none" && (
+                <div className="cal-until-date-row">
+                  <span className="cal-subfield-label">Berulang sampai:</span>
+                  <input
+                    type="date"
+                    min={draft.date}
+                    value={draft.recurrence.untilDate || ""}
+                    onChange={(e) => {
+                      setDraft({
+                        ...draft,
+                        recurrence: {
+                          ...draft.recurrence!,
+                          untilDate: e.target.value || undefined,
+                        },
+                      });
+                      if (error) setError(null);
+                    }}
+                    className="cal-date-picker small"
+                  />
+                  {draft.recurrence.untilDate ? (
+                    <button
+                      type="button"
+                      className="cal-clear-until-btn"
+                      onClick={() => {
+                        setDraft({
+                          ...draft,
+                          recurrence: {
+                            ...draft.recurrence!,
+                            untilDate: undefined,
+                          },
+                        });
+                      }}
+                      title="Ubah jadi selamanya"
+                    >
+                      ✕ Selamanya
+                    </button>
+                  ) : (
+                    <span className="cal-until-hint">(Selamanya)</span>
+                  )}
+                </div>
               )}
             </div>
           </div>

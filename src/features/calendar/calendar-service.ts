@@ -1,4 +1,4 @@
-import type { CalendarEvent } from "../../types/domain.ts";
+import type { CalendarEvent, EventRecurrence } from "../../types/domain.ts";
 
 /* ------------------------------------------------------------------ */
 /* Constants                                                           */
@@ -301,7 +301,70 @@ export function validateEventDraft(draft: EventDraft): string | null {
   if (timeToMinutes(draft.endTime) <= timeToMinutes(draft.startTime)) {
     return "Jam selesai harus setelah jam mulai.";
   }
+  if (draft.recurrence && draft.recurrence.frequency !== "none") {
+    if (draft.recurrence.frequency === "custom") {
+      const days = draft.recurrence.daysOfWeek;
+      if (!Array.isArray(days) || days.length === 0) {
+        return "Pilih minimal satu hari untuk pengulangan jadwal.";
+      }
+      for (const d of days) {
+        if (!Number.isInteger(d) || d < 0 || d > 6) {
+          return "Pilihan hari pengulangan tidak valid.";
+        }
+      }
+    }
+    if (draft.recurrence.untilDate) {
+      if (!DATE_RE.test(draft.recurrence.untilDate)) {
+        return "Format batas tanggal pengulangan tidak valid.";
+      }
+      if (draft.recurrence.untilDate < draft.date) {
+        return "Batas tanggal pengulangan tidak boleh sebelum tanggal mulai jadwal.";
+      }
+    }
+  }
   return null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Recurrence evaluation                                               */
+/* ------------------------------------------------------------------ */
+
+export function isEventOccurringOnDate(event: CalendarEvent, isoDate: string): boolean {
+  if (!event.recurrence || event.recurrence.frequency === "none") {
+    return event.date === isoDate;
+  }
+
+  // Recurrence never expands before the event's start date
+  if (isoDate < event.date) {
+    return false;
+  }
+
+  // Check untilDate cutoff if specified
+  if (event.recurrence.untilDate && isoDate > event.recurrence.untilDate) {
+    return false;
+  }
+
+  // Base date always matches
+  if (event.date === isoDate) {
+    return true;
+  }
+
+  const targetDate = parseISODate(isoDate);
+  const dayOfWeek = targetDate.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+
+  switch (event.recurrence.frequency) {
+    case "daily":
+      return true;
+    case "weekdays":
+      return dayOfWeek >= 1 && dayOfWeek <= 5;
+    case "custom": {
+      const days = event.recurrence.daysOfWeek;
+      if (!Array.isArray(days) || days.length === 0) return false;
+      return days.includes(dayOfWeek);
+    }
+    default:
+      return false;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -367,9 +430,23 @@ export function layoutDayEvents(events: CalendarEvent[], hourHeight = HOUR_HEIGH
 }
 
 export function getEventsForDate(events: CalendarEvent[], isoDate: string): CalendarEvent[] {
-  return events
-    .filter((e) => e.date === isoDate)
-    .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+  const result: CalendarEvent[] = [];
+  for (const event of events) {
+    if (isEventOccurringOnDate(event, isoDate)) {
+      if (event.date === isoDate) {
+        result.push(event);
+      } else {
+        result.push({
+          ...event,
+          id: `${event.id}_occ_${isoDate}`,
+          date: isoDate,
+          isRecurringOccurrence: true,
+          originalEventId: event.id,
+        });
+      }
+    }
+  }
+  return result.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 }
 
 /* ------------------------------------------------------------------ */
@@ -384,6 +461,37 @@ export function getCalendarStorageKey(userId?: string | null): string {
 
 function optionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function normalizeRecurrence(raw: unknown): EventRecurrence | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Record<string, unknown>;
+  const freq = r.frequency;
+  if (freq !== "none" && freq !== "daily" && freq !== "weekdays" && freq !== "custom") {
+    return undefined;
+  }
+  if (freq === "none") return undefined;
+
+  let daysOfWeek: number[] | undefined = undefined;
+  if (Array.isArray(r.daysOfWeek)) {
+    const validDays = Array.from(
+      new Set(
+        r.daysOfWeek.filter((d): d is number => typeof d === "number" && Number.isInteger(d) && d >= 0 && d <= 6),
+      ),
+    ).sort((a, b) => a - b);
+    if (validDays.length > 0) daysOfWeek = validDays;
+  }
+
+  let untilDate: string | undefined = undefined;
+  if (typeof r.untilDate === "string" && DATE_RE.test(r.untilDate)) {
+    untilDate = r.untilDate;
+  }
+
+  return {
+    frequency: freq,
+    daysOfWeek,
+    untilDate,
+  };
 }
 
 export function normalizeEvent(raw: unknown): CalendarEvent | null {
@@ -406,6 +514,7 @@ export function normalizeEvent(raw: unknown): CalendarEvent | null {
     linkedNoteId: optionalString(r.linkedNoteId),
     linkedNoteTitle: optionalString(r.linkedNoteTitle),
     linkedItemId: optionalString(r.linkedItemId),
+    recurrence: normalizeRecurrence(r.recurrence),
   };
 }
 

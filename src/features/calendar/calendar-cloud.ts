@@ -15,6 +15,7 @@ type DbCalendarEvent = {
   linked_note_title: string | null;
   linked_item_id: string | null;
   linked_item_text?: string | null;
+  recurrence?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 };
@@ -33,6 +34,7 @@ export function mapDbCalendarEvent(row: DbCalendarEvent): CalendarEvent {
     linkedNoteTitle: row.linked_note_title || undefined,
     linkedItemId: row.linked_item_id || undefined,
     linkedItemText: row.linked_item_text || undefined,
+    recurrence: (row.recurrence as CalendarEvent["recurrence"]) || undefined,
   };
 }
 
@@ -70,6 +72,7 @@ export async function upsertCloudEvent(
     linked_note_title: event.linkedNoteTitle || null,
     linked_item_id: event.linkedItemId || null,
     linked_item_text: event.linkedItemText || null,
+    recurrence: event.recurrence || null,
     updated_at: new Date().toISOString(),
   };
 

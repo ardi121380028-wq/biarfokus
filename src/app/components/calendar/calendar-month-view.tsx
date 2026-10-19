@@ -117,6 +117,10 @@ export function CalendarMonthView({
                             {event.startTime}
                           </span>
                           <span className="cal-month-event-title">
+                            {((event.recurrence?.frequency && event.recurrence.frequency !== "none") ||
+                              event.isRecurringOccurrence) && (
+                              <span className="cal-repeat-indicator">🔁 </span>
+                            )}
                             {event.linkedItemText ? `☑️ ${event.title}` : event.title}
                           </span>
                         </div>

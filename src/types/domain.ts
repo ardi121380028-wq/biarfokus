@@ -125,6 +125,14 @@ export type KeepNote = {
   updatedAt: string;
 };
 
+export type RecurrenceFrequency = "none" | "daily" | "weekdays" | "custom";
+
+export type EventRecurrence = {
+  frequency: RecurrenceFrequency;
+  daysOfWeek?: number[]; // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
+  untilDate?: string; // YYYY-MM-DD optional end date
+};
+
 export type CalendarEvent = {
   id: string;
   title: string;
@@ -138,6 +146,9 @@ export type CalendarEvent = {
   linkedNoteTitle?: string; // snapshot, used as fallback if the note is deleted
   linkedItemId?: string; // optional specific checklist item inside the linked note
   linkedItemText?: string; // snapshot of specific checklist item text
+  recurrence?: EventRecurrence;
+  isRecurringOccurrence?: boolean; // true if this is a projected virtual occurrence
+  originalEventId?: string; // master event id if this is a recurring occurrence
 };
 
 /* ------------------------------------------------------------------ */

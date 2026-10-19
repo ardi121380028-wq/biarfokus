@@ -358,7 +358,15 @@ export function CalendarGrid({
                         <div className="cal-event-accent-strip" />
 
                         <div className="cal-event-content">
-                          <strong className="cal-event-title">{event.title}</strong>
+                          <strong className="cal-event-title">
+                            {event.title}
+                            {((event.recurrence?.frequency && event.recurrence.frequency !== "none") ||
+                              event.isRecurringOccurrence) && (
+                              <span className="cal-repeat-indicator" title="Jadwal rutin berulang">
+                                🔁
+                              </span>
+                            )}
+                          </strong>
                           <span className="cal-event-time">
                             {displayStartTime} – {displayEndTime}
                           </span>

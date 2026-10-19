@@ -749,7 +749,7 @@ export default function Home() {
   return (
     <main
       className={
-        activeView === "kanban"
+        activeView === "kanban" || activeView === "calendar"
           ? (dark ? "app dark kanban-workspace-mode" : "app kanban-workspace-mode")
           : (dark ? "app dark" : "app")
       }
@@ -761,7 +761,7 @@ export default function Home() {
         "--paper": dark ? "#1d1d1d" : "#ffffff",
       } as CSSProperties}
     >
-      {activeView !== "kanban" && (
+      {activeView !== "kanban" && activeView !== "calendar" && (
         <header className="topbar">
           <button className="brand" onClick={() => setActiveView("timer")} aria-label="Kembali ke timer">
             <span className="brand-mark" aria-hidden="true" />
@@ -875,7 +875,23 @@ export default function Home() {
       {activeView === "calendar" && (
         <CalendarView
           userId={user?.id ?? null}
+          user={user}
+          userName={userName}
+          userAvatar={userAvatar}
+          userRole={userRole}
+          dark={dark}
+          onToggleDark={() => setDark(!dark)}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenProfile={() => {
+            if (user) {
+              setAccountOpen(true);
+            } else {
+              setLoginOpen(true);
+            }
+          }}
+          onNavigate={(targetView) => setActiveView(targetView as View)}
           onNavigateToNotes={() => setActiveView("notes")}
+          onRequireLogin={() => setLoginOpen(true)}
         />
       )}
 

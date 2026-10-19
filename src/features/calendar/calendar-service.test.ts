@@ -228,5 +228,139 @@ describe("calendar-service", () => {
     assert.equal(resizedTop.startTime, "09:15");
     assert.equal(resizedTop.endTime, "12:00");
   });
+
+  it("projects recurring daily events across dates", () => {
+    const dailyEvent: CalendarEvent = {
+      id: "ev-daily",
+      title: "Daily Standup",
+      date: "2026-10-18", // Sunday
+      startTime: "09:00",
+      endTime: "09:30",
+      color: "#039be5",
+      recurrence: { frequency: "daily" },
+    };
+
+    // Sunday (base date)
+    const sunEvents = getEventsForDate([dailyEvent], "2026-10-18");
+    assert.equal(sunEvents.length, 1);
+    assert.equal(sunEvents[0].id, "ev-daily");
+    assert.equal(sunEvents[0].isRecurringOccurrence, undefined);
+
+    // Monday (virtual occurrence)
+    const monEvents = getEventsForDate([dailyEvent], "2026-10-19");
+    assert.equal(monEvents.length, 1);
+    assert.equal(monEvents[0].isRecurringOccurrence, true);
+    assert.equal(monEvents[0].originalEventId, "ev-daily");
+    assert.equal(monEvents[0].date, "2026-10-19");
+
+    // Past date before start date should not project
+    const pastEvents = getEventsForDate([dailyEvent], "2026-10-17");
+    assert.equal(pastEvents.length, 0);
+  });
+
+  it("projects weekdays recurrence (Mon-Fri) accurately", () => {
+    const weekdayEvent: CalendarEvent = {
+      id: "ev-work",
+      title: "Deep Work Sprint",
+      date: "2026-10-19", // Monday
+      startTime: "08:00",
+      endTime: "16:00",
+      color: "#039be5",
+      recurrence: { frequency: "weekdays" },
+    };
+
+    // Monday (weekday 1) => matches
+    assert.equal(getEventsForDate([weekdayEvent], "2026-10-19").length, 1);
+    // Friday (2026-10-23, weekday 5) => matches
+    assert.equal(getEventsForDate([weekdayEvent], "2026-10-23").length, 1);
+    // Saturday (2026-10-24, weekday 6) => excluded
+    assert.equal(getEventsForDate([weekdayEvent], "2026-10-24").length, 0);
+    // Sunday (2026-10-25, weekday 0) => excluded
+    assert.equal(getEventsForDate([weekdayEvent], "2026-10-25").length, 0);
+  });
+
+  it("handles custom days recurrence (repeat except specific days)", () => {
+    // Repeat on Mon(1), Tue(2), Thu(4), Fri(5) -> excluding Wed(3), Sat(6), Sun(0)
+    const customEvent: CalendarEvent = {
+      id: "ev-gym",
+      title: "Gym Workout",
+      date: "2026-10-19", // Monday
+      startTime: "17:00",
+      endTime: "18:00",
+      color: "#33b679",
+      recurrence: {
+        frequency: "custom",
+        daysOfWeek: [1, 2, 4, 5], // Monday, Tuesday, Thursday, Friday
+      },
+    };
+
+    // Monday (19th) -> matches
+    assert.equal(getEventsForDate([customEvent], "2026-10-19").length, 1);
+    // Tuesday (20th) -> matches
+    assert.equal(getEventsForDate([customEvent], "2026-10-20").length, 1);
+    // Wednesday (21st) -> EXCLUDED (not in daysOfWeek)
+    assert.equal(getEventsForDate([customEvent], "2026-10-21").length, 0);
+    // Thursday (22nd) -> matches
+    assert.equal(getEventsForDate([customEvent], "2026-10-22").length, 1);
+    // Friday (23rd) -> matches
+    assert.equal(getEventsForDate([customEvent], "2026-10-23").length, 1);
+    // Saturday (24th) -> EXCLUDED
+    assert.equal(getEventsForDate([customEvent], "2026-10-24").length, 0);
+  });
+
+  it("respects untilDate cutoff for recurring events", () => {
+    const limitedEvent: CalendarEvent = {
+      id: "ev-camp",
+      title: "Bootcamp Day",
+      date: "2026-10-19",
+      startTime: "10:00",
+      endTime: "11:00",
+      color: "#f6bf26",
+      recurrence: {
+        frequency: "daily",
+        untilDate: "2026-10-21", // only until Oct 21
+      },
+    };
+
+    assert.equal(getEventsForDate([limitedEvent], "2026-10-19").length, 1);
+    assert.equal(getEventsForDate([limitedEvent], "2026-10-21").length, 1);
+    // Oct 22 is after cutoff => excluded
+    assert.equal(getEventsForDate([limitedEvent], "2026-10-22").length, 0);
+  });
+
+  it("validates recurrence configuration strictly", () => {
+    // Valid custom recurrence
+    const validErr = validateEventDraft({
+      title: "Valid",
+      date: "2026-10-19",
+      startTime: "09:00",
+      endTime: "10:00",
+      color: "#039be5",
+      recurrence: { frequency: "custom", daysOfWeek: [1, 3, 5] },
+    });
+    assert.equal(validErr, null);
+
+    // Custom recurrence without any days selected
+    const emptyDaysErr = validateEventDraft({
+      title: "Invalid",
+      date: "2026-10-19",
+      startTime: "09:00",
+      endTime: "10:00",
+      color: "#039be5",
+      recurrence: { frequency: "custom", daysOfWeek: [] },
+    });
+    assert.match(emptyDaysErr || "", /minimal satu hari/i);
+
+    // untilDate before start date
+    const pastUntilErr = validateEventDraft({
+      title: "Invalid Cutoff",
+      date: "2026-10-19",
+      startTime: "09:00",
+      endTime: "10:00",
+      color: "#039be5",
+      recurrence: { frequency: "daily", untilDate: "2026-10-18" },
+    });
+    assert.match(pastUntilErr || "", /tidak boleh sebelum/i);
+  });
 });
 

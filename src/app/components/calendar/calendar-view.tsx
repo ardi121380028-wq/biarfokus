@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CalendarEvent } from "@/types/domain";
+import type { User } from "@supabase/supabase-js";
+import type { CalendarEvent, UserRole } from "@/types/domain";
 import {
   addDays,
   addMonths,
@@ -16,7 +17,8 @@ import {
 } from "@/features/calendar/calendar-service";
 import { useCalendarEvents } from "@/features/calendar/use-calendar-events";
 import { useKeepNotes } from "@/features/notes/use-keep-notes";
-import { CalendarHeader } from "./calendar-header";
+import { CalendarSidebar } from "./calendar-sidebar";
+import { CalendarTopbar } from "./calendar-topbar";
 import { CalendarGrid } from "./calendar-grid";
 import { CalendarMonthView } from "./calendar-month-view";
 import { CalendarYearView } from "./calendar-year-view";
@@ -24,12 +26,73 @@ import { CalendarEventModal } from "./calendar-event-modal";
 
 type CalendarViewProps = {
   userId?: string | null;
+  user?: User | null;
+  userName?: string;
+  userAvatar?: string | null;
+  userRole?: UserRole;
+  dark?: boolean;
+  onToggleDark?: () => void;
+  onOpenSettings?: () => void;
+  onOpenProfile?: () => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
   onNavigateToNotes?: () => void;
+  onRequireLogin?: () => void;
 };
 
-export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
+export function CalendarView({
+  userId,
+  userName,
+  userAvatar,
+  dark,
+  onToggleDark,
+  onOpenSettings,
+  onOpenProfile,
+  onNavigate,
+  onNavigateToNotes,
+  onRequireLogin,
+}: CalendarViewProps) {
   const { events, addEvent, updateEvent, deleteEvent } = useCalendarEvents(userId);
   const { notes } = useKeepNotes(userId);
+
+  // Collapsible Sidebar state (persisted)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("biarfokus.calendar.sidebar_collapsed");
+        if (stored !== null) return stored === "true";
+        return window.innerWidth < 1024;
+      } catch {}
+    }
+    return false;
+  });
+
+  function toggleSidebar() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("biarfokus.calendar.sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  }
+
+  // Category filters in sidebar
+  const [categoryFilters, setCategoryFilters] = useState<{
+    event: boolean;
+    task: boolean;
+    recurring: boolean;
+  }>({
+    event: true,
+    task: true,
+    recurring: true,
+  });
+
+  function toggleCategoryFilter(cat: "event" | "task" | "recurring") {
+    setCategoryFilters((prev) => ({
+      ...prev,
+      [cat]: !prev[cat],
+    }));
+  }
 
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
@@ -42,15 +105,25 @@ export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
 
   // Filtered events
   const filteredEvents = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return events;
-    return events.filter(
-      (e) =>
+    return events.filter((e) => {
+      const isRecurring =
+        Boolean(e.recurrence && e.recurrence.frequency !== "none") || Boolean(e.isRecurringOccurrence);
+
+      if (isRecurring && !categoryFilters.recurring) return false;
+      if (!isRecurring && e.category === "task" && !categoryFilters.task) return false;
+      if (!isRecurring && e.category !== "task" && !categoryFilters.event) return false;
+
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+
+      return (
         e.title.toLowerCase().includes(q) ||
         (e.description && e.description.toLowerCase().includes(q)) ||
-        (e.linkedNoteTitle && e.linkedNoteTitle.toLowerCase().includes(q)),
-    );
-  }, [events, searchQuery]);
+        (e.linkedNoteTitle && e.linkedNoteTitle.toLowerCase().includes(q)) ||
+        (e.linkedItemText && e.linkedItemText.toLowerCase().includes(q))
+      );
+    });
+  }, [events, categoryFilters, searchQuery]);
 
   // Visible days for Day/Week
   const visibleDays = useMemo(
@@ -81,7 +154,7 @@ export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
     });
   }
 
-  /* Date selection from Month or Year view */
+  /* Date selection from Sidebar Mini Calendar, Month or Year view */
   function handleSelectDate(date: Date) {
     setAnchorDate(date);
     setViewMode("day");
@@ -102,23 +175,31 @@ export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
       color: DEFAULT_EVENT_COLOR,
       category: "event",
       description: "",
+      recurrence: undefined,
     });
     setModalOpen(true);
   }
 
   function handleOpenEdit(event: CalendarEvent) {
-    setEditingId(event.id);
+    // If user clicked a virtual recurring occurrence, edit the original master event
+    const masterEvent = event.originalEventId
+      ? events.find((e) => e.id === event.originalEventId) || event
+      : event;
+
+    setEditingId(masterEvent.id);
     setModalDraft({
-      title: event.title,
-      date: event.date,
-      startTime: event.startTime,
-      endTime: event.endTime,
-      color: event.color,
-      category: event.category || "event",
-      description: event.description,
-      linkedNoteId: event.linkedNoteId,
-      linkedNoteTitle: event.linkedNoteTitle,
-      linkedItemId: event.linkedItemId,
+      title: masterEvent.title,
+      date: masterEvent.date,
+      startTime: masterEvent.startTime,
+      endTime: masterEvent.endTime,
+      color: masterEvent.color,
+      category: masterEvent.category || "event",
+      description: masterEvent.description,
+      linkedNoteId: masterEvent.linkedNoteId,
+      linkedNoteTitle: masterEvent.linkedNoteTitle,
+      linkedItemId: masterEvent.linkedItemId,
+      linkedItemText: masterEvent.linkedItemText,
+      recurrence: masterEvent.recurrence,
     });
     setModalOpen(true);
   }
@@ -133,63 +214,97 @@ export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
   }
 
   return (
-    <section className="inner-page calendar-page-view">
-      <CalendarHeader
-        anchorDate={anchorDate}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onToday={handleToday}
-        onPrev={handlePrev}
-        onNext={handleNext}
+    <div className="cal-app-workspace">
+      {/* Collapsible Left Sidebar */}
+      <CalendarSidebar
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebar}
         onCreateClick={() => handleOpenCreate()}
-        onNavigateToNotes={onNavigateToNotes}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        anchorDate={anchorDate}
+        onSelectDate={handleSelectDate}
+        categoryFilters={categoryFilters}
+        onToggleCategoryFilter={toggleCategoryFilter}
+        onNavigate={onNavigate}
+        onOpenSettings={onOpenSettings}
+        dark={dark}
+        onToggleDark={onToggleDark}
       />
 
-      {/* Empty notice banner if no events have been created yet */}
-      {events.length === 0 && (
-        <div className="cal-empty-notice">
-          <span>
-            📅 <strong>Kalender masih kosong.</strong> Klik pada petak jam mana saja atau tekan{" "}
-            <strong>+ Buat Jadwal</strong> untuk mulai time-blocking dan menghubungkan to-do list aktif kamu.
-          </span>
-          {onNavigateToNotes && (
-            <button type="button" onClick={onNavigateToNotes}>
-              Lihat Catatan →
-            </button>
+      {/* Main Workspace Layout */}
+      <div className="cal-workspace-main">
+        {/* Workspace Topbar */}
+        <CalendarTopbar
+          anchorDate={anchorDate}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onToday={handleToday}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onToggleSidebar={toggleSidebar}
+          isSidebarCollapsed={sidebarCollapsed}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          dark={dark}
+          onToggleDark={onToggleDark}
+          onOpenSettings={onOpenSettings}
+          onOpenProfile={onOpenProfile}
+          userName={userName}
+          userAvatar={userAvatar}
+          onRequireLogin={onRequireLogin}
+          onNavigate={onNavigate}
+        />
+
+        {/* Content Canvas */}
+        <main className="cal-workspace-content">
+          {events.length === 0 && (
+            <div className="cal-empty-notice">
+              <span>
+                📅 <strong>Kalender masih kosong.</strong> Klik petak jam mana saja atau tekan{" "}
+                <strong>+ Buat Jadwal</strong> di sidebar untuk mulai time-blocking dan jadwal berulang.
+              </span>
+              {onNavigateToNotes && (
+                <button type="button" onClick={onNavigateToNotes}>
+                  Lihat Catatan →
+                </button>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      {/* Main View Mode Content */}
-      {(viewMode === "day" || viewMode === "week") && (
-        <CalendarGrid
-          days={visibleDays}
-          events={filteredEvents}
-          onSlotClick={(dateISO, hour) => handleOpenCreate(dateISO, hour)}
-          onEventClick={handleOpenEdit}
-          onUpdateEvent={updateEvent}
-        />
-      )}
+          {/* Day & Week View */}
+          {(viewMode === "day" || viewMode === "week") && (
+            <CalendarGrid
+              days={visibleDays}
+              events={filteredEvents}
+              onSlotClick={(dateISO, hour) => handleOpenCreate(dateISO, hour)}
+              onEventClick={handleOpenEdit}
+              onUpdateEvent={(updated) => {
+                const targetId = updated.originalEventId || updated.id;
+                updateEvent({ ...updated, id: targetId });
+              }}
+            />
+          )}
 
-      {viewMode === "month" && (
-        <CalendarMonthView
-          anchorDate={anchorDate}
-          events={filteredEvents}
-          onSelectDate={handleSelectDate}
-          onSlotClick={(dateISO, hour) => handleOpenCreate(dateISO, hour)}
-          onEventClick={handleOpenEdit}
-        />
-      )}
+          {/* Month View */}
+          {viewMode === "month" && (
+            <CalendarMonthView
+              anchorDate={anchorDate}
+              events={filteredEvents}
+              onSelectDate={handleSelectDate}
+              onSlotClick={(dateISO, hour) => handleOpenCreate(dateISO, hour)}
+              onEventClick={handleOpenEdit}
+            />
+          )}
 
-      {viewMode === "year" && (
-        <CalendarYearView
-          anchorDate={anchorDate}
-          events={filteredEvents}
-          onSelectDate={handleSelectDate}
-        />
-      )}
+          {/* Year View */}
+          {viewMode === "year" && (
+            <CalendarYearView
+              anchorDate={anchorDate}
+              events={filteredEvents}
+              onSelectDate={handleSelectDate}
+            />
+          )}
+        </main>
+      </div>
 
       {/* Create / Edit Event Modal */}
       {modalOpen && modalDraft && (
@@ -198,10 +313,13 @@ export function CalendarView({ userId, onNavigateToNotes }: CalendarViewProps) {
           editingId={editingId}
           notes={notes}
           onSave={handleSaveDraft}
-          onDelete={deleteEvent}
+          onDelete={(id) => {
+            deleteEvent(id);
+            setModalOpen(false);
+          }}
           onClose={() => setModalOpen(false)}
         />
       )}
-    </section>
+    </div>
   );
 }
