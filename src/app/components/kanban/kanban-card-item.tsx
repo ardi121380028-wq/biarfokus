@@ -7,6 +7,7 @@ type KanbanCardItemProps = {
   card: KanbanCard;
   listId: string;
   index: number;
+  readOnly?: boolean;
   onClick: (card: KanbanCard, listId: string) => void;
   onSendToFrog?: (card: KanbanCard) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>, cardId: string, listId: string, index: number) => void;
@@ -17,6 +18,7 @@ export function KanbanCardItem({
   card,
   listId,
   index,
+  readOnly = false,
   onClick,
   onSendToFrog,
   onDragStart,
@@ -27,31 +29,78 @@ export function KanbanCardItem({
   const totalItems = checklists.reduce((acc, c) => acc + (Array.isArray(c?.items) ? c.items.length : 0), 0);
   const doneItems = checklists.reduce((acc, c) => acc + (Array.isArray(c?.items) ? c.items.filter((i) => i.done).length : 0), 0);
 
-  // Compute due date state
+  // Compute date range & due date state
   let dueDateClass = "kanban-badge-due";
   let dueDateLabel = "";
-  if (card.dueDate) {
-    const due = new Date(card.dueDate);
-    dueDateLabel = due.toLocaleDateString("id-ID", { month: "short", day: "numeric" });
+  if (card.dueDate || card.startDate) {
+    if (card.startDate && card.dueDate) {
+      try {
+        const start = new Date(card.startDate);
+        const due = new Date(card.dueDate);
+        const startYear = start.getFullYear();
+        const dueYear = due.getFullYear();
+        const startStr = start.toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: startYear !== dueYear ? "numeric" : undefined,
+        });
+        const dueStr = due.toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+        dueDateLabel = `${startStr} – ${dueStr}`;
+      } catch {
+        dueDateLabel = `${card.startDate} – ${card.dueDate}`;
+      }
+    } else if (card.dueDate) {
+      try {
+        const due = new Date(card.dueDate);
+        dueDateLabel = due.toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+      } catch {
+        dueDateLabel = card.dueDate;
+      }
+    } else if (card.startDate) {
+      try {
+        const start = new Date(card.startDate);
+        dueDateLabel = `Mulai ${start.toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })}`;
+      } catch {
+        dueDateLabel = `Mulai ${card.startDate}`;
+      }
+    }
+
     if (card.dueCompleted) {
       dueDateClass += " completed";
-    } else {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      due.setHours(0, 0, 0, 0);
-      if (due < today) {
-        dueDateClass += " overdue";
-      } else if (due.getTime() === today.getTime()) {
-        dueDateClass += " today";
-      }
+    } else if (card.dueDate) {
+      try {
+        const due = new Date(card.dueDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        due.setHours(0, 0, 0, 0);
+        if (due < today) {
+          dueDateClass += " overdue";
+        } else if (due.getTime() === today.getTime()) {
+          dueDateClass += " today";
+        }
+      } catch {}
     }
   }
 
   return (
     <div
-      className="kanban-card-item"
-      draggable
-      onDragStart={(e) => onDragStart(e, card.id, listId, index)}
+      className={`kanban-card-item ${readOnly ? "is-readonly" : ""}`}
+      draggable={!readOnly}
+      onDragStart={(e) => {
+        if (!readOnly) onDragStart(e, card.id, listId, index);
+      }}
       onDragEnd={onDragEnd}
       onClick={() => onClick(card, listId)}
       role="button"
@@ -111,8 +160,8 @@ export function KanbanCardItem({
             </span>
           )}
 
-          {card.dueDate && (
-            <span className={dueDateClass} title={`Tenggat waktu: ${card.dueDate}`}>
+          {(card.dueDate || card.startDate) && (
+            <span className={dueDateClass} title={`Rentang waktu: ${dueDateLabel}`}>
               🕒 {dueDateLabel}
             </span>
           )}

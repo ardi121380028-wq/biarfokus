@@ -7,6 +7,7 @@ import { KanbanCardItem } from "./kanban-card-item";
 
 type KanbanColumnProps = {
   list: KanbanList;
+  readOnly?: boolean;
   onCardClick: (card: KanbanCard, listId: string) => void;
   onSendToFrog?: (card: KanbanCard) => void;
   onAddCard: (listId: string, title: string) => void;
@@ -19,6 +20,7 @@ type KanbanColumnProps = {
 
 export function KanbanColumn({
   list,
+  readOnly = false,
   onCardClick,
   onSendToFrog,
   onAddCard,
@@ -71,6 +73,7 @@ export function KanbanColumn({
   }
 
   function handleDragOver(e: DragEvent<HTMLDivElement>) {
+    if (readOnly) return;
     e.preventDefault();
     if (!isDragOver) setIsDragOver(true);
   }
@@ -80,6 +83,7 @@ export function KanbanColumn({
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
+    if (readOnly) return;
     e.preventDefault();
     setIsDragOver(false);
     onDropCard(list.id, list.cards.length);
@@ -87,7 +91,7 @@ export function KanbanColumn({
 
   return (
     <div
-      className={`kanban-column-container ${isDragOver ? "drag-over" : ""}`}
+      className={`kanban-column-container ${isDragOver ? "drag-over" : ""} ${readOnly ? "is-readonly" : ""}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -95,7 +99,7 @@ export function KanbanColumn({
       {/* Column Header */}
       <div className="kanban-column-header">
         <div className="kanban-column-title-box">
-          {isEditingTitle ? (
+          {!readOnly && isEditingTitle ? (
             <input
               type="text"
               className="kanban-column-title-input"
@@ -115,10 +119,12 @@ export function KanbanColumn({
             <h3
               className="kanban-column-title"
               onClick={() => {
-                setTitle(list.title);
-                setIsEditingTitle(true);
+                if (!readOnly) {
+                  setTitle(list.title);
+                  setIsEditingTitle(true);
+                }
               }}
-              title="Klik untuk mengubah nama kolom"
+              title={readOnly ? list.title : "Klik untuk mengubah nama kolom"}
             >
               {list.title}
             </h3>
@@ -127,41 +133,43 @@ export function KanbanColumn({
         </div>
 
         {/* Column Options Menu */}
-        <div className="kanban-column-menu-wrapper" ref={menuRef}>
-          <button
-            type="button"
-            className="kanban-column-menu-btn"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Menu kolom"
-          >
-            ⋯
-          </button>
-          {menuOpen && (
-            <div className="kanban-column-popover" role="menu">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAddingCard(true);
-                  setMenuOpen(false);
-                }}
-              >
-                + Tambah Kartu
-              </button>
-              <button
-                type="button"
-                className="danger-text"
-                onClick={() => {
-                  setMenuOpen(false);
-                  if (confirm(`Hapus kolom "${list.title}" dan seluruh kartunya?`)) {
-                    onDeleteList(list.id);
-                  }
-                }}
-              >
-                Hapus Kolom
-              </button>
-            </div>
-          )}
-        </div>
+        {!readOnly && (
+          <div className="kanban-column-menu-wrapper" ref={menuRef}>
+            <button
+              type="button"
+              className="kanban-column-menu-btn"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Menu kolom"
+            >
+              ⋯
+            </button>
+            {menuOpen && (
+              <div className="kanban-column-popover" role="menu">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingCard(true);
+                    setMenuOpen(false);
+                  }}
+                >
+                  + Tambah Kartu
+                </button>
+                <button
+                  type="button"
+                  className="danger-text"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    if (confirm(`Hapus kolom "${list.title}" dan seluruh kartunya?`)) {
+                      onDeleteList(list.id);
+                    }
+                  }}
+                >
+                  Hapus Kolom
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Cards List Container */}
@@ -172,6 +180,7 @@ export function KanbanColumn({
             card={card}
             listId={list.id}
             index={idx}
+            readOnly={readOnly}
             onClick={onCardClick}
             onSendToFrog={onSendToFrog}
             onDragStart={onDragStartCard}
@@ -179,65 +188,67 @@ export function KanbanColumn({
           />
         ))}
 
-        {/* Inline Card Composer (Screenshot 2) */}
-        {isAddingCard ? (
-          <div className="kanban-add-card-composer">
-            <textarea
-              className="kanban-composer-textarea"
-              placeholder="Enter a title or paste a link..."
-              value={newCardTitle}
-              onChange={(e) => setNewCardTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleCreateCard();
-                }
-                if (e.key === "Escape") {
-                  setIsAddingCard(false);
-                  setNewCardTitle("");
-                }
-              }}
-              rows={2}
-              autoFocus
-            />
-            <div className="kanban-composer-actions">
-              <button
-                type="button"
-                className="kanban-composer-add-btn"
-                onClick={handleCreateCard}
-                disabled={!newCardTitle.trim()}
-              >
-                Add card
-              </button>
-              <button
-                type="button"
-                className="kanban-composer-tip-btn"
-                onClick={handleQuickTip}
-                title="Isi contoh otomatis"
-              >
-                💡 Tip
-              </button>
-              <button
-                type="button"
-                className="kanban-composer-cancel-btn"
-                onClick={() => {
-                  setIsAddingCard(false);
-                  setNewCardTitle("");
+        {/* Inline Card Composer (Only for Editors/Owners) */}
+        {!readOnly && (
+          isAddingCard ? (
+            <div className="kanban-add-card-composer">
+              <textarea
+                className="kanban-composer-textarea"
+                placeholder="Enter a title or paste a link..."
+                value={newCardTitle}
+                onChange={(e) => setNewCardTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleCreateCard();
+                  }
+                  if (e.key === "Escape") {
+                    setIsAddingCard(false);
+                    setNewCardTitle("");
+                  }
                 }}
-                aria-label="Batal"
-              >
-                ✕
-              </button>
+                rows={2}
+                autoFocus
+              />
+              <div className="kanban-composer-actions">
+                <button
+                  type="button"
+                  className="kanban-composer-add-btn"
+                  onClick={handleCreateCard}
+                  disabled={!newCardTitle.trim()}
+                >
+                  Add card
+                </button>
+                <button
+                  type="button"
+                  className="kanban-composer-tip-btn"
+                  onClick={handleQuickTip}
+                  title="Isi contoh otomatis"
+                >
+                  💡 Tip
+                </button>
+                <button
+                  type="button"
+                  className="kanban-composer-cancel-btn"
+                  onClick={() => {
+                    setIsAddingCard(false);
+                    setNewCardTitle("");
+                  }}
+                  aria-label="Batal"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="kanban-add-card-prompt-btn"
-            onClick={() => setIsAddingCard(true)}
-          >
-            + Add a card
-          </button>
+          ) : (
+            <button
+              type="button"
+              className="kanban-add-card-prompt-btn"
+              onClick={() => setIsAddingCard(true)}
+            >
+              + Add a card
+            </button>
+          )
         )}
       </div>
     </div>

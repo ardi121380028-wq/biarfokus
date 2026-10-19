@@ -120,12 +120,42 @@ export default function Home() {
         if (url.searchParams.has("kanbanInvite") || url.searchParams.has("invite")) {
           return "kanban";
         }
+        if (url.searchParams.get("view") === "kanban" || window.location.hash === "#kanban") {
+          return "kanban";
+        }
+        const savedView = window.localStorage.getItem("biarfokus.activeView");
+        if (
+          savedView === "kanban" ||
+          savedView === "notes" ||
+          savedView === "calendar" ||
+          savedView === "stats" ||
+          savedView === "pricing" ||
+          savedView === "admin"
+        ) {
+          return savedView as View;
+        }
       } catch {
         // Safe URL check
       }
     }
     return "timer";
   });
+
+  // Persist active view on browser refresh
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem("biarfokus.activeView", activeView);
+        if (activeView === "kanban") {
+          if (window.location.hash !== "#kanban") {
+            window.history.replaceState(null, "", "#kanban");
+          }
+        } else if (window.location.hash === "#kanban") {
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+      } catch {}
+    }
+  }, [activeView]);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [tasksHydrated, setTasksHydrated] = useState(false);
   const [showSettings, setShowSettings] = useState(false);

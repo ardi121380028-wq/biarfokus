@@ -239,8 +239,37 @@ export async function GET(request: Request) {
       joined_at: string;
     }>;
 
-    // 2. Fetch profiles for display names and avatars
-    const userIds = Array.from(new Set(rawMembers.map((m) => m.user_id)));
+    // 2. Fetch board row to ensure owner is present
+    const { data: boardRow } = await supabase
+      .from("kanban_boards")
+      .select("user_id")
+      .eq("id", boardId)
+      .maybeSingle();
+
+    const seenUserIds = new Set<string>();
+    const uniqueRawMembers: typeof rawMembers = [];
+
+    if (boardRow?.user_id) {
+      seenUserIds.add(boardRow.user_id);
+      const ownerMember = rawMembers.find((m) => m.user_id === boardRow.user_id);
+      uniqueRawMembers.push({
+        id: ownerMember?.id || `owner-${boardRow.user_id}`,
+        board_id: boardId,
+        user_id: boardRow.user_id,
+        role: "owner",
+        joined_at: ownerMember?.joined_at || new Date(0).toISOString(),
+      });
+    }
+
+    for (const m of rawMembers) {
+      if (!seenUserIds.has(m.user_id)) {
+        seenUserIds.add(m.user_id);
+        uniqueRawMembers.push(m);
+      }
+    }
+
+    // 3. Fetch profiles for display names and avatars
+    const userIds = Array.from(seenUserIds);
     const profilesMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
 
     if (userIds.length > 0) {
@@ -257,7 +286,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const members = rawMembers.map((m) => {
+    const members = uniqueRawMembers.map((m) => {
       const prof = profilesMap.get(m.user_id);
       return {
         id: m.id,

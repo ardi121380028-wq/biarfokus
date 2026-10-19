@@ -360,6 +360,7 @@ export function normalizeBoard(raw: unknown): KanbanBoard {
                 description: typeof cardObj.description === "string" ? cardObj.description : "",
                 coverColor: typeof cardObj.coverColor === "string" ? cardObj.coverColor : undefined,
                 coverEmoji: typeof cardObj.coverEmoji === "string" ? cardObj.coverEmoji : undefined,
+                startDate: typeof cardObj.startDate === "string" ? cardObj.startDate : undefined,
                 dueDate: typeof cardObj.dueDate === "string" ? cardObj.dueDate : undefined,
                 dueCompleted: Boolean(cardObj.dueCompleted),
                 labels: Array.isArray(cardObj.labels) ? cardObj.labels : [],
@@ -445,6 +446,9 @@ export function normalizeBoard(raw: unknown): KanbanBoard {
             : b.background)
         : "biarfokus-white",
     starred: Boolean(b.starred),
+    role: b.role,
+    isShared: Boolean(b.isShared),
+    labels: Array.isArray(b.labels) ? b.labels : undefined,
     createdAt: typeof b.createdAt === "string" ? b.createdAt : now,
     updatedAt: typeof b.updatedAt === "string" ? b.updatedAt : now,
     lists,

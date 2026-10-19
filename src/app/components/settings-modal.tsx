@@ -71,7 +71,7 @@ export function SettingsModal({
   setTimerDurations,
   onClose,
 }: SettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<"concentration" | "sound" | "auto" | "notification">("concentration");
+  const [activeTab, setActiveTab] = useState<"concentration" | "sound" | "auto" | "notification" | "kanban">("concentration");
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const isFocusTemplate = (Object.keys(focusDurations) as TimerMode[]).every((mode) => timerDurations[mode] === focusDurations[mode]);
 
@@ -110,6 +110,7 @@ export function SettingsModal({
           <button className={activeTab === "sound" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("sound")}>♧ <span>Sound & alarm</span></button>
           <button className={activeTab === "auto" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("auto")}>▷ <span>Auto start</span></button>
           <button className={activeTab === "notification" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("notification")}>♧ <span>Notification</span></button>
+          <button className={activeTab === "kanban" ? "settings-tab active" : "settings-tab"} onClick={() => setActiveTab("kanban")}>🗂️ <span>Kanban Workspace</span></button>
         </aside>
         <div className="settings-content">
           {activeTab === "concentration" && (
@@ -249,6 +250,52 @@ export function SettingsModal({
                 }
               }}><span>Browser notification</span><b>{notificationsEnabled ? "On" : "Off"}</b></button>
               <p className="settings-help">Show a browser notification when a session ends.</p>
+            </div>
+          )}
+
+          {activeTab === "kanban" && (
+            <div className="settings-section">
+              <p className="settings-section-title">PENGATURAN KANBAN WORKSPACE</p>
+
+              <div className="setting-row">
+                <div>
+                  <span style={{ fontWeight: 600 }}>Tampilkan Avatar PIC pada Kartu</span>
+                  <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                    Tampilkan tumpukan foto atau inisial anggota PIC di pojok kanan bawah kartu tugas.
+                  </p>
+                </div>
+                <b>Aktif</b>
+              </div>
+
+              <div className="setting-row">
+                <div>
+                  <span style={{ fontWeight: 600 }}>Format Tenggat Waktu Rentang (Date Range)</span>
+                  <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                    Dukungan tanggal mulai hingga tanggal selesai (cth: 14 Okt – 20 Nov 2026).
+                  </p>
+                </div>
+                <b>Aktif</b>
+              </div>
+
+              <div className="setting-row">
+                <div>
+                  <span style={{ fontWeight: 600 }}>Integrasi Eat Your Frog</span>
+                  <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                    Shortcut katak 🐸 pada kartu langsung memasukkan tugas ke target harian terfokus.
+                  </p>
+                </div>
+                <b>Aktif</b>
+              </div>
+
+              <div className="setting-row">
+                <div>
+                  <span style={{ fontWeight: 600 }}>Mode Aplikasi Layar Penuh (100vh)</span>
+                  <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                    Meniadakan scroll vertikal browser; scroll kartu hanya terjadi di dalam kolom kanban.
+                  </p>
+                </div>
+                <b>Aktif</b>
+              </div>
             </div>
           )}
 

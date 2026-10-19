@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type {
   KanbanBoardMember,
   KanbanCard,
@@ -18,17 +18,36 @@ type KanbanCardDialogProps = {
   listTitle: string;
   boardMembers?: KanbanBoardMember[];
   currentUserId?: string | null;
+  boardLabels?: KanbanLabel[];
+  onUpdateBoardLabels?: (labels: KanbanLabel[]) => void;
+  readOnly?: boolean;
   onUpdate: (updates: Partial<KanbanCard>) => void;
   onDelete: () => void;
   onClose: () => void;
   onSendToFrog?: (card: KanbanCard) => void;
 };
 
+const DEFAULT_LABEL_COLORS = [
+  "#61bd4f",
+  "#f2d600",
+  "#ff9f1a",
+  "#eb5a46",
+  "#c377e0",
+  "#0079bf",
+  "#00c2e0",
+  "#ff78cb",
+  "#51e898",
+  "#344563",
+];
+
 export function KanbanCardDialog({
   card,
   listTitle,
   boardMembers = [],
   currentUserId,
+  boardLabels,
+  onUpdateBoardLabels,
+  readOnly = false,
   onUpdate,
   onDelete,
   onClose,
@@ -51,17 +70,79 @@ export function KanbanCardDialog({
   const [newChecklistTitle, setNewChecklistTitle] = useState("Checklist");
   const [frogFeedback, setFrogFeedback] = useState<string | null>(null);
 
+  // Custom label creator state
+  const [newLabelName, setNewLabelName] = useState("");
+  const [selectedLabelColor, setSelectedLabelColor] = useState(DEFAULT_LABEL_COLORS[0]);
+  const [isCreatingLabel, setIsCreatingLabel] = useState(false);
+
+  // Mention autocomplete state in comment textarea
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   // Quick cover emojis
   const COVER_EMOJIS = ["🐱", "⭐", "🚀", "💡", "🎯", "🔥", "📌", "🏆", "⚠️", "☕"];
 
+  // Combined pool of available labels
+  const availableLabels: KanbanLabel[] = useMemo(() => {
+    if (boardLabels && boardLabels.length > 0) {
+      return boardLabels;
+    }
+    return LABEL_PALETTE.map((p, idx) => ({
+      id: `lbl-default-${idx}`,
+      name: p.defaultName,
+      color: p.color,
+    }));
+  }, [boardLabels]);
+
+  // List of candidates for @mention in comments
+  const mentionCandidates = useMemo(() => {
+    const list: { id: string; name: string; avatarUrl?: string | null }[] = [];
+    const seen = new Set<string>();
+
+    // 1. Board members
+    boardMembers.forEach((m) => {
+      const id = m.userId || m.id;
+      const name = m.displayName || (m.userId === currentUserId ? "Kamu" : "Anggota");
+      if (!seen.has(id)) {
+        seen.add(id);
+        list.push({ id, name, avatarUrl: m.avatarUrl });
+      }
+    });
+
+    // 2. Card assignees
+    (card.assignees || []).forEach((a) => {
+      if (!seen.has(a.id)) {
+        seen.add(a.id);
+        list.push({ id: a.id, name: a.name, avatarUrl: a.avatarUrl });
+      }
+    });
+
+    if (list.length === 0) {
+      list.push({
+        id: currentUserId || "user-self",
+        name: "Kamu",
+        avatarUrl: null,
+      });
+    }
+
+    if (!mentionQuery) return list;
+    const q = mentionQuery.toLowerCase();
+    return list.filter((item) => item.name.toLowerCase().includes(q));
+  }, [boardMembers, card.assignees, currentUserId, mentionQuery]);
+
+  // Handle strictly by unique member ID (Fixes multi-select bug)
   function handleToggleAssignee(member: { id: string; name: string; avatarUrl?: string | null }) {
+    if (readOnly) return;
     const currentAssignees = card.assignees || [];
-    const exists = currentAssignees.some((a) => a.id === member.id || a.name.toLowerCase() === member.name.toLowerCase());
+    const exists = currentAssignees.some((a) => a.id === member.id);
     let next: KanbanCardAssignee[];
     if (exists) {
-      next = currentAssignees.filter((a) => a.id !== member.id && a.name.toLowerCase() !== member.name.toLowerCase());
+      next = currentAssignees.filter((a) => a.id !== member.id);
     } else {
-      next = [...currentAssignees, { id: member.id, name: member.name, avatarUrl: member.avatarUrl || null }];
+      next = [
+        ...currentAssignees,
+        { id: member.id, name: member.name, avatarUrl: member.avatarUrl || null },
+      ];
     }
     onUpdate({
       assignees: next,
@@ -72,6 +153,7 @@ export function KanbanCardDialog({
   }
 
   function handleAddCustomPic() {
+    if (readOnly) return;
     const trimmed = customPicName.trim();
     if (!trimmed) return;
     const currentAssignees = card.assignees || [];
@@ -91,6 +173,7 @@ export function KanbanCardDialog({
   }
 
   function handleRemoveAssignee(assigneeId: string) {
+    if (readOnly) return;
     const currentAssignees = card.assignees || [];
     const next = currentAssignees.filter((a) => a.id !== assigneeId);
     onUpdate({
@@ -102,6 +185,7 @@ export function KanbanCardDialog({
   }
 
   function handleTitleBlur() {
+    if (readOnly) return;
     const trimmed = title.trim();
     if (trimmed && trimmed !== card.title) {
       onUpdate({ title: trimmed });
@@ -111,22 +195,57 @@ export function KanbanCardDialog({
   }
 
   function handleSaveDescription() {
+    if (readOnly) return;
     onUpdate({ description: description.trim() });
     setIsEditingDesc(false);
   }
 
-  function handleToggleLabel(color: string, defaultName: string) {
-    const existing = card.labels.find((l) => l.color === color);
+  // Toggle label on the card
+  function handleToggleLabel(label: KanbanLabel) {
+    if (readOnly) return;
+    const existing = card.labels.find((l) => l.id === label.id || l.name.toLowerCase() === label.name.toLowerCase());
     let nextLabels: KanbanLabel[];
     if (existing) {
-      nextLabels = card.labels.filter((l) => l.color !== color);
+      nextLabels = card.labels.filter((l) => l.id !== label.id && l.name.toLowerCase() !== label.name.toLowerCase());
     } else {
-      nextLabels = [...card.labels, { id: createId("lbl"), name: defaultName, color }];
+      nextLabels = [...card.labels, label];
     }
     onUpdate({ labels: nextLabels });
   }
 
+  // Create a brand new label
+  function handleCreateCustomLabel() {
+    if (readOnly) return;
+    const trimmed = newLabelName.trim();
+    if (!trimmed) return;
+    const newLbl: KanbanLabel = {
+      id: createId("lbl"),
+      name: trimmed,
+      color: selectedLabelColor,
+    };
+    const updatedPool = [...availableLabels, newLbl];
+    if (onUpdateBoardLabels) {
+      onUpdateBoardLabels(updatedPool);
+    }
+    // Also attach to card immediately
+    onUpdate({ labels: [...card.labels, newLbl] });
+    setNewLabelName("");
+    setIsCreatingLabel(false);
+  }
+
+  // Delete label from board palette and card
+  function handleDeleteLabel(labelId: string, e?: React.MouseEvent) {
+    if (readOnly) return;
+    if (e) e.stopPropagation();
+    const updatedPool = availableLabels.filter((l) => l.id !== labelId);
+    if (onUpdateBoardLabels) {
+      onUpdateBoardLabels(updatedPool);
+    }
+    onUpdate({ labels: card.labels.filter((l) => l.id !== labelId) });
+  }
+
   function handleAddChecklist() {
+    if (readOnly) return;
     const name = newChecklistTitle.trim() || "Checklist";
     const newChecklist: KanbanChecklist = {
       id: createId("chk"),
@@ -139,6 +258,7 @@ export function KanbanCardDialog({
   }
 
   function handleAddItemToChecklist(checklistId: string, itemText: string) {
+    if (readOnly) return;
     const text = itemText.trim();
     if (!text) return;
     const newItem: KanbanChecklistItem = {
@@ -153,6 +273,7 @@ export function KanbanCardDialog({
   }
 
   function handleToggleChecklistItem(checklistId: string, itemId: string) {
+    if (readOnly) return;
     const nextChecklists = card.checklists.map((c) => {
       if (c.id !== checklistId) return c;
       return {
@@ -164,6 +285,7 @@ export function KanbanCardDialog({
   }
 
   function handleDeleteChecklistItem(checklistId: string, itemId: string) {
+    if (readOnly) return;
     const nextChecklists = card.checklists.map((c) => {
       if (c.id !== checklistId) return c;
       return {
@@ -175,7 +297,30 @@ export function KanbanCardDialog({
   }
 
   function handleDeleteChecklist(checklistId: string) {
+    if (readOnly) return;
     onUpdate({ checklists: card.checklists.filter((c) => c.id !== checklistId) });
+  }
+
+  // Handle comment input with @mention detection
+  function handleCommentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const val = e.target.value;
+    setNewCommentText(val);
+
+    const match = val.match(/@([a-zA-Z0-9_\s]{0,20})$/);
+    if (match) {
+      setMentionQuery(match[1]);
+    } else {
+      setMentionQuery(null);
+    }
+  }
+
+  function handleSelectMention(memberName: string) {
+    const replaced = newCommentText.replace(/@([a-zA-Z0-9_\s]{0,20})$/, `@${memberName} `);
+    setNewCommentText(replaced);
+    setMentionQuery(null);
+    if (commentTextareaRef.current) {
+      commentTextareaRef.current.focus();
+    }
   }
 
   function handleAddComment() {
@@ -189,6 +334,7 @@ export function KanbanCardDialog({
     };
     onUpdate({ comments: [comment, ...(card.comments || [])] });
     setNewCommentText("");
+    setMentionQuery(null);
   }
 
   function handleSendToFrogClick() {
@@ -200,6 +346,44 @@ export function KanbanCardDialog({
     }
   }
 
+  // Formatted date range label for header/body
+  const formattedDateRange = useMemo(() => {
+    if (!card.startDate && !card.dueDate) return null;
+    try {
+      if (card.startDate && card.dueDate) {
+        const start = new Date(card.startDate);
+        const due = new Date(card.dueDate);
+        const s = start.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+        const d = due.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+        return `${s} – ${d}`;
+      }
+      if (card.dueDate) {
+        return new Date(card.dueDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+      }
+      if (card.startDate) {
+        return `Mulai ${new Date(card.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`;
+      }
+    } catch {
+      return card.dueDate || card.startDate || "";
+    }
+    return null;
+  }, [card.startDate, card.dueDate]);
+
+  // Parser to style @mentions in comment body
+  function renderCommentBody(text: string) {
+    const parts = text.split(/(@[a-zA-Z0-9_\s]+?\b)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("@")) {
+        return (
+          <span key={i} className="kanban-comment-mention">
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  }
+
   return (
     <div className="kanban-dialog-backdrop" role="presentation">
       <div
@@ -209,6 +393,13 @@ export function KanbanCardDialog({
         aria-modal="true"
         aria-labelledby="kanban-dialog-title"
       >
+        {/* Read-Only Notice Bar */}
+        {readOnly && (
+          <div className="kanban-dialog-readonly-banner">
+            <span>🔒 Mode Hanya Lihat — Kamu belum bergabung sebagai editor untuk kartu ini.</span>
+          </div>
+        )}
+
         {/* Cover Band / Emoji Header */}
         {card.coverColor && (
           <div className="kanban-dialog-cover" style={{ background: card.coverColor }} />
@@ -229,6 +420,7 @@ export function KanbanCardDialog({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleTitleBlur();
                 }}
+                readOnly={readOnly}
                 aria-label="Judul kartu"
               />
               <p className="kanban-dialog-crumb">
@@ -247,7 +439,7 @@ export function KanbanCardDialog({
         </div>
 
         {frogFeedback && (
-          <div className="daily-goal-badge" style={{ animation: "none", margin: "0 0 12px" }}>
+          <div className="daily-goal-badge" style={{ animation: "none", margin: "0 24px 12px" }}>
             ✓ {frogFeedback}
           </div>
         )}
@@ -272,30 +464,34 @@ export function KanbanCardDialog({
                         </span>
                       )}
                       <span className="kanban-pic-chip-name">{pic.name}</span>
-                      <button
-                        type="button"
-                        className="kanban-pic-remove-btn"
-                        onClick={() => handleRemoveAssignee(pic.id)}
-                        title="Hapus PIC"
-                      >
-                        ✕
-                      </button>
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          className="kanban-pic-remove-btn"
+                          onClick={() => handleRemoveAssignee(pic.id)}
+                          title="Hapus PIC"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </span>
                   ))}
-                  <button
-                    type="button"
-                    className="kanban-add-mini-btn"
-                    onClick={() => setShowMemberPicker(!showMemberPicker)}
-                    title="Tambah anggota / PIC"
-                  >
-                    +
-                  </button>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      className="kanban-add-mini-btn"
+                      onClick={() => setShowMemberPicker(!showMemberPicker)}
+                      title="Tambah anggota / PIC"
+                    >
+                      +
+                    </button>
+                  )}
                 </div>
               </div>
             )}
 
             {/* Member / PIC Picker Popover */}
-            {showMemberPicker && (
+            {!readOnly && showMemberPicker && (
               <div className="kanban-popover-box kanban-member-popover">
                 <div className="kanban-popover-head">
                   <span>Pilih Anggota / PIC</span>
@@ -305,9 +501,8 @@ export function KanbanCardDialog({
                 <div className="kanban-member-picker-list">
                   {boardMembers.length > 0 ? (
                     boardMembers.map((member) => {
-                      const isAssigned = (card.assignees || []).some(
-                        (a) => a.id === member.userId || a.name.toLowerCase() === (member.displayName || "").toLowerCase(),
-                      );
+                      const memberId = member.userId || member.id;
+                      const isAssigned = (card.assignees || []).some((a) => a.id === memberId);
                       const name = member.displayName || (member.userId === currentUserId ? "Kamu" : "Anggota Tim");
                       return (
                         <button
@@ -316,7 +511,7 @@ export function KanbanCardDialog({
                           className={`kanban-member-pick-item ${isAssigned ? "selected" : ""}`}
                           onClick={() =>
                             handleToggleAssignee({
-                              id: member.userId,
+                              id: memberId,
                               name,
                               avatarUrl: member.avatarUrl,
                             })
@@ -338,7 +533,7 @@ export function KanbanCardDialog({
                   ) : (
                     <button
                       type="button"
-                      className={`kanban-member-pick-item ${(card.assignees || []).some((a) => a.name === "Kamu") ? "selected" : ""}`}
+                      className={`kanban-member-pick-item ${(card.assignees || []).some((a) => a.id === (currentUserId || "user-self")) ? "selected" : ""}`}
                       onClick={() =>
                         handleToggleAssignee({
                           id: currentUserId || "user-self",
@@ -350,7 +545,7 @@ export function KanbanCardDialog({
                         <span>K</span>
                       </div>
                       <span className="kanban-member-pick-name">Kamu (Pemilik)</span>
-                      {(card.assignees || []).some((a) => a.name === "Kamu") && (
+                      {(card.assignees || []).some((a) => a.id === (currentUserId || "user-self")) && (
                         <span className="kanban-member-pick-check">✓</span>
                       )}
                     </button>
@@ -397,71 +592,151 @@ export function KanbanCardDialog({
                       key={lbl.id}
                       className="kanban-dialog-label-chip"
                       style={{ backgroundColor: lbl.color }}
-                      onClick={() => setShowLabelPicker(true)}
+                      onClick={() => !readOnly && setShowLabelPicker(true)}
                     >
                       {lbl.name}
                     </span>
                   ))}
-                  <button
-                    type="button"
-                    className="kanban-add-mini-btn"
-                    onClick={() => setShowLabelPicker(!showLabelPicker)}
-                    title="Tambah label"
-                  >
-                    +
-                  </button>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      className="kanban-add-mini-btn"
+                      onClick={() => setShowLabelPicker(!showLabelPicker)}
+                      title="Tambah label"
+                    >
+                      +
+                    </button>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Label Picker Popover */}
-            {showLabelPicker && (
-              <div className="kanban-popover-box">
+            {/* Label Picker Popover (With Create & Delete Capabilities) */}
+            {!readOnly && showLabelPicker && (
+              <div className="kanban-popover-box kanban-labels-popover">
                 <div className="kanban-popover-head">
-                  <span>Pilih Label</span>
+                  <span>Pilih &amp; Kelola Label</span>
                   <button type="button" onClick={() => setShowLabelPicker(false)}>✕</button>
                 </div>
+
+                {/* Existing Available Labels */}
                 <div className="kanban-palette-grid">
-                  {LABEL_PALETTE.map((item) => {
-                    const isSelected = card.labels.some((l) => l.color === item.color);
+                  {availableLabels.map((item) => {
+                    const isSelected = card.labels.some((l) => l.id === item.id || l.name === item.name);
                     return (
-                      <button
-                        key={item.color}
-                        type="button"
-                        className={`kanban-palette-item ${isSelected ? "selected" : ""}`}
+                      <div
+                        key={item.id}
+                        className={`kanban-palette-item-wrap ${isSelected ? "selected" : ""}`}
                         style={{ backgroundColor: item.color }}
-                        onClick={() => handleToggleLabel(item.color, item.defaultName)}
                       >
-                        {item.defaultName} {isSelected ? "✓" : ""}
-                      </button>
+                        <button
+                          type="button"
+                          className="kanban-palette-item-btn"
+                          onClick={() => handleToggleLabel(item)}
+                          title={`Terapkan label ${item.name}`}
+                        >
+                          <span className="label-item-name">{item.name}</span>
+                          {isSelected && <span className="label-check">✓</span>}
+                        </button>
+                        <button
+                          type="button"
+                          className="kanban-palette-item-del-btn"
+                          onClick={(e) => handleDeleteLabel(item.id, e)}
+                          title="Hapus label dari daftar"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
+
+                {/* Create New Custom Label Form */}
+                <div className="kanban-create-label-box">
+                  {!isCreatingLabel ? (
+                    <button
+                      type="button"
+                      className="kanban-text-btn create-label-trigger"
+                      onClick={() => setIsCreatingLabel(true)}
+                    >
+                      + Buat Label Baru
+                    </button>
+                  ) : (
+                    <div className="kanban-new-label-form">
+                      <span className="kanban-custom-pic-label">Nama Label Baru</span>
+                      <input
+                        type="text"
+                        placeholder="Cth: Design Sprint, Blocked..."
+                        value={newLabelName}
+                        onChange={(e) => setNewLabelName(e.target.value)}
+                        className="kanban-subtask-input"
+                        autoFocus
+                      />
+
+                      <span className="kanban-custom-pic-label" style={{ marginTop: 6 }}>
+                        Warna Label
+                      </span>
+                      <div className="kanban-label-colors-row">
+                        {DEFAULT_LABEL_COLORS.map((col) => (
+                          <button
+                            key={col}
+                            type="button"
+                            className={`color-swatch-mini ${selectedLabelColor === col ? "active" : ""}`}
+                            style={{ backgroundColor: col }}
+                            onClick={() => setSelectedLabelColor(col)}
+                            title={col}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                        <button
+                          type="button"
+                          className="kanban-primary-btn"
+                          onClick={handleCreateCustomLabel}
+                          disabled={!newLabelName.trim()}
+                        >
+                          Simpan Label
+                        </button>
+                        <button
+                          type="button"
+                          className="kanban-secondary-btn"
+                          onClick={() => setIsCreatingLabel(false)}
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Due Date Indicator */}
-            {card.dueDate && (
+            {/* Date Range Section */}
+            {(card.startDate || card.dueDate) && (
               <div className="kanban-dialog-section">
-                <span className="kanban-section-title">Tenggat Waktu</span>
+                <span className="kanban-section-title">🕒 Rentang Tenggat Waktu</span>
                 <div className="kanban-due-date-row">
                   <input
                     type="checkbox"
                     checked={Boolean(card.dueCompleted)}
-                    onChange={(e) => onUpdate({ dueCompleted: e.target.checked })}
+                    onChange={(e) => !readOnly && onUpdate({ dueCompleted: e.target.checked })}
                     className="keep-checkbox"
                     id="due-check"
+                    disabled={readOnly}
                   />
-                  <label htmlFor="due-check" style={{ fontSize: 13, cursor: "pointer" }}>
-                    {card.dueDate} {card.dueCompleted ? "(Selesai ✓)" : ""}
+                  <label htmlFor="due-check" style={{ fontSize: 13, cursor: readOnly ? "default" : "pointer" }}>
+                    <strong>{formattedDateRange}</strong> {card.dueCompleted ? "(Selesai ✓)" : ""}
                   </label>
-                  <button
-                    type="button"
-                    className="kanban-text-btn"
-                    onClick={() => onUpdate({ dueDate: undefined, dueCompleted: false })}
-                  >
-                    Hapus
-                  </button>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      className="kanban-text-btn"
+                      onClick={() => onUpdate({ startDate: undefined, dueDate: undefined, dueCompleted: false })}
+                    >
+                      Hapus Rentang
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -470,7 +745,7 @@ export function KanbanCardDialog({
             <div className="kanban-dialog-section">
               <div className="kanban-section-head-row">
                 <span className="kanban-section-title">📝 Deskripsi</span>
-                {!isEditingDesc && (
+                {!readOnly && !isEditingDesc && (
                   <button
                     type="button"
                     className="kanban-text-btn"
@@ -481,7 +756,7 @@ export function KanbanCardDialog({
                 )}
               </div>
 
-              {isEditingDesc ? (
+              {!readOnly && isEditingDesc ? (
                 <div className="kanban-desc-editor">
                   <textarea
                     className="kanban-desc-textarea"
@@ -514,15 +789,16 @@ export function KanbanCardDialog({
               ) : (
                 <div
                   className="kanban-desc-preview"
-                  onClick={() => setIsEditingDesc(true)}
+                  onClick={() => !readOnly && setIsEditingDesc(true)}
                   role="button"
                   tabIndex={0}
+                  style={{ cursor: readOnly ? "default" : "pointer" }}
                 >
                   {card.description ? (
                     <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{card.description}</p>
                   ) : (
                     <p className="kanban-desc-placeholder">
-                      Klik untuk menambahkan detail deskripsi...
+                      {readOnly ? "Tidak ada deskripsi." : "Klik untuk menambahkan detail deskripsi..."}
                     </p>
                   )}
                 </div>
@@ -539,13 +815,15 @@ export function KanbanCardDialog({
                 <div key={chk.id} className="kanban-dialog-section">
                   <div className="kanban-section-head-row">
                     <span className="kanban-section-title">☑️ {chk.title}</span>
-                    <button
-                      type="button"
-                      className="kanban-text-btn"
-                      onClick={() => handleDeleteChecklist(chk.id)}
-                    >
-                      Hapus
-                    </button>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        className="kanban-text-btn"
+                        onClick={() => handleDeleteChecklist(chk.id)}
+                      >
+                        Hapus
+                      </button>
+                    )}
                   </div>
 
                   {/* Progress bar */}
@@ -562,65 +840,94 @@ export function KanbanCardDialog({
                     </div>
                   </div>
 
-                  {/* Items List */}
+                  {/* Items list */}
                   <div className="kanban-checklist-items">
-                    {chk.items.map((item) => (
-                      <div key={item.id} className="kanban-check-item-row">
+                    {chk.items.map((it) => (
+                      <div key={it.id} className="kanban-check-item-row">
                         <input
                           type="checkbox"
-                          checked={item.done}
-                          onChange={() => handleToggleChecklistItem(chk.id, item.id)}
+                          checked={it.done}
+                          onChange={() => handleToggleChecklistItem(chk.id, it.id)}
                           className="keep-checkbox"
-                          id={`item-${item.id}`}
+                          disabled={readOnly}
                         />
-                        <label
-                          htmlFor={`item-${item.id}`}
-                          className={`kanban-check-item-text ${item.done ? "done" : ""}`}
+                        <span
+                          className={`kanban-check-item-text ${it.done ? "done" : ""}`}
+                          onClick={() => handleToggleChecklistItem(chk.id, it.id)}
                         >
-                          {item.text}
-                        </label>
-                        <button
-                          type="button"
-                          className="kanban-del-item-btn"
-                          onClick={() => handleDeleteChecklistItem(chk.id, item.id)}
-                          title="Hapus sub-tugas"
-                        >
-                          ✕
-                        </button>
+                          {it.text}
+                        </span>
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            className="kanban-del-item-btn"
+                            onClick={() => handleDeleteChecklistItem(chk.id, it.id)}
+                            title="Hapus butir"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     ))}
-                  </div>
 
-                  {/* Add item inline */}
-                  <div className="kanban-add-item-box">
-                    <input
-                      type="text"
-                      placeholder="Tambah item checklist..."
-                      className="kanban-subtask-input"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          const target = e.currentTarget;
-                          handleAddItemToChecklist(chk.id, target.value);
-                          target.value = "";
-                        }
-                      }}
-                    />
+                    {!readOnly && (
+                      <input
+                        type="text"
+                        placeholder="+ Tambah butir checklist (Enter)..."
+                        className="kanban-subtask-input"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const target = e.currentTarget;
+                            handleAddItemToChecklist(chk.id, target.value);
+                            target.value = "";
+                          }
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               );
             })}
 
-            {/* Comments & Activity Section */}
+            {/* Comments & Activity Section with @mention support */}
             <div className="kanban-dialog-section">
               <span className="kanban-section-title">💬 Komentar &amp; Aktivitas</span>
-              <div className="kanban-comment-input-area">
+
+              <div className="kanban-comment-input-area" style={{ position: "relative" }}>
                 <textarea
+                  ref={commentTextareaRef}
                   className="kanban-desc-textarea"
-                  placeholder="Tulis komentar atau update progress..."
+                  placeholder="Tulis komentar atau ketik @ untuk mention anggota..."
                   value={newCommentText}
-                  onChange={(e) => setNewCommentText(e.target.value)}
+                  onChange={handleCommentChange}
                   rows={2}
                 />
+
+                {/* Floating Mention Autocomplete Suggestions Dropdown */}
+                {mentionQuery !== null && mentionCandidates.length > 0 && (
+                  <div className="kanban-mention-popover">
+                    <span className="mention-popover-title">Mention Anggota Tim:</span>
+                    {mentionCandidates.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        className="mention-candidate-item"
+                        onClick={() => handleSelectMention(m.name)}
+                      >
+                        <div className="mention-candidate-avatar">
+                          {m.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.avatarUrl} alt={m.name} />
+                          ) : (
+                            <span>{m.name.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <span className="mention-candidate-name">{m.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <button
                   type="button"
                   className="kanban-primary-btn"
@@ -640,7 +947,7 @@ export function KanbanCardDialog({
                         <strong>{cmt.authorName}</strong>
                         <span>{cmt.createdAt}</span>
                       </div>
-                      <p className="kanban-comment-body">{cmt.text}</p>
+                      <p className="kanban-comment-body">{renderCommentBody(cmt.text)}</p>
                     </div>
                   ))}
                 </div>
@@ -649,147 +956,174 @@ export function KanbanCardDialog({
           </div>
 
           {/* Right Sidebar Actions */}
-          <div className="kanban-dialog-sidebar">
-            <span className="kanban-sidebar-heading">Tambahkan ke Kartu</span>
+          {!readOnly && (
+            <div className="kanban-dialog-sidebar">
+              <span className="kanban-sidebar-heading">Tambahkan ke Kartu</span>
 
-            {/* Frog Action (Super prominent integration) */}
-            <button
-              type="button"
-              className="kanban-sidebar-btn frog-action"
-              onClick={handleSendToFrogClick}
-              title="Kirim kartu ini langsung ke Eat Your Frog"
-            >
-              🐸 Jadikan Eat Your Frog
-            </button>
+              {/* Frog Action */}
+              <button
+                type="button"
+                className="kanban-sidebar-btn frog-action"
+                onClick={handleSendToFrogClick}
+                title="Kirim kartu ini langsung ke Eat Your Frog"
+              >
+                🐸 Jadikan Eat Your Frog
+              </button>
 
-            <button
-              type="button"
-              className={`kanban-sidebar-btn ${showMemberPicker ? "active" : ""}`}
-              onClick={() => setShowMemberPicker(!showMemberPicker)}
-            >
-              👥 Anggota / PIC
-            </button>
+              <button
+                type="button"
+                className={`kanban-sidebar-btn ${showMemberPicker ? "active" : ""}`}
+                onClick={() => setShowMemberPicker(!showMemberPicker)}
+              >
+                👥 Anggota / PIC
+              </button>
 
-            <button
-              type="button"
-              className="kanban-sidebar-btn"
-              onClick={() => setShowLabelPicker(!showLabelPicker)}
-            >
-              🏷️ Labels
-            </button>
+              <button
+                type="button"
+                className={`kanban-sidebar-btn ${showLabelPicker ? "active" : ""}`}
+                onClick={() => setShowLabelPicker(!showLabelPicker)}
+              >
+                🏷️ Labels
+              </button>
 
-            <button
-              type="button"
-              className="kanban-sidebar-btn"
-              onClick={() => setShowChecklistPrompt(!showChecklistPrompt)}
-            >
-              ☑️ Checklist
-            </button>
+              <button
+                type="button"
+                className="kanban-sidebar-btn"
+                onClick={() => setShowChecklistPrompt(!showChecklistPrompt)}
+              >
+                ☑️ Checklist
+              </button>
 
-            {showChecklistPrompt && (
-              <div className="kanban-sidebar-subbox">
-                <input
-                  type="text"
-                  placeholder="Judul checklist..."
-                  value={newChecklistTitle}
-                  onChange={(e) => setNewChecklistTitle(e.target.value)}
-                  className="kanban-subtask-input"
-                  autoFocus
-                />
-                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                  <button
-                    type="button"
-                    className="kanban-primary-btn"
-                    onClick={handleAddChecklist}
-                  >
-                    Buat
-                  </button>
-                  <button
-                    type="button"
-                    className="kanban-secondary-btn"
-                    onClick={() => setShowChecklistPrompt(false)}
-                  >
-                    Batal
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="kanban-sidebar-btn"
-              onClick={() => setShowDatePicker(!showDatePicker)}
-            >
-              🕒 Tenggat Waktu
-            </button>
-
-            {showDatePicker && (
-              <div className="kanban-sidebar-subbox">
-                <input
-                  type="date"
-                  value={card.dueDate || ""}
-                  onChange={(e) => onUpdate({ dueDate: e.target.value })}
-                  className="kanban-subtask-input"
-                />
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="kanban-sidebar-btn"
-              onClick={() => setShowCoverPicker(!showCoverPicker)}
-            >
-              🎨 Cover Emoji
-            </button>
-
-            {showCoverPicker && (
-              <div className="kanban-sidebar-subbox">
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {COVER_EMOJIS.map((em) => (
+              {showChecklistPrompt && (
+                <div className="kanban-sidebar-subbox">
+                  <input
+                    type="text"
+                    placeholder="Judul checklist..."
+                    value={newChecklistTitle}
+                    onChange={(e) => setNewChecklistTitle(e.target.value)}
+                    className="kanban-subtask-input"
+                    autoFocus
+                  />
+                  <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
                     <button
-                      key={em}
                       type="button"
-                      className="kanban-emoji-pill"
-                      onClick={() => {
-                        onUpdate({ coverEmoji: em });
-                        setShowCoverPicker(false);
-                      }}
+                      className="kanban-primary-btn"
+                      onClick={handleAddChecklist}
                     >
-                      {em}
+                      Buat
                     </button>
-                  ))}
-                  {card.coverEmoji && (
+                    <button
+                      type="button"
+                      className="kanban-secondary-btn"
+                      onClick={() => setShowChecklistPrompt(false)}
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Date Range Picker Action */}
+              <button
+                type="button"
+                className={`kanban-sidebar-btn ${showDatePicker ? "active" : ""}`}
+                onClick={() => setShowDatePicker(!showDatePicker)}
+              >
+                🕒 Tenggat &amp; Rentang Waktu
+              </button>
+
+              {showDatePicker && (
+                <div className="kanban-sidebar-subbox">
+                  <span className="kanban-custom-pic-label">Tanggal Mulai</span>
+                  <input
+                    type="date"
+                    value={card.startDate || ""}
+                    onChange={(e) => onUpdate({ startDate: e.target.value || undefined })}
+                    className="kanban-subtask-input"
+                  />
+
+                  <span className="kanban-custom-pic-label" style={{ marginTop: 8 }}>
+                    Tenggat Selesai
+                  </span>
+                  <input
+                    type="date"
+                    value={card.dueDate || ""}
+                    onChange={(e) => onUpdate({ dueDate: e.target.value || undefined })}
+                    className="kanban-subtask-input"
+                  />
+
+                  {(card.startDate || card.dueDate) && (
                     <button
                       type="button"
                       className="kanban-text-btn"
-                      onClick={() => {
-                        onUpdate({ coverEmoji: undefined });
-                        setShowCoverPicker(false);
-                      }}
-                      style={{ width: "100%", marginTop: 4 }}
+                      onClick={() =>
+                        onUpdate({ startDate: undefined, dueDate: undefined, dueCompleted: false })
+                      }
+                      style={{ marginTop: 6, width: "100%", textAlign: "center" }}
                     >
-                      Hapus Cover
+                      Hapus Rentang Tanggal
                     </button>
                   )}
                 </div>
-              </div>
-            )}
+              )}
 
-            <div style={{ marginTop: 16 }}>
-              <span className="kanban-sidebar-heading">Aksi</span>
               <button
                 type="button"
-                className="kanban-sidebar-btn danger"
-                onClick={() => {
-                  if (confirm(`Hapus kartu "${card.title}"?`)) {
-                    onDelete();
-                  }
-                }}
+                className="kanban-sidebar-btn"
+                onClick={() => setShowCoverPicker(!showCoverPicker)}
               >
-                🗑️ Hapus Kartu
+                🎨 Cover Emoji
               </button>
+
+              {showCoverPicker && (
+                <div className="kanban-sidebar-subbox">
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {COVER_EMOJIS.map((em) => (
+                      <button
+                        key={em}
+                        type="button"
+                        className="kanban-emoji-pill"
+                        onClick={() => {
+                          onUpdate({ coverEmoji: em });
+                          setShowCoverPicker(false);
+                        }}
+                      >
+                        {em}
+                      </button>
+                    ))}
+                    {card.coverEmoji && (
+                      <button
+                        type="button"
+                        className="kanban-text-btn"
+                        onClick={() => {
+                          onUpdate({ coverEmoji: undefined });
+                          setShowCoverPicker(false);
+                        }}
+                        style={{ width: "100%", marginTop: 4 }}
+                      >
+                        Hapus Cover
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop: 16 }}>
+                <span className="kanban-sidebar-heading">Aksi</span>
+                <button
+                  type="button"
+                  className="kanban-sidebar-btn danger"
+                  onClick={() => {
+                    if (confirm(`Hapus kartu "${card.title}"?`)) {
+                      onDelete();
+                    }
+                  }}
+                >
+                  🗑️ Hapus Kartu
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

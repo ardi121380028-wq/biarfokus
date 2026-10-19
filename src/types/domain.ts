@@ -184,6 +184,7 @@ export type KanbanCard = {
   coverColor?: string;
   coverEmoji?: string;
   labels: KanbanLabel[];
+  startDate?: string; // YYYY-MM-DD
   dueDate?: string; // YYYY-MM-DD
   dueCompleted?: boolean;
   checklists: KanbanChecklist[];
@@ -238,6 +239,7 @@ export type KanbanBoard = {
   description?: string;
   background: string; // Preset background key or CSS style
   lists: KanbanList[];
+  labels?: KanbanLabel[]; // Custom label definitions for this board
   starred?: boolean;
   role?: KanbanMemberRole;
   memberCount?: number;
