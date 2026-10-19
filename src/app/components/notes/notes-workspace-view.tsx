@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { KeepNote, UserRole } from "@/types/domain";
 import { filterNotes } from "@/features/notes/notes-service";
@@ -74,14 +74,6 @@ export function NotesWorkspaceView({
   const [typeFilter, setTypeFilter] = useState<"all" | "pinned" | "checklist" | "text">("all");
   const [editingNote, setEditingNote] = useState<KeepNote | null>(null);
 
-  const composerContainerRef = useRef<HTMLDivElement>(null);
-
-  function handleFocusComposer() {
-    composerContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    const titleInput = composerContainerRef.current?.querySelector("input");
-    if (titleInput) titleInput.focus();
-  }
-
   // Filtered notes
   const filteredNotes = useMemo(() => {
     let list = filterNotes(notes, searchQuery, activeLabel);
@@ -116,7 +108,6 @@ export function NotesWorkspaceView({
       <NotesSidebar
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebar}
-        onCreateClick={handleFocusComposer}
         totalCount={totalCount}
         pinnedCount={pinnedCount}
         checklistCount={checklistCount}
@@ -146,8 +137,6 @@ export function NotesWorkspaceView({
       {/* Main Workspace Layout */}
       <div className="notes-workspace-main">
         <NotesTopbar
-          totalCount={notes.length}
-          filteredCount={filteredNotes.length}
           onToggleSidebar={toggleSidebar}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -165,7 +154,7 @@ export function NotesWorkspaceView({
         <main className="notes-workspace-content">
           <div className="notes-workspace-inner">
             {/* Note Composer Container */}
-            <div ref={composerContainerRef} className="notes-composer-wrapper">
+            <div className="notes-composer-wrapper">
               <NoteComposer
                 labels={labels}
                 onCreateNote={createNote}

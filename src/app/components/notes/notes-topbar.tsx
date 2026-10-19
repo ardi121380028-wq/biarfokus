@@ -4,8 +4,6 @@ import { useRef, useState } from "react";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 
 type NotesTopbarProps = {
-  totalCount: number;
-  filteredCount: number;
   onToggleSidebar: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -20,8 +18,6 @@ type NotesTopbarProps = {
 };
 
 export function NotesTopbar({
-  totalCount,
-  filteredCount,
   onToggleSidebar,
   searchQuery,
   onSearchChange,
@@ -42,7 +38,7 @@ export function NotesTopbar({
 
   return (
     <header className="notes-workspace-topbar">
-      {/* Left controls: Hamburger, Title, Count Badge */}
+      {/* Left controls: Hamburger button only */}
       <div className="cal-topbar-left">
         <button
           type="button"
@@ -53,13 +49,6 @@ export function NotesTopbar({
         >
           ☰
         </button>
-
-        <div className="cal-topbar-heading-wrap">
-          <h2 className="notes-topbar-title">📝 Catatan &amp; Todo</h2>
-          <span className="notes-topbar-count-badge" title="Jumlah catatan">
-            {filteredCount === totalCount ? `${totalCount} item` : `${filteredCount} dari ${totalCount}`}
-          </span>
-        </div>
       </div>
 
       {/* Right controls: Search, Theme, Settings, Profile */}

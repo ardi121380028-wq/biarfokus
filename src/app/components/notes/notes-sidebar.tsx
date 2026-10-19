@@ -5,7 +5,6 @@ import { useState } from "react";
 type NotesSidebarProps = {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  onCreateClick?: () => void;
   totalCount: number;
   pinnedCount: number;
   checklistCount: number;
@@ -26,7 +25,6 @@ type NotesSidebarProps = {
 export function NotesSidebar({
   isCollapsed,
   onToggleCollapse,
-  onCreateClick,
   totalCount,
   pinnedCount,
   checklistCount,
@@ -99,19 +97,6 @@ export function NotesSidebar({
             <span className="brand-mark small" aria-hidden="true" />
           </div>
         )}
-      </div>
-
-      {/* Primary Action Button: + Catatan Baru */}
-      <div className="cal-sidebar-create-wrap">
-        <button
-          type="button"
-          className="cal-sidebar-create-btn"
-          onClick={onCreateClick}
-          title="Tulis Catatan / To-do Baru"
-        >
-          <span className="cal-create-icon">➕</span>
-          {!isCollapsed && <span>Catatan Baru</span>}
-        </button>
       </div>
 
       {/* Main Navigation to other BiarFokus modules (Active on Catatan & Todo) */}
