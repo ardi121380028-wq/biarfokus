@@ -17,6 +17,7 @@ import {
 } from "@/features/calendar/calendar-service";
 import { useCalendarEvents } from "@/features/calendar/use-calendar-events";
 import { useKeepNotes } from "@/features/notes/use-keep-notes";
+import { useKanban } from "@/features/kanban/use-kanban";
 import { CalendarSidebar } from "./calendar-sidebar";
 import { CalendarTopbar } from "./calendar-topbar";
 import { CalendarGrid } from "./calendar-grid";
@@ -53,6 +54,7 @@ export function CalendarView({
 }: CalendarViewProps) {
   const { events, addEvent, updateEvent, deleteEvent } = useCalendarEvents(userId);
   const { notes } = useKeepNotes(userId);
+  const { boards } = useKanban(userId);
 
   // Collapsible Sidebar state (persisted)
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
@@ -199,6 +201,9 @@ export function CalendarView({
       linkedNoteTitle: masterEvent.linkedNoteTitle,
       linkedItemId: masterEvent.linkedItemId,
       linkedItemText: masterEvent.linkedItemText,
+      linkedKanbanCardId: masterEvent.linkedKanbanCardId,
+      linkedKanbanBoardId: masterEvent.linkedKanbanBoardId,
+      linkedKanbanBoardTitle: masterEvent.linkedKanbanBoardTitle,
       recurrence: masterEvent.recurrence,
     });
     setModalOpen(true);
@@ -312,6 +317,7 @@ export function CalendarView({
           initialDraft={modalDraft}
           editingId={editingId}
           notes={notes}
+          boards={boards}
           onSave={handleSaveDraft}
           onDelete={(id) => {
             deleteEvent(id);

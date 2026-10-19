@@ -514,6 +514,10 @@ export function normalizeEvent(raw: unknown): CalendarEvent | null {
     linkedNoteId: optionalString(r.linkedNoteId),
     linkedNoteTitle: optionalString(r.linkedNoteTitle),
     linkedItemId: optionalString(r.linkedItemId),
+    linkedItemText: optionalString(r.linkedItemText),
+    linkedKanbanCardId: optionalString(r.linkedKanbanCardId),
+    linkedKanbanBoardId: optionalString(r.linkedKanbanBoardId),
+    linkedKanbanBoardTitle: optionalString(r.linkedKanbanBoardTitle),
     recurrence: normalizeRecurrence(r.recurrence),
   };
 }

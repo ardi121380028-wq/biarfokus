@@ -6,6 +6,8 @@ import type { KanbanBoardMember, KanbanCard, UserRole } from "@/types/domain";
 import { BOARD_BACKGROUNDS } from "@/features/kanban/kanban-service";
 import { loadBoardMembersApi } from "@/features/kanban/kanban-cloud";
 import { useKanban } from "@/features/kanban/use-kanban";
+import { useCalendarEvents } from "@/features/calendar/use-calendar-events";
+import { toISODate } from "@/features/calendar/calendar-service";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { KanbanSidebar } from "./kanban-sidebar";
 import { KanbanColumn } from "./kanban-column";
@@ -59,6 +61,24 @@ export function KanbanView({
     deleteList,
     joinBoard,
   } = useKanban(userId);
+
+  const { addEvent: addCalendarEvent } = useCalendarEvents(userId);
+
+  function handleScheduleCardToCalendar(card: KanbanCard) {
+    const targetDate = card.dueDate || card.startDate || toISODate(new Date());
+    addCalendarEvent({
+      title: card.title,
+      date: targetDate,
+      startTime: "09:00",
+      endTime: "10:00",
+      color: "#0284c7",
+      category: "task",
+      description: card.description || "",
+      linkedKanbanCardId: card.id,
+      linkedKanbanBoardId: activeBoard.id,
+      linkedKanbanBoardTitle: activeBoard.title,
+    });
+  }
 
   // Collapsible Sidebar state (persisted)
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
@@ -823,6 +843,7 @@ export function KanbanView({
           onDelete={() => deleteCard(currentCardDetail.listId, currentCardDetail.card.id)}
           onClose={() => setActiveCardData(null)}
           onSendToFrog={(card) => handleSendCardToFrog(card)}
+          onScheduleToCalendar={handleScheduleCardToCalendar}
         />
       )}
 

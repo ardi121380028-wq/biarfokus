@@ -384,6 +384,13 @@ export function CalendarGrid({
                             >
                               📝 {event.linkedNoteTitle}
                             </span>
+                          ) : event.linkedKanbanCardId ? (
+                            <span
+                              className="cal-event-linked-badge cal-event-kanban-badge"
+                              title={`Terhubung dengan kartu Kanban: ${event.linkedKanbanBoardTitle || "Kanban"}`}
+                            >
+                              📋 {event.linkedKanbanBoardTitle || "Kanban"}
+                            </span>
                           ) : null}
                         </div>
 

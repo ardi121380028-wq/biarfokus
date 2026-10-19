@@ -28,6 +28,7 @@ type KanbanCardDialogProps = {
   onDelete: () => void;
   onClose: () => void;
   onSendToFrog?: (card: KanbanCard) => void;
+  onScheduleToCalendar?: (card: KanbanCard) => void;
 };
 
 const DEFAULT_LABEL_COLORS = [
@@ -58,6 +59,7 @@ export function KanbanCardDialog({
   onDelete,
   onClose,
   onSendToFrog,
+  onScheduleToCalendar,
 }: KanbanCardDialogProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   useOutsideClick(modalRef, onClose);
@@ -75,6 +77,7 @@ export function KanbanCardDialog({
   const [showChecklistPrompt, setShowChecklistPrompt] = useState(false);
   const [newChecklistTitle, setNewChecklistTitle] = useState("Checklist");
   const [frogFeedback, setFrogFeedback] = useState<string | null>(null);
+  const [calendarFeedback, setCalendarFeedback] = useState<string | null>(null);
 
   // Custom label creator state
   const [newLabelName, setNewLabelName] = useState("");
@@ -374,6 +377,14 @@ export function KanbanCardDialog({
     }
     return null;
   }, [card.startDate, card.dueDate]);
+
+  function handleScheduleToCalendar() {
+    if (onScheduleToCalendar) {
+      onScheduleToCalendar(card);
+      setCalendarFeedback("✓ Berhasil dijadwalkan ke Kalender!");
+      setTimeout(() => setCalendarFeedback(null), 3500);
+    }
+  }
 
   // Parser to style @mentions in comment body
   function renderCommentBody(text: string) {
@@ -762,7 +773,19 @@ export function KanbanCardDialog({
             {/* Date Range Section */}
             {(card.startDate || card.dueDate) && (
               <div className="kanban-dialog-section">
-                <span className="kanban-section-title">🕒 Rentang Tenggat Waktu</span>
+                <div className="kanban-section-head-row">
+                  <span className="kanban-section-title">🕒 Rentang Tenggat Waktu</span>
+                  {onScheduleToCalendar && (
+                    <button
+                      type="button"
+                      className="kanban-text-btn kanban-schedule-cal-btn"
+                      onClick={handleScheduleToCalendar}
+                      title="Sinkronkan kartu tugas ini ke time-blocking Kalender"
+                    >
+                      📅 Jadwalkan ke Kalender
+                    </button>
+                  )}
+                </div>
                 <div className="kanban-due-date-row">
                   <input
                     type="checkbox"
@@ -785,6 +808,11 @@ export function KanbanCardDialog({
                     </button>
                   )}
                 </div>
+                {calendarFeedback && (
+                  <div className="kanban-schedule-success-banner">
+                    {calendarFeedback}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1117,6 +1145,17 @@ export function KanbanCardDialog({
                     onChange={(e) => onUpdate({ dueDate: e.target.value || undefined })}
                     className="kanban-subtask-input"
                   />
+
+                  {onScheduleToCalendar && (
+                    <button
+                      type="button"
+                      className="kanban-primary-btn"
+                      onClick={handleScheduleToCalendar}
+                      style={{ marginTop: 8, width: "100%", fontSize: 12, padding: "6px 8px" }}
+                    >
+                      📅 Jadwalkan ke Kalender
+                    </button>
+                  )}
 
                   {(card.startDate || card.dueDate) && (
                     <button

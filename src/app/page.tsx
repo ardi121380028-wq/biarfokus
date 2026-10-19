@@ -16,6 +16,7 @@ import { StatsView } from "@/app/components/stats-view";
 import { AdminView } from "@/app/components/admin-view";
 import { PricingView } from "@/app/components/pricing-view";
 import { NotesModal } from "@/app/components/notes-modal";
+import { NotesWorkspaceView } from "@/app/components/notes/notes-workspace-view";
 import { CalendarView } from "@/app/components/calendar-view";
 import { AboutModal } from "@/app/components/about-modal";
 import { PomodoroModal } from "@/app/components/pomodoro-modal";
@@ -749,7 +750,7 @@ export default function Home() {
   return (
     <main
       className={
-        activeView === "kanban" || activeView === "calendar"
+        activeView === "kanban" || activeView === "calendar" || activeView === "notes"
           ? (dark ? "app dark kanban-workspace-mode" : "app kanban-workspace-mode")
           : (dark ? "app dark" : "app")
       }
@@ -761,7 +762,7 @@ export default function Home() {
         "--paper": dark ? "#1d1d1d" : "#ffffff",
       } as CSSProperties}
     >
-      {activeView !== "kanban" && activeView !== "calendar" && (
+      {activeView !== "kanban" && activeView !== "calendar" && activeView !== "notes" && (
         <header className="topbar">
           <button className="brand" onClick={() => setActiveView("timer")} aria-label="Kembali ke timer">
             <span className="brand-mark" aria-hidden="true" />
@@ -866,9 +867,24 @@ export default function Home() {
       )}
 
       {activeView === "notes" && (
-        <NotesModal
+        <NotesWorkspaceView
           userId={user?.id ?? null}
-          isPageView={true}
+          user={user}
+          userName={userName}
+          userAvatar={userAvatar}
+          userRole={userRole}
+          dark={dark}
+          onToggleDark={() => setDark(!dark)}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenProfile={() => {
+            if (user) {
+              setAccountOpen(true);
+            } else {
+              setLoginOpen(true);
+            }
+          }}
+          onNavigate={(targetView) => setActiveView(targetView as View)}
+          onRequireLogin={() => setLoginOpen(true)}
         />
       )}
 
@@ -939,7 +955,7 @@ export default function Home() {
       )}
       {activeView === "admin" && <AdminView userId={user?.id ?? null} isAdmin={isAdminRole(userRole)} />}
 
-      {activeView !== "kanban" && activeView !== "calendar" && (
+      {activeView !== "kanban" && activeView !== "calendar" && activeView !== "notes" && (
         <footer className="footer">
           <div><strong>BiarFokus</strong><span>Bantu kamu fokus selesain setiap pekerjaan.</span></div>
           <div className="footer-links">
@@ -959,7 +975,7 @@ export default function Home() {
       )}
 
       {/* Quick Notes Floating Action Button (Bottom-Right) */}
-      {activeView !== "kanban" && (
+      {activeView !== "kanban" && activeView !== "calendar" && activeView !== "notes" && (
         <button
           className="notes-fab"
           onClick={() => setNotesOpen(true)}

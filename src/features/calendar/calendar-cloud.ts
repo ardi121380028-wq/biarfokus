@@ -15,6 +15,9 @@ type DbCalendarEvent = {
   linked_note_title: string | null;
   linked_item_id: string | null;
   linked_item_text?: string | null;
+  linked_kanban_card_id?: string | null;
+  linked_kanban_board_id?: string | null;
+  linked_kanban_board_title?: string | null;
   recurrence?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -34,6 +37,9 @@ export function mapDbCalendarEvent(row: DbCalendarEvent): CalendarEvent {
     linkedNoteTitle: row.linked_note_title || undefined,
     linkedItemId: row.linked_item_id || undefined,
     linkedItemText: row.linked_item_text || undefined,
+    linkedKanbanCardId: row.linked_kanban_card_id || undefined,
+    linkedKanbanBoardId: row.linked_kanban_board_id || undefined,
+    linkedKanbanBoardTitle: row.linked_kanban_board_title || undefined,
     recurrence: (row.recurrence as CalendarEvent["recurrence"]) || undefined,
   };
 }
@@ -72,6 +78,9 @@ export async function upsertCloudEvent(
     linked_note_title: event.linkedNoteTitle || null,
     linked_item_id: event.linkedItemId || null,
     linked_item_text: event.linkedItemText || null,
+    linked_kanban_card_id: event.linkedKanbanCardId || null,
+    linked_kanban_board_id: event.linkedKanbanBoardId || null,
+    linked_kanban_board_title: event.linkedKanbanBoardTitle || null,
     recurrence: event.recurrence || null,
     updated_at: new Date().toISOString(),
   };

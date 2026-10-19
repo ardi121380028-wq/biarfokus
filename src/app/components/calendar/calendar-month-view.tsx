@@ -121,7 +121,7 @@ export function CalendarMonthView({
                               event.isRecurringOccurrence) && (
                               <span className="cal-repeat-indicator">🔁 </span>
                             )}
-                            {event.linkedItemText ? `☑️ ${event.title}` : event.title}
+                            {event.linkedItemText ? `☑️ ${event.title}` : event.linkedKanbanCardId ? `📋 ${event.title}` : event.title}
                           </span>
                         </div>
                       ))}

@@ -146,6 +146,9 @@ export type CalendarEvent = {
   linkedNoteTitle?: string; // snapshot, used as fallback if the note is deleted
   linkedItemId?: string; // optional specific checklist item inside the linked note
   linkedItemText?: string; // snapshot of specific checklist item text
+  linkedKanbanCardId?: string; // snapshot of linked Kanban card id
+  linkedKanbanBoardId?: string; // snapshot of linked Kanban board id
+  linkedKanbanBoardTitle?: string; // snapshot of linked Kanban board title
   recurrence?: EventRecurrence;
   isRecurringOccurrence?: boolean; // true if this is a projected virtual occurrence
   originalEventId?: string; // master event id if this is a recurring occurrence
