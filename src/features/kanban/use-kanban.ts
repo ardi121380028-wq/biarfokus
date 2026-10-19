@@ -70,7 +70,25 @@ export function useKanban(userId?: string | null) {
     void loadCloudBoards(supabase, userId).then((cloudBoards) => {
       if (cancelled) return;
       if (cloudBoards && cloudBoards.length > 0) {
-        updateBoards(() => cloudBoards);
+        updateBoards((currentLocal) => {
+          const merged = [...cloudBoards];
+          for (const local of currentLocal) {
+            if (!merged.some((cb) => cb.id === local.id)) {
+              const withUser = { ...local, userId: local.userId || userId };
+              merged.push(withUser);
+              void upsertCloudBoard(supabase, userId, withUser);
+            }
+          }
+          return merged;
+        });
+      } else {
+        // When cloud is empty, back up existing local boards to cloud
+        updateBoards((currentLocal) => {
+          for (const local of currentLocal) {
+            void upsertCloudBoard(supabase, userId, { ...local, userId: local.userId || userId });
+          }
+          return currentLocal;
+        });
       }
     });
 
@@ -101,12 +119,16 @@ export function useKanban(userId?: string | null) {
   const createBoard = useCallback(
     (title: string, background?: string, templateKey?: string) => {
       const board = createNewBoard(title, background, templateKey);
+      if (userId) {
+        board.userId = userId;
+        board.role = "owner";
+      }
       updateBoards((current) => [board, ...current]);
       selectBoard(board.id);
       syncBoardToCloud(board);
       return board;
     },
-    [updateBoards, selectBoard, syncBoardToCloud],
+    [updateBoards, selectBoard, syncBoardToCloud, userId],
   );
 
   const updateBoard = useCallback(

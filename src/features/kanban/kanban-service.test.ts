@@ -222,5 +222,39 @@ describe("kanban-service", () => {
     assert.equal(sharedBoard.role, "editor");
     assert.equal(sharedBoard.isShared, true);
   });
+
+  it("handles createBoardInviteApi payload with board snapshot gracefully", async () => {
+    const { createBoardInviteApi } = await import("./kanban-cloud.ts");
+
+    let capturedUrl = "";
+    let capturedBody: any = null;
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+      capturedUrl = String(url);
+      capturedBody = JSON.parse(String(init?.body || "{}"));
+      return new Response(JSON.stringify({ ok: true, inviteCode: "bf_inv_test123", role: "editor" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }) as typeof fetch;
+
+    try {
+      const board = createNewBoard("Bismillah Project", "biarfokus-white");
+      const res = await createBoardInviteApi(board, "editor");
+
+      assert.equal(res.ok, true);
+      assert.equal(res.inviteCode, "bf_inv_test123");
+      assert.equal(capturedUrl, "/api/kanban/invite");
+      assert.equal(capturedBody.boardId, board.id);
+      assert.equal(capturedBody.role, "editor");
+      assert.equal(capturedBody.board.title, "Bismillah Project");
+      assert.equal(capturedBody.board.background, "biarfokus-white");
+      assert.ok(Array.isArray(capturedBody.board.lists));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
+
 

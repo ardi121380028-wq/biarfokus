@@ -36,55 +36,94 @@ export async function POST(request: Request) {
       return apiJson({ error: "Kode undangan diperlukan." }, { status: 400, correlationId });
     }
 
-    // Try RPC first
-    const rpcRes = await supabase.rpc("join_kanban_board_by_invite", {
-      invite_token: rawInviteCode,
-    });
+function decodeFallbackInviteToken(
+  code: string,
+): { boardId: string; role: "editor" | "viewer" } | null {
+  if (!code.startsWith("bf_inv_")) return null;
+  const payloadStr = code.slice("bf_inv_".length);
+  try {
+    const json = JSON.parse(Buffer.from(payloadStr, "base64url").toString("utf-8"));
+    if (json && typeof json.b === "string") {
+      return {
+        boardId: json.b,
+        role: json.r === "viewer" ? "viewer" : "editor",
+      };
+    }
+  } catch {
+    // not base64url encoded payload
+  }
+  return null;
+}
 
     let boardId: string | null = null;
     let boardTitle = "Papan Proyek";
     let assignedRole: "editor" | "viewer" = "editor";
 
-    if (!rpcRes.error && rpcRes.data) {
-      const data = rpcRes.data as {
-        ok?: boolean;
-        board_id?: string;
-        title?: string;
-        role?: "editor" | "viewer";
-      };
-      boardId = data.board_id || null;
-      boardTitle = data.title || boardTitle;
-      assignedRole = data.role || "editor";
-    } else {
-      // Direct query fallback
-      const { data: invite, error: inviteError } = await supabase
-        .from("kanban_board_invites")
-        .select("id, board_id, role, max_uses, uses_count, expires_at")
-        .eq("invite_code", rawInviteCode)
-        .maybeSingle();
+    // 1. Check fallback encoded invite token
+    const fallbackDecoded = decodeFallbackInviteToken(rawInviteCode);
+    if (fallbackDecoded) {
+      boardId = fallbackDecoded.boardId;
+      assignedRole = fallbackDecoded.role;
 
-      if (inviteError || !invite) {
-        return apiJson(
-          { error: "Tautan undangan tidak valid atau sudah kadaluarsa." },
-          { status: 404, correlationId },
-        );
+      // Ensure membership is registered
+      try {
+        await supabase
+          .from("kanban_board_members")
+          .upsert({
+            board_id: boardId,
+            user_id: authData.user.id,
+            role: assignedRole,
+          });
+      } catch {
+        // Non-blocking membership registration
       }
-
-      boardId = invite.board_id;
-      assignedRole = invite.role as "editor" | "viewer";
-
-      // Add to members table
-      await supabase.from("kanban_board_members").upsert({
-        board_id: invite.board_id,
-        user_id: authData.user.id,
-        role: assignedRole,
+    } else {
+      // 2. Try RPC first
+      const rpcRes = await supabase.rpc("join_kanban_board_by_invite", {
+        invite_token: rawInviteCode,
       });
 
-      // Increment usage count
-      await supabase
-        .from("kanban_board_invites")
-        .update({ uses_count: (invite.uses_count || 0) + 1 })
-        .eq("id", invite.id);
+      if (!rpcRes.error && rpcRes.data) {
+        const data = rpcRes.data as {
+          ok?: boolean;
+          board_id?: string;
+          title?: string;
+          role?: "editor" | "viewer";
+        };
+        boardId = data.board_id || null;
+        boardTitle = data.title || boardTitle;
+        assignedRole = data.role || "editor";
+      } else {
+        // 3. Direct query fallback
+        const { data: invite, error: inviteError } = await supabase
+          .from("kanban_board_invites")
+          .select("id, board_id, role, max_uses, uses_count, expires_at")
+          .eq("invite_code", rawInviteCode)
+          .maybeSingle();
+
+        if (inviteError || !invite) {
+          return apiJson(
+            { error: "Tautan undangan tidak valid atau sudah kadaluarsa." },
+            { status: 404, correlationId },
+          );
+        }
+
+        boardId = invite.board_id;
+        assignedRole = invite.role as "editor" | "viewer";
+
+        // Add to members table
+        await supabase.from("kanban_board_members").upsert({
+          board_id: invite.board_id,
+          user_id: authData.user.id,
+          role: assignedRole,
+        });
+
+        // Increment usage count
+        await supabase
+          .from("kanban_board_invites")
+          .update({ uses_count: (invite.uses_count || 0) + 1 })
+          .eq("id", invite.id);
+      }
     }
 
     if (!boardId) {

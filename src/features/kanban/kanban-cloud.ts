@@ -97,20 +97,31 @@ export async function deleteCloudBoard(
 }
 
 export async function createBoardInviteApi(
-  boardId: string,
+  target: string | KanbanBoard,
   role: "editor" | "viewer" = "editor",
-): Promise<{ ok: boolean; inviteCode?: string; error?: string }> {
+): Promise<{ ok: boolean; inviteCode?: string; role?: string; error?: string }> {
   try {
+    const isBoardObj = typeof target === "object" && target !== null && "id" in target;
+    const boardId = isBoardObj ? target.id : target;
+    const boardPayload = isBoardObj
+      ? {
+          title: target.title,
+          description: target.description,
+          background: target.background,
+          lists: target.lists,
+        }
+      : undefined;
+
     const res = await fetch("/api/kanban/invite", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ boardId, role }),
+      body: JSON.stringify({ boardId, role, board: boardPayload }),
     });
-    const data = (await res.json()) as { ok?: boolean; inviteCode?: string; error?: string };
+    const data = (await res.json()) as { ok?: boolean; inviteCode?: string; role?: string; error?: string };
     if (!res.ok || !data.ok) {
       return { ok: false, error: data.error || "Gagal membuat undangan." };
     }
-    return { ok: true, inviteCode: data.inviteCode };
+    return { ok: true, inviteCode: data.inviteCode, role: data.role };
   } catch (err) {
     return {
       ok: false,

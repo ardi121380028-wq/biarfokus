@@ -43,7 +43,7 @@ export function KanbanShareModal({
 
     let cancelled = false;
 
-    createBoardInviteApi(board.id, role)
+    createBoardInviteApi(board, role)
       .then((res) => {
         if (cancelled) return;
         if (res.ok && res.inviteCode) {
@@ -62,7 +62,7 @@ export function KanbanShareModal({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, board.id, role]);
+  }, [isOpen, board, role]);
 
   // Load existing board members
   useEffect(() => {
