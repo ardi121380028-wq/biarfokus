@@ -100,8 +100,11 @@ export function KanbanBoardModal({
           <div className="kanban-boards-grid">
             {boards.map((b) => {
               const bg = BOARD_BACKGROUNDS.find((bgItem) => bgItem.id === b.background) || BOARD_BACKGROUNDS[0];
-              const isActive = b.id === activeBoardId;
-              const totalCards = b.lists.reduce((acc, l) => acc + l.cards.length, 0);
+              const cleanBoardId = b.id.replace(/^["']|["']$/g, "");
+              const cleanActiveId = activeBoardId.replace(/^["']|["']$/g, "");
+              const isActive = cleanBoardId === cleanActiveId;
+              const lists = Array.isArray(b.lists) ? b.lists : [];
+              const totalCards = lists.reduce((acc, l) => acc + (Array.isArray(l.cards) ? l.cards.length : 0), 0);
 
               return (
                 <div

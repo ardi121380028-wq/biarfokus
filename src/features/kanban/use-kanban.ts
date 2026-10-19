@@ -15,6 +15,7 @@ import {
   INITIAL_BOARDS,
   moveCard as serviceMoveCard,
   moveList as serviceMoveList,
+  parseStoredBoardId,
   parseStoredBoards,
   updateCard as serviceUpdateCard,
   updateListTitle as serviceUpdateListTitle,
@@ -28,10 +29,31 @@ export function useKanban(userId?: string | null) {
     INITIAL_BOARDS,
   );
 
-  const [activeBoardId, setActiveBoardId] = useLocalStoreValue<string>(
+  const [activeBoardIdRaw, setActiveBoardIdRaw] = useLocalStoreValue<string>(
     getActiveBoardStorageKey(userId),
-    (raw) => (raw ? raw : (boards[0]?.id ?? INITIAL_BOARDS[0].id)),
+    parseStoredBoardId,
     INITIAL_BOARDS[0].id,
+  );
+
+  const activeBoardId = useMemo(() => {
+    const clean = parseStoredBoardId(activeBoardIdRaw);
+    return clean || (boards[0]?.id ?? INITIAL_BOARDS[0].id);
+  }, [activeBoardIdRaw, boards]);
+
+  const selectBoard = useCallback(
+    (target: string | ((prev: string) => string)) => {
+      if (typeof target === "function") {
+        setActiveBoardIdRaw((prev) => {
+          const cleanPrev = parseStoredBoardId(prev);
+          const next = target(cleanPrev);
+          return parseStoredBoardId(next);
+        });
+      } else {
+        const clean = parseStoredBoardId(target);
+        setActiveBoardIdRaw(() => clean);
+      }
+    },
+    [setActiveBoardIdRaw],
   );
 
   // Cloud sync on mount when authenticated
@@ -80,11 +102,11 @@ export function useKanban(userId?: string | null) {
     (title: string, background?: string, templateKey?: string) => {
       const board = createNewBoard(title, background, templateKey);
       updateBoards((current) => [board, ...current]);
-      setActiveBoardId(() => board.id);
+      selectBoard(board.id);
       syncBoardToCloud(board);
       return board;
     },
-    [updateBoards, setActiveBoardId, syncBoardToCloud],
+    [updateBoards, selectBoard, syncBoardToCloud],
   );
 
   const updateBoard = useCallback(
@@ -115,7 +137,7 @@ export function useKanban(userId?: string | null) {
       });
 
       if (activeBoardId === boardId) {
-        setActiveBoardId(() => {
+        selectBoard(() => {
           const remaining = boards.filter((b) => b.id !== boardId);
           return remaining[0]?.id || INITIAL_BOARDS[0].id;
         });
@@ -128,7 +150,7 @@ export function useKanban(userId?: string | null) {
         } catch {}
       }
     },
-    [updateBoards, activeBoardId, setActiveBoardId, boards, userId],
+    [updateBoards, activeBoardId, selectBoard, boards, userId],
   );
 
   const addCard = useCallback(
@@ -271,7 +293,8 @@ export function useKanban(userId?: string | null) {
     boards,
     activeBoard,
     activeBoardId,
-    setActiveBoardId: (id: string) => setActiveBoardId(() => id),
+    selectBoard,
+    setActiveBoardId: selectBoard,
     createBoard,
     updateBoard,
     deleteBoard,

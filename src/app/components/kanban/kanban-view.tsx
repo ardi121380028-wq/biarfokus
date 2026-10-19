@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState, type DragEvent } from "react";
+import { useMemo, useRef, useState, type DragEvent } from "react";
 import type { KanbanCard } from "@/types/domain";
 import { BOARD_BACKGROUNDS } from "@/features/kanban/kanban-service";
 import { useKanban } from "@/features/kanban/use-kanban";
+import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCardDialog } from "./kanban-card-dialog";
 import { KanbanBoardModal } from "./kanban-board-modal";
@@ -18,7 +19,7 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
     boards,
     activeBoard,
     activeBoardId,
-    setActiveBoardId,
+    selectBoard,
     createBoard,
     updateBoard,
     deleteBoard,
@@ -39,6 +40,17 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
   const [isEditingBoardTitle, setIsEditingBoardTitle] = useState(false);
   const [boardTitleInput, setBoardTitleInput] = useState(activeBoard.title);
   const [bgMenuOpen, setBgMenuOpen] = useState(false);
+
+  // Outside click dismiss for wallpaper dropdown
+  const bgMenuRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(bgMenuRef, () => setBgMenuOpen(false), bgMenuOpen);
+
+  // Drag-to-scroll canvas state
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isPanningRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+  const [isPanning, setIsPanning] = useState(false);
 
   // Drag state
   const [draggedCardInfo, setDraggedCardInfo] = useState<{
@@ -129,6 +141,61 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
     }
   }
 
+  function handleMouseDownCanvas(e: React.MouseEvent<HTMLDivElement>) {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (
+      target.closest("button") ||
+      target.closest("input") ||
+      target.closest("textarea") ||
+      target.closest(".kanban-card-item") ||
+      target.closest(".kanban-add-card-composer") ||
+      target.closest(".kanban-add-list-composer") ||
+      target.closest(".kanban-dialog-backdrop") ||
+      target.closest(".kanban-modal-backdrop") ||
+      target.closest(".kanban-bg-dropdown") ||
+      target.closest(".kanban-column-popover")
+    ) {
+      return;
+    }
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    isPanningRef.current = true;
+    startXRef.current = e.pageX - container.offsetLeft;
+    scrollLeftRef.current = container.scrollLeft;
+    setIsPanning(true);
+  }
+
+  function handleMouseMoveCanvas(e: React.MouseEvent<HTMLDivElement>) {
+    if (!isPanningRef.current) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    e.preventDefault();
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startXRef.current) * 1.35;
+    container.scrollLeft = scrollLeftRef.current - walk;
+  }
+
+  function handleMouseUpCanvas() {
+    isPanningRef.current = false;
+    setIsPanning(false);
+  }
+
+  function handleMouseLeaveCanvas() {
+    isPanningRef.current = false;
+    setIsPanning(false);
+  }
+
+  function handleWheelCanvas(e: React.WheelEvent<HTMLDivElement>) {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && !e.shiftKey) {
+      container.scrollLeft += e.deltaY;
+    }
+  }
+
   // Active card for dialog
   const currentCardDetail = (() => {
     if (!activeCardData) return null;
@@ -186,14 +253,17 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
           <button
             type="button"
             className="kanban-bar-btn"
-            onClick={() => setBoardModalOpen(true)}
+            onClick={() => {
+              setBgMenuOpen(false);
+              setBoardModalOpen(true);
+            }}
             title="Ganti atau buat board baru"
           >
             🗂️ Switch boards ({boards.length})
           </button>
 
           {/* Background Wallpaper Switcher */}
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative" }} ref={bgMenuRef}>
             <button
               type="button"
               className="kanban-bar-btn"
@@ -257,7 +327,15 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
       </div>
 
       {/* Horizontal Kanban Columns Canvas */}
-      <div className="kanban-canvas-scroll">
+      <div
+        className={`kanban-canvas-scroll ${isPanning ? "is-panning" : ""}`}
+        ref={scrollContainerRef}
+        onMouseDown={handleMouseDownCanvas}
+        onMouseMove={handleMouseMoveCanvas}
+        onMouseUp={handleMouseUpCanvas}
+        onMouseLeave={handleMouseLeaveCanvas}
+        onWheel={handleWheelCanvas}
+      >
         <div className="kanban-columns-row">
           {displayedLists.map((list) => (
             <KanbanColumn
@@ -348,7 +426,10 @@ export function KanbanView({ userId, onSendToFrog }: KanbanViewProps) {
         <KanbanBoardModal
           boards={boards}
           activeBoardId={activeBoardId}
-          onSelectBoard={setActiveBoardId}
+          onSelectBoard={(id) => {
+            selectBoard(id);
+            setBoardModalOpen(false);
+          }}
           onCreateBoard={createBoard}
           onDeleteBoard={deleteBoard}
           onClose={() => setBoardModalOpen(false)}

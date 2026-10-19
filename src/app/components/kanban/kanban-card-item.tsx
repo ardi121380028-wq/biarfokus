@@ -22,9 +22,10 @@ export function KanbanCardItem({
   onDragStart,
   onDragEnd,
 }: KanbanCardItemProps) {
-  // Compute checklist stats
-  const totalItems = card.checklists.reduce((acc, c) => acc + c.items.length, 0);
-  const doneItems = card.checklists.reduce((acc, c) => acc + c.items.filter((i) => i.done).length, 0);
+  // Compute checklist stats defensively
+  const checklists = Array.isArray(card.checklists) ? card.checklists : [];
+  const totalItems = checklists.reduce((acc, c) => acc + (Array.isArray(c?.items) ? c.items.length : 0), 0);
+  const doneItems = checklists.reduce((acc, c) => acc + (Array.isArray(c?.items) ? c.items.filter((i) => i.done).length : 0), 0);
 
   // Compute due date state
   let dueDateClass = "kanban-badge-due";

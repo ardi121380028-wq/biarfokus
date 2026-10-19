@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import { useRef, useState, type DragEvent } from "react";
 import type { KanbanCard, KanbanList } from "@/types/domain";
+import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { KanbanCardItem } from "./kanban-card-item";
 
 type KanbanColumnProps = {
@@ -33,6 +34,11 @@ export function KanbanColumn({
   const [newCardTitle, setNewCardTitle] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const menuRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(menuRef, () => setMenuOpen(false), menuOpen);
+
+  const cards = Array.isArray(list.cards) ? list.cards : [];
 
   function handleTitleBlur() {
     const trimmed = title.trim();
@@ -108,17 +114,20 @@ export function KanbanColumn({
           ) : (
             <h3
               className="kanban-column-title"
-              onClick={() => setIsEditingTitle(true)}
+              onClick={() => {
+                setTitle(list.title);
+                setIsEditingTitle(true);
+              }}
               title="Klik untuk mengubah nama kolom"
             >
               {list.title}
             </h3>
           )}
-          <span className="kanban-column-count">{list.cards.length}</span>
+          <span className="kanban-column-count">{cards.length}</span>
         </div>
 
         {/* Column Options Menu */}
-        <div className="kanban-column-menu-wrapper">
+        <div className="kanban-column-menu-wrapper" ref={menuRef}>
           <button
             type="button"
             className="kanban-column-menu-btn"
@@ -157,7 +166,7 @@ export function KanbanColumn({
 
       {/* Cards List Container */}
       <div className="kanban-cards-scroll-area">
-        {list.cards.map((card, idx) => (
+        {cards.map((card, idx) => (
           <KanbanCardItem
             key={card.id}
             card={card}

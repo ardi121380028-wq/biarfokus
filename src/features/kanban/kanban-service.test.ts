@@ -9,6 +9,8 @@ import {
   deleteList,
   moveCard,
   moveList,
+  normalizeBoard,
+  parseStoredBoardId,
   parseStoredBoards,
   TEMPLATES,
   updateCard,
@@ -157,5 +159,43 @@ describe("kanban-service", () => {
     const parsedValid = parseStoredBoards(JSON.stringify([customBoard]));
     assert.equal(parsedValid.length, 1);
     assert.equal(parsedValid[0].title, "Saved Board");
+  });
+
+  it("parses stored active board ID cleanly across JSON-quotes and plain strings", () => {
+    assert.equal(parseStoredBoardId(null), "");
+    assert.equal(parseStoredBoardId(""), "");
+    assert.equal(parseStoredBoardId("board-growth"), "board-growth");
+    // Handled JSON stringified string with quotes
+    assert.equal(parseStoredBoardId(JSON.stringify("board-growth")), "board-growth");
+    assert.equal(parseStoredBoardId('"board-growth"'), "board-growth");
+    assert.equal(parseStoredBoardId("'board-growth'"), "board-growth");
+  });
+
+  it("normalizes incomplete board payloads defensively", () => {
+    const rawIncomplete = {
+      id: "board-custom",
+      title: "Incomplete Board",
+      lists: [
+        {
+          id: "list-1",
+          title: "To Do",
+          cards: [
+            {
+              id: "card-1",
+              title: "Card without checklists or labels",
+            },
+          ],
+        },
+      ],
+    };
+
+    const normalized = normalizeBoard(rawIncomplete);
+    assert.equal(normalized.id, "board-custom");
+    assert.equal(normalized.title, "Incomplete Board");
+    assert.ok(Array.isArray(normalized.lists));
+    assert.ok(Array.isArray(normalized.lists[0].cards));
+    assert.ok(Array.isArray(normalized.lists[0].cards[0].checklists));
+    assert.ok(Array.isArray(normalized.lists[0].cards[0].labels));
+    assert.ok(Array.isArray(normalized.lists[0].cards[0].comments));
   });
 });

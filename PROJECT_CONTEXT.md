@@ -232,7 +232,10 @@ All tables have Row Level Security (RLS) enabled.
     - **Board Switcher & Workspace Modal (`KanbanBoardModal`):** Pemilihan board aktif, template instan (Growth Marketing, Sprint Scrum, Bug Tracking, Personal Board), dan pembuat board baru dengan pratinjau wallpaper.
     - **Theming & Wallpaper Support:** Koleksi background gradient dinamis (Ocean Wave, Sunset Ember, Northern Aurora, Midnight Deep) dan warna solid Trello dengan kontras teks otomatis.
     - **Deep Ecosystem Bridge (`🐸 Eat Your Frog`):** Tombol integrasi langsung di setiap kartu kanban dan dialog detail untuk mengirimkan card kanban langsung menjadi target fokus Pomodoro aktif di Eat Your Frog.
-    - **Test Coverage:** Suite unit test `kanban-service.test.ts` (9 test cases) terverifikasi lulus bersama total 81 test suite di seluruh project.
+    - **Board Switcher Bugfix & Defensive Parsing:** Menangani `parseStoredBoardId` untuk membersihkan serialization quotes dari storage, normalisasi payload board defensif (`normalizeBoard`) untuk mencegah `lists is undefined`, serta `selectBoard(id)` yang kebal terhadap type updater functional error.
+    - **No-Scrollbar Drag-to-Pan Canvas:** Menghilangkan tampilan scrollbar horizontal bawah (`scrollbar-width: none`, `::-webkit-scrollbar: none`) dan menambahkan interaksi drag-and-drop mouse panning (klik dan geser mouse di kanvas untuk menggeser board ke kanan/kiri secara halus) serta dukungan mouse wheel horizontal.
+    - **Full Rounded BiarFokus UI Aesthetic:** Menyelaraskan seluruh elemen visual kotak menjadi rounded pills (`border-radius: 9999px`) pada button, tab, search bar, chip filter, status badge, dan rounded corners (`16px - 28px`) pada card, column, serta modal dialog, dipadukan dengan wallpaper slate/navy/emerald/violet gelap yang selaras dengan tema BiarFokus.
+    - **Test Coverage:** Suite unit test `kanban-service.test.ts` (11 test cases) terverifikasi lulus bersama total 83 test suite di seluruh project dengan 0 lint error dan 0 warning.
 
 ---
 

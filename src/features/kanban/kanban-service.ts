@@ -41,38 +41,38 @@ export const LABEL_PALETTE: { color: string; defaultName: string }[] = [
 export const BOARD_BACKGROUNDS: { id: string; name: string; value: string; textColor: string }[] = [
   {
     id: "wave-blue",
-    name: "Wave Paper Blue",
-    value: "radial-gradient(ellipse at bottom, #1b3a57 0%, #0a192f 100%)",
+    name: "Ocean Navy",
+    value: "radial-gradient(ellipse at 50% 20%, #15324e 0%, #0b1a29 60%, #060e17 100%)",
     textColor: "#ffffff",
   },
   {
     id: "purple-haze",
-    name: "Purple Gradient",
-    value: "linear-gradient(135deg, #7928ca 0%, #4c1d95 100%)",
+    name: "Velvet Violet",
+    value: "radial-gradient(ellipse at 50% 20%, #311855 0%, #1c0a34 60%, #0d0319 100%)",
     textColor: "#ffffff",
   },
   {
     id: "emerald-forest",
     name: "Emerald Forest",
-    value: "linear-gradient(135deg, #065f46 0%, #022c22 100%)",
+    value: "radial-gradient(ellipse at 50% 20%, #0e442c 0%, #072718 60%, #02120b 100%)",
     textColor: "#ffffff",
   },
   {
     id: "sunset-glow",
-    name: "Sunset Glow",
-    value: "linear-gradient(135deg, #9d174d 0%, #4c0519 100%)",
+    name: "Sunset Ember",
+    value: "radial-gradient(ellipse at 50% 20%, #4c1825 0%, #290a12 60%, #140307 100%)",
     textColor: "#ffffff",
   },
   {
     id: "ocean-breeze",
-    name: "Ocean Breeze",
-    value: "linear-gradient(135deg, #0284c7 0%, #0c4a6e 100%)",
+    name: "Deep Azure",
+    value: "radial-gradient(ellipse at 50% 20%, #035380 0%, #08334e 60%, #041c2c 100%)",
     textColor: "#ffffff",
   },
   {
     id: "slate-clean",
     name: "Clean Slate",
-    value: "linear-gradient(135deg, #334155 0%, #0f172a 100%)",
+    value: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
     textColor: "#ffffff",
   },
 ];
@@ -318,12 +318,99 @@ export const INITIAL_BOARDS: KanbanBoard[] = [createDefaultGrowthBoard()];
 /* Storage Parser                                                     */
 /* ------------------------------------------------------------------ */
 
+export function normalizeBoard(raw: unknown): KanbanBoard {
+  const b = (raw && typeof raw === "object" ? raw : {}) as Partial<KanbanBoard>;
+  const now = formatUpdatedAt(new Date());
+
+  const lists = Array.isArray(b.lists)
+    ? b.lists.map((l: unknown, lIdx: number) => {
+        const listObj = (l && typeof l === "object" ? l : {}) as Partial<KanbanList>;
+        const cards = Array.isArray(listObj.cards)
+          ? listObj.cards.map((c: unknown, cIdx: number) => {
+              const cardObj = (c && typeof c === "object" ? c : {}) as Partial<KanbanCard>;
+              return {
+                id: typeof cardObj.id === "string" && cardObj.id ? cardObj.id : createId("card"),
+                title: typeof cardObj.title === "string" ? cardObj.title : "Kartu",
+                description: typeof cardObj.description === "string" ? cardObj.description : "",
+                coverColor: typeof cardObj.coverColor === "string" ? cardObj.coverColor : undefined,
+                coverEmoji: typeof cardObj.coverEmoji === "string" ? cardObj.coverEmoji : undefined,
+                dueDate: typeof cardObj.dueDate === "string" ? cardObj.dueDate : undefined,
+                dueCompleted: Boolean(cardObj.dueCompleted),
+                labels: Array.isArray(cardObj.labels) ? cardObj.labels : [],
+                checklists: Array.isArray(cardObj.checklists)
+                  ? cardObj.checklists.map((chk: unknown) => {
+                      const chkObj = (chk && typeof chk === "object" ? chk : {}) as {
+                        id?: string;
+                        title?: string;
+                        items?: unknown[];
+                      };
+                      return {
+                        id: typeof chkObj.id === "string" && chkObj.id ? chkObj.id : createId("chk"),
+                        title: typeof chkObj.title === "string" ? chkObj.title : "Checklist",
+                        items: Array.isArray(chkObj.items)
+                          ? chkObj.items.map((it: unknown) => {
+                              const itObj = (it && typeof it === "object" ? it : {}) as {
+                                id?: string;
+                                text?: string;
+                                done?: boolean;
+                              };
+                              return {
+                                id: typeof itObj.id === "string" && itObj.id ? itObj.id : createId("item"),
+                                text: typeof itObj.text === "string" ? itObj.text : "",
+                                done: Boolean(itObj.done),
+                              };
+                            })
+                          : [],
+                      };
+                    })
+                  : [],
+                comments: Array.isArray(cardObj.comments) ? cardObj.comments : [],
+                order: typeof cardObj.order === "number" ? cardObj.order : cIdx,
+                createdAt: typeof cardObj.createdAt === "string" ? cardObj.createdAt : now,
+                updatedAt: typeof cardObj.updatedAt === "string" ? cardObj.updatedAt : now,
+              };
+            })
+          : [];
+
+        return {
+          id: typeof listObj.id === "string" && listObj.id ? listObj.id : createId("list"),
+          title: typeof listObj.title === "string" ? listObj.title : "Kolom",
+          order: typeof listObj.order === "number" ? listObj.order : lIdx,
+          cards,
+        };
+      })
+    : [];
+
+  return {
+    id: typeof b.id === "string" && b.id ? b.id : createId("board"),
+    title: typeof b.title === "string" && b.title ? b.title : "Board Baru",
+    description: typeof b.description === "string" ? b.description : "",
+    background: typeof b.background === "string" ? b.background : "wave-blue",
+    starred: Boolean(b.starred),
+    createdAt: typeof b.createdAt === "string" ? b.createdAt : now,
+    updatedAt: typeof b.updatedAt === "string" ? b.updatedAt : now,
+    lists,
+  };
+}
+
+export function parseStoredBoardId(raw: string | null): string {
+  if (!raw) return "";
+  let val = raw;
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "string") val = parsed;
+  } catch {
+    // not JSON
+  }
+  return val.replace(/^["']|["']$/g, "").trim();
+}
+
 export function parseStoredBoards(raw: string | null): KanbanBoard[] {
   if (!raw) return INITIAL_BOARDS;
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].id === "string") {
-      return parsed as KanbanBoard[];
+      return parsed.map((item) => normalizeBoard(item));
     }
   } catch {
     // Malformed JSON: return defaults
