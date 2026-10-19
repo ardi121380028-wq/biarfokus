@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChecklistItem } from "@/types/domain";
 import {
   convertDraftType,
@@ -25,23 +25,54 @@ export function NoteComposer({
   onCreateLabel,
 }: NoteComposerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isFullyExpanded, setIsFullyExpanded] = useState(false);
   const [draft, setDraft] = useState<NoteDraft>(() => createEmptyDraft("checklist"));
   const [newItemText, setNewItemText] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function reset() {
-    setIsExpanded(false);
-    setDraft(createEmptyDraft("checklist"));
-    setNewItemText("");
+  function openComposer(type?: "checklist" | "text") {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    if (type) {
+      setDraft(createEmptyDraft(type));
+    }
+    setIsExpanded(true);
   }
+
+  function closeComposer() {
+    setIsFullyExpanded(false);
+    setIsExpanded(false);
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+    }
+    // Retain draft during the 320ms accordion closing animation so text does not vanish abruptly
+    closeTimerRef.current = setTimeout(() => {
+      setDraft(createEmptyDraft("checklist"));
+      setNewItemText("");
+      closeTimerRef.current = null;
+    }, 320);
+  }
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    const timer = setTimeout(() => {
+      setIsFullyExpanded(true);
+      titleInputRef.current?.focus();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [isExpanded]);
 
   function handleSave() {
     if (isDraftEmpty(draft)) {
-      reset();
+      closeComposer();
       return;
     }
     onCreateNote(draft);
-    reset();
+    closeComposer();
   }
 
   useOutsideClick(containerRef, () => {
@@ -49,14 +80,14 @@ export function NoteComposer({
     if (!isDraftEmpty(draft)) {
       handleSave();
     } else {
-      reset();
+      closeComposer();
     }
   }, isExpanded);
 
   useEscapeKey(() => {
     if (isExpanded) {
       if (!isDraftEmpty(draft)) handleSave();
-      else reset();
+      else closeComposer();
     }
   }, isExpanded);
 
@@ -88,13 +119,20 @@ export function NoteComposer({
   return (
     <div
       ref={containerRef}
-      className="keep-create-box"
+      className={`keep-create-box ${isExpanded ? "is-expanded" : ""} ${
+        isFullyExpanded ? "is-fully-expanded" : ""
+      }`}
       style={{ background: draft.color }}
     >
-      {!isExpanded ? (
+      {/* Collapsed Placeholder Row: folds up smoothly with CSS grid */}
+      <div
+        className="keep-create-collapsed-wrap"
+        aria-hidden={isExpanded}
+        inert={isExpanded ? true : undefined}
+      >
         <div
-          className="keep-create-placeholder-row"
-          onClick={() => setIsExpanded(true)}
+          className="keep-create-collapsed-inner keep-create-placeholder-row"
+          onClick={() => openComposer()}
         >
           <span className="keep-create-prompt">
             Buat catatan baru atau to-do list...
@@ -105,8 +143,7 @@ export function NoteComposer({
               className="keep-quick-btn"
               onClick={(e) => {
                 e.stopPropagation();
-                setDraft(createEmptyDraft("checklist"));
-                setIsExpanded(true);
+                openComposer("checklist");
               }}
             >
               ☑️ Checklist
@@ -116,24 +153,30 @@ export function NoteComposer({
               className="keep-quick-btn"
               onClick={(e) => {
                 e.stopPropagation();
-                setDraft(createEmptyDraft("text"));
-                setIsExpanded(true);
+                openComposer("text");
               }}
             >
               📝 Catatan
             </button>
           </div>
         </div>
-      ) : (
-        <div className="keep-create-expanded">
+      </div>
+
+      {/* Expanded Composer: unfolds smoothly with CSS grid & opacity */}
+      <div
+        className="keep-create-expanded-wrap"
+        aria-hidden={!isExpanded}
+        inert={!isExpanded ? true : undefined}
+      >
+        <div className="keep-create-expanded-inner keep-create-expanded">
           <div className="keep-create-title-row">
             <input
+              ref={titleInputRef}
               type="text"
               placeholder="Judul catatan..."
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
               className="keep-create-input keep-title-input"
-              autoFocus
             />
             <button
               type="button"
@@ -277,7 +320,7 @@ export function NoteComposer({
               <button
                 type="button"
                 className="keep-cancel-btn"
-                onClick={reset}
+                onClick={closeComposer}
               >
                 Tutup
               </button>
@@ -291,7 +334,7 @@ export function NoteComposer({
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
