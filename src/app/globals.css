@@ -76,7 +76,7 @@ button:active:not(:disabled) {
 .timer-card .timer-display { margin:14px 0 24px; line-height:0.92; }
 .focused-task-banner { display:flex; align-items:center; justify-content:center; gap:8px; width:min(520px,100%); min-width:0; margin-bottom:18px; padding:9px 14px; border-radius:14px; border:1px solid color-mix(in srgb,var(--blue) 22%,transparent); background:color-mix(in srgb,var(--blue) 7%,transparent); font-size:13px; }.focused-task-badge { flex:none; font-size:11px; font-weight:bold; color:var(--blue); background:color-mix(in srgb,var(--blue) 14%,var(--paper)); padding:3px 8px; border-radius:999px; }.focused-task-title { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; }.focused-task-pomos { flex:none; font-size:12px; color:var(--muted); }.focused-task-empty { color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
 .timer-controls { display:flex; align-items:center; justify-content:center; gap:10px; width:min(520px,100%); }.timer-controls .start-button { flex:1; width:auto; min-width:0; }.timer-aux-button { flex:none; width:46px; height:46px; border-radius:50%; border:1px solid color-mix(in srgb,var(--ink) 16%,transparent); background:color-mix(in srgb,var(--ink) 4%,transparent); color:var(--ink); font-size:18px; display:grid; place-items:center; }.timer-aux-button:hover { border-color:var(--blue); color:var(--blue); }
-.ambient-bar { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; width:min(520px,100%); margin-top:20px; padding:8px 12px; border-radius:16px; background:color-mix(in srgb,var(--ink) 4%,transparent); }.ambient-label { font-size:12px; color:var(--muted); font-weight:bold; }.ambient-pills { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }.ambient-pill { border:1px solid color-mix(in srgb,var(--ink) 14%,transparent); border-radius:999px; background:var(--paper); color:var(--ink); padding:5px 11px; font-size:12px; }.ambient-pill.selected { border-color:var(--blue); background:var(--blue); color:#fff; font-weight:bold; }
+.ambient-bar { display:flex; flex-direction:column; align-items:stretch; gap:8px; width:min(520px,100%); margin-top:20px; padding:10px 14px; border-radius:16px; background:color-mix(in srgb,var(--ink) 4%,transparent); }.ambient-label { font-size:11.5px; color:var(--muted); font-weight:600; text-align:center; letter-spacing:0.3px; }.ambient-pills { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; width:100%; }.ambient-pill { border:1px solid color-mix(in srgb,var(--ink) 14%,transparent); border-radius:999px; background:var(--paper); color:var(--ink); padding:6px 4px; font-size:11.5px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; transition:all 0.15s ease; }.ambient-pill.selected { border-color:var(--blue); background:var(--blue); color:#fff; font-weight:600; }
 .task.focused { background:color-mix(in srgb,var(--blue) 7%,transparent); border-radius:10px; padding-left:10px; padding-right:8px; }.task-focus-btn { flex:none; border:1px solid color-mix(in srgb,var(--ink) 16%,transparent); border-radius:999px; background:transparent; color:var(--muted); padding:3px 9px; font-size:11px; white-space:nowrap; }.task-focus-btn:hover { border-color:var(--blue); color:var(--blue); }.task-focus-btn.active { border-color:var(--blue); background:color-mix(in srgb,var(--blue) 14%,var(--paper)); color:var(--blue); font-weight:bold; }
 .footer-social-link { color:var(--pink); text-decoration:none; font-weight:bold; font-size:13px; display:inline-flex; align-items:center; gap:6px; }.footer-social-link:hover { text-decoration:underline; }
 .admin-success-banner { padding:10px 14px; border-radius:10px; background:color-mix(in srgb,#49a361 14%,var(--paper)); color:#2e7d32; font-size:13px; font-weight:bold; margin-bottom:16px; border:1px solid color-mix(in srgb,#49a361 24%,transparent); }
@@ -4301,6 +4301,7 @@ button:active:not(:disabled) {
     gap: 10px;
     overflow-x: auto;
     overflow-y: hidden;
+    touch-action: pan-x pan-y !important;
   }
 
   .kanban-columns-row {
@@ -4322,6 +4323,7 @@ button:active:not(:disabled) {
     border-radius: 18px;
     display: flex;
     flex-direction: column;
+    touch-action: pan-x pan-y !important;
   }
 
   .kanban-cards-scroll-area {
@@ -4330,7 +4332,11 @@ button:active:not(:disabled) {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain !important;
-    touch-action: pan-y !important;
+    touch-action: pan-x pan-y !important;
+  }
+
+  .kanban-card-item {
+    touch-action: pan-x pan-y !important;
   }
 
   .kanban-add-list-column {
@@ -5406,16 +5412,216 @@ button:active:not(:disabled) {
     width: 256px;
   }
 
-  .cal-topbar-title {
-    font-size: 16px;
+  .cal-workspace-topbar {
+    padding: 0 10px;
+    gap: 8px;
+    height: 54px;
+    position: relative;
   }
 
-  .cal-topbar-search-box input {
-    width: 100px;
+  .cal-topbar-left {
+    gap: 6px;
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .cal-topbar-hamburger-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .cal-topbar-today-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+
+  .cal-topbar-arrow-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .cal-topbar-heading-wrap {
+    min-width: 0;
+    overflow: hidden;
+    gap: 4px;
+  }
+
+  .cal-topbar-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .cal-topbar-week-badge {
     display: none;
+  }
+
+  .cal-topbar-right {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* Hide desktop theme toggle and settings in mobile topbar */
+  .cal-topbar-right .cal-topbar-icon-btn {
+    display: none;
+  }
+
+  .cal-topbar-view-select {
+    padding: 4px 8px;
+    font-size: 11.5px;
+    border-radius: 12px;
+  }
+
+  .cal-topbar-avatar-btn,
+  .cal-topbar-avatar-img {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  /* Expandable Search on Mobile */
+  .cal-topbar-search-box:not(.is-open) {
+    background: transparent;
+    border-color: transparent;
+    padding: 0;
+  }
+
+  .cal-topbar-search-box:not(.is-open) input {
+    display: none;
+    width: 0;
+  }
+
+  .cal-topbar-search-toggle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    font-size: 13px;
+  }
+
+  .cal-topbar-search-box.is-open {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 7px;
+    bottom: 7px;
+    background: var(--paper);
+    z-index: 30;
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+  }
+
+  .cal-topbar-search-box.is-open input {
+    display: block;
+    width: 100%;
+    flex: 1;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cal-topbar-today-btn {
+    display: none;
+  }
+}
+
+/* ========================================================================== */
+/* Account Modal Tabs & Embedded Stats                                       */
+/* ========================================================================== */
+
+.account-modal.account-modal-wide {
+  width: min(880px, 96vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.account-modal-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 32px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.account-tab-btn {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.account-tab-btn:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.account-tab-btn.active {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+}
+
+.account-stats-container {
+  padding: 16px 28px 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.stats-view-embedded {
+  width: 100%;
+}
+
+.stats-view-embedded .stats-header {
+  margin-bottom: 16px;
+}
+
+.stats-view-embedded .stat-grid {
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .account-modal-tabs {
+    padding: 0 16px 12px;
+    gap: 6px;
+  }
+
+  .account-tab-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    flex: 1;
+    text-align: center;
+  }
+
+  .account-stats-container {
+    padding: 12px 14px 20px;
+  }
+
+  .account-modal.account-modal-wide {
+    width: 100vw !important;
+    max-height: 94vh !important;
+    border-radius: 16px;
   }
 }
 

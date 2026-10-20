@@ -11,7 +11,7 @@ type KanbanSidebarProps = {
   onSelectBoard: (boardId: string) => void;
   onCreateBoardModalOpen: () => void;
   onDeleteBoard: (boardId: string) => void;
-  onNavigate: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onNavigate: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   onOpenShare?: () => void;
   dark?: boolean;
@@ -38,6 +38,20 @@ export function KanbanSidebar({
     b.title.toLowerCase().includes(searchBoard.trim().toLowerCase()),
   );
 
+  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      if (!isCollapsed) onToggleCollapse();
+    }
+    onNavigate(view);
+  }
+
+  function handleSelectBoard(boardId: string) {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      if (!isCollapsed) onToggleCollapse();
+    }
+    onSelectBoard(boardId);
+  }
+
   return (
     <aside
       className={`kanban-workspace-sidebar ${isCollapsed ? "is-collapsed" : ""}`}
@@ -50,7 +64,7 @@ export function KanbanSidebar({
             <button
               type="button"
               className="kanban-sidebar-brand-btn"
-              onClick={() => onNavigate("timer")}
+              onClick={() => handleNavigate("timer")}
               title="Kembali ke Timer Fokus"
             >
               <span className="brand-mark" aria-hidden="true" />
@@ -90,7 +104,7 @@ export function KanbanSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate("timer")}
+            onClick={() => handleNavigate("timer")}
             title="Timer Pomodoro"
           >
             <span className="nav-icon">⏱️</span>
@@ -99,7 +113,7 @@ export function KanbanSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate("notes")}
+            onClick={() => handleNavigate("notes")}
             title="Catatan & Todo"
           >
             <span className="nav-icon">📝</span>
@@ -108,7 +122,7 @@ export function KanbanSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate("calendar")}
+            onClick={() => handleNavigate("calendar")}
             title="Kalender Jadwal"
           >
             <span className="nav-icon">📅</span>
@@ -125,16 +139,7 @@ export function KanbanSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate("stats")}
-            title="Statistik Produktivitas"
-          >
-            <span className="nav-icon">📊</span>
-            {!isCollapsed && <span className="nav-label">Statistik</span>}
-          </button>
-          <button
-            type="button"
-            className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate("pricing")}
+            onClick={() => handleNavigate("pricing")}
             title="Upgrade Pro"
           >
             <span className="nav-icon">💎</span>
@@ -191,7 +196,7 @@ export function KanbanSidebar({
               <div
                 key={b.id}
                 className={`kanban-sidebar-board-item ${isActive ? "active" : ""}`}
-                onClick={() => onSelectBoard(b.id)}
+                onClick={() => handleSelectBoard(b.id)}
                 role="button"
                 tabIndex={0}
                 title={b.title}

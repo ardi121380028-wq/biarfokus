@@ -11,10 +11,11 @@ type NotesTopbarProps = {
   onToggleDark?: () => void;
   onOpenSettings?: () => void;
   onOpenProfile?: () => void;
+  onOpenStats?: () => void;
   userName?: string;
   userAvatar?: string | null;
   onRequireLogin?: () => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
 };
 
 export function NotesTopbar({
@@ -25,6 +26,7 @@ export function NotesTopbar({
   onToggleDark,
   onOpenSettings,
   onOpenProfile,
+  onOpenStats,
   userName,
   userAvatar,
   onRequireLogin,
@@ -154,6 +156,18 @@ export function NotesTopbar({
               >
                 👤 Profil Akun
               </button>
+              {onOpenStats && (
+                <button
+                  type="button"
+                  className="cal-profile-menu-item"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    onOpenStats();
+                  }}
+                >
+                  📊 Statistik
+                </button>
+              )}
               {onOpenSettings && (
                 <button
                   type="button"

@@ -182,6 +182,7 @@ export default function Home() {
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [accountModalTab, setAccountModalTab] = useState<"profile" | "stats">("profile");
   const [notesOpen, setNotesOpen] = useState(false);
   const [pomodoroModalOpen, setPomodoroModalOpen] = useState(false);
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
@@ -774,7 +775,6 @@ export default function Home() {
               { view: "notes", label: "Catatan" },
               { view: "calendar", label: "Kalender" },
               { view: "kanban", label: "Project Kanban" },
-              { view: "stats", label: "Statistik" },
               { view: "pricing", label: "Pro" },
             ] as { view: View; label: string }[]).map(({ view, label }) => (
               <button key={view} className={activeView === view ? "nav-link active" : "nav-link"} onClick={() => setActiveView(view)}>
@@ -794,7 +794,8 @@ export default function Home() {
                 {profileMenuOpen && <ProfileMenu
                   userName={userName}
                   isAdmin={isAdminRole(userRole)}
-                  onAccount={() => { setAccountOpen(true); setProfileMenuOpen(false); }}
+                  onAccount={() => { setAccountModalTab("profile"); setAccountOpen(true); setProfileMenuOpen(false); }}
+                  onStats={() => { setAccountModalTab("stats"); setAccountOpen(true); setProfileMenuOpen(false); }}
                   onPremium={() => { setActiveView("pricing"); setProfileMenuOpen(false); }}
                   onAdmin={() => { setActiveView("admin"); setProfileMenuOpen(false); }}
                   onShortcuts={() => { setShortcutsOpen(true); setProfileMenuOpen(false); }}
@@ -818,7 +819,6 @@ export default function Home() {
           { view: "notes", label: "Catatan" },
           { view: "calendar", label: "Kalender" },
           { view: "kanban", label: "Project Kanban" },
-          { view: "stats", label: "Statistik" },
           { view: "pricing", label: "Pro" },
         ] as { view: View; label: string }[]).map(({ view, label }) => (
           <button key={view} className={activeView === view ? "nav-link active" : "nav-link"} onClick={() => { setActiveView(view); setMenuOpen(false); }}>
@@ -878,6 +878,15 @@ export default function Home() {
           onOpenSettings={() => setShowSettings(true)}
           onOpenProfile={() => {
             if (user) {
+              setAccountModalTab("profile");
+              setAccountOpen(true);
+            } else {
+              setLoginOpen(true);
+            }
+          }}
+          onOpenStats={() => {
+            if (user) {
+              setAccountModalTab("stats");
               setAccountOpen(true);
             } else {
               setLoginOpen(true);
@@ -900,6 +909,15 @@ export default function Home() {
           onOpenSettings={() => setShowSettings(true)}
           onOpenProfile={() => {
             if (user) {
+              setAccountModalTab("profile");
+              setAccountOpen(true);
+            } else {
+              setLoginOpen(true);
+            }
+          }}
+          onOpenStats={() => {
+            if (user) {
+              setAccountModalTab("stats");
               setAccountOpen(true);
             } else {
               setLoginOpen(true);
@@ -923,6 +941,7 @@ export default function Home() {
           onOpenSettings={() => setShowSettings(true)}
           onOpenProfile={() => {
             if (user) {
+              setAccountModalTab("profile");
               setAccountOpen(true);
             } else {
               setLoginOpen(true);
@@ -1022,7 +1041,17 @@ export default function Home() {
         onClose={() => setShowSettings(false)}
       />}
       {loginOpen && <AuthModalComponent mode={authMode} setMode={setAuthMode} onClose={() => setLoginOpen(false)} />}
-      {accountOpen && <AccountModal user={user} userName={userName} supabase={getSupabaseBrowserClient()} onSaved={setProfileDisplayName} onClose={() => setAccountOpen(false)} />}
+      {accountOpen && (
+        <AccountModal
+          user={user}
+          userName={userName}
+          supabase={getSupabaseBrowserClient()}
+          initialTab={accountModalTab}
+          completedTasks={completedTasks}
+          onSaved={setProfileDisplayName}
+          onClose={() => setAccountOpen(false)}
+        />
+      )}
       {deleteConfirmOpen && (
         <div className="modal-backdrop" role="presentation" onClick={() => { if (!deletingAccount) setDeleteConfirmOpen(false); }}>
           <section className="modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>

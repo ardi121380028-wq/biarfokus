@@ -18,6 +18,7 @@ type StatsViewProps = {
   supabase: SupabaseClient;
   userId: string | null;
   completedTasks: number;
+  embedded?: boolean;
 };
 
 type LoadedStats = {
@@ -51,7 +52,7 @@ function getErrorMessage(error: unknown) {
   return "Gagal memuat statistik.";
 }
 
-export function StatsView({ supabase, userId, completedTasks }: StatsViewProps) {
+export function StatsView({ supabase, userId, completedTasks, embedded = false }: StatsViewProps) {
   const [stats, setStats] = useState<LoadedStats | null>(null);
   const [range, setRange] = useState<StatsRange>("week");
   const [loading, setLoading] = useState(true);
@@ -110,105 +111,165 @@ export function StatsView({ supabase, userId, completedTasks }: StatsViewProps) 
     URL.revokeObjectURL(url);
   }
 
+  const containerClass = embedded ? "stats-view-embedded" : "inner-page";
+
   if (!userId) {
-    return <div className="inner-page"><p className="eyebrow">Ringkasan produktivitas</p><h1>Statistik produktivitas</h1><p className="admin-note">Masuk untuk menyimpan dan melihat histori fokusmu.</p></div>;
+    return (
+      <div className={containerClass}>
+        {!embedded && <p className="eyebrow">Ringkasan produktivitas</p>}
+        {!embedded && <h1>Statistik produktivitas</h1>}
+        <p className="admin-note">Masuk untuk menyimpan dan melihat histori fokusmu.</p>
+      </div>
+    );
   }
-  if (loading) return <div className="inner-page"><p className="eyebrow">Ringkasan produktivitas</p><h1>Statistik produktivitas</h1><p className="admin-note">Memuat statistik...</p></div>;
-  if (error || !summary || !streaks) return <div className="inner-page"><p className="eyebrow">Ringkasan produktivitas</p><h1>Statistik produktivitas</h1><p className="task-error" role="alert">Gagal memuat statistik: {error ?? "Data statistik tidak tersedia."}</p></div>;
+  if (loading) {
+    return (
+      <div className={containerClass}>
+        {!embedded && <p className="eyebrow">Ringkasan produktivitas</p>}
+        {!embedded && <h1>Statistik produktivitas</h1>}
+        <p className="admin-note">Memuat statistik...</p>
+      </div>
+    );
+  }
+  if (error || !summary || !streaks) {
+    return (
+      <div className={containerClass}>
+        {!embedded && <p className="eyebrow">Ringkasan produktivitas</p>}
+        {!embedded && <h1>Statistik produktivitas</h1>}
+        <p className="task-error" role="alert">
+          Gagal memuat statistik: {error ?? "Data statistik tidak tersedia."}
+        </p>
+      </div>
+    );
+  }
 
   const maxFocus = Math.max(...summary.series.map((entry) => entry.focusSeconds), 1);
   const dense = summary.series.length > 7;
   const firstDay = summary.series[0].day;
   const lastDay = summary.series[summary.series.length - 1].day;
 
-  return <div className="inner-page">
-    <p className="eyebrow">{activeRange.title}</p>
-    <h1>Statistik produktivitas</h1>
-    <div className="stats-toolbar">
-      <div className="range-tabs" role="group" aria-label="Rentang statistik">
-        {rangeOptions.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            className={range === option.value ? "range-tab selected" : "range-tab"}
-            aria-pressed={range === option.value}
-            onClick={() => setRange(option.value)}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-      <button type="button" className="secondary-button admin-action-button" onClick={handleExport} disabled={stats?.daily.length === 0}>
-        Export CSV
-      </button>
-    </div>
-    <div className="stat-grid">
-      <div className="stat-card"><span>Fokus {activeRange.label.toLowerCase()}</span><strong>{formatFocusTime(summary.focusSeconds)}</strong><small>Data sesi Pomodoro selesai</small></div>
-      <div className="stat-card"><span>Pomodoro selesai</span><strong>{summary.pomodoroCount}</strong><small>{activeRange.title}</small></div>
-      <div className="stat-card"><span>Streak fokus</span><strong>{streaks.current} hari</strong><small>Terbaik: {streaks.longest} hari (1 tahun terakhir)</small></div>
-      <div className="stat-card"><span>Tugas selesai</span><strong>{completedTasks}</strong><small>Dari task aktifmu</small></div>
-    </div>
-    <div className="chart-card">
-      <div className="chart-labels">
-        {dense
-          ? <><span>{formatShortDay(firstDay)}</span><span>{formatShortDay(lastDay)}</span></>
-          : summary.series.map((entry) => <span key={entry.day}>{dayLabels[getWeekdayIndex(entry.day)]}</span>)}
-      </div>
-      <div className={dense ? "bars dense" : "bars"}>
-        {summary.series.map((entry) => (
-          <div className="bar-wrap" key={entry.day}>
-            <div
-              className="bar"
-              title={`${formatShortDay(entry.day)}: ${formatFocusTime(entry.focusSeconds)}`}
-              style={{ height: `${Math.max((entry.focusSeconds / maxFocus) * 100, entry.focusSeconds ? 4 : 0)}%` }}
-            />
-            {!dense && <small>{formatFocusTime(entry.focusSeconds)}</small>}
-          </div>
-        ))}
-      </div>
-    </div>
-    {summary.pomodoroCount === 0 && <p className="admin-note">Belum ada sesi fokus yang selesai di rentang ini.</p>}
-
-    <div className="badges-section">
-      <div className="badges-header">
-        <div>
-          <h2>Lencana & Pencapaian</h2>
-          <p className="badges-subtitle">Pencapaian fokus dan konsistensi belajarmu</p>
+  return (
+    <div className={containerClass}>
+      {!embedded && <p className="eyebrow">{activeRange.title}</p>}
+      {!embedded && <h1>Statistik produktivitas</h1>}
+      <div className="stats-toolbar">
+        <div className="range-tabs" role="group" aria-label="Rentang statistik">
+          {rangeOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={range === option.value ? "range-tab selected" : "range-tab"}
+              aria-pressed={range === option.value}
+              onClick={() => setRange(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
-        <span className="badges-count-pill">
-          {badges.filter((b) => b.unlocked).length} / {badges.length} Terbuka
-        </span>
+        <button
+          type="button"
+          className="secondary-button admin-action-button"
+          onClick={handleExport}
+          disabled={stats?.daily.length === 0}
+        >
+          Export CSV
+        </button>
       </div>
-
-      <div className="badges-grid">
-        {badges.map((badge) => (
-          <div key={badge.id} className={badge.unlocked ? "badge-card unlocked" : "badge-card"}>
-            <div className="badge-icon" aria-hidden="true">{badge.icon}</div>
-            <div className="badge-content">
-              <div className="badge-title-row">
-                <strong>{badge.title}</strong>
-                {badge.unlocked ? (
-                  <span className="badge-status-pill unlocked">Tercapai</span>
-                ) : (
-                  <span className="badge-status-pill locked">{badge.progressPercent}%</span>
-                )}
-              </div>
-              <p>{badge.description}</p>
-              <div className="badge-progress-wrap" aria-hidden="true">
-                <div
-                  className="badge-progress-fill"
-                  style={{ width: `${badge.progressPercent}%` }}
-                />
-              </div>
-              <small>
-                {badge.unlocked
-                  ? "✓ Target terpenuhi"
-                  : `${badge.current} / ${badge.target} ${badge.unit}`}
-              </small>
+      <div className="stat-grid">
+        <div className="stat-card">
+          <span>Fokus {activeRange.label.toLowerCase()}</span>
+          <strong>{formatFocusTime(summary.focusSeconds)}</strong>
+          <small>Data sesi Pomodoro selesai</small>
+        </div>
+        <div className="stat-card">
+          <span>Pomodoro selesai</span>
+          <strong>{summary.pomodoroCount}</strong>
+          <small>{activeRange.title}</small>
+        </div>
+        <div className="stat-card">
+          <span>Streak fokus</span>
+          <strong>{streaks.current} hari</strong>
+          <small>Terbaik: {streaks.longest} hari (1 tahun terakhir)</small>
+        </div>
+        <div className="stat-card">
+          <span>Tugas selesai</span>
+          <strong>{completedTasks}</strong>
+          <small>Dari task aktifmu</small>
+        </div>
+      </div>
+      <div className="chart-card">
+        <div className="chart-labels">
+          {dense
+            ? (
+              <>
+                <span>{formatShortDay(firstDay)}</span>
+                <span>{formatShortDay(lastDay)}</span>
+              </>
+            )
+            : summary.series.map((entry) => (
+                <span key={entry.day}>{dayLabels[getWeekdayIndex(entry.day)]}</span>
+              ))}
+        </div>
+        <div className={dense ? "bars dense" : "bars"}>
+          {summary.series.map((entry) => (
+            <div className="bar-wrap" key={entry.day}>
+              <div
+                className="bar"
+                title={`${formatShortDay(entry.day)}: ${formatFocusTime(entry.focusSeconds)}`}
+                style={{
+                  height: `${Math.max((entry.focusSeconds / maxFocus) * 100, entry.focusSeconds ? 4 : 0)}%`,
+                }}
+              />
+              {!dense && <small>{formatFocusTime(entry.focusSeconds)}</small>}
             </div>
+          ))}
+        </div>
+      </div>
+      {summary.pomodoroCount === 0 && (
+        <p className="admin-note">Belum ada sesi fokus yang selesai di rentang ini.</p>
+      )}
+
+      <div className="badges-section">
+        <div className="badges-header">
+          <div>
+            <h2>Lencana &amp; Pencapaian</h2>
+            <p className="badges-subtitle">Pencapaian fokus dan konsistensi belajarmu</p>
           </div>
-        ))}
+          <span className="badges-count-pill">
+            {badges.filter((b) => b.unlocked).length} / {badges.length} Terbuka
+          </span>
+        </div>
+
+        <div className="badges-grid">
+          {badges.map((badge) => (
+            <div key={badge.id} className={badge.unlocked ? "badge-card unlocked" : "badge-card"}>
+              <div className="badge-icon" aria-hidden="true">{badge.icon}</div>
+              <div className="badge-content">
+                <div className="badge-title-row">
+                  <strong>{badge.title}</strong>
+                  {badge.unlocked ? (
+                    <span className="badge-status-pill unlocked">Tercapai</span>
+                  ) : (
+                    <span className="badge-status-pill locked">{badge.progressPercent}%</span>
+                  )}
+                </div>
+                <p>{badge.description}</p>
+                <div className="badge-progress-wrap" aria-hidden="true">
+                  <div
+                    className="badge-progress-fill"
+                    style={{ width: `${badge.progressPercent}%` }}
+                  />
+                </div>
+                <small>
+                  {badge.unlocked
+                    ? "✓ Target terpenuhi"
+                    : `${badge.current} / ${badge.target} ${badge.unit}`}
+                </small>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  </div>;
+  );
 }

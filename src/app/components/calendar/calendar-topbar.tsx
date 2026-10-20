@@ -20,10 +20,11 @@ type CalendarTopbarProps = {
   onToggleDark?: () => void;
   onOpenSettings?: () => void;
   onOpenProfile?: () => void;
+  onOpenStats?: () => void;
   userName?: string;
   userAvatar?: string | null;
   onRequireLogin?: () => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
 };
 
 export function CalendarTopbar({
@@ -40,6 +41,7 @@ export function CalendarTopbar({
   onToggleDark,
   onOpenSettings,
   onOpenProfile,
+  onOpenStats,
   userName,
   userAvatar,
   onRequireLogin,
@@ -143,12 +145,16 @@ export function CalendarTopbar({
             onChange={(e) => onSearchChange(e.target.value)}
             className="cal-topbar-search-input"
           />
-          {searchQuery && (
+          {(searchQuery || searchOpen) && (
             <button
               type="button"
               className="cal-topbar-search-clear"
-              onClick={() => onSearchChange("")}
-              aria-label="Hapus pencarian"
+              onClick={() => {
+                onSearchChange("");
+                setSearchOpen(false);
+              }}
+              aria-label="Tutup pencarian"
+              title="Tutup pencarian"
             >
               ✕
             </button>
@@ -241,6 +247,18 @@ export function CalendarTopbar({
               >
                 👤 Profil & Akun
               </button>
+              {onOpenStats && (
+                <button
+                  type="button"
+                  className="cal-profile-menu-item"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    onOpenStats();
+                  }}
+                >
+                  📊 Statistik
+                </button>
+              )}
               {onOpenSettings && (
                 <button
                   type="button"

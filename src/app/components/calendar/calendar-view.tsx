@@ -35,7 +35,8 @@ type CalendarViewProps = {
   onToggleDark?: () => void;
   onOpenSettings?: () => void;
   onOpenProfile?: () => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onOpenStats?: () => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
   onNavigateToNotes?: () => void;
   onRequireLogin?: () => void;
 };
@@ -48,6 +49,7 @@ export function CalendarView({
   onToggleDark,
   onOpenSettings,
   onOpenProfile,
+  onOpenStats,
   onNavigate,
   onNavigateToNotes,
   onRequireLogin,
@@ -253,6 +255,7 @@ export function CalendarView({
           onToggleDark={onToggleDark}
           onOpenSettings={onOpenSettings}
           onOpenProfile={onOpenProfile}
+          onOpenStats={onOpenStats}
           userName={userName}
           userAvatar={userAvatar}
           onRequireLogin={onRequireLogin}

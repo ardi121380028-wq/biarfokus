@@ -16,7 +16,7 @@ type NotesSidebarProps = {
   onSelectLabel: (label: string | null) => void;
   getLabelCount: (label: string) => number;
   onCreateLabel: (name: string) => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   dark?: boolean;
   onToggleDark?: () => void;
@@ -44,6 +44,27 @@ export function NotesSidebar({
   const [newLabelInput, setNewLabelInput] = useState("");
   const [showAddLabel, setShowAddLabel] = useState(false);
 
+  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      if (!isCollapsed) onToggleCollapse();
+    }
+    onNavigate?.(view);
+  }
+
+  function handleSelectType(type: "all" | "pinned" | "checklist" | "text") {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      if (!isCollapsed) onToggleCollapse();
+    }
+    onSelectTypeFilter(type);
+  }
+
+  function handleSelectTag(label: string | null) {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      if (!isCollapsed) onToggleCollapse();
+    }
+    onSelectLabel(label);
+  }
+
   function handleAddLabelSubmit(e: React.FormEvent) {
     e.preventDefault();
     const clean = newLabelInput.trim();
@@ -66,7 +87,7 @@ export function NotesSidebar({
             <button
               type="button"
               className="kanban-sidebar-brand-btn"
-              onClick={() => onNavigate?.("timer")}
+              onClick={() => handleNavigate("timer")}
               title="Kembali ke Timer Fokus"
             >
               <span className="brand-mark" aria-hidden="true" />
@@ -106,7 +127,7 @@ export function NotesSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("timer")}
+            onClick={() => handleNavigate("timer")}
             title="Timer Pomodoro"
           >
             <span className="nav-icon">⏱️</span>
@@ -123,7 +144,7 @@ export function NotesSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("calendar")}
+            onClick={() => handleNavigate("calendar")}
             title="Kalender Jadwal"
           >
             <span className="nav-icon">📅</span>
@@ -132,7 +153,7 @@ export function NotesSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("kanban")}
+            onClick={() => handleNavigate("kanban")}
             title="Project Kanban"
           >
             <span className="nav-icon">📋</span>
@@ -141,16 +162,7 @@ export function NotesSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("stats")}
-            title="Statistik Produktivitas"
-          >
-            <span className="nav-icon">📊</span>
-            {!isCollapsed && <span className="nav-label">Statistik</span>}
-          </button>
-          <button
-            type="button"
-            className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("pricing")}
+            onClick={() => handleNavigate("pricing")}
             title="Upgrade Pro"
           >
             <span className="nav-icon">💎</span>
@@ -167,8 +179,8 @@ export function NotesSidebar({
             type="button"
             className={`notes-sidebar-filter-item ${typeFilter === "all" && activeLabel === null ? "active" : ""}`}
             onClick={() => {
-              onSelectTypeFilter("all");
-              onSelectLabel(null);
+              handleSelectType("all");
+              handleSelectTag(null);
             }}
             title="Semua Catatan"
           >
@@ -184,7 +196,7 @@ export function NotesSidebar({
           <button
             type="button"
             className={`notes-sidebar-filter-item ${typeFilter === "pinned" ? "active" : ""}`}
-            onClick={() => onSelectTypeFilter("pinned")}
+            onClick={() => handleSelectType("pinned")}
             title="Catatan Disematkan"
           >
             <span className="filter-icon">📌</span>
@@ -199,7 +211,7 @@ export function NotesSidebar({
           <button
             type="button"
             className={`notes-sidebar-filter-item ${typeFilter === "checklist" ? "active" : ""}`}
-            onClick={() => onSelectTypeFilter("checklist")}
+            onClick={() => handleSelectType("checklist")}
             title="Daftar Tugas (Checklist)"
           >
             <span className="filter-icon">☑️</span>
@@ -214,7 +226,7 @@ export function NotesSidebar({
           <button
             type="button"
             className={`notes-sidebar-filter-item ${typeFilter === "text" ? "active" : ""}`}
-            onClick={() => onSelectTypeFilter("text")}
+            onClick={() => handleSelectType("text")}
             title="Catatan Teks"
           >
             <span className="filter-icon">📄</span>
@@ -279,7 +291,7 @@ export function NotesSidebar({
                 key={lbl}
                 type="button"
                 className={`notes-sidebar-filter-item ${isSelected ? "active" : ""}`}
-                onClick={() => onSelectLabel(isSelected ? null : lbl)}
+                onClick={() => handleSelectTag(isSelected ? null : lbl)}
                 title={`Filter label ${lbl}`}
               >
                 <span className="filter-icon">🏷️</span>

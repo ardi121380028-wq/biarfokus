@@ -19,7 +19,7 @@ type CalendarSidebarProps = {
     recurring: boolean;
   };
   onToggleCategoryFilter: (category: "event" | "task" | "recurring") => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   dark?: boolean;
   onToggleDark?: () => void;
@@ -52,6 +52,20 @@ export function CalendarSidebar({
 
   const today = new Date();
 
+  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      if (!isCollapsed) onToggleCollapse();
+    }
+    onNavigate?.(view);
+  }
+
+  function handleSelectDate(d: Date) {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      if (!isCollapsed) onToggleCollapse();
+    }
+    onSelectDate(d);
+  }
+
   return (
     <aside
       className={`kanban-workspace-sidebar ${isCollapsed ? "is-collapsed" : ""}`}
@@ -64,7 +78,7 @@ export function CalendarSidebar({
             <button
               type="button"
               className="kanban-sidebar-brand-btn"
-              onClick={() => onNavigate?.("timer")}
+              onClick={() => handleNavigate("timer")}
               title="Kembali ke Timer Fokus"
             >
               <span className="brand-mark" aria-hidden="true" />
@@ -104,7 +118,7 @@ export function CalendarSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("timer")}
+            onClick={() => handleNavigate("timer")}
             title="Timer Pomodoro"
           >
             <span className="nav-icon">⏱️</span>
@@ -113,7 +127,7 @@ export function CalendarSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("notes")}
+            onClick={() => handleNavigate("notes")}
             title="Catatan & Todo"
           >
             <span className="nav-icon">📝</span>
@@ -130,7 +144,7 @@ export function CalendarSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("kanban")}
+            onClick={() => handleNavigate("kanban")}
             title="Project Kanban"
           >
             <span className="nav-icon">📋</span>
@@ -139,16 +153,7 @@ export function CalendarSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("stats")}
-            title="Statistik Produktivitas"
-          >
-            <span className="nav-icon">📊</span>
-            {!isCollapsed && <span className="nav-label">Statistik</span>}
-          </button>
-          <button
-            type="button"
-            className="kanban-sidebar-nav-item"
-            onClick={() => onNavigate?.("pricing")}
+            onClick={() => handleNavigate("pricing")}
             title="Upgrade Pro"
           >
             <span className="nav-icon">💎</span>
@@ -159,121 +164,93 @@ export function CalendarSidebar({
 
       <div className="kanban-sidebar-divider" />
 
-      {/* Schedule & Filters Section */}
-      <div className="kanban-sidebar-section boards-section" style={{ overflowY: "auto" }}>
-        {!isCollapsed ? (
-          <div className="kanban-sidebar-section-header">
-            <span className="kanban-sidebar-section-title">Jadwal &amp; Filter</span>
-            <button
-              type="button"
-              className="kanban-sidebar-add-board-btn"
-              onClick={onCreateClick}
-              title="Buat Jadwal Baru"
-            >
-              + Baru
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="kanban-sidebar-icon-only-btn"
-            onClick={onCreateClick}
-            title="Buat Jadwal Baru"
-          >
-            +
-          </button>
-        )}
+      {/* Primary Action Button: + Buat Jadwal */}
+      <div className="cal-sidebar-create-wrap">
+        <button
+          type="button"
+          className="cal-sidebar-create-btn"
+          onClick={() => {
+            if (typeof window !== "undefined" && window.innerWidth < 1024) {
+              onToggleCollapse();
+            }
+            onCreateClick();
+          }}
+          title="Buat Jadwal Baru"
+        >
+          <span className="cal-create-icon">➕</span>
+          {!isCollapsed && <span>Buat Jadwal</span>}
+        </button>
+      </div>
 
-        {/* Primary + Buat Jadwal Button */}
-        {!isCollapsed && (
-          <button
-            type="button"
-            className="cal-sidebar-create-btn"
-            onClick={onCreateClick}
-            title="Buat Jadwal Time-Blocking Baru"
-            style={{ marginBottom: "12px" }}
-          >
-            <span className="cal-create-plus-icon">+</span>
-            <span className="cal-create-label">Buat Jadwal</span>
-          </button>
-        )}
-
-        {/* Mini Month Calendar Picker */}
-        {!isCollapsed && (
-          <div className="cal-mini-month-widget">
-            <div className="cal-mini-month-header">
-              <span className="cal-mini-month-title">{miniMonthTitle}</span>
-              <div className="cal-mini-nav-btns">
-                <button
-                  type="button"
-                  className="cal-mini-arrow-btn"
-                  onClick={() => setMiniMonthAnchor((prev) => addMonths(prev, -1))}
-                  aria-label="Bulan sebelumnya"
-                  title="Bulan sebelumnya"
-                >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  className="cal-mini-arrow-btn"
-                  onClick={() => setMiniMonthAnchor((prev) => addMonths(prev, 1))}
-                  aria-label="Bulan berikutnya"
-                  title="Bulan berikutnya"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
-
-            <div className="cal-mini-weekdays-row">
-              {["M", "S", "S", "R", "K", "J", "S"].map((dayName, idx) => (
-                <span key={idx} className="cal-mini-weekday-cell">
-                  {dayName}
-                </span>
-              ))}
-            </div>
-
-            <div className="cal-mini-days-grid">
-              {miniGrid.map((day, idx) => {
-                const isSelected = isSameDay(day, anchorDate);
-                const isToday = isSameDay(day, today);
-                const isOutsideMonth = day.getMonth() !== miniMonthAnchor.getMonth();
-
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    className={`cal-mini-day-cell ${isSelected ? "selected" : ""} ${
-                      isToday ? "today" : ""
-                    } ${isOutsideMonth ? "outside" : ""}`}
-                    onClick={() => {
-                      onSelectDate(day);
-                      setMiniMonthAnchor(day);
-                    }}
-                    title={day.toLocaleDateString("id-ID", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  >
-                    {day.getDate()}
-                  </button>
-                );
-              })}
+      {/* Mini Month Calendar */}
+      {!isCollapsed && (
+        <div className="cal-mini-month-widget">
+          <div className="cal-mini-month-header">
+            <span className="cal-mini-month-title">{miniMonthTitle}</span>
+            <div className="cal-mini-nav-btns">
+              <button
+                type="button"
+                className="cal-mini-arrow-btn"
+                onClick={() => setMiniMonthAnchor((prev) => addMonths(prev, -1))}
+                aria-label="Bulan sebelumnya"
+                title="Bulan sebelumnya"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="cal-mini-arrow-btn"
+                onClick={() => setMiniMonthAnchor((prev) => addMonths(prev, 1))}
+                aria-label="Bulan berikutnya"
+                title="Bulan berikutnya"
+              >
+                ›
+              </button>
             </div>
           </div>
-        )}
 
-        {/* Filter Kategori Checkboxes */}
+          <div className="cal-mini-weekdays-row">
+            {["S", "S", "R", "K", "J", "S", "M"].map((lbl, idx) => (
+              <span key={idx} className="cal-mini-weekday-label">
+                {lbl}
+              </span>
+            ))}
+          </div>
+
+          <div className="cal-mini-grid">
+            {miniGrid.map((d, dIdx) => {
+              const isCurrentMonth = d.getMonth() === miniMonthAnchor.getMonth();
+              const isSelected = isSameDay(d, anchorDate);
+              const isTodayDate = isSameDay(d, today);
+
+              return (
+                <button
+                  key={dIdx}
+                  type="button"
+                  className={`cal-mini-cell ${!isCurrentMonth ? "is-other-month" : ""} ${
+                    isSelected ? "is-selected" : ""
+                  } ${isTodayDate ? "is-today" : ""}`}
+                  onClick={() => handleSelectDate(d)}
+                  title={d.toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                >
+                  {d.getDate()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Categories Filter */}
+      <div className="kanban-sidebar-section cal-categories-section">
+        {!isCollapsed && <span className="kanban-sidebar-section-title">Kategori Jadwal</span>}
         {!isCollapsed && (
-          <div className="cal-category-filters-list" style={{ marginTop: "12px", padding: "0 4px" }}>
-            <span
-              className="kanban-sidebar-section-title"
-              style={{ display: "block", marginBottom: "6px" }}
-            >
-              Filter Kategori
-            </span>
+          <div className="cal-categories-list">
             <label className="cal-filter-checkbox-item">
               <input
                 type="checkbox"
