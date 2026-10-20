@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import type { KeepNote, Task } from "@/types/domain";
 import type { LinkedNoteMeta } from "@/features/tasks/task-service";
 import { NoteTaskPickerModal } from "./notes/note-task-picker-modal";
@@ -39,6 +40,11 @@ export function TaskManagement({
   const [menuOpen, setMenuOpen] = useState(false);
   const [notePickerOpen, setNotePickerOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<"task" | "completed" | "all" | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const completedTasks = tasks.filter((task) => task.done).length;
   const activeTasks = tasks.filter((task) => !task.done);
   const archivedTasks = tasks.filter((task) => task.done);
@@ -232,17 +238,20 @@ export function TaskManagement({
           ))}</div>}
         </div>}
       </div>
-      {confirmation && <div className="task-confirm-backdrop" role="presentation" onClick={() => { if (!submitting) { setConfirmation(null); setActiveTaskId(null); } }}>
-        <section className="task-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="task-confirm-title" onClick={(event) => event.stopPropagation()}>
-          <h2 id="task-confirm-title">{confirmation === "all" ? "Hapus semua task?" : confirmation === "completed" ? "Hapus task selesai?" : "Hapus task?"}</h2>
-          <p>{confirmation === "all" ? "Semua task akan dihapus permanen." : confirmation === "completed" ? "Semua task di archive akan dihapus permanen." : `Task "${taskToDelete?.title ?? ""}" akan dihapus permanen.`}</p>
-          <div className="task-confirm-actions">
-            <button type="button" className="secondary-button" onClick={() => { setConfirmation(null); setActiveTaskId(null); }} disabled={submitting}>Batal</button>
-            <button type="button" className="danger-button" onClick={() => void confirmDelete()} disabled={submitting}>{submitting ? "Menghapus..." : "Hapus"}</button>
-          </div>
-        </section>
-      </div>}
-      {notePickerOpen && (
+      {confirmation && mounted && createPortal(
+        <div className="task-confirm-backdrop" role="presentation" onClick={() => { if (!submitting) { setConfirmation(null); setActiveTaskId(null); } }}>
+          <section className="task-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="task-confirm-title" onClick={(event) => event.stopPropagation()}>
+            <h2 id="task-confirm-title">{confirmation === "all" ? "Hapus semua task?" : confirmation === "completed" ? "Hapus task selesai?" : "Hapus task?"}</h2>
+            <p>{confirmation === "all" ? "Semua task akan dihapus permanen." : confirmation === "completed" ? "Semua task di archive akan dihapus permanen." : `Task "${taskToDelete?.title ?? ""}" akan dihapus permanen.`}</p>
+            <div className="task-confirm-actions">
+              <button type="button" className="secondary-button" onClick={() => { setConfirmation(null); setActiveTaskId(null); }} disabled={submitting}>Batal</button>
+              <button type="button" className="danger-button" onClick={() => void confirmDelete()} disabled={submitting}>{submitting ? "Menghapus..." : "Hapus"}</button>
+            </div>
+          </section>
+        </div>,
+        document.body
+      )}
+      {notePickerOpen && mounted && createPortal(
         <NoteTaskPickerModal
           notes={notes ?? []}
           tasks={tasks}
@@ -256,7 +265,8 @@ export function TaskManagement({
           }}
           onClose={() => setNotePickerOpen(false)}
           onOpenNotes={onOpenNotes}
-        />
+        />,
+        document.body
       )}
     </section>
   );
