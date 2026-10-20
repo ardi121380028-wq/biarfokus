@@ -25,23 +25,23 @@ drop policy if exists "Users can view their own kanban boards" on public.kanban_
 create policy "Users can view their own kanban boards"
   on public.kanban_boards for select
   to authenticated
-  using (auth.uid() = user_id);
+  using (auth.uid()::text = user_id::text);
 
 drop policy if exists "Users can insert their own kanban boards" on public.kanban_boards;
 create policy "Users can insert their own kanban boards"
   on public.kanban_boards for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check (auth.uid()::text = user_id::text);
 
 drop policy if exists "Users can update their own kanban boards" on public.kanban_boards;
 create policy "Users can update their own kanban boards"
   on public.kanban_boards for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using (auth.uid()::text = user_id::text)
+  with check (auth.uid()::text = user_id::text);
 
 drop policy if exists "Users can delete their own kanban boards" on public.kanban_boards;
 create policy "Users can delete their own kanban boards"
   on public.kanban_boards for delete
   to authenticated
-  using (auth.uid() = user_id);
+  using (auth.uid()::text = user_id::text);

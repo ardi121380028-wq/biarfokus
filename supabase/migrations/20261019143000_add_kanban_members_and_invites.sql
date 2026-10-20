@@ -176,7 +176,7 @@ create policy "Users can view accessible kanban boards"
   on public.kanban_boards for select
   to authenticated
   using (
-    auth.uid() = user_id
+    auth.uid()::text = user_id::text
     or public.is_board_member(id)
   );
 
@@ -186,11 +186,11 @@ create policy "Users can update accessible kanban boards"
   on public.kanban_boards for update
   to authenticated
   using (
-    auth.uid() = user_id
+    auth.uid()::text = user_id::text
     or public.get_board_role(id) in ('owner', 'editor')
   )
   with check (
-    auth.uid() = user_id
+    auth.uid()::text = user_id::text
     or public.get_board_role(id) in ('owner', 'editor')
   );
 
@@ -200,7 +200,7 @@ create policy "Owners can delete kanban boards"
   on public.kanban_boards for delete
   to authenticated
   using (
-    auth.uid() = user_id
+    auth.uid()::text = user_id::text
     or public.get_board_role(id) = 'owner'
   );
 
