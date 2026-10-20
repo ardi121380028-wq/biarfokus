@@ -66,13 +66,20 @@ export const metadata: Metadata = {
   },
 };
 
+import { AppProvider } from "@/app/providers/app-provider";
+import { AppShell } from "@/app/components/app-shell";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="id"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AppProvider>
+          <AppShell>{children}</AppShell>
+        </AppProvider>
+      </body>
     </html>
   );
 }

@@ -13,6 +13,15 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    return [
+      { source: "/calendar", destination: "/kalender", permanent: true },
+      { source: "/notes", destination: "/catatan", permanent: true },
+      { source: "/stats", destination: "/statistik", permanent: true },
+      { source: "/pricing", destination: "/upgrade", permanent: true },
+      { source: "/pro", destination: "/upgrade", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -216,15 +216,16 @@ export function KanbanView({
   );
 
   // Month and Year format for Catatan-style headline
-  const currentMonthYear = useMemo(() => {
+  const [currentMonthYear, setCurrentMonthYear] = useState("Bulan Ini");
+  useEffect(() => {
     try {
-      return new Intl.DateTimeFormat("id-ID", {
-        month: "long",
-        year: "numeric",
-      }).format(new Date());
-    } catch {
-      return "Bulan Ini";
-    }
+      setCurrentMonthYear(
+        new Intl.DateTimeFormat("id-ID", {
+          month: "long",
+          year: "numeric",
+        }).format(new Date()),
+      );
+    } catch {}
   }, []);
 
   const totalCardsCount = useMemo(() => {
