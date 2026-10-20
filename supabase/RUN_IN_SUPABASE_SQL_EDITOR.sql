@@ -130,13 +130,13 @@ as $$
   select exists (
     select 1
     from public.kanban_board_members
-    where board_id = check_board_id
-      and user_id = coalesce(check_user_id, auth.uid())
+    where board_id::text = check_board_id::text
+      and user_id::text = coalesce(check_user_id::text, auth.uid()::text)
   ) or exists (
     select 1
     from public.kanban_boards
-    where id = check_board_id
-      and user_id = coalesce(check_user_id, auth.uid())
+    where id::text = check_board_id::text
+      and user_id::text = coalesce(check_user_id::text, auth.uid()::text)
   );
 $$;
 
@@ -151,16 +151,16 @@ as $$
     (
       select role
       from public.kanban_board_members
-      where board_id = check_board_id
-        and user_id = coalesce(check_user_id, auth.uid())
+      where board_id::text = check_board_id::text
+        and user_id::text = coalesce(check_user_id::text, auth.uid()::text)
       limit 1
     ),
     case
       when exists (
         select 1
         from public.kanban_boards
-        where id = check_board_id
-          and user_id = coalesce(check_user_id, auth.uid())
+        where id::text = check_board_id::text
+          and user_id::text = coalesce(check_user_id::text, auth.uid()::text)
       ) then 'owner'
       else null
     end
@@ -256,7 +256,7 @@ create policy "Users can view accessible kanban boards"
   on public.kanban_boards for select
   to authenticated
   using (
-    auth.uid() = user_id
+    auth.uid()::text = user_id::text
     or public.is_board_member(id)
   );
 
@@ -264,7 +264,7 @@ drop policy if exists "Users can insert their own kanban boards" on public.kanba
 create policy "Users can insert their own kanban boards"
   on public.kanban_boards for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check (auth.uid()::text = user_id::text);
 
 drop policy if exists "Users can update their own kanban boards" on public.kanban_boards;
 drop policy if exists "Users can update accessible kanban boards" on public.kanban_boards;
@@ -272,11 +272,11 @@ create policy "Users can update accessible kanban boards"
   on public.kanban_boards for update
   to authenticated
   using (
-    auth.uid() = user_id
+    auth.uid()::text = user_id::text
     or public.get_board_role(id) in ('owner', 'editor')
   )
   with check (
-    auth.uid() = user_id
+    auth.uid()::text = user_id::text
     or public.get_board_role(id) in ('owner', 'editor')
   );
 
@@ -286,7 +286,7 @@ create policy "Owners can delete kanban boards"
   on public.kanban_boards for delete
   to authenticated
   using (
-    auth.uid() = user_id
+    auth.uid()::text = user_id::text
     or public.get_board_role(id) = 'owner'
   );
 
@@ -304,7 +304,7 @@ create policy "Owners can manage board members"
   to authenticated
   using (
     public.get_board_role(board_id) = 'owner'
-    or auth.uid() = user_id
+    or auth.uid()::text = user_id::text
   );
 
 drop policy if exists "Members can view invites" on public.kanban_board_invites;

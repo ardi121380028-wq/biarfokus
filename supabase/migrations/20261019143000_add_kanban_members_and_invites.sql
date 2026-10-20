@@ -47,13 +47,13 @@ as $$
   select exists (
     select 1
     from public.kanban_board_members
-    where board_id = check_board_id
-      and user_id = coalesce(check_user_id, auth.uid())
+    where board_id::text = check_board_id::text
+      and user_id::text = coalesce(check_user_id::text, auth.uid()::text)
   ) or exists (
     select 1
     from public.kanban_boards
-    where id = check_board_id
-      and user_id = coalesce(check_user_id, auth.uid())
+    where id::text = check_board_id::text
+      and user_id::text = coalesce(check_user_id::text, auth.uid()::text)
   );
 $$;
 
@@ -68,16 +68,16 @@ as $$
     (
       select role
       from public.kanban_board_members
-      where board_id = check_board_id
-        and user_id = coalesce(check_user_id, auth.uid())
+      where board_id::text = check_board_id::text
+      and user_id::text = coalesce(check_user_id::text, auth.uid()::text)
       limit 1
     ),
     case
       when exists (
         select 1
         from public.kanban_boards
-        where id = check_board_id
-          and user_id = coalesce(check_user_id, auth.uid())
+        where id::text = check_board_id::text
+      and user_id::text = coalesce(check_user_id::text, auth.uid()::text)
       ) then 'owner'
       else null
     end
@@ -219,7 +219,7 @@ create policy "Owners can manage board members"
   to authenticated
   using (
     public.get_board_role(board_id) = 'owner'
-    or auth.uid() = user_id
+    or auth.uid()::text = user_id::text
   );
 
 -- Policies for kanban_board_invites
