@@ -118,22 +118,31 @@ export default function Home() {
     if (typeof window !== "undefined") {
       try {
         const url = new URL(window.location.href);
+        // Explicit invite links always open Kanban
         if (url.searchParams.has("kanbanInvite") || url.searchParams.has("invite")) {
           return "kanban";
         }
-        if (url.searchParams.get("view") === "kanban" || window.location.hash === "#kanban") {
+        if (url.searchParams.get("view") === "kanban") {
           return "kanban";
         }
-        const savedView = window.localStorage.getItem("biarfokus.activeView");
+
+        // Clean up legacy hash leftover in browser address bar if present
+        if (window.location.hash === "#kanban") {
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+
+        // Only restore view on page refresh within the same session (sessionStorage)
+        // First-time opens in a new tab or browser session will naturally default to "timer"
+        const sessionSavedView = window.sessionStorage.getItem("biarfokus.activeView");
         if (
-          savedView === "kanban" ||
-          savedView === "notes" ||
-          savedView === "calendar" ||
-          savedView === "stats" ||
-          savedView === "pricing" ||
-          savedView === "admin"
+          sessionSavedView === "kanban" ||
+          sessionSavedView === "notes" ||
+          sessionSavedView === "calendar" ||
+          sessionSavedView === "stats" ||
+          sessionSavedView === "pricing" ||
+          sessionSavedView === "admin"
         ) {
-          return savedView as View;
+          return sessionSavedView as View;
         }
       } catch {
         // Safe URL check
@@ -142,18 +151,13 @@ export default function Home() {
     return "timer";
   });
 
-  // Persist active view on browser refresh
+  // Persist active view on browser refresh within session, clean up stale localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        window.localStorage.setItem("biarfokus.activeView", activeView);
-        if (activeView === "kanban") {
-          if (window.location.hash !== "#kanban") {
-            window.history.replaceState(null, "", "#kanban");
-          }
-        } else if (window.location.hash === "#kanban") {
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        }
+        // Clean up old stale localStorage key so it doesn't force Kanban on new sessions
+        window.localStorage.removeItem("biarfokus.activeView");
+        window.sessionStorage.setItem("biarfokus.activeView", activeView);
       } catch {}
     }
   }, [activeView]);
