@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KanbanBoard, KanbanCard } from "@/types/domain";
 import { useLocalStoreValue } from "@/lib/storage/local-store";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -21,6 +21,32 @@ import {
   updateListTitle as serviceUpdateListTitle,
 } from "./kanban-service";
 import { deleteCloudBoard, loadCloudBoards, upsertCloudBoard } from "./kanban-cloud";
+
+export type KanbanSyncStatus = "synced" | "saving" | "offline" | "error";
+
+const DELETED_BOARDS_PREFIX = "biarfokus.kanban.deleted";
+
+function getDeletedBoardIds(userId?: string | null): Set<string> {
+  if (typeof window === "undefined" || !userId) return new Set();
+  try {
+    const raw = window.localStorage.getItem(`${DELETED_BOARDS_PREFIX}.${userId}`);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch {}
+  return new Set();
+}
+
+function markBoardDeleted(boardId: string, userId?: string | null): void {
+  if (typeof window === "undefined" || !userId) return;
+  try {
+    const set = getDeletedBoardIds(userId);
+    set.add(boardId);
+    const arr = Array.from(set).slice(-100);
+    window.localStorage.setItem(`${DELETED_BOARDS_PREFIX}.${userId}`, JSON.stringify(arr));
+  } catch {}
+}
 
 const EMPTY_FALLBACK_BOARD: KanbanBoard = {
   id: "",
@@ -46,6 +72,9 @@ export function useKanban(userId?: string | null) {
     "",
   );
 
+  const [syncStatus, setSyncStatus] = useState<KanbanSyncStatus>(userId ? "saving" : "offline");
+  const syncInProgressRef = useRef(false);
+
   const activeBoardId = useMemo(() => {
     const clean = parseStoredBoardId(activeBoardIdRaw);
     return clean || (boards[0]?.id ?? "");
@@ -67,50 +96,127 @@ export function useKanban(userId?: string | null) {
     [setActiveBoardIdRaw],
   );
 
-  // Cloud sync on mount when authenticated
+  // Core Bidirectional Cloud Sync
+  const performCloudSync = useCallback(async () => {
+    if (!userId) {
+      setSyncStatus("offline");
+      return;
+    }
+    if (syncInProgressRef.current) return;
+    syncInProgressRef.current = true;
+    setSyncStatus("saving");
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const cloudBoards = await loadCloudBoards(supabase, userId);
+      const deletedIds = getDeletedBoardIds(userId);
+      const cloudIds = new Set(cloudBoards.map((b) => b.id));
+
+      updateBoards((currentLocal) => {
+        // Exclude boards marked as deleted
+        const activeLocal = currentLocal.filter((b) => !deletedIds.has(b.id));
+
+        // Find boards in local that have not yet reached the cloud (e.g. created offline / before DB setup)
+        const unsyncedLocal = activeLocal.filter((b) => !cloudIds.has(b.id));
+
+        // Immediately upload unsynced boards to Supabase cloud
+        if (unsyncedLocal.length > 0) {
+          for (const localBoard of unsyncedLocal) {
+            void upsertCloudBoard(supabase, userId, { ...localBoard, userId });
+          }
+        }
+
+        if (cloudBoards.length > 0) {
+          const activeCloud = cloudBoards.filter((b) => !deletedIds.has(b.id));
+          const combined = [...activeCloud, ...unsyncedLocal];
+          const seen = new Set<string>();
+          return combined.filter((b) => {
+            if (seen.has(b.id)) return false;
+            seen.add(b.id);
+            return true;
+          });
+        }
+
+        // If cloud is empty, upload all valid local boards
+        if (activeLocal.length > 0) {
+          for (const b of activeLocal) {
+            void upsertCloudBoard(supabase, userId, { ...b, userId });
+          }
+        }
+        return activeLocal;
+      });
+
+      // Clear guest boards to prevent bleed-through
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.removeItem("biarfokus.kanban.guest.boards");
+        } catch {}
+      }
+
+      setSyncStatus("synced");
+    } catch (err) {
+      console.warn("[BiarFokus Kanban] Cloud sync error:", err);
+      setSyncStatus("error");
+    } finally {
+      syncInProgressRef.current = false;
+    }
+  }, [userId, updateBoards]);
+
+  // Real-time synchronization + Mount + Window/Tab Focus
   useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
+    if (!userId) {
+      setSyncStatus("offline");
+      return;
+    }
+
+    let isCancelled = false;
     let supabase: ReturnType<typeof getSupabaseBrowserClient>;
     try {
       supabase = getSupabaseBrowserClient();
     } catch {
+      setSyncStatus("offline");
       return;
     }
 
-    void loadCloudBoards(supabase, userId).then((cloudBoards) => {
-      if (cancelled) return;
-      // If user has boards in cloud, cloud is the authoritative source of truth
-      if (cloudBoards && cloudBoards.length > 0) {
-        updateBoards(() => cloudBoards);
-        // Clear old guest boards so they never conflict
-        if (typeof window !== "undefined") {
-          try {
-            window.localStorage.removeItem("biarfokus.kanban.guest.boards");
-          } catch {}
-        }
-      } else {
-        // If cloud is empty, check if user had local boards from before login (first-time onboarding)
-        updateBoards((currentLocal) => {
-          if (currentLocal.length > 0) {
-            for (const local of currentLocal) {
-              void upsertCloudBoard(supabase, userId, { ...local, userId });
-            }
-            if (typeof window !== "undefined") {
-              try {
-                window.localStorage.removeItem("biarfokus.kanban.guest.boards");
-              } catch {}
-            }
+    // 1. Initial sync on mount or auth change
+    void performCloudSync();
+
+    // 2. Real-time Supabase postgres_changes channel
+    const channelName = `kanban_realtime_${userId}_${Date.now()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "kanban_boards",
+        },
+        () => {
+          if (!isCancelled) {
+            void performCloudSync();
           }
-          return currentLocal;
-        });
+        },
+      )
+      .subscribe();
+
+    // 3. Tab visibility and window focus listeners (e.g. mobile browser returns from sleep/background)
+    function handleFocusOrVisibility() {
+      if (document.visibilityState === "visible" && !isCancelled) {
+        void performCloudSync();
       }
-    });
+    }
+
+    window.addEventListener("focus", handleFocusOrVisibility);
+    document.addEventListener("visibilitychange", handleFocusOrVisibility);
 
     return () => {
-      cancelled = true;
+      isCancelled = true;
+      void supabase.removeChannel(channel);
+      window.removeEventListener("focus", handleFocusOrVisibility);
+      document.removeEventListener("visibilitychange", handleFocusOrVisibility);
     };
-  }, [userId, updateBoards]);
+  }, [userId, performCloudSync]);
 
   // Resolve current active board safely
   const activeBoard = useMemo(() => {
@@ -119,13 +225,16 @@ export function useKanban(userId?: string | null) {
   }, [boards, activeBoardId]);
 
   const syncBoardToCloud = useCallback(
-    (board: KanbanBoard) => {
+    async (board: KanbanBoard) => {
       if (!userId) return;
+      setSyncStatus("saving");
       try {
         const supabase = getSupabaseBrowserClient();
-        void upsertCloudBoard(supabase, userId, board);
+        const ok = await upsertCloudBoard(supabase, userId, board);
+        setSyncStatus(ok ? "synced" : "error");
       } catch (err) {
         console.warn("Could not sync kanban board to cloud:", err);
+        setSyncStatus("error");
       }
     },
     [userId],
@@ -140,7 +249,7 @@ export function useKanban(userId?: string | null) {
       }
       updateBoards((current) => [board, ...current]);
       selectBoard(board.id);
-      syncBoardToCloud(board);
+      void syncBoardToCloud(board);
       return board;
     },
     [updateBoards, selectBoard, syncBoardToCloud, userId],
@@ -158,13 +267,15 @@ export function useKanban(userId?: string | null) {
           return b;
         }),
       );
-      if (updatedBoard) syncBoardToCloud(updatedBoard);
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
     },
     [updateBoards, syncBoardToCloud],
   );
 
   const deleteBoard = useCallback(
     (boardId: string) => {
+      markBoardDeleted(boardId, userId);
+
       updateBoards((current) => {
         const next = current.filter((b) => b.id !== boardId);
         return next;
@@ -218,7 +329,7 @@ export function useKanban(userId?: string | null) {
           return b;
         }),
       );
-      if (updatedBoard) syncBoardToCloud(updatedBoard);
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
     },
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
@@ -235,7 +346,7 @@ export function useKanban(userId?: string | null) {
           return b;
         }),
       );
-      if (updatedBoard) syncBoardToCloud(updatedBoard);
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
     },
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
@@ -252,7 +363,7 @@ export function useKanban(userId?: string | null) {
           return b;
         }),
       );
-      if (updatedBoard) syncBoardToCloud(updatedBoard);
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
     },
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
@@ -269,7 +380,7 @@ export function useKanban(userId?: string | null) {
           return b;
         }),
       );
-      if (updatedBoard) syncBoardToCloud(updatedBoard);
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
     },
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
@@ -286,7 +397,7 @@ export function useKanban(userId?: string | null) {
           return b;
         }),
       );
-      if (updatedBoard) syncBoardToCloud(updatedBoard);
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
     },
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
@@ -303,7 +414,7 @@ export function useKanban(userId?: string | null) {
           return b;
         }),
       );
-      if (updatedBoard) syncBoardToCloud(updatedBoard);
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
     },
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
@@ -320,7 +431,7 @@ export function useKanban(userId?: string | null) {
           return b;
         }),
       );
-      if (updatedBoard) syncBoardToCloud(updatedBoard);
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
     },
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
@@ -337,7 +448,7 @@ export function useKanban(userId?: string | null) {
           return b;
         }),
       );
-      if (updatedBoard) syncBoardToCloud(updatedBoard);
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
     },
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
@@ -360,6 +471,8 @@ export function useKanban(userId?: string | null) {
     boards,
     activeBoard,
     activeBoardId,
+    syncStatus,
+    forceSync: performCloudSync,
     selectBoard,
     setActiveBoardId: selectBoard,
     createBoard,

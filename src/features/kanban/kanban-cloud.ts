@@ -55,7 +55,7 @@ export async function upsertCloudBoard(
   supabase: SupabaseClient,
   userId: string,
   board: KanbanBoard,
-): Promise<void> {
+): Promise<boolean> {
   try {
     const payload = {
       id: board.id,
@@ -72,12 +72,15 @@ export async function upsertCloudBoard(
     if (error) {
       if (error.code === "42P01" || error.message?.includes("does not exist")) {
         console.warn("[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor.");
-        return;
+        return false;
       }
-      throw error;
+      console.warn("Cloud kanban upsert error:", error);
+      return false;
     }
+    return true;
   } catch (err) {
     console.warn("Cloud kanban upsert skipped or failed.", err);
+    return false;
   }
 }
 

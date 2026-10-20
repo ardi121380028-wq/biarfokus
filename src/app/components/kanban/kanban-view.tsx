@@ -48,6 +48,8 @@ export function KanbanView({
     boards,
     activeBoard,
     activeBoardId,
+    syncStatus,
+    forceSync,
     selectBoard,
     createBoard,
     updateBoard,
@@ -536,6 +538,41 @@ export function KanbanView({
               aria-label="Cari kartu"
             >
               🔍
+            </button>
+
+            {/* Realtime Cloud Sync Status Badge */}
+            <button
+              type="button"
+              className={`kanban-sync-status-badge ${syncStatus}`}
+              onClick={() => {
+                if (!userId && onRequireLogin) {
+                  onRequireLogin();
+                } else {
+                  void forceSync();
+                }
+              }}
+              title={
+                syncStatus === "synced"
+                  ? "Tersinkron dengan cloud Supabase (Klik untuk perbarui data)"
+                  : syncStatus === "saving"
+                    ? "Sedang menyimpan ke cloud..."
+                    : syncStatus === "offline"
+                      ? "Mode Lokal / Belum login (Klik untuk login & sinkronkan)"
+                      : "Gagal tersambung ke cloud (Klik untuk coba lagi)"
+              }
+            >
+              <span className="sync-status-icon">
+                {syncStatus === "synced" && "☁️"}
+                {syncStatus === "saving" && "⏳"}
+                {syncStatus === "offline" && "💻"}
+                {syncStatus === "error" && "⚠️"}
+              </span>
+              <span className="sync-status-text">
+                {syncStatus === "synced" && "Tersinkron"}
+                {syncStatus === "saving" && "Menyimpan..."}
+                {syncStatus === "offline" && "Mode Lokal"}
+                {syncStatus === "error" && "Coba Lagi"}
+              </span>
             </button>
 
             {/* Share & Invite Button */}
