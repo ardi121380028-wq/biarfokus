@@ -16,7 +16,7 @@ type NotesSidebarProps = {
   onSelectLabel: (label: string | null) => void;
   getLabelCount: (label: string) => number;
   onCreateLabel: (name: string) => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   dark?: boolean;
   onToggleDark?: () => void;
@@ -44,7 +44,7 @@ export function NotesSidebar({
   const [newLabelInput, setNewLabelInput] = useState("");
   const [showAddLabel, setShowAddLabel] = useState(false);
 
-  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") {
+  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       if (!isCollapsed) onToggleCollapse();
     }
@@ -158,6 +158,15 @@ export function NotesSidebar({
           >
             <span className="nav-icon">📋</span>
             {!isCollapsed && <span className="nav-label">Project Kanban</span>}
+          </button>
+          <button
+            type="button"
+            className="kanban-sidebar-nav-item"
+            onClick={() => handleNavigate("stats")}
+            title="Statistik Produktivitas"
+          >
+            <span className="nav-icon">📊</span>
+            {!isCollapsed && <span className="nav-label">Statistik</span>}
           </button>
           <button
             type="button"

@@ -11,7 +11,7 @@ type KanbanSidebarProps = {
   onSelectBoard: (boardId: string) => void;
   onCreateBoardModalOpen: () => void;
   onDeleteBoard: (boardId: string) => void;
-  onNavigate: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
+  onNavigate: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   onOpenShare?: () => void;
   dark?: boolean;
@@ -38,7 +38,7 @@ export function KanbanSidebar({
     b.title.toLowerCase().includes(searchBoard.trim().toLowerCase()),
   );
 
-  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") {
+  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       if (!isCollapsed) onToggleCollapse();
     }
@@ -139,11 +139,20 @@ export function KanbanSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
+            onClick={() => handleNavigate("stats")}
+            title="Statistik Produktivitas"
+          >
+            <span className="nav-icon">📊</span>
+            {!isCollapsed && <span className="nav-label">Statistik</span>}
+          </button>
+          <button
+            type="button"
+            className="kanban-sidebar-nav-item"
             onClick={() => handleNavigate("pricing")}
             title="Upgrade Pro"
           >
             <span className="nav-icon">💎</span>
-            {!isCollapsed && <span className="nav-label">BiarFokus Pro</span>}
+            {!isCollapsed && <span className="nav-label">Upgrade Pro</span>}
           </button>
         </nav>
       </div>

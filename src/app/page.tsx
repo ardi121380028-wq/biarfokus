@@ -182,7 +182,6 @@ export default function Home() {
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [accountModalTab, setAccountModalTab] = useState<"profile" | "stats">("profile");
   const [notesOpen, setNotesOpen] = useState(false);
   const [pomodoroModalOpen, setPomodoroModalOpen] = useState(false);
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
@@ -794,8 +793,8 @@ export default function Home() {
                 {profileMenuOpen && <ProfileMenu
                   userName={userName}
                   isAdmin={isAdminRole(userRole)}
-                  onAccount={() => { setAccountModalTab("profile"); setAccountOpen(true); setProfileMenuOpen(false); }}
-                  onStats={() => { setAccountModalTab("stats"); setAccountOpen(true); setProfileMenuOpen(false); }}
+                  onAccount={() => { setAccountOpen(true); setProfileMenuOpen(false); }}
+                  onStats={() => { setActiveView("stats"); setProfileMenuOpen(false); }}
                   onPremium={() => { setActiveView("pricing"); setProfileMenuOpen(false); }}
                   onAdmin={() => { setActiveView("admin"); setProfileMenuOpen(false); }}
                   onShortcuts={() => { setShortcutsOpen(true); setProfileMenuOpen(false); }}
@@ -878,19 +877,13 @@ export default function Home() {
           onOpenSettings={() => setShowSettings(true)}
           onOpenProfile={() => {
             if (user) {
-              setAccountModalTab("profile");
               setAccountOpen(true);
             } else {
               setLoginOpen(true);
             }
           }}
           onOpenStats={() => {
-            if (user) {
-              setAccountModalTab("stats");
-              setAccountOpen(true);
-            } else {
-              setLoginOpen(true);
-            }
+            setActiveView("stats");
           }}
           onNavigate={(targetView) => setActiveView(targetView as View)}
           onRequireLogin={() => setLoginOpen(true)}
@@ -909,19 +902,13 @@ export default function Home() {
           onOpenSettings={() => setShowSettings(true)}
           onOpenProfile={() => {
             if (user) {
-              setAccountModalTab("profile");
               setAccountOpen(true);
             } else {
               setLoginOpen(true);
             }
           }}
           onOpenStats={() => {
-            if (user) {
-              setAccountModalTab("stats");
-              setAccountOpen(true);
-            } else {
-              setLoginOpen(true);
-            }
+            setActiveView("stats");
           }}
           onNavigate={(targetView) => setActiveView(targetView as View)}
           onNavigateToNotes={() => setActiveView("notes")}
@@ -941,7 +928,6 @@ export default function Home() {
           onOpenSettings={() => setShowSettings(true)}
           onOpenProfile={() => {
             if (user) {
-              setAccountModalTab("profile");
               setAccountOpen(true);
             } else {
               setLoginOpen(true);
@@ -958,7 +944,15 @@ export default function Home() {
         />
       )}
 
-      {activeView === "stats" && <StatsView key={user?.id ?? "guest"} supabase={getSupabaseBrowserClient()} userId={user?.id ?? null} completedTasks={completedTasks} />}
+      {activeView === "stats" && (
+        <StatsView
+          key={user?.id ?? "guest"}
+          supabase={getSupabaseBrowserClient()}
+          userId={user?.id ?? null}
+          completedTasks={completedTasks}
+          onGoTimer={() => setActiveView("timer")}
+        />
+      )}
       {activeView === "pricing" && (
         <PricingView
           userId={user?.id ?? null}
@@ -1046,8 +1040,6 @@ export default function Home() {
           user={user}
           userName={userName}
           supabase={getSupabaseBrowserClient()}
-          initialTab={accountModalTab}
-          completedTasks={completedTasks}
           onSaved={setProfileDisplayName}
           onClose={() => setAccountOpen(false)}
         />

@@ -24,7 +24,7 @@ type CalendarTopbarProps = {
   userName?: string;
   userAvatar?: string | null;
   onRequireLogin?: () => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
 };
 
 export function CalendarTopbar({

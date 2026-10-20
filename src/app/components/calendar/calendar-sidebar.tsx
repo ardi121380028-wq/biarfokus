@@ -19,7 +19,7 @@ type CalendarSidebarProps = {
     recurring: boolean;
   };
   onToggleCategoryFilter: (category: "event" | "task" | "recurring") => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   dark?: boolean;
   onToggleDark?: () => void;
@@ -56,7 +56,7 @@ export function CalendarSidebar({
 
   const today = new Date();
 
-  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") {
+  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       if (!isCollapsed) onToggleCollapse();
     }
@@ -157,11 +157,20 @@ export function CalendarSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
+            onClick={() => handleNavigate("stats")}
+            title="Statistik Produktivitas"
+          >
+            <span className="nav-icon">📊</span>
+            {!isCollapsed && <span className="nav-label">Statistik</span>}
+          </button>
+          <button
+            type="button"
+            className="kanban-sidebar-nav-item"
             onClick={() => handleNavigate("pricing")}
             title="Upgrade Pro"
           >
             <span className="nav-icon">💎</span>
-            {!isCollapsed && <span className="nav-label">BiarFokus Pro</span>}
+            {!isCollapsed && <span className="nav-label">Upgrade Pro</span>}
           </button>
         </nav>
       </div>

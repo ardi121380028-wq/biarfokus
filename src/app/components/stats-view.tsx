@@ -19,6 +19,7 @@ type StatsViewProps = {
   userId: string | null;
   completedTasks: number;
   embedded?: boolean;
+  onGoTimer?: () => void;
 };
 
 type LoadedStats = {
@@ -52,7 +53,13 @@ function getErrorMessage(error: unknown) {
   return "Gagal memuat statistik.";
 }
 
-export function StatsView({ supabase, userId, completedTasks, embedded = false }: StatsViewProps) {
+export function StatsView({
+  supabase,
+  userId,
+  completedTasks,
+  embedded = false,
+  onGoTimer,
+}: StatsViewProps) {
   const [stats, setStats] = useState<LoadedStats | null>(null);
   const [range, setRange] = useState<StatsRange>("week");
   const [loading, setLoading] = useState(true);
@@ -116,9 +123,19 @@ export function StatsView({ supabase, userId, completedTasks, embedded = false }
   if (!userId) {
     return (
       <div className={containerClass}>
-        {!embedded && <p className="eyebrow">Ringkasan produktivitas</p>}
-        {!embedded && <h1>Statistik produktivitas</h1>}
+        {!embedded && <p className="eyebrow">Workspace produktivitas</p>}
+        {!embedded && <h1>Statistik Produktivitas</h1>}
         <p className="admin-note">Masuk untuk menyimpan dan melihat histori fokusmu.</p>
+        {!embedded && onGoTimer && (
+          <button
+            type="button"
+            className="secondary-button admin-action-button"
+            onClick={onGoTimer}
+            style={{ marginTop: "16px" }}
+          >
+            ⏱️ Kembali ke Timer
+          </button>
+        )}
       </div>
     );
   }
@@ -126,7 +143,7 @@ export function StatsView({ supabase, userId, completedTasks, embedded = false }
     return (
       <div className={containerClass}>
         {!embedded && <p className="eyebrow">Ringkasan produktivitas</p>}
-        {!embedded && <h1>Statistik produktivitas</h1>}
+        {!embedded && <h1>Statistik Produktivitas</h1>}
         <p className="admin-note">Memuat statistik...</p>
       </div>
     );
@@ -135,10 +152,20 @@ export function StatsView({ supabase, userId, completedTasks, embedded = false }
     return (
       <div className={containerClass}>
         {!embedded && <p className="eyebrow">Ringkasan produktivitas</p>}
-        {!embedded && <h1>Statistik produktivitas</h1>}
+        {!embedded && <h1>Statistik Produktivitas</h1>}
         <p className="task-error" role="alert">
           Gagal memuat statistik: {error ?? "Data statistik tidak tersedia."}
         </p>
+        {!embedded && onGoTimer && (
+          <button
+            type="button"
+            className="secondary-button admin-action-button"
+            onClick={onGoTimer}
+            style={{ marginTop: "16px" }}
+          >
+            ⏱️ Kembali ke Timer
+          </button>
+        )}
       </div>
     );
   }
@@ -150,8 +177,45 @@ export function StatsView({ supabase, userId, completedTasks, embedded = false }
 
   return (
     <div className={containerClass}>
-      {!embedded && <p className="eyebrow">{activeRange.title}</p>}
-      {!embedded && <h1>Statistik produktivitas</h1>}
+      {!embedded ? (
+        <div className="admin-header">
+          <div>
+            <p className="eyebrow">Workspace produktivitas</p>
+            <h1>Statistik &amp; Pencapaian Fokus</h1>
+          </div>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+            {onGoTimer && (
+              <button
+                type="button"
+                className="secondary-button admin-action-button"
+                onClick={onGoTimer}
+              >
+                ⏱️ Kembali ke Timer
+              </button>
+            )}
+            <button
+              type="button"
+              className="secondary-button admin-action-button"
+              onClick={handleExport}
+              disabled={stats?.daily.length === 0}
+            >
+              Export CSV
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "12px" }}>
+          <button
+            type="button"
+            className="secondary-button admin-action-button"
+            onClick={handleExport}
+            disabled={stats?.daily.length === 0}
+          >
+            Export CSV
+          </button>
+        </div>
+      )}
+
       <div className="stats-toolbar">
         <div className="range-tabs" role="group" aria-label="Rentang statistik">
           {rangeOptions.map((option) => (
@@ -166,14 +230,9 @@ export function StatsView({ supabase, userId, completedTasks, embedded = false }
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className="secondary-button admin-action-button"
-          onClick={handleExport}
-          disabled={stats?.daily.length === 0}
-        >
-          Export CSV
-        </button>
+        <span style={{ fontSize: "13px", color: "var(--muted)", fontWeight: 600 }}>
+          {activeRange.title}
+        </span>
       </div>
       <div className="stat-grid">
         <div className="stat-card">

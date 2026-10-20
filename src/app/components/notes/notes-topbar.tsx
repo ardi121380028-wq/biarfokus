@@ -15,7 +15,7 @@ type NotesTopbarProps = {
   userName?: string;
   userAvatar?: string | null;
   onRequireLogin?: () => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
 };
 
 export function NotesTopbar({
@@ -189,7 +189,7 @@ export function NotesTopbar({
                     onNavigate("pricing");
                   }}
                 >
-                  💎 Langganan Pro
+                  💎 Upgrade Pro
                 </button>
               )}
             </div>
