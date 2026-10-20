@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addMonths,
   getMonthGrid,
@@ -40,6 +40,10 @@ export function CalendarSidebar({
 }: CalendarSidebarProps) {
   // Mini calendar month navigation
   const [miniMonthAnchor, setMiniMonthAnchor] = useState<Date>(() => new Date(anchorDate));
+
+  useEffect(() => {
+    setMiniMonthAnchor(new Date(anchorDate));
+  }, [anchorDate]);
 
   const miniGrid = useMemo(() => getMonthGrid(miniMonthAnchor, true), [miniMonthAnchor]);
 
@@ -210,35 +214,38 @@ export function CalendarSidebar({
           </div>
 
           <div className="cal-mini-weekdays-row">
-            {["S", "S", "R", "K", "J", "S", "M"].map((lbl, idx) => (
-              <span key={idx} className="cal-mini-weekday-label">
+            {["M", "S", "S", "R", "K", "J", "S"].map((lbl, idx) => (
+              <span key={idx} className="cal-mini-weekday-cell">
                 {lbl}
               </span>
             ))}
           </div>
 
-          <div className="cal-mini-grid">
-            {miniGrid.map((d, dIdx) => {
-              const isCurrentMonth = d.getMonth() === miniMonthAnchor.getMonth();
-              const isSelected = isSameDay(d, anchorDate);
-              const isTodayDate = isSameDay(d, today);
+          <div className="cal-mini-days-grid">
+            {miniGrid.map((day, idx) => {
+              const isCurrentMonth = day.getMonth() === miniMonthAnchor.getMonth();
+              const isSelected = isSameDay(day, anchorDate);
+              const isTodayDate = isSameDay(day, today);
 
               return (
                 <button
-                  key={dIdx}
+                  key={idx}
                   type="button"
-                  className={`cal-mini-cell ${!isCurrentMonth ? "is-other-month" : ""} ${
-                    isSelected ? "is-selected" : ""
-                  } ${isTodayDate ? "is-today" : ""}`}
-                  onClick={() => handleSelectDate(d)}
-                  title={d.toLocaleDateString("id-ID", {
+                  className={`cal-mini-day-cell ${isSelected ? "selected" : ""} ${
+                    isTodayDate ? "today" : ""
+                  } ${!isCurrentMonth ? "outside" : ""}`}
+                  onClick={() => {
+                    handleSelectDate(day);
+                    setMiniMonthAnchor(day);
+                  }}
+                  title={day.toLocaleDateString("id-ID", {
                     weekday: "long",
                     day: "numeric",
                     month: "long",
                     year: "numeric",
                   })}
                 >
-                  {d.getDate()}
+                  {day.getDate()}
                 </button>
               );
             })}
