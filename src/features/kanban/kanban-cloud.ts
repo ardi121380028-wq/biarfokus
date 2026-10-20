@@ -37,7 +37,8 @@ export async function loadCloudBoards(
 
     if (error) {
       // If table doesn't exist yet, gracefully return empty so local fallback is used
-      if (error.code === "42P01" || error.message.includes("does not exist")) {
+      if (error.code === "42P01" || error.message?.includes("does not exist")) {
+        console.warn("[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor.");
         return [];
       }
       throw error;
@@ -69,7 +70,8 @@ export async function upsertCloudBoard(
 
     const { error } = await supabase.from("kanban_boards").upsert(payload);
     if (error) {
-      if (error.code === "42P01" || error.message.includes("does not exist")) {
+      if (error.code === "42P01" || error.message?.includes("does not exist")) {
+        console.warn("[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor.");
         return;
       }
       throw error;
@@ -90,7 +92,13 @@ export async function deleteCloudBoard(
       .delete()
       .eq("id", boardId);
 
-    if (error && error.code !== "42P01") throw error;
+    if (error) {
+      if (error.code === "42P01" || error.message?.includes("does not exist")) {
+        console.warn("[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor.");
+        return;
+      }
+      throw error;
+    }
   } catch (err) {
     console.warn("Cloud kanban delete failed.", err);
   }

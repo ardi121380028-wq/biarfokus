@@ -80,23 +80,27 @@ export function useKanban(userId?: string | null) {
 
     void loadCloudBoards(supabase, userId).then((cloudBoards) => {
       if (cancelled) return;
+      // If user has boards in cloud, cloud is the authoritative source of truth
       if (cloudBoards && cloudBoards.length > 0) {
-        updateBoards((currentLocal) => {
-          const merged = [...cloudBoards];
-          for (const local of currentLocal) {
-            if (!merged.some((cb) => cb.id === local.id)) {
-              const withUser = { ...local, userId: local.userId || userId };
-              merged.push(withUser);
-              void upsertCloudBoard(supabase, userId, withUser);
-            }
-          }
-          return merged;
-        });
+        updateBoards(() => cloudBoards);
+        // Clear old guest boards so they never conflict
+        if (typeof window !== "undefined") {
+          try {
+            window.localStorage.removeItem("biarfokus.kanban.guest.boards");
+          } catch {}
+        }
       } else {
-        // When cloud is empty, back up existing local boards to cloud
+        // If cloud is empty, check if user had local boards from before login (first-time onboarding)
         updateBoards((currentLocal) => {
-          for (const local of currentLocal) {
-            void upsertCloudBoard(supabase, userId, { ...local, userId: local.userId || userId });
+          if (currentLocal.length > 0) {
+            for (const local of currentLocal) {
+              void upsertCloudBoard(supabase, userId, { ...local, userId });
+            }
+            if (typeof window !== "undefined") {
+              try {
+                window.localStorage.removeItem("biarfokus.kanban.guest.boards");
+              } catch {}
+            }
           }
           return currentLocal;
         });
@@ -173,11 +177,30 @@ export function useKanban(userId?: string | null) {
         });
       }
 
+      // Also clean up from guest storage if any ghost copy remains
+      if (typeof window !== "undefined") {
+        try {
+          const guestKey = "biarfokus.kanban.guest.boards";
+          const raw = window.localStorage.getItem(guestKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              window.localStorage.setItem(
+                guestKey,
+                JSON.stringify(parsed.filter((b: { id?: string }) => b?.id !== boardId)),
+              );
+            }
+          }
+        } catch {}
+      }
+
       if (userId) {
         try {
           const supabase = getSupabaseBrowserClient();
           void deleteCloudBoard(supabase, userId, boardId);
-        } catch {}
+        } catch (err) {
+          console.warn("Gagal menghapus papan dari cloud:", err);
+        }
       }
     },
     [updateBoards, activeBoardId, selectBoard, boards, userId],
