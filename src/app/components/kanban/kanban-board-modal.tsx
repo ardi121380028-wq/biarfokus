@@ -12,6 +12,8 @@ type KanbanBoardModalProps = {
   onCreateBoard: (title: string, background?: string, templateKey?: string) => void;
   onDeleteBoard: (boardId: string) => void;
   onClose: () => void;
+  isGuest?: boolean;
+  onRequireLogin?: () => void;
 };
 
 export function KanbanBoardModal({
@@ -21,6 +23,8 @@ export function KanbanBoardModal({
   onCreateBoard,
   onDeleteBoard,
   onClose,
+  isGuest = false,
+  onRequireLogin,
 }: KanbanBoardModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   useOutsideClick(modalRef, onClose);
@@ -99,7 +103,28 @@ export function KanbanBoardModal({
 
         {/* Tab 1: Existing Boards (Screenshot 4) */}
         {activeTab === "boards" && (
-          boards.length === 0 ? (
+          <>
+            {isGuest && (
+              <div className="kanban-guest-sync-notice">
+                <div>
+                  <strong>📱 Mode Tamu Lokal</strong>
+                  <div>Papan ini hanya tersimpan di perangkat ini. Masuk dengan akun kamu agar otomatis tersinkron ke desktop/laptop.</div>
+                </div>
+                {onRequireLogin && (
+                  <button
+                    type="button"
+                    className="kanban-guest-sync-btn"
+                    onClick={() => {
+                      onClose();
+                      onRequireLogin();
+                    }}
+                  >
+                    Masuk Akun
+                  </button>
+                )}
+              </div>
+            )}
+            {boards.length === 0 ? (
             <div className="kanban-empty-boards-modal-state">
               <p>Belum ada board yang tersimpan.</p>
               <button
@@ -170,7 +195,8 @@ export function KanbanBoardModal({
               <span>+ Buat Board Baru</span>
             </div>
           </div>
-          )
+          )}
+          </>
         )}
 
         {/* Tab 2: Templates Library (Screenshot 4) */}
@@ -203,21 +229,20 @@ export function KanbanBoardModal({
         {/* Tab 3: Create Board */}
         {activeTab === "create" && (
           <div className="kanban-create-board-form">
-            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600 }}>
+            <label className="kanban-create-board-label">
               Judul Board
               <input
                 type="text"
                 placeholder="Misal: GT - Growth, Sprint Q4, Redesign App..."
                 value={newBoardTitle}
                 onChange={(e) => setNewBoardTitle(e.target.value)}
-                className="kanban-dialog-title-input"
-                style={{ fontSize: 15, padding: "8px 12px", borderRadius: 10 }}
+                className="kanban-create-board-input"
                 autoFocus
               />
             </label>
 
             <div>
-              <span style={{ display: "block", fontSize: 13, fontWeight: 600, margin: "14px 0 8px" }}>
+              <span className="kanban-create-board-subheading">
                 Pilih Wallpaper &amp; Tema Background
               </span>
               <div className="kanban-bg-grid">

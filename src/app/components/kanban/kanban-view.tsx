@@ -897,6 +897,8 @@ export function KanbanView({
           onCreateBoard={createBoard}
           onDeleteBoard={deleteBoard}
           onClose={() => setBoardModalOpen(false)}
+          isGuest={!userId}
+          onRequireLogin={onRequireLogin}
         />
       )}
 

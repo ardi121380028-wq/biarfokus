@@ -114,36 +114,24 @@ export function useKanban(userId?: string | null) {
 
       updateBoards((currentLocal) => {
         // Exclude boards marked as deleted
+        const activeCloud = cloudBoards.filter((b) => !deletedIds.has(b.id));
+
+        // If cloud has boards, Cloud is the single authoritative source of truth.
+        // We DO NOT merge with stale local boards, so old template boards from previous sessions won't resurrect.
+        if (activeCloud.length > 0) {
+          return activeCloud;
+        }
+
+        // If cloud is completely empty (first time onboarding with local boards):
         const activeLocal = currentLocal.filter((b) => !deletedIds.has(b.id));
-
-        // Find boards in local that have not yet reached the cloud (e.g. created offline / before DB setup)
-        const unsyncedLocal = activeLocal.filter((b) => !cloudIds.has(b.id));
-
-        // Immediately upload unsynced boards to Supabase cloud
-        if (unsyncedLocal.length > 0) {
-          for (const localBoard of unsyncedLocal) {
-            void upsertCloudBoard(supabase, userId, { ...localBoard, userId });
-          }
-        }
-
-        if (cloudBoards.length > 0) {
-          const activeCloud = cloudBoards.filter((b) => !deletedIds.has(b.id));
-          const combined = [...activeCloud, ...unsyncedLocal];
-          const seen = new Set<string>();
-          return combined.filter((b) => {
-            if (seen.has(b.id)) return false;
-            seen.add(b.id);
-            return true;
-          });
-        }
-
-        // If cloud is empty, upload all valid local boards
         if (activeLocal.length > 0) {
           for (const b of activeLocal) {
             void upsertCloudBoard(supabase, userId, { ...b, userId });
           }
+          return activeLocal;
         }
-        return activeLocal;
+
+        return [];
       });
 
       // Clear guest boards to prevent bleed-through
