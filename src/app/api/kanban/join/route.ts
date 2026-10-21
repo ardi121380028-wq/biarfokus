@@ -8,14 +8,14 @@ import {
   resolveCorrelationId,
 } from "@/lib/api/request-guard";
 import { mapDbKanbanBoard } from "@/features/kanban/kanban-cloud";
-import type { DbKanbanBoard } from "@/types/domain";
+import type { DbKanbanBoard, KanbanBoard, KanbanList } from "@/types/domain";
 
 const ROUTE = "/api/kanban/join";
-const limiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
+const limiter = createRateLimiter({ limit: 30, windowMs: 60_000 });
 
 function decodeFallbackInviteToken(
   code: string,
-): { boardId: string; role: "editor" | "viewer"; board?: unknown } | null {
+): { boardId: string; role: "editor" | "viewer"; board?: unknown; ownerName?: string } | null {
   if (!code.startsWith("bf_inv_")) return null;
   let payloadStr = code.slice("bf_inv_".length);
   if (payloadStr.startsWith("viewer_")) {
@@ -32,6 +32,7 @@ function decodeFallbackInviteToken(
         boardId: json.b,
         role: explicitRole,
         board: json.board,
+        ownerName: typeof json.owner === "string" ? json.owner : undefined,
       };
     }
   } catch {
@@ -49,45 +50,138 @@ export async function GET(request: Request) {
     return apiJson({ error: "inviteCode diperlukan." }, { status: 400, correlationId });
   }
 
-  // 1. Check fallback token
+  // 1. Check fallback self-contained token
   const fallback = decodeFallbackInviteToken(rawInviteCode);
   if (fallback) {
+    const fbBoard = fallback.board as Record<string, unknown> | undefined;
     const boardTitle =
-      (fallback.board as { title?: string } | undefined)?.title || "Papan Proyek";
+      (typeof fbBoard?.title === "string" && fbBoard.title) || "Papan Proyek";
+    const mappedBoard: KanbanBoard = {
+      id: fallback.boardId,
+      title: boardTitle,
+      description: typeof fbBoard?.description === "string" ? fbBoard.description : "",
+      background: typeof fbBoard?.background === "string" ? fbBoard.background : "wave-blue",
+      lists: Array.isArray(fbBoard?.lists) ? (fbBoard.lists as KanbanList[]) : [],
+      starred: false,
+      role: fallback.role,
+      isShared: true,
+      createdAt: new Date().toLocaleDateString("id-ID"),
+      updatedAt: new Date().toLocaleDateString("id-ID"),
+    };
+
     return apiJson(
       {
         ok: true,
         boardId: fallback.boardId,
         boardTitle,
         role: fallback.role,
+        ownerName: fallback.ownerName || "Pemilik Papan",
+        board: mappedBoard,
       },
       { correlationId },
     );
   }
 
-  // 2. Check cloud DB invite table
+  // 2. Query database for invite and board preview
   try {
     const supabase = await getSupabaseServerClient();
-    const { data: invite } = await supabase
+
+    // 2a. Try RPC preview function first (security definer, works for guests & members)
+    try {
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("get_kanban_board_preview", {
+        invite_token: rawInviteCode,
+      });
+
+      if (!rpcErr && rpcData && rpcData.ok) {
+        const preview = rpcData as {
+          boardId: string;
+          boardTitle: string;
+          boardDescription?: string;
+          boardBackground?: string;
+          boardLists?: unknown[];
+          role: "editor" | "viewer";
+          ownerName?: string;
+          ownerAvatar?: string | null;
+        };
+
+        const previewBoard: KanbanBoard = {
+          id: preview.boardId,
+          title: preview.boardTitle || "Papan Proyek",
+          description: preview.boardDescription || "",
+          background: preview.boardBackground || "wave-blue",
+          lists: Array.isArray(preview.boardLists) ? (preview.boardLists as KanbanList[]) : [],
+          starred: false,
+          role: preview.role,
+          isShared: true,
+          createdAt: new Date().toLocaleDateString("id-ID"),
+          updatedAt: new Date().toLocaleDateString("id-ID"),
+        };
+
+        return apiJson(
+          {
+            ok: true,
+            boardId: preview.boardId,
+            boardTitle: preview.boardTitle,
+            role: preview.role,
+            ownerName: preview.ownerName || "Pemilik Papan",
+            ownerAvatar: preview.ownerAvatar || null,
+            board: previewBoard,
+          },
+          { correlationId },
+        );
+      }
+    } catch {
+      // RPC might not be applied yet, continue to fallback query
+    }
+
+    // 2b. Direct table query
+    const { data: invite, error: inviteError } = await supabase
       .from("kanban_board_invites")
-      .select("board_id, role, kanban_boards(title)")
+      .select("board_id, role, created_by, kanban_boards(id, user_id, title, description, background, lists)")
       .eq("invite_code", rawInviteCode)
       .maybeSingle();
 
-    if (invite) {
-      const dbBoard = invite.kanban_boards as unknown as { title?: string } | null;
+    if (!inviteError && invite) {
+      const dbBoard = invite.kanban_boards as unknown as DbKanbanBoard | null;
+      let ownerName = "Pemilik Papan";
+      let ownerAvatar: string | null = null;
+
+      if (invite.created_by) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name, avatar_url")
+          .eq("id", invite.created_by)
+          .maybeSingle();
+        if (profile?.display_name) ownerName = profile.display_name;
+        if (profile?.avatar_url) ownerAvatar = profile.avatar_url;
+      }
+
+      const assignedRole = (invite.role as "editor" | "viewer") || "editor";
+      const boardTitle = dbBoard?.title || "Papan Proyek";
+
+      const mappedBoard: KanbanBoard | null = dbBoard
+        ? {
+            ...mapDbKanbanBoard(dbBoard, null),
+            role: assignedRole,
+            isShared: true,
+          }
+        : null;
+
       return apiJson(
         {
           ok: true,
           boardId: invite.board_id,
-          boardTitle: dbBoard?.title || "Papan Proyek",
-          role: (invite.role as "editor" | "viewer") || (rawInviteCode.includes("_viewer_") ? "viewer" : "editor"),
+          boardTitle,
+          role: assignedRole,
+          ownerName,
+          ownerAvatar,
+          board: mappedBoard,
         },
         { correlationId },
       );
     }
-  } catch {
-    // Non-blocking query error
+  } catch (error) {
+    logApiEvent("warn", ROUTE, correlationId, "GET /api/kanban/join database lookup failed", error);
   }
 
   // Inferred fallback
@@ -97,6 +191,8 @@ export async function GET(request: Request) {
       ok: true,
       boardTitle: "Papan Proyek",
       role,
+      ownerName: "Pemilik Papan",
+      board: null,
     },
     { correlationId },
   );
@@ -123,7 +219,7 @@ export async function POST(request: Request) {
     let assignedRole: "editor" | "viewer" = rawInviteCode.includes("_viewer_") ? "viewer" : "editor";
     let embeddedBoard: unknown = null;
 
-    // 1. Check fallback encoded invite token
+    // 1. Check fallback self-contained token
     const fallbackDecoded = decodeFallbackInviteToken(rawInviteCode);
     if (fallbackDecoded) {
       boardId = fallbackDecoded.boardId;
@@ -153,11 +249,23 @@ export async function POST(request: Request) {
             ok?: boolean;
             board_id?: string;
             title?: string;
+            description?: string;
+            background?: string;
+            lists?: unknown[];
             role?: "editor" | "viewer";
           };
           boardId = data.board_id || null;
           boardTitle = data.title || boardTitle;
           assignedRole = data.role || assignedRole;
+
+          if (data.lists) {
+            embeddedBoard = {
+              title: data.title,
+              description: data.description,
+              background: data.background,
+              lists: data.lists,
+            };
+          }
         }
       }
 
@@ -165,7 +273,7 @@ export async function POST(request: Request) {
       if (!boardId) {
         const { data: invite, error: inviteError } = await supabase
           .from("kanban_board_invites")
-          .select("id, board_id, role, max_uses, uses_count, expires_at")
+          .select("id, board_id, role, max_uses, uses_count, expires_at, created_by")
           .eq("invite_code", rawInviteCode)
           .maybeSingle();
 
@@ -177,7 +285,7 @@ export async function POST(request: Request) {
         }
 
         boardId = invite.board_id;
-        assignedRole = invite.role as "editor" | "viewer";
+        assignedRole = (invite.role as "editor" | "viewer") || assignedRole;
 
         if (authData?.user) {
           await supabase.from("kanban_board_members").upsert({
@@ -209,12 +317,14 @@ export async function POST(request: Request) {
       .eq("id", boardId)
       .maybeSingle();
 
-    let mappedBoard: unknown = null;
+    const isOwner = authData?.user?.id && boardData?.user_id === authData.user.id;
+
+    let mappedBoard: KanbanBoard | null = null;
     if (boardData) {
       mappedBoard = {
         ...mapDbKanbanBoard(boardData as DbKanbanBoard, authData?.user?.id || "guest"),
-        role: assignedRole,
-        isShared: true,
+        role: isOwner ? "owner" : assignedRole,
+        isShared: !isOwner,
       };
     } else if (embeddedBoard && typeof embeddedBoard === "object") {
       const eBoard = embeddedBoard as Record<string, unknown>;
@@ -222,8 +332,8 @@ export async function POST(request: Request) {
         id: boardId,
         title: typeof eBoard.title === "string" ? eBoard.title : boardTitle,
         description: typeof eBoard.description === "string" ? eBoard.description : "",
-        background: typeof eBoard.background === "string" ? eBoard.background : "biarfokus-white",
-        lists: Array.isArray(eBoard.lists) ? eBoard.lists : [],
+        background: typeof eBoard.background === "string" ? eBoard.background : "wave-blue",
+        lists: Array.isArray(eBoard.lists) ? (eBoard.lists as KanbanList[]) : [],
         starred: false,
         role: assignedRole,
         isShared: true,
@@ -236,9 +346,10 @@ export async function POST(request: Request) {
       {
         ok: true,
         boardId,
-        boardTitle: (mappedBoard as { title?: string } | null)?.title || boardTitle,
-        role: assignedRole,
+        boardTitle: mappedBoard?.title || boardTitle,
+        role: isOwner ? "owner" : assignedRole,
         board: mappedBoard,
+        isOwner: Boolean(isOwner),
       },
       { correlationId },
     );

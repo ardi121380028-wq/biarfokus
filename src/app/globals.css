@@ -3073,6 +3073,123 @@ button:active:not(:disabled) {
   flex-shrink: 0;
 }
 
+
+/* Kanban Preview Banner & Autojoin Toast */
+.kanban-preview-banner {
+  margin: 0 28px 14px;
+  padding: 10px 18px;
+  background: color-mix(in srgb, #3b82f6 18%, rgba(15, 23, 42, 0.75));
+  border: 1px solid color-mix(in srgb, #3b82f6 45%, transparent);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 13px;
+  color: #e0f2fe;
+  backdrop-filter: blur(10px);
+  z-index: 15;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.kanban-preview-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kanban-preview-badge {
+  background: #2563eb;
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.kanban-preview-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.kanban-preview-join-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+}
+
+.kanban-preview-join-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.kanban-preview-close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kanban-preview-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.kanban-autojoin-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #10b981;
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 99999;
+}
+
+.kanban-autojoin-toast button {
+  background: transparent;
+  border: 0;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .kanban-preview-banner {
+    margin: 0 12px 10px;
+    padding: 8px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .kanban-preview-banner-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 .kanban-dialog-readonly-banner {
   background: color-mix(in srgb, #f59e0b 18%, #1c222c);
   border-bottom: 1px solid color-mix(in srgb, #f59e0b 40%, transparent);

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import type { User } from "@supabase/supabase-js";
-import type { KanbanBoardMember, KanbanCard, UserRole } from "@/types/domain";
+import type { KanbanBoard, KanbanBoardMember, KanbanCard, KanbanList, UserRole } from "@/types/domain";
 import { BOARD_BACKGROUNDS } from "@/features/kanban/kanban-service";
-import { loadBoardMembersApi } from "@/features/kanban/kanban-cloud";
+import { joinBoardViaInviteApi, loadBoardMembersApi } from "@/features/kanban/kanban-cloud";
 import { useKanban } from "@/features/kanban/use-kanban";
 import { useCalendarEvents } from "@/features/calendar/use-calendar-events";
 import { toISODate } from "@/features/calendar/calendar-service";
@@ -121,6 +121,52 @@ export function KanbanView({
     return null;
   });
 
+  const [previewBoard, setPreviewBoard] = useState<KanbanBoard | null>(null);
+  const [previewOwnerName, setPreviewOwnerName] = useState<string>("Pemilik Papan");
+  const [autoJoinNotice, setAutoJoinNotice] = useState<string | null>(null);
+  const autoJoinAttempted = useRef<string | null>(null);
+
+  // Auto-join effect when user becomes authenticated and has a pending invite code
+  useEffect(() => {
+    if (!userId) return;
+
+    let codeToJoin = pendingInviteCode;
+    if (!codeToJoin && typeof window !== "undefined") {
+      try {
+        codeToJoin =
+          localStorage.getItem("biarfokus.pending_kanban_invite") ||
+          new URL(window.location.href).searchParams.get("kanbanInvite") ||
+          new URL(window.location.href).searchParams.get("invite");
+      } catch {}
+    }
+
+    if (!codeToJoin || autoJoinAttempted.current === codeToJoin) return;
+    autoJoinAttempted.current = codeToJoin;
+
+    void joinBoardViaInviteApi(codeToJoin).then((res) => {
+      if (res.ok && res.board) {
+        joinBoard(res.board);
+        setPendingInviteCode(null);
+        setPreviewBoard(null);
+        setAutoJoinNotice(`🎉 Berhasil bergabung ke papan "${res.board.title}"!`);
+        setTimeout(() => setAutoJoinNotice(null), 5000);
+
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem("biarfokus.pending_kanban_invite");
+            document.cookie = "bf_pending_invite=; path=/; max-age=0";
+            if (window.history.replaceState) {
+              const url = new URL(window.location.href);
+              url.searchParams.delete("kanbanInvite");
+              url.searchParams.delete("invite");
+              window.history.replaceState({}, "", url.toString());
+            }
+          } catch {}
+        }
+      }
+    });
+  }, [userId, pendingInviteCode, joinBoard]);
+
   const [activeCardData, setActiveCardData] = useState<{ card: KanbanCard; listId: string } | null>(null);
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
@@ -204,12 +250,14 @@ export function KanbanView({
     };
   }, [isFullscreen]);
 
+  const currentBoard: KanbanBoard = previewBoard || activeBoard;
+
   // Current background
   const currentBg = useMemo(() => {
     return (
-      BOARD_BACKGROUNDS.find((b) => b.id === activeBoard.background) || BOARD_BACKGROUNDS[0]
+      BOARD_BACKGROUNDS.find((b) => b.id === currentBoard.background) || BOARD_BACKGROUNDS[0]
     );
-  }, [activeBoard.background]);
+  }, [currentBoard.background]);
 
   const isLightBg = Boolean(
     currentBg.isLight ||
@@ -231,22 +279,23 @@ export function KanbanView({
   }, []);
 
   const totalCardsCount = useMemo(() => {
-    return activeBoard.lists.reduce((acc, l) => acc + (Array.isArray(l.cards) ? l.cards.length : 0), 0);
-  }, [activeBoard.lists]);
+    return currentBoard.lists.reduce((acc: number, l: KanbanList) => acc + (Array.isArray(l.cards) ? l.cards.length : 0), 0);
+  }, [currentBoard.lists]);
 
   // Permission check: read-only unless user is owner, editor, or private board
   const canEdit = useMemo(() => {
+    if (previewBoard) return false;
     if (pendingInviteCode) return false;
-    if (activeBoard.role === "viewer") return false;
+    if (currentBoard.role === "viewer") return false;
     return true;
-  }, [pendingInviteCode, activeBoard.role]);
+  }, [previewBoard, pendingInviteCode, currentBoard.role]);
 
   // Filtered lists if search query is active
   const displayedLists = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return activeBoard.lists;
+    if (!q) return currentBoard.lists;
 
-    return activeBoard.lists.map((list) => ({
+    return currentBoard.lists.map((list: KanbanList) => ({
       ...list,
       cards: list.cards.filter((card) => {
         const titleMatch = card.title.toLowerCase().includes(q);
@@ -259,7 +308,7 @@ export function KanbanView({
         return titleMatch || descMatch || labelMatch || picMatch || checkMatch;
       }),
     }));
-  }, [activeBoard.lists, searchQuery]);
+  }, [currentBoard.lists, searchQuery]);
 
   function handleSaveBoardTitle() {
     const trimmed = boardTitleInput.trim();
@@ -310,7 +359,7 @@ export function KanbanView({
           detail: {
             title: card.title,
             linkedNoteId: activeBoard.id,
-            linkedNoteTitle: `Kanban: ${activeBoard.title}`,
+            linkedNoteTitle: `Kanban: ${currentBoard.title}`,
           },
         }),
       );
@@ -443,7 +492,7 @@ export function KanbanView({
               {boards.length > 0 && (
                 <>
                   <span className="kanban-breadcrumb-sep">/</span>
-                  <span className="kanban-breadcrumb-current">{activeBoard.title}</span>
+                  <span className="kanban-breadcrumb-current">{currentBoard.title}</span>
                 </>
               )}
             </div>
@@ -628,6 +677,71 @@ export function KanbanView({
           </div>
         </div>
 
+        {/* Preview Mode Top Banner */}
+        {previewBoard && (
+          <div className="kanban-preview-banner">
+            <div className="kanban-preview-banner-left">
+              <span className="kanban-preview-badge">👁️ Mode Pratinjau</span>
+              <span>
+                Kamu sedang melihat papan <strong>{previewBoard.title}</strong>
+                {previewOwnerName ? ` milik ${previewOwnerName}` : ""} sebagai tamu.
+              </span>
+            </div>
+            <div className="kanban-preview-banner-actions">
+              <button
+                type="button"
+                className="kanban-preview-join-btn"
+                onClick={() => {
+                  if (userId && pendingInviteCode) {
+                    void joinBoardViaInviteApi(pendingInviteCode).then((res) => {
+                      if (res.ok && res.board) {
+                        joinBoard(res.board);
+                        setPreviewBoard(null);
+                        setPendingInviteCode(null);
+                        setAutoJoinNotice(`🎉 Berhasil bergabung ke papan "${res.board.title}"!`);
+                        setTimeout(() => setAutoJoinNotice(null), 5000);
+                      }
+                    });
+                  } else {
+                    if (pendingInviteCode) {
+                      try {
+                        localStorage.setItem("biarfokus.pending_kanban_invite", pendingInviteCode);
+                        document.cookie = `bf_pending_invite=${encodeURIComponent(pendingInviteCode)}; path=/; max-age=86400; SameSite=Lax`;
+                      } catch {}
+                    }
+                    onRequireLogin?.();
+                  }
+                }}
+              >
+                🚀 {userId ? "Gabung ke Papan" : "Login & Bergabung ke Projek"}
+              </button>
+              <button
+                type="button"
+                className="kanban-preview-close-btn"
+                onClick={() => {
+                  setPreviewBoard(null);
+                  if (typeof window !== "undefined" && window.history.replaceState) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("kanbanInvite");
+                    url.searchParams.delete("invite");
+                    window.history.replaceState({}, "", url.toString());
+                  }
+                }}
+              >
+                ✕ Tutup Pratinjau
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Auto Join Toast Notification */}
+        {autoJoinNotice && (
+          <div className="kanban-autojoin-toast" role="alert">
+            <span>{autoJoinNotice}</span>
+            <button type="button" onClick={() => setAutoJoinNotice(null)}>✕</button>
+          </div>
+        )}
+
         {/* Mobile Search Input Bar */}
         {mobileSearchOpen && (
           <div className="kanban-mobile-search-bar">
@@ -655,7 +769,7 @@ export function KanbanView({
         )}
 
         {/* If no boards exist yet: show onboarding empty state */}
-        {boards.length === 0 ? (
+        {boards.length === 0 && !previewBoard ? (
           <div className="kanban-empty-workspace-state">
             <div className="kanban-empty-workspace-card">
               <span className="kanban-empty-workspace-icon" aria-hidden="true">
@@ -707,7 +821,7 @@ export function KanbanView({
                             setIsEditingBoardTitle(true);
                           }
                         }}
-                        title={canEdit ? "Klik untuk mengubah nama proyek" : activeBoard.title}
+                        title={canEdit ? "Klik untuk mengubah nama proyek" : currentBoard.title}
                         style={{ cursor: canEdit ? "pointer" : "default" }}
                       >
                         {activeBoard.title}
@@ -719,12 +833,12 @@ export function KanbanView({
                       </h1>
                     )}
 
-                    {activeBoard.isShared && (
+                    {currentBoard.isShared && (
                       <span className="kanban-role-badge editor" title="Papan kolaborasi bersama tim">
                         👥 Tim
                       </span>
                     )}
-                    {(!canEdit || activeBoard.role === "viewer") && (
+                    {(!canEdit || currentBoard.role === "viewer") && (
                       <span className="kanban-role-badge viewer" title="Izin hanya lihat">
                         👁️ Viewer
                       </span>
@@ -737,7 +851,7 @@ export function KanbanView({
                       📅 {currentMonthYear}
                     </span>
                     <span className="kanban-meta-pill count-pill">
-                      📋 {activeBoard.lists.length} Kolom • 🗂️ {totalCardsCount} Kartu • 👥 {boardMembers.length > 0 ? boardMembers.length : 1} Anggota
+                      📋 {currentBoard.lists.length} Kolom • 🗂️ {totalCardsCount} Kartu • 👥 {boardMembers.length > 0 ? boardMembers.length : 1} Anggota
                     </span>
                   </div>
                 </div>
@@ -909,18 +1023,29 @@ export function KanbanView({
           onClose={() => setShareModalOpen(false)}
           board={activeBoard}
           userId={userId}
+          userName={userName}
+          userAvatar={userAvatar}
+          userEmail={user?.email}
         />
       )}
 
       {/* Join Board Modal via Invite Link */}
-      {pendingInviteCode && (
+      {pendingInviteCode && !previewBoard && (
         <KanbanJoinModal
           inviteCode={pendingInviteCode}
           userId={userId}
+          userName={userName}
           onClose={() => setPendingInviteCode(null)}
           onJoined={(joinedBoard) => {
             joinBoard(joinedBoard);
             setPendingInviteCode(null);
+            setPreviewBoard(null);
+            setAutoJoinNotice(`🎉 Berhasil bergabung ke papan "${joinedBoard.title}"!`);
+            setTimeout(() => setAutoJoinNotice(null), 5000);
+          }}
+          onPreview={(board, owner) => {
+            setPreviewBoard(board);
+            if (owner) setPreviewOwnerName(owner);
           }}
           onRequireLogin={onRequireLogin}
         />

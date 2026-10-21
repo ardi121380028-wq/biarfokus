@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { KanbanBoard, KanbanBoardMember } from "@/types/domain";
 import { createBoardInviteApi, loadBoardMembersApi } from "@/features/kanban/kanban-cloud";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
@@ -10,6 +10,9 @@ type KanbanShareModalProps = {
   onClose: () => void;
   board: KanbanBoard;
   userId?: string | null;
+  userName?: string;
+  userAvatar?: string | null;
+  userEmail?: string | null;
 };
 
 export function KanbanShareModal({
@@ -17,6 +20,9 @@ export function KanbanShareModal({
   onClose,
   board,
   userId,
+  userName,
+  userAvatar,
+  userEmail,
 }: KanbanShareModalProps) {
   const [role, setRole] = useState<"editor" | "viewer">("editor");
   const [inviteCode, setInviteCode] = useState<string>("");
@@ -86,7 +92,7 @@ export function KanbanShareModal({
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const inviteUrl = inviteCode
-    ? `${origin}/?kanbanInvite=${inviteCode}`
+    ? `${origin}/kanban?invite=${inviteCode}`
     : "Membuat tautan...";
 
   function handleCopy() {
@@ -97,23 +103,59 @@ export function KanbanShareModal({
     });
   }
 
+  // Calculate clean, accurate list of members ensuring owner's profile is always rendered
+  const effectiveMembers = useMemo(() => {
+    const ownerName = userName || userEmail || "Kamu (Pemilik)";
+
+    if (members.length > 0) {
+      return members.map((m) => {
+        if (m.userId === userId || m.role === "owner") {
+          return {
+            ...m,
+            displayName: (m.displayName && m.displayName !== "Kamu" && m.displayName !== "Anggota")
+              ? m.displayName
+              : ownerName,
+            avatarUrl: m.avatarUrl || userAvatar || null,
+          };
+        }
+        return m;
+      });
+    }
+
+    // Default owner fallback
+    return [
+      {
+        id: `owner-${userId || "me"}`,
+        boardId: board.id,
+        userId: userId || "me",
+        role: "owner" as const,
+        joinedAt: board.createdAt || new Date().toISOString(),
+        displayName: ownerName,
+        avatarUrl: userAvatar || null,
+      },
+    ];
+  }, [members, userId, userName, userAvatar, userEmail, board.id, board.createdAt]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="kanban-modal-backdrop">
-      <div className="kanban-share-modal" ref={modalRef}>
+    <div className="kanban-modal-backdrop" role="presentation">
+      <div className="kanban-share-modal" ref={modalRef} role="dialog" aria-modal="true">
+        {/* Header */}
         <div className="kanban-modal-header">
           <div>
-            <h3>👥 Bagikan Papan Proyek</h3>
+            <h3 className="kanban-modal-title">
+              <span className="kanban-modal-icon">👥</span> Bagikan Papan Proyek
+            </h3>
             <p className="kanban-modal-sub">
               Undang teman untuk berkolaborasi di <strong>{board.title}</strong>
             </p>
           </div>
           <button
             type="button"
-            className="kanban-icon-btn"
+            className="kanban-modal-close"
             onClick={onClose}
-            aria-label="Tutup modal"
+            aria-label="Tutup modal bagikan papan"
           >
             ✕
           </button>
@@ -125,28 +167,20 @@ export function KanbanShareModal({
           </div>
         )}
 
-        {/* Share Link Generation Section */}
+        {/* Role Selector & Quick Link Section */}
         <div className="kanban-share-section">
           <label className="kanban-share-label">Tautan Undangan Cepat</label>
-          <div className="kanban-share-role-switcher">
+          <div className="kanban-share-role-tabs">
             <button
               type="button"
-              className={
-                role === "editor"
-                  ? "kanban-role-tab active"
-                  : "kanban-role-tab"
-              }
+              className={role === "editor" ? "kanban-role-tab active" : "kanban-role-tab"}
               onClick={() => handleSelectRole("editor")}
             >
               ✏️ Sebagai Editor (Bisa Edit & Pindah Kartu)
             </button>
             <button
               type="button"
-              className={
-                role === "viewer"
-                  ? "kanban-role-tab active"
-                  : "kanban-role-tab"
-              }
+              className={role === "viewer" ? "kanban-role-tab active" : "kanban-role-tab"}
               onClick={() => handleSelectRole("viewer")}
             >
               👁️ Sebagai Viewer (Hanya Lihat)
@@ -171,33 +205,17 @@ export function KanbanShareModal({
             </button>
           </div>
           <small className="kanban-share-hint">
-            Siapa saja yang memiliki link ini dan akun BiarFokus dapat langsung bergabung ke papan ini.
+            Siapa saja yang memiliki link ini dapat langsung melihat pratinjau atau masuk untuk berkolaborasi di papan ini.
           </small>
         </div>
 
         {/* Members List Section */}
         <div className="kanban-share-section members">
           <label className="kanban-share-label">
-            Anggota Papan ({members.length > 0 ? members.length : "1"})
+            Anggota Papan ({effectiveMembers.length})
           </label>
           <div className="kanban-share-members-list">
-            {/* Creator / current user fallback if members query is loading or empty */}
-            {members.length === 0 && (
-              <div className="kanban-share-member-item">
-                <div className="kanban-member-avatar-placeholder">
-                  {board.title.slice(0, 1).toUpperCase()}
-                </div>
-                <div className="kanban-member-info">
-                  <span className="kanban-member-name">
-                    {userId ? "Kamu (Pemilik)" : "Pemilik Papan"}
-                  </span>
-                  <span className="kanban-member-email">Pemilik Utama</span>
-                </div>
-                <span className="kanban-role-badge owner">👑 Pemilik</span>
-              </div>
-            )}
-
-            {members.map((member) => (
+            {effectiveMembers.map((member) => (
               <div key={member.id} className="kanban-share-member-item">
                 {member.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -213,11 +231,13 @@ export function KanbanShareModal({
                 )}
                 <div className="kanban-member-info">
                   <span className="kanban-member-name">
-                    {member.displayName || "Pengguna"}
+                    {member.displayName}
                     {member.userId === userId ? " (Kamu)" : ""}
                   </span>
                   <span className="kanban-member-email">
-                    Bergabung {new Date(member.joinedAt).toLocaleDateString("id-ID")}
+                    {member.role === "owner"
+                      ? "Pemilik Utama"
+                      : `Bergabung ${new Date(member.joinedAt).toLocaleDateString("id-ID")}`}
                   </span>
                 </div>
                 <span className={`kanban-role-badge ${member.role}`}>
@@ -230,7 +250,7 @@ export function KanbanShareModal({
               </div>
             ))}
 
-            {loadingMembers && (
+            {loadingMembers && members.length === 0 && (
               <div className="kanban-share-loading-hint">Memuat daftar anggota...</div>
             )}
           </div>

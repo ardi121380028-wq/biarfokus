@@ -42,5 +42,14 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/?auth_error=${encodeURIComponent(error.message)}`, requestUrl.origin));
   }
 
+  // If user arrived from a project invite link, redirect back to the board invite
+  const pendingInvite = cookieStore.get("bf_pending_invite")?.value;
+  if (pendingInvite) {
+    const targetUrl = new URL(`/kanban?invite=${encodeURIComponent(pendingInvite)}`, requestUrl.origin);
+    const response = NextResponse.redirect(targetUrl);
+    response.cookies.delete("bf_pending_invite");
+    return response;
+  }
+
   return NextResponse.redirect(new URL("/", requestUrl.origin));
 }

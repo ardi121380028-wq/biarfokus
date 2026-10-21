@@ -245,11 +245,68 @@ begin
   set uses_count = uses_count + 1
   where id = v_invite.id;
 
-  return jsonb_build_object(
+    return jsonb_build_object(
     'ok', true,
     'board_id', v_board.id,
     'title', v_board.title,
+    'description', coalesce(v_board.description, ''),
+    'background', v_board.background,
+    'lists', v_board.lists,
     'role', v_invite.role
+  );
+end;
+$$;
+
+-- Preview board for guests & invites before joining
+create or replace function public.get_kanban_board_preview(invite_token text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_invite record;
+  v_board record;
+  v_owner_profile record;
+  v_owner_name text := 'Pemilik Papan';
+  v_owner_avatar text := null;
+begin
+  select * into v_invite
+  from public.kanban_board_invites
+  where invite_code = invite_token;
+
+  if not found then
+    return jsonb_build_object('ok', false, 'error', 'Tautan undangan tidak ditemukan atau sudah kadaluarsa.');
+  end if;
+
+  select * into v_board
+  from public.kanban_boards
+  where id = v_invite.board_id;
+
+  if not found then
+    return jsonb_build_object('ok', false, 'error', 'Papan proyek tidak ditemukan.');
+  end if;
+
+  -- Get owner profile
+  select display_name, avatar_url into v_owner_profile
+  from public.profiles
+  where id = v_board.user_id;
+
+  if found and v_owner_profile.display_name is not null then
+    v_owner_name := v_owner_profile.display_name;
+    v_owner_avatar := v_owner_profile.avatar_url;
+  end if;
+
+  return jsonb_build_object(
+    'ok', true,
+    'boardId', v_board.id,
+    'boardTitle', v_board.title,
+    'boardDescription', coalesce(v_board.description, ''),
+    'boardBackground', v_board.background,
+    'boardLists', v_board.lists,
+    'role', v_invite.role,
+    'ownerName', v_owner_name,
+    'ownerAvatar', v_owner_avatar
   );
 end;
 $$;
@@ -316,12 +373,10 @@ create policy "Owners can manage board members"
   );
 
 drop policy if exists "Members can view invites" on public.kanban_board_invites;
-create policy "Members can view invites"
+drop policy if exists "Anyone can view invites by code" on public.kanban_board_invites;
+create policy "Anyone can view invites by code"
   on public.kanban_board_invites for select
-  to authenticated
-  using (
-    public.is_board_member(board_id)
-  );
+  using (true);
 
 drop policy if exists "Editors and owners can create invites" on public.kanban_board_invites;
 create policy "Editors and owners can create invites"

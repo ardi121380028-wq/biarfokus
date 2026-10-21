@@ -303,14 +303,22 @@ export async function GET(request: Request) {
 
     const members = uniqueRawMembers.map((m) => {
       const prof = profilesMap.get(m.user_id);
+      const isCurrentUser = m.user_id === authData?.user?.id;
+      const currentUserName =
+        authData?.user?.user_metadata?.full_name ||
+        authData?.user?.user_metadata?.name ||
+        authData?.user?.email?.split("@")[0] ||
+        "Kamu";
+      const currentUserAvatar = authData?.user?.user_metadata?.avatar_url || null;
+
       return {
         id: m.id,
         boardId: m.board_id,
         userId: m.user_id,
         role: m.role,
         joinedAt: m.joined_at,
-        displayName: prof?.display_name || (m.user_id === authData?.user?.id ? "Kamu" : "Anggota"),
-        avatarUrl: prof?.avatar_url || null,
+        displayName: prof?.display_name || (isCurrentUser ? currentUserName : "Anggota"),
+        avatarUrl: prof?.avatar_url || (isCurrentUser ? currentUserAvatar : null),
       };
     });
 
