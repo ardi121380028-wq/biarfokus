@@ -209,6 +209,11 @@ export async function POST(request: Request) {
       r: requestedRole,
       u: authData.user.id,
       t: Date.now(),
+      board: body.board,
+      owner:
+        (typeof authData.user.user_metadata?.full_name === "string" && authData.user.user_metadata.full_name) ||
+        authData.user.email?.split("@")[0] ||
+        "Pemilik Papan",
     };
     const fallbackCode = `bf_inv_${requestedRole}_${Buffer.from(JSON.stringify(fallbackPayload)).toString("base64url")}`;
 

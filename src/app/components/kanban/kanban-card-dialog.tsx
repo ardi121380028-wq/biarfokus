@@ -29,6 +29,7 @@ type KanbanCardDialogProps = {
   onClose: () => void;
   onSendToFrog?: (card: KanbanCard) => void;
   onScheduleToCalendar?: (card: KanbanCard) => void;
+  isLight?: boolean;
 };
 
 const DEFAULT_LABEL_COLORS = [
@@ -55,6 +56,7 @@ export function KanbanCardDialog({
   boardLabels,
   onUpdateBoardLabels,
   readOnly = false,
+  isLight = false,
   onUpdate,
   onDelete,
   onClose,
@@ -78,6 +80,23 @@ export function KanbanCardDialog({
   const [newChecklistTitle, setNewChecklistTitle] = useState("Checklist");
   const [frogFeedback, setFrogFeedback] = useState<string | null>(null);
   const [calendarFeedback, setCalendarFeedback] = useState<string | null>(null);
+
+  // Mobile quick action inline panel state
+  const [activeMobilePanel, setActiveMobilePanel] = useState<"date" | "move" | "pic" | "label" | "checklist" | "cover" | null>(null);
+
+  // Modern Move Column dropdown state
+  const [moveMenuOpen, setMoveMenuOpen] = useState(false);
+  const moveMenuRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(moveMenuRef, () => setMoveMenuOpen(false), moveMenuOpen);
+
+  const handleToggleQuickAction = (panel: "date" | "move" | "pic" | "label" | "checklist" | "cover") => {
+    setActiveMobilePanel((prev) => (prev === panel ? null : panel));
+    if (panel === "date") setShowDatePicker((prev) => !prev);
+    if (panel === "pic") setShowMemberPicker((prev) => !prev);
+    if (panel === "label") setShowLabelPicker((prev) => !prev);
+    if (panel === "checklist") setShowChecklistPrompt((prev) => !prev);
+    if (panel === "cover") setShowCoverPicker((prev) => !prev);
+  };
 
   // Custom label creator state
   const [newLabelName, setNewLabelName] = useState("");
@@ -405,11 +424,13 @@ export function KanbanCardDialog({
     <div className="kanban-dialog-backdrop" role="presentation">
       <div
         ref={modalRef}
-        className="kanban-dialog-card"
+        className={`kanban-dialog-card ${isLight ? "kanban-light-card" : "kanban-dark-card"}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="kanban-dialog-title"
       >
+        {/* Mobile Drag Handle Indicator */}
+        <div className="kanban-dialog-mobile-handle" aria-hidden="true" />
         {/* Read-Only Notice Bar */}
         {readOnly && (
           <div className="kanban-dialog-readonly-banner">
@@ -460,39 +481,253 @@ export function KanbanCardDialog({
           <div className="kanban-dialog-quick-toolbar">
             <button
               type="button"
-              className={`kanban-quick-btn ${showMemberPicker ? "active" : ""}`}
-              onClick={() => setShowMemberPicker(!showMemberPicker)}
+              className={`kanban-quick-btn ${activeMobilePanel === "date" || showDatePicker ? "active" : ""}`}
+              onClick={() => handleToggleQuickAction("date")}
+            >
+              🕒 Tenggat
+            </button>
+            {boardLists && boardLists.length > 1 && (
+              <button
+                type="button"
+                className={`kanban-quick-btn ${activeMobilePanel === "move" || moveMenuOpen ? "active" : ""}`}
+                onClick={() => handleToggleQuickAction("move")}
+              >
+                📍 Pindah
+              </button>
+            )}
+            <button
+              type="button"
+              className={`kanban-quick-btn ${activeMobilePanel === "pic" || showMemberPicker ? "active" : ""}`}
+              onClick={() => handleToggleQuickAction("pic")}
             >
               👥 PIC
             </button>
             <button
               type="button"
-              className={`kanban-quick-btn ${showLabelPicker ? "active" : ""}`}
-              onClick={() => setShowLabelPicker(!showLabelPicker)}
+              className={`kanban-quick-btn ${activeMobilePanel === "label" || showLabelPicker ? "active" : ""}`}
+              onClick={() => handleToggleQuickAction("label")}
             >
               🏷️ Label
             </button>
             <button
               type="button"
-              className="kanban-quick-btn"
-              onClick={() => setShowChecklistPrompt(!showChecklistPrompt)}
+              className={`kanban-quick-btn ${activeMobilePanel === "checklist" || showChecklistPrompt ? "active" : ""}`}
+              onClick={() => handleToggleQuickAction("checklist")}
             >
               ☑️ Checklist
             </button>
             <button
               type="button"
-              className={`kanban-quick-btn ${showDatePicker ? "active" : ""}`}
-              onClick={() => setShowDatePicker(!showDatePicker)}
-            >
-              🕒 Tenggat
-            </button>
-            <button
-              type="button"
-              className={`kanban-quick-btn ${showCoverPicker ? "active" : ""}`}
-              onClick={() => setShowCoverPicker(!showCoverPicker)}
+              className={`kanban-quick-btn ${activeMobilePanel === "cover" || showCoverPicker ? "active" : ""}`}
+              onClick={() => handleToggleQuickAction("cover")}
             >
               🎨 Cover
             </button>
+          </div>
+        )}
+
+        {/* Mobile Inline Quick Action Panel */}
+        {!readOnly && activeMobilePanel && (
+          <div className="kanban-mobile-inline-panel kanban-mobile-only">
+            <div className="mobile-panel-header">
+              <span className="mobile-panel-title">
+                {activeMobilePanel === "date" && "🕒 Tenggat & Rentang Waktu"}
+                {activeMobilePanel === "move" && "📍 Pindahkan ke Kolom"}
+                {activeMobilePanel === "pic" && "👥 Atur Anggota / PIC"}
+                {activeMobilePanel === "label" && "🏷️ Atur Labels"}
+                {activeMobilePanel === "checklist" && "☑️ Tambah Checklist Baru"}
+                {activeMobilePanel === "cover" && "🎨 Cover & Emoji Kartu"}
+              </span>
+              <button
+                type="button"
+                className="mobile-panel-close-btn"
+                onClick={() => setActiveMobilePanel(null)}
+                aria-label="Tutup panel"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mobile-panel-body">
+              {activeMobilePanel === "date" && (
+                <div className="kanban-date-picker-box">
+                  <div className="kanban-date-field-row">
+                    <div className="kanban-date-field-col">
+                      <label className="kanban-custom-pic-label">
+                        <span className="date-icon-badge">📅</span> Tanggal Mulai
+                      </label>
+                      <input
+                        type="date"
+                        value={card.startDate || ""}
+                        onChange={(e) => onUpdate({ startDate: e.target.value || undefined })}
+                        className="kanban-subtask-input kanban-date-input"
+                      />
+                    </div>
+                    <div className="kanban-date-field-col">
+                      <label className="kanban-custom-pic-label">
+                        <span className="date-icon-badge">🏁</span> Tenggat Selesai
+                      </label>
+                      <input
+                        type="date"
+                        value={card.dueDate || ""}
+                        onChange={(e) => onUpdate({ dueDate: e.target.value || undefined })}
+                        className="kanban-subtask-input kanban-date-input"
+                      />
+                    </div>
+                  </div>
+
+                  {onScheduleToCalendar && (
+                    <button
+                      type="button"
+                      className="kanban-primary-btn kanban-schedule-btn"
+                      onClick={() => {
+                        handleScheduleToCalendar();
+                        setActiveMobilePanel(null);
+                      }}
+                      style={{ marginTop: 10, width: "100%", padding: "8px 12px", fontSize: 12.5 }}
+                    >
+                      📅 Jadwalkan ke Kalender
+                    </button>
+                  )}
+
+                  {(card.startDate || card.dueDate) && (
+                    <button
+                      type="button"
+                      className="kanban-text-btn"
+                      onClick={() => {
+                        onUpdate({ startDate: undefined, dueDate: undefined, dueCompleted: false });
+                        setActiveMobilePanel(null);
+                      }}
+                      style={{ marginTop: 8, width: "100%", textAlign: "center", fontSize: 12 }}
+                    >
+                      Hapus Rentang Tanggal
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {activeMobilePanel === "move" && (
+                <div className="mobile-move-column-list" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {boardLists?.map((l) => {
+                    const isCurrent = l.id === currentListId;
+                    return (
+                      <button
+                        key={l.id}
+                        type="button"
+                        className={`mobile-move-column-btn ${isCurrent ? "current" : ""}`}
+                        onClick={() => {
+                          if (!isCurrent && onMoveToList) {
+                            onMoveToList(l.id);
+                          }
+                          setActiveMobilePanel(null);
+                        }}
+                      >
+                        <span style={{ fontWeight: 600 }}>{l.title}</span>
+                        {isCurrent ? <span className="option-badge current">✓ Saat ini</span> : <span className="option-badge hover-tag">Pindah →</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {activeMobilePanel === "checklist" && (
+                <div className="mobile-panel-checklist">
+                  <input
+                    type="text"
+                    placeholder="Judul checklist..."
+                    value={newChecklistTitle}
+                    onChange={(e) => setNewChecklistTitle(e.target.value)}
+                    className="kanban-subtask-input"
+                    autoFocus
+                  />
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button
+                      type="button"
+                      className="kanban-primary-btn"
+                      onClick={() => {
+                        handleAddChecklist();
+                        setActiveMobilePanel(null);
+                      }}
+                    >
+                      + Buat Checklist
+                    </button>
+                    <button
+                      type="button"
+                      className="kanban-secondary-btn"
+                      onClick={() => setActiveMobilePanel(null)}
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeMobilePanel === "cover" && (
+                <div className="mobile-panel-cover">
+                  <div className="kanban-cover-emoji-grid" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {COVER_EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        className={`emoji-btn ${card.coverEmoji === emoji ? "active" : ""}`}
+                        onClick={() => {
+                          onUpdate({ coverEmoji: card.coverEmoji === emoji ? undefined : emoji });
+                        }}
+                        style={{ fontSize: 24, padding: "6px 10px", borderRadius: 10 }}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeMobilePanel === "pic" && (
+                <div className="mobile-panel-pic">
+                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }}>
+                    Atur penugasan kartu ke anggota tim:
+                  </p>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                    <input
+                      type="text"
+                      placeholder="Nama PIC baru..."
+                      value={customPicName}
+                      onChange={(e) => setCustomPicName(e.target.value)}
+                      className="kanban-subtask-input"
+                    />
+                    <button
+                      type="button"
+                      className="kanban-primary-btn"
+                      onClick={() => {
+                        handleAddCustomPic();
+                        setActiveMobilePanel(null);
+                      }}
+                      disabled={!customPicName.trim()}
+                    >
+                      Tambah
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeMobilePanel === "label" && (
+                <div className="mobile-panel-label">
+                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }}>
+                    Pilih warna label:
+                  </p>
+                  <div className="kanban-palette-swatches" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {DEFAULT_LABEL_COLORS.map((col) => (
+                      <button
+                        key={col}
+                        type="button"
+                        className={`color-swatch-mini ${selectedLabelColor === col ? "active" : ""}`}
+                        style={{ background: col, width: 26, height: 26, borderRadius: "50%" }}
+                        onClick={() => setSelectedLabelColor(col)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1033,22 +1268,66 @@ export function KanbanCardDialog({
           {/* Right Sidebar Actions */}
           {!readOnly && (
             <div className="kanban-dialog-sidebar">
-              {/* Move to another list selector (Crucial for mobile users!) */}
+              {/* Modern Move Column Dropdown */}
               {onMoveToList && boardLists && boardLists.length > 1 && (
-                <div className="kanban-move-card-box">
+                <div className="kanban-move-card-box" ref={moveMenuRef}>
                   <span className="kanban-sidebar-heading">📍 Pindahkan ke Kolom</span>
-                  <select
-                    value={currentListId || ""}
-                    onChange={(e) => onMoveToList(e.target.value)}
-                    className="kanban-select-list"
-                    aria-label="Pindahkan kartu ke kolom lain"
-                  >
-                    {boardLists.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.title} {l.id === currentListId ? "(Saat Ini)" : ""}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="kanban-custom-select-wrap">
+                    <button
+                      type="button"
+                      className={`kanban-custom-select-btn ${moveMenuOpen ? "active" : ""}`}
+                      onClick={() => setMoveMenuOpen(!moveMenuOpen)}
+                      disabled={readOnly}
+                      aria-label="Pindahkan kartu ke kolom lain"
+                      aria-expanded={moveMenuOpen}
+                    >
+                      <span className="select-btn-text">
+                        {boardLists.find((l) => l.id === currentListId)?.title || "Pilih Kolom..."}
+                      </span>
+                      <svg
+                        className={`select-chevron ${moveMenuOpen ? "open" : ""}`}
+                        width="12"
+                        height="12"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+
+                    {moveMenuOpen && (
+                      <div className="kanban-custom-select-menu" role="menu">
+                        {boardLists.map((l) => {
+                          const isCurrent = l.id === currentListId;
+                          return (
+                            <button
+                              key={l.id}
+                              type="button"
+                              className={`kanban-select-option ${isCurrent ? "current" : ""}`}
+                              onClick={() => {
+                                if (!isCurrent && onMoveToList) {
+                                  onMoveToList(l.id);
+                                }
+                                setMoveMenuOpen(false);
+                              }}
+                              role="menuitem"
+                            >
+                              <span className="option-title">{l.title}</span>
+                              {isCurrent ? (
+                                <span className="option-badge current">✓ Saat ini</span>
+                              ) : (
+                                <span className="option-badge hover-tag">Pindahkan →</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1127,31 +1406,37 @@ export function KanbanCardDialog({
               </button>
 
               {showDatePicker && (
-                <div className="kanban-sidebar-subbox">
-                  <span className="kanban-custom-pic-label">Tanggal Mulai</span>
-                  <input
-                    type="date"
-                    value={card.startDate || ""}
-                    onChange={(e) => onUpdate({ startDate: e.target.value || undefined })}
-                    className="kanban-subtask-input"
-                  />
+                <div className="kanban-sidebar-subbox kanban-date-picker-box">
+                  <div className="kanban-date-field-col" style={{ marginBottom: 8 }}>
+                    <label className="kanban-custom-pic-label" style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
+                      <span className="date-icon-badge">📅</span> Tanggal Mulai
+                    </label>
+                    <input
+                      type="date"
+                      value={card.startDate || ""}
+                      onChange={(e) => onUpdate({ startDate: e.target.value || undefined })}
+                      className="kanban-subtask-input kanban-date-input"
+                    />
+                  </div>
 
-                  <span className="kanban-custom-pic-label" style={{ marginTop: 8 }}>
-                    Tenggat Selesai
-                  </span>
-                  <input
-                    type="date"
-                    value={card.dueDate || ""}
-                    onChange={(e) => onUpdate({ dueDate: e.target.value || undefined })}
-                    className="kanban-subtask-input"
-                  />
+                  <div className="kanban-date-field-col" style={{ marginBottom: 10 }}>
+                    <label className="kanban-custom-pic-label" style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
+                      <span className="date-icon-badge">🏁</span> Tenggat Selesai
+                    </label>
+                    <input
+                      type="date"
+                      value={card.dueDate || ""}
+                      onChange={(e) => onUpdate({ dueDate: e.target.value || undefined })}
+                      className="kanban-subtask-input kanban-date-input"
+                    />
+                  </div>
 
                   {onScheduleToCalendar && (
                     <button
                       type="button"
-                      className="kanban-primary-btn"
+                      className="kanban-primary-btn kanban-schedule-btn"
                       onClick={handleScheduleToCalendar}
-                      style={{ marginTop: 8, width: "100%", fontSize: 12, padding: "6px 8px" }}
+                      style={{ width: "100%", fontSize: 12, padding: "7px 10px", fontWeight: 700 }}
                     >
                       📅 Jadwalkan ke Kalender
                     </button>
@@ -1164,7 +1449,7 @@ export function KanbanCardDialog({
                       onClick={() =>
                         onUpdate({ startDate: undefined, dueDate: undefined, dueCompleted: false })
                       }
-                      style={{ marginTop: 6, width: "100%", textAlign: "center" }}
+                      style={{ marginTop: 6, width: "100%", textAlign: "center", fontSize: 12 }}
                     >
                       Hapus Rentang Tanggal
                     </button>

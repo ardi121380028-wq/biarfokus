@@ -54,8 +54,19 @@ export function CalendarTopbar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-
   useOutsideClick(profileMenuRef, () => setProfileMenuOpen(false));
+
+  const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const viewMenuRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(viewMenuRef, () => setViewMenuOpen(false), viewMenuOpen);
+
+  const VIEW_OPTIONS: { id: CalendarViewMode; label: string; icon: string }[] = [
+    { id: "day", label: "Hari", icon: "📅" },
+    { id: "week", label: "Minggu", icon: "📆" },
+    { id: "month", label: "Bulan", icon: "🗓️" },
+    { id: "year", label: "Tahun", icon: "📊" },
+  ];
+  const activeViewOption = VIEW_OPTIONS.find((v) => v.id === viewMode) || VIEW_OPTIONS[1];
 
   const weekNumber = useMemo(() => getWeekNumber(anchorDate, true), [anchorDate]);
 
@@ -200,19 +211,55 @@ export function CalendarTopbar({
           )}
         </div>
 
-        {/* View Mode Switcher */}
-        <div className="cal-topbar-view-switcher">
-          <select
-            value={viewMode}
-            onChange={(e) => onViewModeChange(e.target.value as CalendarViewMode)}
-            className="cal-topbar-view-select"
+        {/* Modern View Mode Switcher */}
+        <div className="cal-topbar-view-switcher" ref={viewMenuRef}>
+          <button
+            type="button"
+            className={`cal-modern-view-btn ${viewMenuOpen ? "active" : ""}`}
+            onClick={() => setViewMenuOpen(!viewMenuOpen)}
             aria-label="Pilih tampilan kalender"
+            aria-expanded={viewMenuOpen}
           >
-            <option value="day">Hari</option>
-            <option value="week">Minggu</option>
-            <option value="month">Bulan</option>
-            <option value="year">Tahun</option>
-          </select>
+            <span className="cal-view-btn-icon">{activeViewOption.icon}</span>
+            <span className="cal-view-btn-label">{activeViewOption.label}</span>
+            <svg
+              className={`cal-view-chevron ${viewMenuOpen ? "open" : ""}`}
+              width="12"
+              height="12"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+
+          {viewMenuOpen && (
+            <div className="cal-modern-view-dropdown" role="menu">
+              {VIEW_OPTIONS.map((opt) => {
+                const isSelected = viewMode === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={`cal-modern-view-item ${isSelected ? "selected" : ""}`}
+                    onClick={() => {
+                      onViewModeChange(opt.id);
+                      setViewMenuOpen(false);
+                    }}
+                    role="menuitem"
+                  >
+                    <span className="cal-view-item-icon">{opt.icon}</span>
+                    <span className="cal-view-item-label">{opt.label}</span>
+                    {isSelected && <span className="cal-view-item-check">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Theme Toggle */}

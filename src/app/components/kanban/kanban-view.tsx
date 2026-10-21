@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { KanbanBoard, KanbanBoardMember, KanbanCard, KanbanList, UserRole } from "@/types/domain";
 import { BOARD_BACKGROUNDS } from "@/features/kanban/kanban-service";
@@ -110,6 +110,14 @@ export function KanbanView({
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [boardModalOpen, setBoardModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  const handleOpenShareModal = useCallback(() => {
+    if (boards.length === 0 || !activeBoard.id) {
+      setBoardModalOpen(true);
+      return;
+    }
+    setShareModalOpen(true);
+  }, [boards.length, activeBoard.id]);
   const [boardMembers, setBoardMembers] = useState<KanbanBoardMember[]>([]);
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
@@ -478,7 +486,7 @@ export function KanbanView({
           if (onNavigate) onNavigate(view);
         }}
         onOpenSettings={onOpenSettings}
-        onOpenShare={() => setShareModalOpen(true)}
+        onOpenShare={handleOpenShareModal}
         dark={dark}
         onToggleDark={onToggleDark}
       />
@@ -658,7 +666,7 @@ export function KanbanView({
             <button
               type="button"
               className="kanban-bar-btn kanban-share-bar-btn"
-              onClick={() => setShareModalOpen(true)}
+              onClick={handleOpenShareModal}
               title="Bagikan papan atau undang teman"
             >
               <span className="share-btn-icon">👥</span>
@@ -1019,6 +1027,7 @@ export function KanbanView({
           boardLabels={activeBoard.labels}
           onUpdateBoardLabels={(newLabels) => updateBoard(activeBoard.id, { labels: newLabels })}
           readOnly={!canEdit}
+          isLight={isLightBg}
           onUpdate={(updates) =>
             updateCard(currentCardDetail.listId, currentCardDetail.card.id, updates)
           }
@@ -1056,6 +1065,7 @@ export function KanbanView({
           userName={userName}
           userAvatar={userAvatar}
           userEmail={user?.email}
+          onOpenCreateBoard={() => setBoardModalOpen(true)}
         />
       )}
 

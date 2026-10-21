@@ -6153,3 +6153,591 @@ button:active:not(:disabled) {
   font-weight: 700 !important;
 }
 
+
+
+/* ================================================================== */
+/* Modern Dropdowns & Kanban Dialog UI Overhaul                       */
+/* ================================================================== */
+
+/* Modern Calendar View Dropdown */
+.cal-topbar-view-switcher {
+  position: relative;
+}
+
+.cal-modern-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  color: var(--ink);
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cal-modern-view-btn:hover,
+.cal-modern-view-btn.active {
+  background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+  border-color: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+.cal-view-chevron {
+  transition: transform 0.2s ease;
+  color: var(--muted);
+}
+
+.cal-view-chevron.open {
+  transform: rotate(180deg);
+}
+
+.cal-modern-view-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 100;
+  min-width: 150px;
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  backdrop-filter: blur(12px);
+  animation: calDropdownIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes calDropdownIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cal-modern-view-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+  width: 100%;
+}
+
+.cal-modern-view-item:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.cal-modern-view-item.selected {
+  background: color-mix(in srgb, var(--blue) 12%, transparent);
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.cal-view-item-check {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--blue);
+}
+
+/* Modern Kanban Column Select (Replaces native select) */
+.kanban-custom-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.kanban-custom-select-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 13px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.kanban-light-card .kanban-custom-select-btn {
+  background: #f8fafc;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #0f172a;
+}
+
+.kanban-custom-select-btn:hover,
+.kanban-custom-select-btn.active {
+  border-color: #0284c7;
+}
+
+.select-chevron {
+  transition: transform 0.2s ease;
+  color: var(--muted);
+}
+
+.select-chevron.open {
+  transform: rotate(180deg);
+}
+
+.kanban-custom-select-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #1c222c;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.kanban-light-card .kanban-custom-select-menu {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+}
+
+.kanban-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: #dee4ea;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s ease;
+}
+
+.kanban-light-card .kanban-select-option {
+  color: #334155;
+}
+
+.kanban-select-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.kanban-light-card .kanban-select-option:hover {
+  background: #f1f5f9;
+}
+
+.kanban-select-option.current {
+  background: rgba(2, 132, 199, 0.18);
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.kanban-light-card .kanban-select-option.current {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.option-badge.current {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: rgba(2, 132, 199, 0.25);
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.kanban-light-card .option-badge.current {
+  background: #bae6fd;
+  color: #0369a1;
+}
+
+.option-badge.hover-tag {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+/* Kanban Card Dialog Light Mode (Softlight / Soft Slate / Putih BiarFokus) */
+.kanban-dialog-card.kanban-light-card {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.22) !important;
+}
+
+.kanban-light-card .kanban-dialog-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+
+.kanban-light-card .kanban-dialog-title-input {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-dialog-title-input:focus {
+  background: #f8fafc !important;
+  border-color: #0284c7 !important;
+}
+
+.kanban-light-card .kanban-dialog-crumb {
+  color: #64748b !important;
+}
+
+.kanban-light-card .kanban-dialog-crumb strong {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-dialog-close-btn {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+.kanban-light-card .kanban-dialog-close-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-dialog-quick-toolbar {
+  background: #f8fafc !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+
+.kanban-light-card .kanban-quick-btn {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+}
+
+.kanban-light-card .kanban-quick-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-quick-btn.active {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.kanban-light-card .kanban-section-title,
+.kanban-light-card .kanban-sidebar-heading {
+  color: #64748b !important;
+}
+
+.kanban-light-card .kanban-desc-textarea {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-desc-textarea:focus {
+  background: #ffffff !important;
+  border-color: #0284c7 !important;
+}
+
+.kanban-light-card .kanban-checklist-item {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+
+.kanban-light-card .kanban-checklist-item:hover {
+  border-color: rgba(0, 0, 0, 0.14) !important;
+}
+
+.kanban-light-card .kanban-checklist-text {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-checklist-action-btn {
+  color: #64748b !important;
+}
+
+.kanban-light-card .kanban-sidebar-btn {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: #1e293b !important;
+}
+
+.kanban-light-card .kanban-sidebar-btn:hover {
+  background: #f1f5f9 !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+.kanban-light-card .kanban-sidebar-btn.active {
+  background: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  color: #0369a1 !important;
+}
+
+.kanban-light-card .kanban-sidebar-subbox {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+}
+
+.kanban-light-card .kanban-subtask-input {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-custom-pic-label {
+  color: #475569 !important;
+}
+
+.kanban-light-card .kanban-comment-composer {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.kanban-light-card .kanban-comment-composer textarea {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-comment-item {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+
+.kanban-light-card .kanban-comment-author {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-comment-text {
+  color: #334155 !important;
+}
+
+/* Date Inputs & Calendar Icon Contrast */
+.kanban-date-picker-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanban-date-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.kanban-date-field-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kanban-date-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13px !important;
+  padding: 8px 10px !important;
+  border-radius: 10px !important;
+}
+
+/* Date Picker Calendar Icon Contrast */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+/* Dark mode / dark dialog: bright white calendar icon */
+.kanban-dialog-card.kanban-dark-card input[type="date"]::-webkit-calendar-picker-indicator,
+.app.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.95);
+  opacity: 0.85;
+}
+
+.kanban-dialog-card.kanban-dark-card input[type="date"] {
+  color-scheme: dark;
+}
+
+/* Light mode / light dialog: crisp dark calendar icon */
+.kanban-dialog-card.kanban-light-card input[type="date"]::-webkit-calendar-picker-indicator,
+:root:not(.dark) .kanban-dialog-card:not(.kanban-dark-card) input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.75;
+}
+
+.kanban-dialog-card.kanban-light-card input[type="date"] {
+  color-scheme: light;
+}
+
+/* Mobile Overhaul for Kanban Card Dialog */
+.kanban-dialog-mobile-handle {
+  display: none;
+}
+
+.kanban-mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .kanban-dialog-backdrop {
+    padding: 0 !important;
+    align-items: flex-end !important;
+    background: rgba(0, 0, 0, 0.65) !important;
+  }
+
+  .kanban-dialog-card {
+    width: 100% !important;
+    max-height: 94vh !important;
+    border-radius: 24px 24px 0 0 !important;
+    border-bottom: none !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .kanban-dialog-mobile-handle {
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 9999px;
+    margin: 8px auto 0;
+  }
+
+  .kanban-light-card .kanban-dialog-mobile-handle {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .kanban-dialog-header {
+    padding: 10px 14px !important;
+    gap: 8px !important;
+  }
+
+  .kanban-dialog-title-input {
+    font-size: 16px !important;
+    padding: 3px 6px !important;
+  }
+
+  .kanban-dialog-close-btn {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 15px !important;
+    flex-shrink: 0;
+  }
+
+  .kanban-dialog-quick-toolbar {
+    display: flex !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    padding: 8px 14px !important;
+    scrollbar-width: none;
+  }
+
+  .kanban-dialog-quick-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kanban-quick-btn {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .kanban-mobile-only {
+    display: block !important;
+  }
+
+  /* Mobile Inline Panel (Expands directly under quick toolbar) */
+  .kanban-mobile-inline-panel {
+    background: rgba(0, 0, 0, 0.35);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 14px;
+    animation: mobilePanelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .kanban-light-card .kanban-mobile-inline-panel {
+    background: #f1f5f9;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  @keyframes mobilePanelIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .mobile-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .mobile-panel-title {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .mobile-panel-close-btn {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  .mobile-move-column-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.12s ease;
+  }
+
+  .kanban-light-card .mobile-move-column-btn {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+  }
+
+  .mobile-move-column-btn.current {
+    border-color: #0284c7;
+    background: rgba(2, 132, 199, 0.18);
+    color: #38bdf8;
+  }
+
+  .kanban-light-card .mobile-move-column-btn.current {
+    background: #e0f2fe;
+    color: #0284c7;
+  }
+
+  .kanban-dialog-body {
+    padding: 12px 14px 30px !important;
+  }
+
+  /* Hide duplicate sidebar on mobile since controls are accessible in quick toolbar */
+  .kanban-dialog-sidebar {
+    display: none !important;
+  }
+}

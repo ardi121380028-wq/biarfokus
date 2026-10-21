@@ -13,6 +13,7 @@ type KanbanShareModalProps = {
   userName?: string;
   userAvatar?: string | null;
   userEmail?: string | null;
+  onOpenCreateBoard?: () => void;
 };
 
 export function KanbanShareModal({
@@ -23,6 +24,7 @@ export function KanbanShareModal({
   userName,
   userAvatar,
   userEmail,
+  onOpenCreateBoard,
 }: KanbanShareModalProps) {
   const [role, setRole] = useState<"editor" | "viewer">("editor");
   const [inviteCode, setInviteCode] = useState<string>("");
@@ -45,9 +47,16 @@ export function KanbanShareModal({
 
   // Generate / get invite link whenever board or selected role changes
   useEffect(() => {
-    if (!isOpen || !board.id) return;
+    if (!isOpen) return;
+    if (!board || !board.id) {
+      setLoadingInvite(false);
+      setLoadingMembers(false);
+      return;
+    }
 
     let cancelled = false;
+    setLoadingInvite(true);
+    setError(null);
 
     createBoardInviteApi(board, role)
       .then((res) => {
@@ -68,7 +77,7 @@ export function KanbanShareModal({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, board, role]);
+  }, [isOpen, board?.id, role]);
 
   // Load existing board members
   useEffect(() => {
@@ -96,10 +105,39 @@ export function KanbanShareModal({
     : "Membuat tautan...";
 
   function handleCopy() {
-    if (!inviteCode || typeof navigator === "undefined" || !navigator.clipboard) return;
-    navigator.clipboard.writeText(inviteUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+    if (!inviteCode) return;
+
+    const copyToClipboard = async () => {
+      try {
+        if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(inviteUrl);
+          return true;
+        }
+      } catch {}
+
+      // Fallback for mobile / insecure contexts
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = inviteUrl;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const success = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        return success;
+      } catch {
+        return false;
+      }
+    };
+
+    void copyToClipboard().then((ok) => {
+      if (ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      } else {
+        setError("Gagal menyalin otomatis. Silakan blok dan salin link secara manual.");
+      }
     });
   }
 
@@ -167,6 +205,27 @@ export function KanbanShareModal({
           </div>
         )}
 
+        {!board?.id ? (
+          <div className="kanban-share-empty-box" style={{ padding: "32px 16px", textAlign: "center" }}>
+            <span style={{ fontSize: 36, display: "block", marginBottom: 10 }}>📋</span>
+            <h4 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700 }}>Belum Ada Papan Aktif</h4>
+            <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 0 18px", maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>
+              Pilih atau buat papan proyek terlebih dahulu untuk membagikan tautan kolaborasi kepada rekan tim.
+            </p>
+            <button
+              type="button"
+              className="kanban-primary-btn"
+              onClick={() => {
+                onClose();
+                onOpenCreateBoard?.();
+              }}
+              style={{ padding: "8px 20px" }}
+            >
+              + Buat Papan Proyek Baru
+            </button>
+          </div>
+        ) : (
+          <>
         {/* Role Selector & Quick Link Section */}
         <div className="kanban-share-section">
           <label className="kanban-share-label">Tautan Undangan Cepat</label>
@@ -255,6 +314,9 @@ export function KanbanShareModal({
             )}
           </div>
         </div>
+
+          </>
+        )}
 
         <div className="kanban-modal-footer" style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
           <button
