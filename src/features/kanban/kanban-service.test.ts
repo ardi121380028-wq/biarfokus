@@ -219,9 +219,17 @@ describe("kanban-service", () => {
     assert.equal(ownedBoard.isShared, false);
     assert.equal(ownedBoard.userId, "user-owner-123");
 
-    const sharedBoard = mapDbKanbanBoard(rawDbBoard, "user-teammate-456");
-    assert.equal(sharedBoard.role, "editor");
-    assert.equal(sharedBoard.isShared, true);
+    const sharedEditorBoard = mapDbKanbanBoard(rawDbBoard, "user-teammate-456", "editor");
+    assert.equal(sharedEditorBoard.role, "editor");
+    assert.equal(sharedEditorBoard.isShared, true);
+
+    const sharedViewerBoard = mapDbKanbanBoard(rawDbBoard, "user-teammate-456", "viewer");
+    assert.equal(sharedViewerBoard.role, "viewer");
+    assert.equal(sharedViewerBoard.isShared, true);
+
+    const defaultSharedBoard = mapDbKanbanBoard(rawDbBoard, "user-teammate-456");
+    assert.equal(defaultSharedBoard.role, "viewer");
+    assert.equal(defaultSharedBoard.isShared, true);
   });
 
   it("handles createBoardInviteApi payload with board snapshot gracefully", async () => {

@@ -15,7 +15,7 @@ const limiter = createRateLimiter({ limit: 30, windowMs: 60_000 });
 
 function decodeFallbackInviteToken(
   code: string,
-): { boardId: string; role: "editor" | "viewer"; board?: unknown; ownerName?: string } | null {
+): { boardId: string; role: "editor" | "viewer"; board?: unknown; ownerName?: string; userId?: string } | null {
   if (!code.startsWith("bf_inv_")) return null;
   let payloadStr = code.slice("bf_inv_".length);
   if (payloadStr.startsWith("viewer_")) {
@@ -33,6 +33,7 @@ function decodeFallbackInviteToken(
         role: explicitRole,
         board: json.board,
         ownerName: typeof json.owner === "string" ? json.owner : undefined,
+        userId: typeof json.u === "string" ? json.u : undefined,
       };
     }
   } catch {
@@ -58,6 +59,7 @@ export async function GET(request: Request) {
       (typeof fbBoard?.title === "string" && fbBoard.title) || "Papan Proyek";
     const mappedBoard: KanbanBoard = {
       id: fallback.boardId,
+      userId: fallback.userId,
       title: boardTitle,
       description: typeof fbBoard?.description === "string" ? fbBoard.description : "",
       background: typeof fbBoard?.background === "string" ? fbBoard.background : "wave-blue",
@@ -337,6 +339,7 @@ export async function POST(request: Request) {
       const eBoard = embeddedBoard as Record<string, unknown>;
       mappedBoard = {
         id: boardId,
+        userId: fallbackDecoded?.userId || (typeof eBoard.userId === "string" ? eBoard.userId : "owner-shared"),
         title: typeof eBoard.title === "string" ? eBoard.title : boardTitle,
         description: typeof eBoard.description === "string" ? eBoard.description : "",
         background: typeof eBoard.background === "string" ? eBoard.background : "wave-blue",

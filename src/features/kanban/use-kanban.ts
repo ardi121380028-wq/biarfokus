@@ -117,7 +117,7 @@ export function useKanban(userId?: string | null) {
         const activeCloud = cloudBoards
           .filter((b) => !deletedIds.has(b.id))
           .map((b) => {
-            if (userId && (b.userId === userId || !b.userId)) {
+            if (userId && b.userId === userId) {
               return { ...b, role: "owner" as const };
             }
             return b;
@@ -218,7 +218,7 @@ export function useKanban(userId?: string | null) {
     const found = boards.find((b) => b.id === activeBoardId);
     const resolved = found || boards[0] || EMPTY_FALLBACK_BOARD;
     // CRITICAL: An owner can never be locked out as viewer on their own board
-    if (userId && (resolved.userId === userId || !resolved.userId) && resolved.role !== "owner") {
+    if (userId && resolved.userId === userId && resolved.role !== "owner") {
       return { ...resolved, role: "owner" as const };
     }
     return resolved;
@@ -458,7 +458,7 @@ export function useKanban(userId?: string | null) {
       updateBoards((current) => {
         const existing = current.find((b) => b.id === newBoard.id);
         const isOwner = Boolean(
-          userId && (newBoard.userId === userId || existing?.userId === userId || existing?.role === "owner")
+          userId && (newBoard.userId === userId || existing?.userId === userId)
         );
 
         const safeBoard: KanbanBoard = isOwner

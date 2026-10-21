@@ -232,17 +232,27 @@ export function KanbanShareModal({
           <div className="kanban-share-role-tabs">
             <button
               type="button"
-              className={role === "editor" ? "kanban-role-tab active" : "kanban-role-tab"}
+              className={`kanban-role-tab editor ${role === "editor" ? "active" : ""}`}
               onClick={() => handleSelectRole("editor")}
+              aria-pressed={role === "editor"}
             >
-              ✏️ Sebagai Editor (Bisa Edit & Pindah Kartu)
+              <span className="kanban-role-tab-icon">✏️</span>
+              <span className="kanban-role-tab-label">
+                <strong>Sebagai Editor</strong>
+                <small className="kanban-role-tab-sub">Bisa Edit &amp; Pindah</small>
+              </span>
             </button>
             <button
               type="button"
-              className={role === "viewer" ? "kanban-role-tab active" : "kanban-role-tab"}
+              className={`kanban-role-tab viewer ${role === "viewer" ? "active" : ""}`}
               onClick={() => handleSelectRole("viewer")}
+              aria-pressed={role === "viewer"}
             >
-              👁️ Sebagai Viewer (Hanya Lihat)
+              <span className="kanban-role-tab-icon">👁️</span>
+              <span className="kanban-role-tab-label">
+                <strong>Sebagai Viewer</strong>
+                <small className="kanban-role-tab-sub">Hanya Lihat</small>
+              </span>
             </button>
           </div>
 

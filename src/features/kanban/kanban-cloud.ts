@@ -1,8 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DbKanbanBoard, KanbanBoard, KanbanBoardMember, KanbanList, KanbanMemberRole } from "@/types/domain";
 
-export function mapDbKanbanBoard(row: DbKanbanBoard, currentUserId?: string | null): KanbanBoard {
+export function mapDbKanbanBoard(
+  row: DbKanbanBoard,
+  currentUserId?: string | null,
+  membershipRole?: KanbanMemberRole,
+): KanbanBoard {
   const isOwner = currentUserId ? row.user_id === currentUserId : true;
+  const role: KanbanMemberRole = isOwner
+    ? "owner"
+    : membershipRole || "viewer";
+
   return {
     id: row.id,
     userId: row.user_id,
@@ -11,7 +19,7 @@ export function mapDbKanbanBoard(row: DbKanbanBoard, currentUserId?: string | nu
     background: row.background || "wave-blue",
     lists: Array.isArray(row.lists) ? (row.lists as KanbanList[]) : [],
     starred: Boolean(row.starred),
-    role: (isOwner ? "owner" : "editor") as KanbanMemberRole,
+    role,
     isShared: !isOwner,
     createdAt: row.created_at,
     updatedAt: new Date(row.updated_at).toLocaleDateString("id-ID", {
@@ -44,7 +52,28 @@ export async function loadCloudBoards(
       throw error;
     }
 
-    return ((data as DbKanbanBoard[]) || []).map((row) => mapDbKanbanBoard(row, userId));
+    // Query user's memberships to ensure viewers stay viewers
+    const memberRoleMap = new Map<string, KanbanMemberRole>();
+    try {
+      const { data: memberRows } = await supabase
+        .from("kanban_board_members")
+        .select("board_id, role")
+        .eq("user_id", userId);
+
+      if (memberRows && Array.isArray(memberRows)) {
+        for (const m of memberRows) {
+          if (m.board_id && m.role) {
+            memberRoleMap.set(m.board_id, m.role as KanbanMemberRole);
+          }
+        }
+      }
+    } catch {}
+
+    return ((data as DbKanbanBoard[]) || []).map((row) => {
+      const isOwner = row.user_id === userId;
+      const assignedRole = memberRoleMap.get(row.id) || (isOwner ? "owner" : "viewer");
+      return mapDbKanbanBoard(row, userId, assignedRole);
+    });
   } catch (err) {
     console.warn("Cloud kanban fetch skipped or failed; using local state.", err);
     return [];

@@ -178,26 +178,7 @@ export function KanbanView({
     });
   }, [userId, joinBoard]);
 
-  // If the owner opens an invite link for their own board, dismiss it silently and clean up
-  useEffect(() => {
-    if (!pendingInviteCode || !userId) return;
-    if (activeBoard.userId === userId || activeBoard.role === "owner" || (previewBoard && previewBoard.userId === userId)) {
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.removeItem("biarfokus.pending_auto_join");
-          localStorage.removeItem("biarfokus.pending_kanban_invite");
-          document.cookie = "bf_pending_invite=; path=/; max-age=0";
-          if (window.history.replaceState) {
-            const url = new URL(window.location.href);
-            url.searchParams.delete("kanbanInvite");
-            url.searchParams.delete("invite");
-            window.history.replaceState({}, "", url.toString());
-          }
-        } catch {}
-      }
-      setPendingInviteCode(null);
-    }
-  }, [pendingInviteCode, userId, activeBoard.userId, activeBoard.role, previewBoard]);
+
 
   const [activeCardData, setActiveCardData] = useState<{ card: KanbanCard; listId: string } | null>(null);
   const [isAddingList, setIsAddingList] = useState(false);
@@ -292,6 +273,7 @@ export function KanbanView({
   }, [currentBoard.background]);
 
   const isLightBg = Boolean(
+    dark === false ||
     currentBg.isLight ||
     currentBg.textColor === "#0f172a" ||
     currentBg.textColor === "#111111"
@@ -315,18 +297,20 @@ export function KanbanView({
   }, [currentBoard.lists]);
 
   const isOwner = Boolean(
-    userId && (currentBoard.userId === userId || activeBoard.userId === userId || currentBoard.role === "owner")
+    userId &&
+      ((currentBoard.userId && currentBoard.userId === userId) ||
+        (!currentBoard.isShared && currentBoard.role === "owner"))
   );
 
   // Permission check: read-only unless user is owner, editor, or private board
   const canEdit = useMemo(() => {
     if (previewBoard) return false;
-    // An owner can ALWAYS edit their board regardless of invite codes or role
-    if (isOwner) return true;
     if (pendingInviteCode) return false;
+    if (isOwner) return true;
     if (currentBoard.role === "viewer") return false;
-    return true;
-  }, [previewBoard, isOwner, pendingInviteCode, currentBoard.role]);
+    if (currentBoard.role === "editor") return true;
+    return !currentBoard.isShared;
+  }, [previewBoard, pendingInviteCode, isOwner, currentBoard.role, currentBoard.isShared]);
 
   // Filtered lists if search query is active
   const displayedLists = useMemo(() => {
@@ -855,14 +839,14 @@ export function KanbanView({
                         className="kanban-headline-main-title"
                         onClick={() => {
                           if (canEdit) {
-                            setBoardTitleInput(activeBoard.title);
+                            setBoardTitleInput(currentBoard.title);
                             setIsEditingBoardTitle(true);
                           }
                         }}
                         title={canEdit ? "Klik untuk mengubah nama proyek" : currentBoard.title}
                         style={{ cursor: canEdit ? "pointer" : "default" }}
                       >
-                        {activeBoard.title}
+                        {currentBoard.title}
                         {canEdit && (
                           <span className="kanban-headline-edit-icon" aria-hidden="true">
                             ✏️

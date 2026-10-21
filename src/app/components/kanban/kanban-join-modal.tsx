@@ -80,16 +80,12 @@ export function KanbanJoinModal({
     };
   }, [inviteCode]);
 
-  // If current logged-in user is already the owner of this board, dismiss silently
-  useEffect(() => {
-    if (userId && previewBoard && previewBoard.userId === userId) {
-      handleCancel();
-    }
-  }, [userId, previewBoard]);
+
 
   if (!inviteCode) return null;
 
   const isEditorRole = role === "editor";
+  const isOwnerOfInvitedBoard = Boolean(userId && previewBoard && previewBoard.userId === userId);
 
   async function handleJoin() {
     if (!inviteCode) return;
@@ -167,19 +163,44 @@ export function KanbanJoinModal({
           </p>
         </div>
 
-        {/* Role Privileges Card */}
-        <div className="kanban-join-role-card" style={{ margin: "14px 0" }}>
-          <div className="join-role-badge-row">
-            <span className={`join-role-badge ${isEditorRole ? "editor" : "viewer"}`}>
-              {isEditorRole ? "✏️ Peran: Editor (Bisa Edit & Pindah Kartu)" : "👁️ Peran: Viewer (Hanya Lihat)"}
-            </span>
+        {/* Role Privileges Card or Owner Notice */}
+        {isOwnerOfInvitedBoard ? (
+          <div
+            className="kanban-join-role-card"
+            style={{
+              margin: "14px 0",
+              background: "color-mix(in srgb, #0284c7 10%, var(--paper))",
+              border: "1.5px solid #0284c7",
+              borderRadius: 14,
+              padding: "14px 16px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <span style={{ fontSize: 28, lineHeight: 1 }}>👑</span>
+              <div>
+                <strong style={{ fontSize: 14, color: "var(--ink)", display: "block" }}>
+                  Kamu Adalah Pemilik Papan Ini
+                </strong>
+                <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "4px 0 0", lineHeight: 1.5 }}>
+                  Kamu memiliki akses penuh sebagai Owner di papan <strong>{boardTitle}</strong>. Tautan undangan ini dibuat untuk kamu bagikan kepada rekan tim.
+                </p>
+              </div>
+            </div>
           </div>
-          <p className="join-role-desc" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 6 }}>
-            {isEditorRole
-              ? "Sebagai Editor, kamu dapat menambah kartu baru, memindahkan tahapan, mengatur PIC, serta mengedit checklist secara real-time bersama tim."
-              : "Sebagai Viewer, kamu dapat melihat progres tahapan tugas dan membaca detail kartu tanpa mengubah isi papan."}
-          </p>
-        </div>
+        ) : (
+          <div className="kanban-join-role-card" style={{ margin: "14px 0" }}>
+            <div className="join-role-badge-row">
+              <span className={`join-role-badge ${isEditorRole ? "editor" : "viewer"}`}>
+                {isEditorRole ? "✏️ Peran: Editor (Bisa Edit & Pindah Kartu)" : "👁️ Peran: Viewer (Hanya Lihat)"}
+              </span>
+            </div>
+            <p className="join-role-desc" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 6 }}>
+              {isEditorRole
+                ? "Sebagai Editor, kamu dapat menambah kartu baru, memindahkan tahapan, mengatur PIC, serta mengedit checklist secara real-time bersama tim."
+                : "Sebagai Viewer, kamu dapat melihat progres tahapan tugas dan membaca detail kartu tanpa mengubah isi papan."}
+            </p>
+          </div>
+        )}
 
         {error && (
           <div className="kanban-share-error" role="alert" style={{ marginBottom: 12 }}>
@@ -260,34 +281,59 @@ export function KanbanJoinModal({
         ) : null}
 
         <div className="kanban-modal-footer join-footer" style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
-          <button
-            type="button"
-            className="kanban-secondary-btn"
-            onClick={handleCancel}
-            disabled={joining}
-          >
-            Nanti Saja
-          </button>
-
-          {userId && (
+          {isOwnerOfInvitedBoard ? (
             <>
               <button
                 type="button"
                 className="kanban-secondary-btn"
-                onClick={handleOpenPreview}
-                disabled={joining}
+                onClick={handleCancel}
               >
-                👀 Lihat Pratinjau
+                Tutup
               </button>
               <button
                 type="button"
                 className="kanban-primary-btn"
-                onClick={handleJoin}
-                disabled={joining}
-                style={{ padding: "8px 22px", fontWeight: 700 }}
+                onClick={() => {
+                  handleCancel();
+                  if (previewBoard) onJoined(previewBoard);
+                }}
+                style={{ padding: "8px 24px", fontWeight: 700 }}
               >
-                {joining ? "Bergabung..." : (isEditorRole ? "✓ Setuju & Gabung sebagai Editor" : "✓ Masuk sebagai Viewer")}
+                Buka Papan Saya →
               </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="kanban-secondary-btn"
+                onClick={handleCancel}
+                disabled={joining}
+              >
+                Nanti Saja
+              </button>
+
+              {userId && (
+                <>
+                  <button
+                    type="button"
+                    className="kanban-secondary-btn"
+                    onClick={handleOpenPreview}
+                    disabled={joining}
+                  >
+                    👀 Lihat Pratinjau
+                  </button>
+                  <button
+                    type="button"
+                    className="kanban-primary-btn"
+                    onClick={handleJoin}
+                    disabled={joining}
+                    style={{ padding: "8px 22px", fontWeight: 700 }}
+                  >
+                    {joining ? "Bergabung..." : (isEditorRole ? "✓ Setuju & Gabung sebagai Editor" : "✓ Masuk sebagai Viewer")}
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>

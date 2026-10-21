@@ -91,11 +91,6 @@ export function KanbanCardDialog({
 
   const handleToggleQuickAction = (panel: "date" | "move" | "pic" | "label" | "checklist" | "cover") => {
     setActiveMobilePanel((prev) => (prev === panel ? null : panel));
-    if (panel === "date") setShowDatePicker((prev) => !prev);
-    if (panel === "pic") setShowMemberPicker((prev) => !prev);
-    if (panel === "label") setShowLabelPicker((prev) => !prev);
-    if (panel === "checklist") setShowChecklistPrompt((prev) => !prev);
-    if (panel === "cover") setShowCoverPicker((prev) => !prev);
   };
 
   // Custom label creator state
@@ -481,7 +476,7 @@ export function KanbanCardDialog({
           <div className="kanban-dialog-quick-toolbar">
             <button
               type="button"
-              className={`kanban-quick-btn ${activeMobilePanel === "date" || showDatePicker ? "active" : ""}`}
+              className={`kanban-quick-btn ${activeMobilePanel === "date" ? "active" : ""}`}
               onClick={() => handleToggleQuickAction("date")}
             >
               🕒 Tenggat
@@ -489,7 +484,7 @@ export function KanbanCardDialog({
             {boardLists && boardLists.length > 1 && (
               <button
                 type="button"
-                className={`kanban-quick-btn ${activeMobilePanel === "move" || moveMenuOpen ? "active" : ""}`}
+                className={`kanban-quick-btn ${activeMobilePanel === "move" ? "active" : ""}`}
                 onClick={() => handleToggleQuickAction("move")}
               >
                 📍 Pindah
@@ -497,28 +492,28 @@ export function KanbanCardDialog({
             )}
             <button
               type="button"
-              className={`kanban-quick-btn ${activeMobilePanel === "pic" || showMemberPicker ? "active" : ""}`}
+              className={`kanban-quick-btn ${activeMobilePanel === "pic" ? "active" : ""}`}
               onClick={() => handleToggleQuickAction("pic")}
             >
               👥 PIC
             </button>
             <button
               type="button"
-              className={`kanban-quick-btn ${activeMobilePanel === "label" || showLabelPicker ? "active" : ""}`}
+              className={`kanban-quick-btn ${activeMobilePanel === "label" ? "active" : ""}`}
               onClick={() => handleToggleQuickAction("label")}
             >
               🏷️ Label
             </button>
             <button
               type="button"
-              className={`kanban-quick-btn ${activeMobilePanel === "checklist" || showChecklistPrompt ? "active" : ""}`}
+              className={`kanban-quick-btn ${activeMobilePanel === "checklist" ? "active" : ""}`}
               onClick={() => handleToggleQuickAction("checklist")}
             >
               ☑️ Checklist
             </button>
             <button
               type="button"
-              className={`kanban-quick-btn ${activeMobilePanel === "cover" || showCoverPicker ? "active" : ""}`}
+              className={`kanban-quick-btn ${activeMobilePanel === "cover" ? "active" : ""}`}
               onClick={() => handleToggleQuickAction("cover")}
             >
               🎨 Cover
@@ -663,7 +658,8 @@ export function KanbanCardDialog({
 
               {activeMobilePanel === "cover" && (
                 <div className="mobile-panel-cover">
-                  <div className="kanban-cover-emoji-grid" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }}>Pilih Emoji Cover:</p>
+                  <div className="kanban-cover-emoji-grid" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
                     {COVER_EMOJIS.map((emoji) => (
                       <button
                         key={emoji}
@@ -672,24 +668,82 @@ export function KanbanCardDialog({
                         onClick={() => {
                           onUpdate({ coverEmoji: card.coverEmoji === emoji ? undefined : emoji });
                         }}
-                        style={{ fontSize: 24, padding: "6px 10px", borderRadius: 10 }}
+                        style={{ fontSize: 22, padding: "6px 9px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer" }}
                       >
                         {emoji}
                       </button>
                     ))}
                   </div>
+                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }}>Pilih Warna Cover:</p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                    {DEFAULT_LABEL_COLORS.map((col) => (
+                      <button
+                        key={col}
+                        type="button"
+                        style={{ width: 28, height: 28, borderRadius: 8, background: col, border: card.coverColor === col ? "2px solid #fff" : "none", cursor: "pointer" }}
+                        onClick={() => onUpdate({ coverColor: card.coverColor === col ? undefined : col })}
+                      />
+                    ))}
+                  </div>
+                  {(card.coverColor || card.coverEmoji) && (
+                    <button
+                      type="button"
+                      className="kanban-text-btn"
+                      onClick={() => onUpdate({ coverColor: undefined, coverEmoji: undefined })}
+                      style={{ marginTop: 4, width: "100%", textAlign: "center", fontSize: 12 }}
+                    >
+                      Hapus Cover
+                    </button>
+                  )}
                 </div>
               )}
 
               {activeMobilePanel === "pic" && (
                 <div className="mobile-panel-pic">
                   <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }}>
-                    Atur penugasan kartu ke anggota tim:
+                    Tugaskan kartu ke anggota tim:
                   </p>
-                  <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                  {boardMembers.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12, maxHeight: 180, overflowY: "auto" }}>
+                      {boardMembers.map((member) => {
+                        const memberId = member.userId || member.id;
+                        const isAssigned = (card.assignees || []).some((a) => a.id === memberId);
+                        const name = member.displayName || (member.userId === currentUserId ? "Kamu" : "Anggota Tim");
+                        return (
+                          <button
+                            key={memberId}
+                            type="button"
+                            onClick={() => handleToggleAssignee({ id: memberId, name, avatarUrl: member.avatarUrl })}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "8px 12px",
+                              borderRadius: 10,
+                              border: isAssigned ? "1.5px solid #0284c7" : "1px solid color-mix(in srgb, var(--ink) 12%, transparent)",
+                              background: isAssigned ? "color-mix(in srgb, #0284c7 15%, var(--paper))" : "var(--paper)",
+                              color: "var(--ink)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: isAssigned ? 700 : 500 }}>
+                              <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#0284c7", color: "#fff", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>
+                                {name.charAt(0).toUpperCase()}
+                              </span>
+                              {name}
+                            </span>
+                            <span style={{ fontSize: 12, color: isAssigned ? "#0284c7" : "var(--muted)" }}>
+                              {isAssigned ? "✓ Ditugaskan" : "+ Pilih"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                     <input
                       type="text"
-                      placeholder="Nama PIC baru..."
+                      placeholder="Nama PIC kustom..."
                       value={customPicName}
                       onChange={(e) => setCustomPicName(e.target.value)}
                       className="kanban-subtask-input"
@@ -699,11 +753,11 @@ export function KanbanCardDialog({
                       className="kanban-primary-btn"
                       onClick={() => {
                         handleAddCustomPic();
-                        setActiveMobilePanel(null);
+                        setCustomPicName("");
                       }}
                       disabled={!customPicName.trim()}
                     >
-                      Tambah
+                      + Tambah
                     </button>
                   </div>
                 </div>
@@ -712,18 +766,55 @@ export function KanbanCardDialog({
               {activeMobilePanel === "label" && (
                 <div className="mobile-panel-label">
                   <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }}>
-                    Pilih warna label:
+                    Pilih label untuk kartu ini:
                   </p>
-                  <div className="kanban-palette-swatches" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {DEFAULT_LABEL_COLORS.map((col) => (
-                      <button
-                        key={col}
-                        type="button"
-                        className={`color-swatch-mini ${selectedLabelColor === col ? "active" : ""}`}
-                        style={{ background: col, width: 26, height: 26, borderRadius: "50%" }}
-                        onClick={() => setSelectedLabelColor(col)}
-                      />
-                    ))}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12, maxHeight: 180, overflowY: "auto" }}>
+                    {availableLabels.map((lbl) => {
+                      const isAttached = card.labels.some((l) => l.id === lbl.id || l.name.toLowerCase() === lbl.name.toLowerCase());
+                      return (
+                        <button
+                          key={lbl.id}
+                          type="button"
+                          onClick={() => handleToggleLabel(lbl)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "8px 12px",
+                            borderRadius: 10,
+                            border: isAttached ? "1.5px solid #0284c7" : "1px solid color-mix(in srgb, var(--ink) 12%, transparent)",
+                            background: isAttached ? "color-mix(in srgb, #0284c7 15%, var(--paper))" : "var(--paper)",
+                            color: "var(--ink)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: isAttached ? 700 : 500 }}>
+                            <span style={{ width: 14, height: 14, borderRadius: 4, background: lbl.color, flexShrink: 0 }} />
+                            {lbl.name}
+                          </span>
+                          <span style={{ fontSize: 12, color: isAttached ? "#0284c7" : "var(--muted)" }}>
+                            {isAttached ? "✓ Aktif" : "+ Pasang"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input
+                      type="text"
+                      placeholder="Nama label baru..."
+                      value={newLabelName}
+                      onChange={(e) => setNewLabelName(e.target.value)}
+                      className="kanban-subtask-input"
+                    />
+                    <button
+                      type="button"
+                      className="kanban-primary-btn"
+                      onClick={handleCreateCustomLabel}
+                      disabled={!newLabelName.trim()}
+                    >
+                      + Buat
+                    </button>
                   </div>
                 </div>
               )}
