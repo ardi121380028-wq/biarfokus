@@ -113,8 +113,15 @@ export function useKanban(userId?: string | null) {
       const cloudIds = new Set(cloudBoards.map((b) => b.id));
 
       updateBoards((currentLocal) => {
-        // Exclude boards marked as deleted
-        const activeCloud = cloudBoards.filter((b) => !deletedIds.has(b.id));
+        // Exclude boards marked as deleted, and ensure owned boards always keep owner role
+        const activeCloud = cloudBoards
+          .filter((b) => !deletedIds.has(b.id))
+          .map((b) => {
+            if (userId && (b.userId === userId || !b.userId)) {
+              return { ...b, role: "owner" as const };
+            }
+            return b;
+          });
 
         // If cloud has boards, Cloud is the single authoritative source of truth.
         // We DO NOT merge with stale local boards, so old template boards from previous sessions won't resurrect.
@@ -209,8 +216,13 @@ export function useKanban(userId?: string | null) {
   // Resolve current active board safely
   const activeBoard = useMemo(() => {
     const found = boards.find((b) => b.id === activeBoardId);
-    return found || boards[0] || EMPTY_FALLBACK_BOARD;
-  }, [boards, activeBoardId]);
+    const resolved = found || boards[0] || EMPTY_FALLBACK_BOARD;
+    // CRITICAL: An owner can never be locked out as viewer on their own board
+    if (userId && (resolved.userId === userId || !resolved.userId) && resolved.role !== "owner") {
+      return { ...resolved, role: "owner" as const };
+    }
+    return resolved;
+  }, [boards, activeBoardId, userId]);
 
   const syncBoardToCloud = useCallback(
     async (board: KanbanBoard) => {
@@ -444,15 +456,25 @@ export function useKanban(userId?: string | null) {
   const joinBoard = useCallback(
     (newBoard: KanbanBoard) => {
       updateBoards((current) => {
-        const exists = current.some((b) => b.id === newBoard.id);
-        if (exists) {
-          return current.map((b) => (b.id === newBoard.id ? newBoard : b));
+        const existing = current.find((b) => b.id === newBoard.id);
+        const isOwner = Boolean(
+          userId && (newBoard.userId === userId || existing?.userId === userId || existing?.role === "owner")
+        );
+
+        const safeBoard: KanbanBoard = isOwner
+          ? { ...newBoard, role: "owner", isShared: newBoard.isShared }
+          : newBoard;
+
+        if (existing) {
+          return current.map((b) =>
+            b.id === safeBoard.id ? { ...b, ...safeBoard, role: isOwner ? "owner" : safeBoard.role } : b,
+          );
         }
-        return [newBoard, ...current];
+        return [safeBoard, ...current];
       });
       selectBoard(newBoard.id);
     },
-    [updateBoards, selectBoard],
+    [updateBoards, selectBoard, userId],
   );
 
   return {

@@ -236,10 +236,18 @@ begin
     raise exception 'Papan kanban tidak ditemukan.';
   end if;
 
-  insert into public.kanban_board_members (board_id, user_id, role)
-  values (v_invite.board_id, v_current_user, v_invite.role)
-  on conflict (board_id, user_id)
-  do update set role = excluded.role;
+  if v_board.user_id = v_current_user then
+    -- Current user is board owner: keep role as owner
+    insert into public.kanban_board_members (board_id, user_id, role)
+    values (v_invite.board_id, v_current_user, 'owner')
+    on conflict (board_id, user_id)
+    do update set role = 'owner';
+  else
+    insert into public.kanban_board_members (board_id, user_id, role)
+    values (v_invite.board_id, v_current_user, v_invite.role)
+    on conflict (board_id, user_id)
+    do update set role = excluded.role;
+  end if;
 
   update public.kanban_board_invites
   set uses_count = uses_count + 1

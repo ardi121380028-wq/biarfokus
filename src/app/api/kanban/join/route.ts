@@ -226,17 +226,7 @@ export async function POST(request: Request) {
       assignedRole = fallbackDecoded.role;
       embeddedBoard = fallbackDecoded.board || null;
 
-      if (authData?.user) {
-        try {
-          await supabase.from("kanban_board_members").upsert({
-            board_id: boardId,
-            user_id: authData.user.id,
-            role: assignedRole,
-          });
-        } catch {
-          // Non-blocking membership registration
-        }
-      }
+      // Note: membership upsert will be handled after checking ownership
     } else {
       // 2. Try RPC first if authenticated
       if (authData?.user) {
@@ -287,13 +277,7 @@ export async function POST(request: Request) {
         boardId = invite.board_id;
         assignedRole = (invite.role as "editor" | "viewer") || assignedRole;
 
-        if (authData?.user) {
-          await supabase.from("kanban_board_members").upsert({
-            board_id: invite.board_id,
-            user_id: authData.user.id,
-            role: assignedRole,
-          });
-        }
+        // Note: membership upsert will be handled after checking ownership
 
         // Increment usage count
         await supabase
@@ -317,7 +301,30 @@ export async function POST(request: Request) {
       .eq("id", boardId)
       .maybeSingle();
 
-    const isOwner = authData?.user?.id && boardData?.user_id === authData.user.id;
+    const isOwner = Boolean(authData?.user?.id && boardData?.user_id === authData.user.id);
+
+    // CRITICAL: An owner must NEVER be registered as a viewer or editor on their own board
+    if (authData?.user?.id) {
+      if (isOwner) {
+        // Enforce owner role for board creator in kanban_board_members
+        try {
+          await supabase.from("kanban_board_members").upsert({
+            board_id: boardId,
+            user_id: authData.user.id,
+            role: "owner",
+          });
+        } catch {}
+      } else {
+        // Register member role
+        try {
+          await supabase.from("kanban_board_members").upsert({
+            board_id: boardId,
+            user_id: authData.user.id,
+            role: assignedRole,
+          });
+        } catch {}
+      }
+    }
 
     let mappedBoard: KanbanBoard | null = null;
     if (boardData) {
@@ -335,8 +342,8 @@ export async function POST(request: Request) {
         background: typeof eBoard.background === "string" ? eBoard.background : "wave-blue",
         lists: Array.isArray(eBoard.lists) ? (eBoard.lists as KanbanList[]) : [],
         starred: false,
-        role: assignedRole,
-        isShared: true,
+        role: isOwner ? "owner" : assignedRole,
+        isShared: !isOwner,
         createdAt: new Date().toLocaleDateString("id-ID"),
         updatedAt: new Date().toLocaleDateString("id-ID"),
       };

@@ -80,6 +80,13 @@ export function KanbanJoinModal({
     };
   }, [inviteCode]);
 
+  // If current logged-in user is already the owner of this board, dismiss silently
+  useEffect(() => {
+    if (userId && previewBoard && previewBoard.userId === userId) {
+      handleCancel();
+    }
+  }, [userId, previewBoard]);
+
   if (!inviteCode) return null;
 
   const isEditorRole = role === "editor";
@@ -238,6 +245,7 @@ export function KanbanJoinModal({
                 className="kanban-primary-btn"
                 onClick={() => {
                   try {
+                    localStorage.setItem("biarfokus.pending_auto_join", "true");
                     localStorage.setItem("biarfokus.pending_kanban_invite", inviteCode);
                     document.cookie = `bf_pending_invite=${encodeURIComponent(inviteCode)}; path=/; max-age=86400; SameSite=Lax`;
                   } catch {}

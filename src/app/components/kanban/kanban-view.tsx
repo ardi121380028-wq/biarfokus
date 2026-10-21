@@ -126,13 +126,15 @@ export function KanbanView({
   const [autoJoinNotice, setAutoJoinNotice] = useState<string | null>(null);
   const autoJoinAttempted = useRef<string | null>(null);
 
-  // Auto-join effect when user becomes authenticated and has a pending invite code
+  // Auto-join effect ONLY when user explicitly clicked "Masuk & Gabung" on the join modal
   useEffect(() => {
     if (!userId) return;
 
-    let codeToJoin = pendingInviteCode;
-    if (!codeToJoin && typeof window !== "undefined") {
+    let shouldAutoJoin = false;
+    let codeToJoin: string | null = null;
+    if (typeof window !== "undefined") {
       try {
+        shouldAutoJoin = localStorage.getItem("biarfokus.pending_auto_join") === "true";
         codeToJoin =
           localStorage.getItem("biarfokus.pending_kanban_invite") ||
           new URL(window.location.href).searchParams.get("kanbanInvite") ||
@@ -140,7 +142,7 @@ export function KanbanView({
       } catch {}
     }
 
-    if (!codeToJoin || autoJoinAttempted.current === codeToJoin) return;
+    if (!shouldAutoJoin || !codeToJoin || autoJoinAttempted.current === codeToJoin) return;
     autoJoinAttempted.current = codeToJoin;
 
     void joinBoardViaInviteApi(codeToJoin).then((res) => {
@@ -153,6 +155,7 @@ export function KanbanView({
 
         if (typeof window !== "undefined") {
           try {
+            localStorage.removeItem("biarfokus.pending_auto_join");
             localStorage.removeItem("biarfokus.pending_kanban_invite");
             document.cookie = "bf_pending_invite=; path=/; max-age=0";
             if (window.history.replaceState) {
@@ -165,7 +168,28 @@ export function KanbanView({
         }
       }
     });
-  }, [userId, pendingInviteCode, joinBoard]);
+  }, [userId, joinBoard]);
+
+  // If the owner opens an invite link for their own board, dismiss it silently and clean up
+  useEffect(() => {
+    if (!pendingInviteCode || !userId) return;
+    if (activeBoard.userId === userId || activeBoard.role === "owner" || (previewBoard && previewBoard.userId === userId)) {
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("biarfokus.pending_auto_join");
+          localStorage.removeItem("biarfokus.pending_kanban_invite");
+          document.cookie = "bf_pending_invite=; path=/; max-age=0";
+          if (window.history.replaceState) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("kanbanInvite");
+            url.searchParams.delete("invite");
+            window.history.replaceState({}, "", url.toString());
+          }
+        } catch {}
+      }
+      setPendingInviteCode(null);
+    }
+  }, [pendingInviteCode, userId, activeBoard.userId, activeBoard.role, previewBoard]);
 
   const [activeCardData, setActiveCardData] = useState<{ card: KanbanCard; listId: string } | null>(null);
   const [isAddingList, setIsAddingList] = useState(false);
@@ -282,13 +306,19 @@ export function KanbanView({
     return currentBoard.lists.reduce((acc: number, l: KanbanList) => acc + (Array.isArray(l.cards) ? l.cards.length : 0), 0);
   }, [currentBoard.lists]);
 
+  const isOwner = Boolean(
+    userId && (currentBoard.userId === userId || activeBoard.userId === userId || currentBoard.role === "owner")
+  );
+
   // Permission check: read-only unless user is owner, editor, or private board
   const canEdit = useMemo(() => {
     if (previewBoard) return false;
+    // An owner can ALWAYS edit their board regardless of invite codes or role
+    if (isOwner) return true;
     if (pendingInviteCode) return false;
     if (currentBoard.role === "viewer") return false;
     return true;
-  }, [previewBoard, pendingInviteCode, currentBoard.role]);
+  }, [previewBoard, isOwner, pendingInviteCode, currentBoard.role]);
 
   // Filtered lists if search query is active
   const displayedLists = useMemo(() => {
@@ -838,7 +868,7 @@ export function KanbanView({
                         👥 Tim
                       </span>
                     )}
-                    {(!canEdit || currentBoard.role === "viewer") && (
+                    {!isOwner && (!canEdit || currentBoard.role === "viewer") && (
                       <span className="kanban-role-badge viewer" title="Izin hanya lihat">
                         👁️ Viewer
                       </span>
@@ -859,7 +889,7 @@ export function KanbanView({
             </div>
 
             {/* Read-Only Mode Banner */}
-            {!canEdit && (
+            {!canEdit && !isOwner && !previewBoard && (
               <div className="kanban-readonly-notice-banner">
                 <div className="readonly-banner-info">
                   <span className="readonly-banner-icon">🔒</span>

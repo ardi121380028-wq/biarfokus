@@ -6110,3 +6110,46 @@ button:active:not(:disabled) {
 .kanban-guest-sync-btn:hover {
   opacity: 0.9;
 }
+
+
+/* High contrast styling for viewer and editor badges */
+.join-role-badge.viewer,
+.kanban-role-badge.viewer {
+  background: #e0f2fe !important;
+  border: 1px solid #7dd3fc !important;
+  color: #0369a1 !important;
+  font-weight: 700 !important;
+}
+
+.join-role-badge.editor,
+.kanban-role-badge.editor {
+  background: #ecfdf5 !important;
+  border: 1px solid #a7f3d0 !important;
+  color: #047857 !important;
+  font-weight: 700 !important;
+}
+
+:root.dark .join-role-badge.viewer,
+:root.dark .kanban-role-badge.viewer,
+.app.dark .join-role-badge.viewer,
+.app.dark .kanban-role-badge.viewer,
+.kanban-dark-theme .join-role-badge.viewer,
+.kanban-dark-theme .kanban-role-badge.viewer {
+  background: rgba(14, 165, 233, 0.22) !important;
+  border: 1px solid rgba(56, 189, 248, 0.6) !important;
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+}
+
+:root.dark .join-role-badge.editor,
+:root.dark .kanban-role-badge.editor,
+.app.dark .join-role-badge.editor,
+.app.dark .kanban-role-badge.editor,
+.kanban-dark-theme .join-role-badge.editor,
+.kanban-dark-theme .kanban-role-badge.editor {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border: 1px solid rgba(52, 211, 153, 0.6) !important;
+  color: #34d399 !important;
+  font-weight: 700 !important;
+}
+
