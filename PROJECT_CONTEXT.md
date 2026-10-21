@@ -252,7 +252,19 @@ All tables have Row Level Security (RLS) enabled.
         - Endpoints API: `POST/GET /api/kanban/invite` dan `POST /api/kanban/join`.
         - UI Tombol `👥 Bagikan` di bar atas Project Canban yang membuka `KanbanShareModal` untuk menyalin link instan dengan role switcher (Editor vs Viewer) dan melihat daftar anggota papan.
         - Deteksi otomatis link undangan via URL query parameter (`?kanbanInvite=...`), memicu `KanbanJoinModal` yang menyambut pengguna baru untuk bergabung langsung ke papan tim.
-    - **Test Coverage:** Suite unit test `kanban-service.test.ts` (12 test cases) terverifikasi lulus bersama total 84 test suite di seluruh project dengan 0 lint error dan 0 warning.
+    - **Bidirectional Cloud Sync & Mobile/Desktop Parity (Kanban & Kalender):**
+        - Papan Kanban dan Event Kalender sekarang menggunakan sinkronisasi Cloud Supabase sebagai Single Source of Truth terotorisasi.
+        - Memperbaiki masalah template lama/dummy yang bangkit kembali dengan mekanisme tombstone `biarfokus.deleted_boards` dan migrasi otomatis.
+        - Event Kalender dilengkapi auto-heal `user_id` fallback, background sync setiap 30 detik, serta Supabase Realtime channel listener sehingga penambahan jadwal di HP/mobile otomatis muncul di desktop seketika.
+    - **Collaborative Invite Flow & Owner Immunity:**
+        - **Owner Protection**: Pembuat papan kebal terhadap penurunan hak akses (role downgrade). Walaupun membuka link invite 'viewer', status owner tetap dipertahankan dan auto-healed di `use-kanban.ts` serta `/api/kanban/join`.
+        - **No Forced Auto-Join**: Membuka link invite tidak lagi langsung memasukkan akun secara paksa dalam beberapa detik. Modal undangan tetap terbuka dan memberi pengguna pilihan eksplisit: "👀 Lihat Pratinjau", "✓ Gabung", atau "Nanti Saja".
+        - **Accessible High-Contrast Badges**: Badge peran 'Viewer' dan 'Editor' memiliki kontras tinggi yang jelas dan terbaca di Light Mode maupun Dark Mode (`.app.dark`).
+    - **Git Branches & Staging Workflow:**
+        - Branch `main`: Kode produksi utama yang bersih dan teruji.
+        - Branch `staging-final`: Branch staging aktif yang selalu sinkron dengan `main`.
+        - Branch `staging-mantap`: Snapshot staging stabil sebelumnya.
+    - **Test Coverage:** Suite unit test (90 test cases di 25 suite) terverifikasi lulus bersama build Next.js 16.4.2 tanpa error.
 
 ---
 
