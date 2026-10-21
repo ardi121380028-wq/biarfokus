@@ -25,6 +25,8 @@ type CalendarTopbarProps = {
   userAvatar?: string | null;
   onRequireLogin?: () => void;
   onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  syncStatus?: "synced" | "saving" | "offline" | "error";
+  onForceSync?: () => void;
 };
 
 export function CalendarTopbar({
@@ -46,6 +48,8 @@ export function CalendarTopbar({
   userAvatar,
   onRequireLogin,
   onNavigate,
+  syncStatus,
+  onForceSync,
 }: CalendarTopbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -125,8 +129,43 @@ export function CalendarTopbar({
         </div>
       </div>
 
-      {/* Right controls: Search, View Switcher, Theme, Settings, Profile */}
+      {/* Right controls: Sync Status, Search, View Switcher, Theme, Settings, Profile */}
       <div className="cal-topbar-right">
+        {/* Cloud Sync Status Badge */}
+        {syncStatus && (
+          <button
+            type="button"
+            className={`cal-sync-status-badge ${syncStatus}`}
+            onClick={() => {
+              if (syncStatus === "error" || syncStatus === "offline") {
+                onForceSync?.();
+              }
+            }}
+            title={
+              syncStatus === "synced"
+                ? "Kalender tersinkronisasi otomatis dengan cloud & HP"
+                : syncStatus === "saving"
+                  ? "Menyimpan perubahan ke cloud..."
+                  : syncStatus === "offline"
+                    ? "Mode offline / tamu"
+                    : "Gagal sinkron. Klik untuk mencoba lagi."
+            }
+          >
+            <span className="cal-sync-status-icon">
+              {syncStatus === "synced" && "☁️"}
+              {syncStatus === "saving" && "⏳"}
+              {syncStatus === "offline" && "💻"}
+              {syncStatus === "error" && "⚠️"}
+            </span>
+            <span className="cal-sync-status-text">
+              {syncStatus === "synced" && "Tersinkron"}
+              {syncStatus === "saving" && "Menyimpan..."}
+              {syncStatus === "offline" && "Mode Lokal"}
+              {syncStatus === "error" && "Coba Lagi"}
+            </span>
+          </button>
+        )}
+
         {/* Search input / toggle */}
         <div className={`cal-topbar-search-box ${searchOpen ? "is-open" : ""}`}>
           <button

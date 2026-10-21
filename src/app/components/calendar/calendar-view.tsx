@@ -54,7 +54,7 @@ export function CalendarView({
   onNavigateToNotes,
   onRequireLogin,
 }: CalendarViewProps) {
-  const { events, addEvent, updateEvent, deleteEvent } = useCalendarEvents(userId);
+  const { events, addEvent, updateEvent, deleteEvent, syncStatus, forceSync } = useCalendarEvents(userId);
   const { notes } = useKeepNotes(userId);
   const { boards } = useKanban(userId);
 
@@ -260,6 +260,8 @@ export function CalendarView({
           userAvatar={userAvatar}
           onRequireLogin={onRequireLogin}
           onNavigate={onNavigate}
+          syncStatus={syncStatus}
+          onForceSync={forceSync}
         />
 
         {/* Content Canvas */}

@@ -48,7 +48,15 @@ create policy "Admins can view site visits"
 -- 2. KOLOM LINKED ITEM DI calendar_events
 -- ------------------------------------------------------------------------------
 alter table public.calendar_events
-  add column if not exists linked_item_text text;
+  add column if not exists linked_item_text text,
+  add column if not exists recurrence jsonb default null,
+  add column if not exists linked_kanban_card_id text default null,
+  add column if not exists linked_kanban_board_id text default null,
+  add column if not exists linked_kanban_board_title text default null;
+
+create index if not exists calendar_events_kanban_card_idx
+  on public.calendar_events (linked_kanban_card_id)
+  where linked_kanban_card_id is not null;
 
 -- ------------------------------------------------------------------------------
 -- 3. KOLOM LINKED NOTE DI tasks (Koneksi Eat Your Frog <-> Catatan & Todo List)
@@ -357,6 +365,35 @@ create policy "Users can view their own subscription"
   on public.user_subscriptions for select
   to authenticated
   using (auth.uid() = user_id);
+
+
+
+-- ------------------------------------------------------------------------------
+-- 7. AKTIFKAN REALTIME UNTUK calendar_events DAN kanban_boards
+-- ------------------------------------------------------------------------------
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and tablename = 'calendar_events'
+  ) then
+    alter publication supabase_realtime add table public.calendar_events;
+  end if;
+exception when others then
+  -- publication or permission may vary, ignore if not allowed
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and tablename = 'kanban_boards'
+  ) then
+    alter publication supabase_realtime add table public.kanban_boards;
+  end if;
+exception when others then
+  -- publication or permission may vary, ignore if not allowed
+end $$;
 
 -- Notifikasi sukses setelah run script
 select 'Migrasi database berhasil dijalankan! Tabel site_visits, kanban_boards, kanban_board_members, kanban_board_invites, user_subscriptions, dan kolom relasi tasks siap digunakan.' as status;

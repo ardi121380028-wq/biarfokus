@@ -63,8 +63,8 @@ export async function upsertCloudEvent(
   supabase: SupabaseClient,
   userId: string,
   event: CalendarEvent,
-): Promise<void> {
-  const payload = {
+): Promise<boolean> {
+  const fullPayload = {
     id: event.id,
     user_id: userId,
     title: event.title,
@@ -85,8 +85,54 @@ export async function upsertCloudEvent(
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase.from("calendar_events").upsert(payload);
-  if (error) throw error;
+  const { error } = await supabase.from("calendar_events").upsert(fullPayload);
+  if (!error) return true;
+
+  // Fallback 1: Retry without recurrence and kanban linkage in case migrations are not yet applied in Supabase
+  const fallbackPayload1 = {
+    id: event.id,
+    user_id: userId,
+    title: event.title,
+    date: event.date,
+    start_time: event.startTime,
+    end_time: event.endTime,
+    color: event.color,
+    category: event.category || "event",
+    description: event.description || null,
+    linked_note_id: event.linkedNoteId || null,
+    linked_note_title: event.linkedNoteTitle || null,
+    linked_item_id: event.linkedItemId || null,
+    linked_item_text: event.linkedItemText || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error: err1 } = await supabase.from("calendar_events").upsert(fallbackPayload1);
+  if (!err1) return true;
+
+  // Fallback 2: Retry with base schema (columns from initial calendar_events table creation)
+  const fallbackPayload2 = {
+    id: event.id,
+    user_id: userId,
+    title: event.title,
+    date: event.date,
+    start_time: event.startTime,
+    end_time: event.endTime,
+    color: event.color,
+    category: event.category || "event",
+    description: event.description || null,
+    linked_note_id: event.linkedNoteId || null,
+    linked_note_title: event.linkedNoteTitle || null,
+    linked_item_id: event.linkedItemId || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error: err2 } = await supabase.from("calendar_events").upsert(fallbackPayload2);
+  if (err2) {
+    console.warn("[BiarFokus Calendar] Failed to upsert event even with fallbacks:", err2);
+    throw err2;
+  }
+
+  return true;
 }
 
 export async function deleteCloudEvent(
