@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { KeepNote } from "@/types/domain";
+import { exportNoteToPdf } from "@/features/notes/note-format";
+import { NoteContentRenderer } from "./note-content-renderer";
 
 type NoteCardProps = {
   note: KeepNote;
@@ -115,7 +117,9 @@ export function NoteCard({
           )}
         </div>
       ) : (
-        <p className="keep-card-text">{note.content || "Catatan kosong..."}</p>
+        <div className="keep-card-content-wrap">
+          <NoteContentRenderer content={note.content} isCardPreview />
+        </div>
       )}
 
       {note.labels && note.labels.length > 0 && (
@@ -131,6 +135,15 @@ export function NoteCard({
       <div className="keep-card-bottom" onClick={(e) => e.stopPropagation()}>
         <span>{note.updatedAt}</span>
         <div className="keep-card-actions">
+          <button
+            type="button"
+            className="keep-icon-action"
+            onClick={() => exportNoteToPdf(note)}
+            title="Unduh sebagai PDF"
+            aria-label="Unduh sebagai PDF"
+          >
+            📥
+          </button>
           <button
             type="button"
             className="keep-icon-action"
