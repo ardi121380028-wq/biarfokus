@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { ChecklistItem, KeepNote } from "@/types/domain";
 import {
   convertDraftType,
@@ -8,14 +8,9 @@ import {
   NOTE_COLORS,
   type NoteDraft,
 } from "@/features/notes/notes-service";
-import {
-  exportNoteToPdf,
-  insertMarkdownFormatting,
-  type MarkdownFormattingType,
-} from "@/features/notes/note-format";
+import { exportNoteToPdf } from "@/features/notes/note-format";
 import { LabelSelect } from "./label-select";
-import { NoteFormatterToolbar } from "./note-formatter-toolbar";
-import { NoteContentRenderer } from "./note-content-renderer";
+import { RichNoteEditor } from "./rich-note-editor";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 
 type NoteEditDialogProps = {
@@ -25,6 +20,7 @@ type NoteEditDialogProps = {
   onDelete: (id: string) => void;
   onClose: () => void;
   onCreateLabel: (name: string) => string | null;
+  onToggleArchive?: (id: string) => void;
 };
 
 export function NoteEditDialog({
@@ -34,6 +30,7 @@ export function NoteEditDialog({
   onDelete,
   onClose,
   onCreateLabel,
+  onToggleArchive,
 }: NoteEditDialogProps) {
   const [draft, setDraft] = useState<NoteDraft>({
     title: note.title,
@@ -46,17 +43,8 @@ export function NoteEditDialog({
   });
   const [newItemText, setNewItemText] = useState("");
   const [collapsedDone, setCollapsedDone] = useState(true);
-  const [isPreview, setIsPreview] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (draft.type === "text" && textareaRef.current && !isPreview) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.max(220, textareaRef.current.scrollHeight)}px`;
-    }
-  }, [draft.type, draft.content, isPreview]);
 
   const activeItems = (draft.items || []).filter((i) => !i.done);
   const doneItems = (draft.items || []).filter((i) => i.done);
@@ -92,21 +80,6 @@ export function NoteEditDialog({
       ...prev,
       items: (prev.items || []).filter((i) => i.id !== id),
     }));
-  }
-
-  function handleFormat(type: MarkdownFormattingType) {
-    const el = textareaRef.current;
-    const current = draft.content || "";
-    const start = el ? el.selectionStart : current.length;
-    const end = el ? el.selectionEnd : current.length;
-    const { newText, newStart, newEnd } = insertMarkdownFormatting(current, start, end, type);
-    setDraft((prev) => ({ ...prev, content: newText }));
-    requestAnimationFrame(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(newStart, newEnd);
-      }
-    });
   }
 
   function handleExportPdf() {
@@ -153,10 +126,7 @@ export function NoteEditDialog({
                 ? "keep-switch-btn active"
                 : "keep-switch-btn"
             }
-            onClick={() => {
-              setIsPreview(false);
-              setDraft((prev) => convertDraftType(prev, "checklist"));
-            }}
+            onClick={() => setDraft((prev) => convertDraftType(prev, "checklist"))}
           >
             ☑️ Checklist
           </button>
@@ -175,31 +145,13 @@ export function NoteEditDialog({
 
         {draft.type === "text" ? (
           <div className="keep-text-editor-wrap">
-            <NoteFormatterToolbar
-              onFormat={handleFormat}
-              isPreview={isPreview}
-              onTogglePreview={() => setIsPreview(!isPreview)}
-              showPdfButton={true}
+            <RichNoteEditor
+              content={draft.content || ""}
+              onChange={(html) => setDraft((prev) => ({ ...prev, content: html }))}
+              minHeight={240}
               onDownloadPdf={handleExportPdf}
+              showPdfButton={true}
             />
-
-            {isPreview ? (
-              <div className="keep-edit-preview-box">
-                <NoteContentRenderer content={draft.content} />
-              </div>
-            ) : (
-              <textarea
-                ref={textareaRef}
-                placeholder="Isi catatan... (Mendukung Heading H1-H5, • Bullet, dan ⊞ Grid)"
-                value={draft.content || ""}
-                onChange={(e) => {
-                  setDraft({ ...draft, content: e.target.value });
-                  e.target.style.height = "auto";
-                  e.target.style.height = `${Math.max(220, e.target.scrollHeight)}px`;
-                }}
-                className="keep-create-input keep-textarea keep-edit-textarea"
-              />
-            )}
           </div>
         ) : (
           <div className="keep-checklist-create-section">
@@ -341,6 +293,19 @@ export function NoteEditDialog({
           </div>
 
           <div className="keep-footer-btns">
+            {onToggleArchive && (
+              <button
+                type="button"
+                className="keep-archive-btn"
+                onClick={() => {
+                  onToggleArchive(note.id);
+                  onClose();
+                }}
+                title={note.archived ? "Keluarkan dari arsip" : "Arsipkan catatan ini"}
+              >
+                {note.archived ? "📤 Buka Arsip" : "📦 Arsip"}
+              </button>
+            )}
             <button
               type="button"
               className="keep-pdf-export-btn"

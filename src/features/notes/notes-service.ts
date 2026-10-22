@@ -150,9 +150,19 @@ export function finalizeDraft(draft: NoteDraft): NoteDraft {
   };
 }
 
-export function filterNotes(notes: KeepNote[], searchQuery: string, activeLabel?: string | null): KeepNote[] {
+export function filterNotes(
+  notes: KeepNote[],
+  searchQuery: string,
+  activeLabel?: string | null,
+  showArchived: boolean = false,
+): KeepNote[] {
   const q = searchQuery.trim().toLowerCase();
   return notes.filter((note) => {
+    if (showArchived) {
+      if (!note.archived) return false;
+    } else {
+      if (note.archived) return false;
+    }
     if (activeLabel && !note.labels.some((l) => l.toLowerCase() === activeLabel.toLowerCase())) return false;
     if (!q) return true;
     return (
@@ -204,6 +214,7 @@ export function normalizeNote(raw: unknown): KeepNote | null {
     color: typeof r.color === "string" && r.color ? r.color : DEFAULT_NOTE_COLOR,
     labels,
     pinned: Boolean(r.pinned),
+    archived: Boolean(r.archived),
     updatedAt: typeof r.updatedAt === "string" ? r.updatedAt : "",
   };
 }

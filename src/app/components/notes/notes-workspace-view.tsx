@@ -45,6 +45,7 @@ export function NotesWorkspaceView({
     updateNote,
     deleteNote,
     togglePin,
+    toggleArchive,
     toggleItem,
     createLabel,
   } = useKeepNotes(userId);
@@ -73,12 +74,14 @@ export function NotesWorkspaceView({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeLabel, setActiveLabel] = useState<string | null>(null);
-  const [typeFilter, setTypeFilter] = useState<"all" | "pinned" | "checklist" | "text">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "pinned" | "checklist" | "text" | "archive">("all");
   const [editingNote, setEditingNote] = useState<KeepNote | null>(null);
+
+  const isArchiveView = typeFilter === "archive";
 
   // Filtered notes
   const filteredNotes = useMemo(() => {
-    let list = filterNotes(notes, searchQuery, activeLabel);
+    let list = filterNotes(notes, searchQuery, activeLabel, isArchiveView);
     if (typeFilter === "pinned") {
       list = list.filter((n) => n.pinned);
     } else if (typeFilter === "checklist") {
@@ -87,20 +90,27 @@ export function NotesWorkspaceView({
       list = list.filter((n) => n.type === "text");
     }
     return list;
-  }, [notes, searchQuery, activeLabel, typeFilter]);
+  }, [notes, searchQuery, activeLabel, typeFilter, isArchiveView]);
 
-  const pinnedNotes = useMemo(() => filteredNotes.filter((n) => n.pinned), [filteredNotes]);
-  const otherNotes = useMemo(() => filteredNotes.filter((n) => !n.pinned), [filteredNotes]);
+  const pinnedNotes = useMemo(
+    () => (isArchiveView ? [] : filteredNotes.filter((n) => n.pinned)),
+    [filteredNotes, isArchiveView],
+  );
+  const otherNotes = useMemo(
+    () => (isArchiveView ? filteredNotes : filteredNotes.filter((n) => !n.pinned)),
+    [filteredNotes, isArchiveView],
+  );
 
   // Counts
-  const totalCount = notes.length;
-  const pinnedCount = useMemo(() => notes.filter((n) => n.pinned).length, [notes]);
-  const checklistCount = useMemo(() => notes.filter((n) => n.type === "checklist").length, [notes]);
-  const textCount = useMemo(() => notes.filter((n) => n.type === "text").length, [notes]);
+  const totalCount = useMemo(() => notes.filter((n) => !n.archived).length, [notes]);
+  const pinnedCount = useMemo(() => notes.filter((n) => !n.archived && n.pinned).length, [notes]);
+  const checklistCount = useMemo(() => notes.filter((n) => !n.archived && n.type === "checklist").length, [notes]);
+  const textCount = useMemo(() => notes.filter((n) => !n.archived && n.type === "text").length, [notes]);
+  const archivedCount = useMemo(() => notes.filter((n) => n.archived).length, [notes]);
 
   function getLabelCount(lbl: string): number {
     return notes.filter((n) =>
-      n.labels?.some((l) => l.toLowerCase() === lbl.toLowerCase()),
+      !n.archived && n.labels?.some((l) => l.toLowerCase() === lbl.toLowerCase()),
     ).length;
   }
 
@@ -114,6 +124,7 @@ export function NotesWorkspaceView({
         pinnedCount={pinnedCount}
         checklistCount={checklistCount}
         textCount={textCount}
+        archivedCount={archivedCount}
         typeFilter={typeFilter}
         onSelectTypeFilter={setTypeFilter}
         labels={labels}
@@ -156,70 +167,109 @@ export function NotesWorkspaceView({
         {/* Content Canvas */}
         <main className="notes-workspace-content">
           <div className="notes-workspace-inner">
-            {/* Note Composer Container */}
-            <div className="notes-composer-wrapper">
-              <NoteComposer
-                labels={labels}
-                onCreateNote={createNote}
-                onCreateLabel={createLabel}
-              />
-            </div>
-
-            {/* Pinned Notes Section */}
-            {pinnedNotes.length > 0 && (
-              <section className="keep-notes-section">
-                <span className="keep-section-header">
-                  📌 DISEMATKAN ({pinnedNotes.length})
-                </span>
-                <div className="keep-grid">
-                  {pinnedNotes.map((note) => (
-                    <NoteCard
-                      key={note.id}
-                      note={note}
-                      onEdit={setEditingNote}
-                      onTogglePin={togglePin}
-                      onToggleItem={toggleItem}
-                      onDelete={deleteNote}
-                    />
-                  ))}
-                </div>
-              </section>
+            {/* Note Composer Container (hidden in Archive view so users don't accidentally compose archived notes) */}
+            {!isArchiveView && (
+              <div className="notes-composer-wrapper">
+                <NoteComposer
+                  labels={labels}
+                  onCreateNote={createNote}
+                  onCreateLabel={createLabel}
+                />
+              </div>
             )}
 
-            {/* Other Notes Section */}
-            <section className="keep-notes-section">
-              {pinnedNotes.length > 0 && otherNotes.length > 0 && (
+            {isArchiveView ? (
+              <section className="keep-notes-section">
                 <span className="keep-section-header">
-                  LAINNYA ({otherNotes.length})
+                  📦 ARSIP CATATAN ({filteredNotes.length})
                 </span>
-              )}
-              {otherNotes.length > 0 ? (
-                <div className="keep-grid">
-                  {otherNotes.map((note) => (
-                    <NoteCard
-                      key={note.id}
-                      note={note}
-                      onEdit={setEditingNote}
-                      onTogglePin={togglePin}
-                      onToggleItem={toggleItem}
-                      onDelete={deleteNote}
-                    />
-                  ))}
-                </div>
-              ) : (
-                pinnedNotes.length === 0 && (
+                {filteredNotes.length > 0 ? (
+                  <div className="keep-grid">
+                    {filteredNotes.map((note) => (
+                      <NoteCard
+                        key={note.id}
+                        note={note}
+                        onEdit={setEditingNote}
+                        onTogglePin={togglePin}
+                        onToggleArchive={toggleArchive}
+                        onToggleItem={toggleItem}
+                        onDelete={deleteNote}
+                      />
+                    ))}
+                  </div>
+                ) : (
                   <div className="keep-empty-placeholder">
-                    <span className="empty-icon">📝</span>
-                    <h3>Belum ada catatan</h3>
+                    <span className="empty-icon">📦</span>
+                    <h3>Belum ada catatan yang diarsipkan</h3>
                     <p>
-                      {searchQuery || activeLabel || typeFilter !== "all"
-                        ? "Tidak ada catatan yang cocok dengan filter kamu."
-                        : "Mulai buat to-do list, catatan ide, atau frog task di atas."}
+                      {searchQuery || activeLabel
+                        ? "Tidak ada arsip yang cocok dengan pencarian kamu."
+                        : "Kamu bisa mengarsipkan catatan yang sudah selesai agar ruang kerja tetap fokus dan rapi."}
                     </p>
                   </div>
-                )
-              )}
-            </section>
+                )}
+              </section>
+            ) : (
+              <>
+                {/* Pinned Notes Section */}
+                {pinnedNotes.length > 0 && (
+                  <section className="keep-notes-section">
+                    <span className="keep-section-header">
+                      📌 DISEMATKAN ({pinnedNotes.length})
+                    </span>
+                    <div className="keep-grid">
+                      {pinnedNotes.map((note) => (
+                        <NoteCard
+                          key={note.id}
+                          note={note}
+                          onEdit={setEditingNote}
+                          onTogglePin={togglePin}
+                          onToggleArchive={toggleArchive}
+                          onToggleItem={toggleItem}
+                          onDelete={deleteNote}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Other Notes Section */}
+                <section className="keep-notes-section">
+                  {pinnedNotes.length > 0 && otherNotes.length > 0 && (
+                    <span className="keep-section-header">
+                      LAINNYA ({otherNotes.length})
+                    </span>
+                  )}
+                  {otherNotes.length > 0 ? (
+                    <div className="keep-grid">
+                      {otherNotes.map((note) => (
+                        <NoteCard
+                          key={note.id}
+                          note={note}
+                          onEdit={setEditingNote}
+                          onTogglePin={togglePin}
+                          onToggleArchive={toggleArchive}
+                          onToggleItem={toggleItem}
+                          onDelete={deleteNote}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    pinnedNotes.length === 0 && (
+                      <div className="keep-empty-placeholder">
+                        <span className="empty-icon">📝</span>
+                        <h3>Belum ada catatan</h3>
+                        <p>
+                          {searchQuery || activeLabel || typeFilter !== "all"
+                            ? "Tidak ada catatan yang cocok dengan filter kamu."
+                            : "Mulai buat to-do list, catatan ide, atau frog task di atas."}
+                        </p>
+                      </div>
+                    )
+                  )}
+                </section>
+              </>
+            )}
           </div>
         </main>
       </div>
@@ -233,6 +283,7 @@ export function NotesWorkspaceView({
           onDelete={deleteNote}
           onClose={() => setEditingNote(null)}
           onCreateLabel={createLabel}
+          onToggleArchive={toggleArchive}
         />
       )}
     </div>

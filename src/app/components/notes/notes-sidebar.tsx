@@ -9,8 +9,9 @@ type NotesSidebarProps = {
   pinnedCount: number;
   checklistCount: number;
   textCount: number;
-  typeFilter: "all" | "pinned" | "checklist" | "text";
-  onSelectTypeFilter: (type: "all" | "pinned" | "checklist" | "text") => void;
+  archivedCount?: number;
+  typeFilter: "all" | "pinned" | "checklist" | "text" | "archive";
+  onSelectTypeFilter: (type: "all" | "pinned" | "checklist" | "text" | "archive") => void;
   labels: string[];
   activeLabel: string | null;
   onSelectLabel: (label: string | null) => void;
@@ -29,6 +30,7 @@ export function NotesSidebar({
   pinnedCount,
   checklistCount,
   textCount,
+  archivedCount = 0,
   typeFilter,
   onSelectTypeFilter,
   labels,
@@ -51,7 +53,7 @@ export function NotesSidebar({
     onNavigate?.(view);
   }
 
-  function handleSelectType(type: "all" | "pinned" | "checklist" | "text") {
+  function handleSelectType(type: "all" | "pinned" | "checklist" | "text" | "archive") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       if (!isCollapsed) onToggleCollapse();
     }
@@ -90,8 +92,16 @@ export function NotesSidebar({
               onClick={() => handleNavigate("timer")}
               title="Kembali ke Timer Fokus"
             >
-              <span className="brand-mark" aria-hidden="true" />
-              <span className="kanban-sidebar-brand-name">biarfokus</span>
+              <img
+                src="/biarfokus-logo-light.png"
+                alt="biarfokus"
+                className="sidebar-brand-logo-img light-only"
+              />
+              <img
+                src="/biarfokus-logo-dark.png"
+                alt="biarfokus"
+                className="sidebar-brand-logo-img dark-only"
+              />
               <span className="kanban-sidebar-badge">Catatan</span>
             </button>
             <button
@@ -234,6 +244,21 @@ export function NotesSidebar({
               <>
                 <span className="filter-title">Catatan Teks</span>
                 <span className="filter-count">{textCount}</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className={`notes-sidebar-filter-item ${typeFilter === "archive" ? "active" : ""}`}
+            onClick={() => handleSelectType("archive")}
+            title="Arsip Catatan"
+          >
+            <span className="filter-icon">📦</span>
+            {!isCollapsed && (
+              <>
+                <span className="filter-title">Arsip</span>
+                <span className="filter-count">{archivedCount ?? 0}</span>
               </>
             )}
           </button>

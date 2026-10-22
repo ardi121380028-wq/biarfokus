@@ -132,8 +132,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       {!isWorkspaceView && (
         <header className="topbar">
           <Link href="/" className="brand" aria-label="Kembali ke timer">
-            <span className="brand-mark" aria-hidden="true" />
-            <span>biarfokus</span>
+            <img
+              src="/biarfokus-logo-light.png"
+              alt="biarfokus"
+              className="brand-logo-img light-only"
+            />
+            <img
+              src="/biarfokus-logo-dark.png"
+              alt="biarfokus"
+              className="brand-logo-img dark-only"
+            />
           </Link>
           <nav className="desktop-nav" aria-label="Navigasi utama">
             {NAV_LINKS.map(({ href, label }) => (

@@ -122,6 +122,7 @@ export type KeepNote = {
   color: string;
   labels: string[];
   pinned?: boolean;
+  archived?: boolean;
   updatedAt: string;
 };
 

@@ -10,14 +10,9 @@ import {
   NOTE_COLORS,
   type NoteDraft,
 } from "@/features/notes/notes-service";
-import {
-  exportNoteToPdf,
-  insertMarkdownFormatting,
-  type MarkdownFormattingType,
-} from "@/features/notes/note-format";
+import { exportNoteToPdf } from "@/features/notes/note-format";
 import { LabelSelect } from "./label-select";
-import { NoteFormatterToolbar } from "./note-formatter-toolbar";
-import { NoteContentRenderer } from "./note-content-renderer";
+import { RichNoteEditor } from "./rich-note-editor";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 
 type NoteComposerProps = {
@@ -35,11 +30,9 @@ export function NoteComposer({
   const [isFullyExpanded, setIsFullyExpanded] = useState(false);
   const [draft, setDraft] = useState<NoteDraft>(() => createEmptyDraft("checklist"));
   const [newItemText, setNewItemText] = useState("");
-  const [isPreview, setIsPreview] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function openComposer(type?: "checklist" | "text") {
@@ -50,14 +43,12 @@ export function NoteComposer({
     if (type) {
       setDraft(createEmptyDraft(type));
     }
-    setIsPreview(false);
     setIsExpanded(true);
   }
 
   function closeComposer() {
     setIsFullyExpanded(false);
     setIsExpanded(false);
-    setIsPreview(false);
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
     }
@@ -126,21 +117,6 @@ export function NoteComposer({
       ...prev,
       items: (prev.items || []).filter((i) => i.id !== id),
     }));
-  }
-
-  function handleFormat(type: MarkdownFormattingType) {
-    const el = textareaRef.current;
-    const current = draft.content || "";
-    const start = el ? el.selectionStart : current.length;
-    const end = el ? el.selectionEnd : current.length;
-    const { newText, newStart, newEnd } = insertMarkdownFormatting(current, start, end, type);
-    setDraft((prev) => ({ ...prev, content: newText }));
-    requestAnimationFrame(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(newStart, newEnd);
-      }
-    });
   }
 
   return (
@@ -243,27 +219,13 @@ export function NoteComposer({
 
           {draft.type === "text" ? (
             <div className="keep-text-editor-wrap">
-              <NoteFormatterToolbar
-                onFormat={handleFormat}
-                isPreview={isPreview}
-                onTogglePreview={() => setIsPreview(!isPreview)}
-                showPdfButton={Boolean(draft.title || draft.content)}
+              <RichNoteEditor
+                content={draft.content || ""}
+                onChange={(html) => setDraft((prev) => ({ ...prev, content: html }))}
+                minHeight={150}
                 onDownloadPdf={() => exportNoteToPdf(draft)}
+                showPdfButton={Boolean(draft.title || draft.content)}
               />
-              {isPreview ? (
-                <div className="keep-composer-preview-box">
-                  <NoteContentRenderer content={draft.content} />
-                </div>
-              ) : (
-                <textarea
-                  ref={textareaRef}
-                  placeholder="Tulis catatan fokus kamu di sini... (Mendukung Heading H1-H5, • Bullet, dan ⊞ Grid)"
-                  value={draft.content || ""}
-                  onChange={(e) => setDraft({ ...draft, content: e.target.value })}
-                  rows={5}
-                  className="keep-create-input keep-textarea"
-                />
-              )}
             </div>
           ) : (
             <div className="keep-checklist-create-section">

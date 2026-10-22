@@ -149,6 +149,24 @@ export function insertMarkdownFormatting(
 export function parseMarkdownToHtml(markdown: string): string {
   if (!markdown || !markdown.trim()) return "";
 
+  const trimmed = markdown.trim();
+  // If already HTML from rich live editor, return as-is
+  if (
+    trimmed.startsWith("<") &&
+    (trimmed.includes("</p>") ||
+      trimmed.includes("</h1>") ||
+      trimmed.includes("</h2>") ||
+      trimmed.includes("</h3>") ||
+      trimmed.includes("</h4>") ||
+      trimmed.includes("</h5>") ||
+      trimmed.includes("</ul>") ||
+      trimmed.includes("</ol>") ||
+      trimmed.includes("</table>") ||
+      trimmed.includes("</div>"))
+  ) {
+    return markdown;
+  }
+
   const lines = markdown.split("\n");
   const result: string[] = [];
 

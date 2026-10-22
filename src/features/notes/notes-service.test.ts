@@ -84,6 +84,20 @@ describe("notes-service", () => {
     assert.equal(labelResults[0].id, "note-2");
   });
 
+  it("filters notes by archived flag", () => {
+    const mixedNotes: KeepNote[] = [
+      { ...sampleNotes[0], archived: false },
+      { ...sampleNotes[1], archived: true },
+    ];
+    const active = filterNotes(mixedNotes, "", null, false);
+    assert.equal(active.length, 1);
+    assert.equal(active[0].id, "note-1");
+
+    const archived = filterNotes(mixedNotes, "", null, true);
+    assert.equal(archived.length, 1);
+    assert.equal(archived[0].id, "note-2");
+  });
+
   it("toggles checklist item done status", () => {
     const toggled = toggleChecklistItem(sampleNotes, "note-1", "item-1");
     assert.equal(toggled[0].items?.[0].done, true);

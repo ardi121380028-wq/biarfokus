@@ -167,6 +167,27 @@ export function useKeepNotes(userId?: string | null) {
     [userId, updateNotes],
   );
 
+  const toggleArchive = useCallback(
+    (id: string) => {
+      let updatedNote: KeepNote | null = null;
+      updateNotes((current) => {
+        const next = current.map((n) =>
+          n.id === id ? { ...n, archived: !n.archived, pinned: false } : n
+        );
+        updatedNote = next.find((n) => n.id === id) || null;
+        return next;
+      });
+      if (userId && updatedNote) {
+        try {
+          upsertCloudNote(getSupabaseBrowserClient(), userId, updatedNote).catch((err) =>
+            console.warn("Failed to sync archive to cloud:", err),
+          );
+        } catch {}
+      }
+    },
+    [userId, updateNotes],
+  );
+
   const toggleItem = useCallback(
     (noteId: string, itemId: string) => {
       let updatedNote: KeepNote | null = null;
@@ -263,6 +284,7 @@ export function useKeepNotes(userId?: string | null) {
     updateNote,
     deleteNote,
     togglePin,
+    toggleArchive,
     toggleItem,
     setItemDone,
     createLabel,

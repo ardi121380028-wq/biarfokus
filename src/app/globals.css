@@ -20,7 +20,11 @@ button:active:not(:disabled) {
 .app.dark { --ink:#f5f5f5; --muted:#a9a9a9; --paper:#1d1d1d; --page:#111; color-scheme:dark; }
 .topbar,.content-grid,.footer,.inner-page { width:min(100%,1160px); margin-left:auto; margin-right:auto; }
 .topbar { background:var(--paper); border-radius:34px; min-height:70px; padding:10px 18px 10px 26px; display:flex; align-items:center; justify-content:space-between; border:1px solid color-mix(in srgb,var(--ink) 7%,transparent); position:relative; z-index:120; }
-.brand { border:0; background:none; display:flex; align-items:center; gap:10px; font-family:Georgia, "Times New Roman", serif; font-size:24px; font-weight:700; letter-spacing:-0.4px; color:var(--ink); }
+.brand { border:0; background:none; display:flex; align-items:center; gap:10px; color:var(--ink); padding:0; text-decoration:none; }
+.brand-logo-img { height:36px; width:auto; max-width:160px; object-fit:contain; display:block; }
+.sidebar-brand-logo-img { height:28px; width:auto; max-width:130px; object-fit:contain; display:block; }
+.app:not(.dark) .dark-only { display:none !important; }
+.app.dark .light-only { display:none !important; }
 .brand-mark { width:40px; height:40px; display:inline-block; flex:none; background:url("/biarfokus-icon.png") center/contain no-repeat; }
 .desktop-nav { display:flex; gap:25px; }.nav-link,.footer-links button { border:0; background:none; color:var(--muted); }.nav-link.active { color:var(--ink); font-weight:bold; border-bottom:3px solid var(--yellow); padding-bottom:4px; }
 .mobile-nav { display:none; }.mobile-login-button { border:0; border-radius:20px; padding:10px 14px; background:var(--blue); color:#fff; }
@@ -385,6 +389,9 @@ button:active:not(:disabled) {
 .keep-delete-btn { border:none; background:transparent; color:#dc2626; font-size:12px; font-weight:bold; cursor:pointer; padding:6px 10px; border-radius:12px; transition:all 0.15s ease; }
 .keep-delete-btn:hover { background:color-mix(in srgb,#dc2626 10%,transparent); }
 .keep-delete-btn:active { transform:scale(0.96); }
+.keep-archive-btn { border:1px solid color-mix(in srgb,var(--ink) 18%,transparent); background:transparent; color:var(--ink); font-size:12px; font-weight:600; cursor:pointer; padding:6px 12px; border-radius:12px; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; }
+.keep-archive-btn:hover { background:color-mix(in srgb,var(--ink) 8%,transparent); border-color:color-mix(in srgb,var(--ink) 30%,transparent); transform:translateY(-1px); }
+.keep-archive-btn:active { transform:scale(0.96); }
 
 /* Keep Notes Body Grid */
 .keep-scroll-body { flex:1; overflow-y:auto; padding-right:4px; min-height:220px; }

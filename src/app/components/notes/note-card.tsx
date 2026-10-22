@@ -9,6 +9,7 @@ type NoteCardProps = {
   note: KeepNote;
   onEdit: (note: KeepNote) => void;
   onTogglePin: (id: string) => void;
+  onToggleArchive?: (id: string) => void;
   onToggleItem: (noteId: string, itemId: string) => void;
   onDelete: (id: string) => void;
 };
@@ -17,6 +18,7 @@ export function NoteCard({
   note,
   onEdit,
   onTogglePin,
+  onToggleArchive,
   onToggleItem,
   onDelete,
 }: NoteCardProps) {
@@ -135,6 +137,17 @@ export function NoteCard({
       <div className="keep-card-bottom" onClick={(e) => e.stopPropagation()}>
         <span>{note.updatedAt}</span>
         <div className="keep-card-actions">
+          {onToggleArchive && (
+            <button
+              type="button"
+              className="keep-icon-action"
+              onClick={() => onToggleArchive(note.id)}
+              title={note.archived ? "Keluarkan dari arsip" : "Arsipkan catatan"}
+              aria-label={note.archived ? "Keluarkan dari arsip" : "Arsipkan catatan"}
+            >
+              {note.archived ? "📤" : "📦"}
+            </button>
+          )}
           <button
             type="button"
             className="keep-icon-action"

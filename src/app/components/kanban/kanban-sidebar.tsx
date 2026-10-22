@@ -67,8 +67,16 @@ export function KanbanSidebar({
               onClick={() => handleNavigate("timer")}
               title="Kembali ke Timer Fokus"
             >
-              <span className="brand-mark" aria-hidden="true" />
-              <span className="kanban-sidebar-brand-name">biarfokus</span>
+              <img
+                src="/biarfokus-logo-light.png"
+                alt="biarfokus"
+                className="sidebar-brand-logo-img light-only"
+              />
+              <img
+                src="/biarfokus-logo-dark.png"
+                alt="biarfokus"
+                className="sidebar-brand-logo-img dark-only"
+              />
               <span className="kanban-sidebar-badge">Kanban</span>
             </button>
             <button
