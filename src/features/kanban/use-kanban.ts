@@ -106,11 +106,14 @@ export function useKanban(userId?: string | null) {
     syncInProgressRef.current = true;
     setSyncStatus("saving");
 
-    try {
+    const syncTimeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Kanban sync timeout")), 8000);
+    });
+
+    const runSync = async () => {
       const supabase = getSupabaseBrowserClient();
       const cloudBoards = await loadCloudBoards(supabase, userId);
       const deletedIds = getDeletedBoardIds(userId);
-      const cloudIds = new Set(cloudBoards.map((b) => b.id));
 
       const isGtGrowthPurged = typeof window !== "undefined" && window.localStorage.getItem("biarfokus.kanban.gt_growth_purged") === "true";
 
@@ -214,8 +217,12 @@ export function useKanban(userId?: string | null) {
       const merged = Array.from(boardMap.values());
       updateBoards(() => merged);
       setSyncStatus("synced");
+    };
+
+    try {
+      await Promise.race([runSync(), syncTimeout]);
     } catch (err) {
-      console.warn("[BiarFokus Kanban] Cloud sync error:", err);
+      console.warn("[BiarFokus Kanban] Cloud sync error or timeout:", err);
       setSyncStatus("error");
     } finally {
       syncInProgressRef.current = false;

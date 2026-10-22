@@ -36,38 +36,13 @@ export async function loadCloudBoards(
   userId: string,
 ): Promise<KanbanBoard[]> {
   try {
-    // 1. Try server API route first (100% reliable session cookies across mobile & desktop)
-    if (typeof window !== "undefined") {
-      try {
-        let authHeaders: Record<string, string> = { "Content-Type": "application/json" };
-        try {
-          const session = (await supabase.auth.getSession()).data.session;
-          if (session?.access_token) {
-            authHeaders.Authorization = `Bearer ${session.access_token}`;
-          }
-        } catch {}
+    if (!userId) return [];
 
-        const res = await fetch("/api/kanban/boards", {
-          method: "GET",
-          headers: authHeaders,
-          cache: "no-store",
-          credentials: "include",
-        });
-        if (res.ok) {
-          const json = (await res.json()) as { boards?: KanbanBoard[] };
-          if (json && Array.isArray(json.boards)) {
-            return json.boards;
-          }
-        }
-      } catch {
-        // Fall back to direct browser client
-      }
-    }
-
-    // 2. Direct browser client fallback
+    // 1. Fetch owned boards directly with user_id filter (fast & authoritative)
     const { data, error } = await supabase
       .from("kanban_boards")
       .select("*")
+      .eq("user_id", userId)
       .order("starred", { ascending: false })
       .order("updated_at", { ascending: false });
 
@@ -79,28 +54,48 @@ export async function loadCloudBoards(
       throw error;
     }
 
-    // Query user's memberships to ensure viewers stay viewers
-    const memberRoleMap = new Map<string, KanbanMemberRole>();
+    const ownedBoards: KanbanBoard[] = ((data as DbKanbanBoard[]) || []).map((row) =>
+      mapDbKanbanBoard(row, userId, "owner")
+    );
+
+    // 2. Fetch collaborative boards where user is an invited member (optional check)
     try {
       const { data: memberRows } = await supabase
         .from("kanban_board_members")
         .select("board_id, role")
         .eq("user_id", userId);
 
-      if (memberRows && Array.isArray(memberRows)) {
-        for (const m of memberRows) {
-          if (m.board_id && m.role) {
-            memberRoleMap.set(m.board_id, m.role as KanbanMemberRole);
+      if (memberRows && Array.isArray(memberRows) && memberRows.length > 0) {
+        const ownedIds = new Set(ownedBoards.map((b) => b.id));
+        const sharedMemberRows = memberRows.filter(
+          (m) => m.board_id && !ownedIds.has(m.board_id)
+        );
+
+        if (sharedMemberRows.length > 0) {
+          const sharedIds = sharedMemberRows.map((m) => m.board_id);
+          const { data: sharedData } = await supabase
+            .from("kanban_boards")
+            .select("*")
+            .in("id", sharedIds);
+
+          if (sharedData && Array.isArray(sharedData)) {
+            const roleMap = new Map<string, KanbanMemberRole>();
+            for (const m of sharedMemberRows) {
+              if (m.board_id && m.role) {
+                roleMap.set(m.board_id, m.role as KanbanMemberRole);
+              }
+            }
+            for (const row of sharedData as DbKanbanBoard[]) {
+              ownedBoards.push(mapDbKanbanBoard(row, userId, roleMap.get(row.id) || "viewer"));
+            }
           }
         }
       }
-    } catch {}
+    } catch {
+      // Non-critical: failure to load shared boards shouldn't block owned boards
+    }
 
-    return ((data as DbKanbanBoard[]) || []).map((row) => {
-      const isOwner = row.user_id === userId;
-      const assignedRole = memberRoleMap.get(row.id) || (isOwner ? "owner" : "viewer");
-      return mapDbKanbanBoard(row, userId, assignedRole);
-    });
+    return ownedBoards;
   } catch (err) {
     console.warn("Cloud kanban fetch skipped or failed; using local state.", err);
     return [];
@@ -115,33 +110,6 @@ export async function upsertCloudBoard(
   try {
     if (!userId || !board.id) return false;
 
-    // 1. Try server API route first
-    if (typeof window !== "undefined") {
-      try {
-        let authHeaders: Record<string, string> = { "Content-Type": "application/json" };
-        try {
-          const session = (await supabase.auth.getSession()).data.session;
-          if (session?.access_token) {
-            authHeaders.Authorization = `Bearer ${session.access_token}`;
-          }
-        } catch {}
-
-        const res = await fetch("/api/kanban/boards", {
-          method: "POST",
-          headers: authHeaders,
-          credentials: "include",
-          body: JSON.stringify({ board }),
-        });
-        if (res.ok) {
-          const json = (await res.json()) as { ok?: boolean };
-          if (json && json.ok) return true;
-        }
-      } catch {
-        // Fall back to direct browser client
-      }
-    }
-
-    // 2. Direct browser client fallback
     const isSharedCollab = Boolean(board.isShared && board.userId && board.userId !== userId);
 
     if (isSharedCollab) {
@@ -166,7 +134,7 @@ export async function upsertCloudBoard(
     }
 
     // Owned board: ensure user_id is the authenticated user's UUID (never "guest" or invalid string)
-        const payload = {
+    const payload = {
       id: board.id,
       user_id: userId,
       title: board.title || "My Board",
@@ -177,45 +145,44 @@ export async function upsertCloudBoard(
       updated_at: new Date().toISOString(),
     };
 
-    // 1. Try insert first (most reliable for newly created boards with RLS)
+    // 1. Try upsert first (fast and standard)
+    const { error: upsertError } = await supabase
+      .from("kanban_boards")
+      .upsert(payload, { onConflict: "id" });
+
+    if (!upsertError) {
+      return true;
+    }
+
+    // 2. If upsert fails, try update
+    const { error: updateError } = await supabase
+      .from("kanban_boards")
+      .update({
+        title: payload.title,
+        description: payload.description,
+        background: payload.background,
+        lists: payload.lists,
+        starred: payload.starred,
+        updated_at: payload.updated_at,
+      })
+      .eq("id", board.id)
+      .eq("user_id", userId);
+
+    if (!updateError) {
+      return true;
+    }
+
+    // 3. Fallback: try insert
     const { error: insertError } = await supabase.from("kanban_boards").insert(payload);
     if (!insertError) {
       return true;
     }
 
-    // 2. If duplicate key error 23505 (board already exists), update it
     if (
-      insertError.code === "23505" ||
-      insertError.message?.includes("duplicate") ||
-      insertError.message?.includes("unique") ||
-      insertError.message?.includes("already exists")
-    ) {
-      const { error: updateError } = await supabase
-        .from("kanban_boards")
-        .update({
-          title: payload.title,
-          description: payload.description,
-          background: payload.background,
-          lists: payload.lists,
-          starred: payload.starred,
-          updated_at: payload.updated_at,
-        })
-        .eq("id", board.id);
-
-      if (!updateError) return true;
-      console.warn("[BiarFokus Cloud] Cloud kanban update on duplicate error:", updateError);
-      return false;
-    }
-
-    // 3. Fallback: try upsert
-    const { error: upsertError } = await supabase.from("kanban_boards").upsert(payload, { onConflict: "id" });
-    if (!upsertError) return true;
-
-    if (
-      insertError.code === "42P01" ||
-      insertError.message?.includes("does not exist") ||
       upsertError?.code === "42P01" ||
-      upsertError?.message?.includes("does not exist")
+      upsertError?.message?.includes("does not exist") ||
+      updateError?.code === "42P01" ||
+      updateError?.message?.includes("does not exist")
     ) {
       console.warn(
         "[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor."
@@ -223,7 +190,7 @@ export async function upsertCloudBoard(
       return false;
     }
 
-    console.warn("[BiarFokus Cloud] Cloud kanban insert error:", insertError, "upsert error:", upsertError);
+    console.warn("[BiarFokus Cloud] Cloud kanban save failed:", upsertError, updateError, insertError);
     return false;
   } catch (err) {
     console.warn("[BiarFokus Cloud] Cloud kanban upsert skipped or failed.", err);
@@ -237,26 +204,20 @@ export async function deleteCloudBoard(
   boardId: string,
 ): Promise<void> {
   try {
-    if (typeof window !== "undefined") {
-      try {
-        await fetch(`/api/kanban/boards?id=${encodeURIComponent(boardId)}`, {
-          method: "DELETE",
-          credentials: "include",
-        });
-      } catch {}
-    }
+    if (!userId || !boardId) return;
 
     const { error } = await supabase
       .from("kanban_boards")
       .delete()
-      .eq("id", boardId);
+      .eq("id", boardId)
+      .eq("user_id", userId);
 
     if (error) {
       if (error.code === "42P01" || error.message?.includes("does not exist")) {
         console.warn("[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor.");
         return;
       }
-      throw error;
+      console.warn("Cloud kanban delete failed.", error);
     }
   } catch (err) {
     console.warn("Cloud kanban delete failed.", err);
