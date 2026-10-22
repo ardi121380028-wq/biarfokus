@@ -68,10 +68,10 @@ describe("resolveFocusedTask and isUuid", () => {
     { id: "active-2", title: "Fokus kedua", done: false, pomodoros: 1 },
   ];
 
-  it("prefers the explicitly selected incomplete task and falls back to the first active task", () => {
+  it("prefers the explicitly selected incomplete task and returns null when unselected or done", () => {
     assert.equal(resolveFocusedTask(sampleTasks, "active-2")?.id, "active-2");
-    assert.equal(resolveFocusedTask(sampleTasks, "done-1")?.id, "active-1");
-    assert.equal(resolveFocusedTask(sampleTasks, null)?.id, "active-1");
+    assert.equal(resolveFocusedTask(sampleTasks, "done-1"), null);
+    assert.equal(resolveFocusedTask(sampleTasks, null), null);
     assert.equal(resolveFocusedTask([sampleTasks[0]], "done-1"), null);
   });
 

@@ -9,7 +9,8 @@ import { NoteTaskPickerModal } from "./notes/note-task-picker-modal";
 type TaskManagementProps = {
   tasks: Task[];
   focusedTaskId: string | null;
-  onSelectTask: (taskId: string) => void;
+  onSelectTask: (taskId: string | null) => void;
+  onReorderTasks?: (sourceIndex: number, destinationIndex: number) => void;
   onAdd: (title: string, linkedMeta?: LinkedNoteMeta) => Promise<void>;
   onToggle: (task: Task) => Promise<void>;
   onDelete: (task: Task) => Promise<void>;
@@ -23,6 +24,7 @@ export function TaskManagement({
   tasks,
   focusedTaskId,
   onSelectTask,
+  onReorderTasks,
   onAdd,
   onToggle,
   onDelete,
@@ -41,6 +43,99 @@ export function TaskManagement({
   const [notePickerOpen, setNotePickerOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<"task" | "completed" | "all" | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOverPos, setDragOverPos] = useState<"above" | "below" | null>(null);
+  const touchStartRef = useRef<{ y: number; index: number } | null>(null);
+
+  function handleDragStart(e: React.DragEvent<HTMLDivElement>, index: number) {
+    if (submitting || activeTaskId) return;
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>, index: number) {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) {
+      setDragOverIndex(null);
+      setDragOverPos(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const pos = e.clientY < midY ? "above" : "below";
+    setDragOverIndex(index);
+    setDragOverPos(pos);
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverIndex(null);
+      setDragOverPos(null);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>, index: number) {
+    e.preventDefault();
+    if (draggedIndex === null || !onReorderTasks) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      setDragOverPos(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const isAbove = e.clientY < midY;
+    let targetIndex = index;
+    if (!isAbove && draggedIndex < index) {
+      targetIndex = index;
+    } else if (isAbove && draggedIndex > index) {
+      targetIndex = index;
+    }
+    onReorderTasks(draggedIndex, targetIndex);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setDragOverPos(null);
+  }
+
+  function handleDragEnd() {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setDragOverPos(null);
+  }
+
+  function handleTouchStart(e: React.TouchEvent, index: number) {
+    if (submitting || activeTaskId) return;
+    const touch = e.touches[0];
+    touchStartRef.current = { y: touch.clientY, index };
+    setDraggedIndex(index);
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!touchStartRef.current) return;
+    const touch = e.touches[0];
+    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    const rowBelow = elemBelow?.closest("[data-task-index]") as HTMLElement | null;
+    if (rowBelow) {
+      const idx = Number(rowBelow.getAttribute("data-task-index"));
+      if (!Number.isNaN(idx)) {
+        setDragOverIndex(idx);
+      }
+    }
+  }
+
+  function handleTouchEnd() {
+    if (touchStartRef.current && dragOverIndex !== null && onReorderTasks) {
+      if (touchStartRef.current.index !== dragOverIndex) {
+        onReorderTasks(touchStartRef.current.index, dragOverIndex);
+      }
+    }
+    touchStartRef.current = null;
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setDragOverPos(null);
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -153,10 +248,31 @@ export function TaskManagement({
       {error && <p className="task-error" role="alert">{error}</p>}
       <div className="task-list">
         {activeTasks.length === 0 && !archivedTasks.length && <p className="task-empty">Belum ada task. Tambahkan fokus pertamamu.</p>}
-        {activeTasks.map((task) => {
+        {activeTasks.map((task, index) => {
           const isFocused = task.id === focusedTaskId;
           return (
-            <div className={isFocused ? "task focused" : "task"} key={task.id}>
+            <div
+              className={`task ${isFocused ? "focused" : ""} ${draggedIndex === index ? "is-dragging" : ""} ${dragOverIndex === index ? (dragOverPos === "above" ? "drag-over-above" : "drag-over-below") : ""}`}
+              key={task.id}
+              data-task-index={index}
+              draggable={!submitting && activeTaskId === null}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+            >
+              <span
+                className="task-drag-handle"
+                title="Tahan dan geser untuk ubah urutan prioritas"
+                aria-label="Geser urutan prioritas"
+                onTouchStart={(e) => handleTouchStart(e, index)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
+              >
+                ⠿
+              </span>
               <label className="task-check">
                 <input
                   type="checkbox"
@@ -186,9 +302,9 @@ export function TaskManagement({
               <button
                 type="button"
                 className={isFocused ? "task-focus-btn active" : "task-focus-btn"}
-                onClick={() => onSelectTask(task.id)}
+                onClick={() => onSelectTask(isFocused ? null : task.id)}
                 aria-pressed={isFocused}
-                title={isFocused ? "Sedang menjadi fokus aktif" : "Jadikan fokus aktif"}
+                title={isFocused ? "Klik untuk membatalkan fokus aktif" : "Jadikan fokus aktif"}
               >
                 {isFocused ? "🎯 Fokus" : "Pilih"}
               </button>

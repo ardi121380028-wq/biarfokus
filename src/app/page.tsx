@@ -33,6 +33,7 @@ function HomeContent() {
     tasks,
     addTask,
     toggleTask,
+    reorderTasks,
     deleteTask,
     deleteCompletedTasks,
     deleteAllTasks,
@@ -101,6 +102,7 @@ function HomeContent() {
           tasks={tasks}
           focusedTaskId={selectedTaskId}
           onSelectTask={(id) => setSelectedTaskId(id)}
+          onReorderTasks={reorderTasks}
           onAdd={addTask}
           onToggle={toggleTask}
           onDelete={deleteTask}

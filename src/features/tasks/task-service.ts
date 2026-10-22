@@ -18,21 +18,16 @@ export function isUuid(value: string | null | undefined): value is string {
 
 /**
  * Resolves the active task being worked on:
- * - Prefers the explicitly selected task if it is still incomplete.
- * - Falls back to the first incomplete task in list order.
- * - Returns null when there are no incomplete tasks.
+ * - Returns the task matching selectedTaskId if it is incomplete.
+ * - If no task is selected or if the selected task is done/not found, returns null.
  */
 export function resolveFocusedTask(
   tasks: Task[],
   selectedTaskId: string | null,
 ): Task | null {
+  if (!selectedTaskId) return null;
   const activeTasks = tasks.filter((task) => !task.done);
-  if (activeTasks.length === 0) return null;
-  if (selectedTaskId) {
-    const matching = activeTasks.find((task) => task.id === selectedTaskId);
-    if (matching) return matching;
-  }
-  return activeTasks[0];
+  return activeTasks.find((task) => task.id === selectedTaskId) || null;
 }
 
 export type LinkedNoteMeta = {
@@ -164,7 +159,7 @@ export async function loadTasks(
 
   if (loadedTasks) {
     const links = loadTaskLinks();
-    return loadedTasks.map((t) => {
+    const mapped = loadedTasks.map((t) => {
       const link = links[t.id];
       if (!link) return t;
       return {
@@ -175,6 +170,23 @@ export async function loadTasks(
         linkedItemText: t.linkedItemText || link.linkedItemText,
       };
     });
+
+    if (typeof window !== "undefined") {
+      try {
+        const rawOrder = window.localStorage.getItem(`biarfokus.tasks.order.${userId}`);
+        if (rawOrder) {
+          const orderArr: string[] = JSON.parse(rawOrder);
+          const orderMap = new Map(orderArr.map((id, idx) => [id, idx]));
+          mapped.sort((a, b) => {
+            const posA = orderMap.has(a.id) ? (orderMap.get(a.id) as number) : 99999;
+            const posB = orderMap.has(b.id) ? (orderMap.get(b.id) as number) : 99999;
+            return posA - posB;
+          });
+        }
+      } catch {}
+    }
+
+    return mapped;
   }
 
   const localTasks = loadLocalTasks();

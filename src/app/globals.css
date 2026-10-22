@@ -6914,3 +6914,40 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     max-width: 100% !important;
   }
 }
+
+
+/* Eat Your Frog Task Drag & Drop Priority Styles */
+.task-drag-handle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  cursor: grab;
+  font-size: 17px;
+  line-height: 1;
+  padding: 4px 2px;
+  opacity: 0.45;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  user-select: none;
+  touch-action: none;
+}
+.task:hover .task-drag-handle,
+.task-drag-handle:active {
+  opacity: 0.95;
+  color: var(--blue);
+}
+.task-drag-handle:active {
+  cursor: grabbing;
+  transform: scale(1.15);
+}
+.task.is-dragging {
+  opacity: 0.35 !important;
+  background: color-mix(in srgb, var(--blue) 8%, var(--paper)) !important;
+  transform: scale(0.99);
+}
+.task.drag-over-above {
+  border-top: 2.5px solid var(--blue) !important;
+}
+.task.drag-over-below {
+  border-bottom: 2.5px solid var(--blue) !important;
+}

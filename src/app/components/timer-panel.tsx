@@ -93,17 +93,13 @@ export function TimerPanel({
 
       <div className="timer-display" aria-live="polite">{formatTime(seconds)}</div>
 
-      <div className="focused-task-banner" aria-live="polite">
-        {focusedTask ? (
-          <>
-            <span className="focused-task-badge">🎯 Fokus aktif</span>
-            <strong className="focused-task-title" title={focusedTask.title}>{focusedTask.title}</strong>
-            <span className="focused-task-pomos">🍅 {focusedTask.pomodoros}</span>
-          </>
-        ) : (
-          <span className="focused-task-empty">Belum ada task aktif — tambahkan task untuk mulai fokus</span>
-        )}
-      </div>
+      {focusedTask && (
+        <div className="focused-task-banner" aria-live="polite">
+          <span className="focused-task-badge">🎯 Fokus aktif</span>
+          <strong className="focused-task-title" title={focusedTask.title}>{focusedTask.title}</strong>
+          <span className="focused-task-pomos">🍅 {focusedTask.pomodoros}</span>
+        </div>
+      )}
 
       <div className="timer-controls">
         <button

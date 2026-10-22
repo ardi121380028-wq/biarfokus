@@ -189,6 +189,7 @@ export interface AppContextType {
   completedTasks: number;
   addTask: (title: string, linkedMeta?: LinkedNoteMeta) => Promise<void>;
   toggleTask: (task: Task) => Promise<void>;
+  reorderTasks: (sourceIndex: number, destinationIndex: number) => void;
   deleteTask: (task: Task) => Promise<void>;
   deleteCompletedTasks: () => Promise<void>;
   deleteAllTasks: () => Promise<void>;
@@ -720,7 +721,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         try {
           const task = await createTask(getSupabaseBrowserClient(), user.id, title, linkedMeta);
           setTasks((current) => [...current, task]);
-          setSelectedTaskId((current) => current ?? task.id);
+          // do not auto-select
           return;
         } catch (error) {
           const message = error instanceof Error ? error.message : "Gagal menyimpan task.";
@@ -738,7 +739,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveTaskLink(localTask.id, linkedMeta);
       }
       setTasks((current) => [...current, localTask]);
-      setSelectedTaskId((current) => current ?? localTask.id);
+      // do not auto-select
     },
     [activeTasksCount, isPro, user],
   );
@@ -890,6 +891,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+    const reorderTasks = useCallback(
+    (sourceIndex: number, destinationIndex: number) => {
+      setTasks((current) => {
+        const active = current.filter((t) => !t.done);
+        const done = current.filter((t) => t.done);
+        if (
+          sourceIndex < 0 ||
+          sourceIndex >= active.length ||
+          destinationIndex < 0 ||
+          destinationIndex >= active.length ||
+          sourceIndex === destinationIndex
+        ) {
+          return current;
+        }
+        const reorderedActive = [...active];
+        const [moved] = reorderedActive.splice(sourceIndex, 1);
+        reorderedActive.splice(destinationIndex, 0, moved);
+        const nextTasks = [...reorderedActive, ...done];
+
+        if (typeof window !== "undefined") {
+          try {
+            window.localStorage.setItem("biarfokus.tasks", JSON.stringify(nextTasks));
+            if (user) {
+              window.localStorage.setItem(
+                `biarfokus.tasks.order.${user.id}`,
+                JSON.stringify(nextTasks.map((t) => t.id)),
+              );
+            }
+          } catch {}
+        }
+        return nextTasks;
+      });
+    },
+    [user],
+  );
+
   const handleDeleteAccount = useCallback(async () => {
     if (deletingAccount || !user) return;
     setDeletingAccount(true);
@@ -994,6 +1031,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       completedTasks,
       addTask,
       toggleTask,
+      reorderTasks,
       deleteTask,
       deleteCompletedTasks,
       deleteAllTasks,
