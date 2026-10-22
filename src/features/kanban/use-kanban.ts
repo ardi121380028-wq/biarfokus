@@ -112,72 +112,92 @@ export function useKanban(userId?: string | null) {
       const deletedIds = getDeletedBoardIds(userId);
       const cloudIds = new Set(cloudBoards.map((b) => b.id));
 
-      // Read current local boards from storage
+      // Read current local boards from storage safely
       const storageKey = getStorageKey(userId);
       let localBoards: KanbanBoard[] = [];
       if (typeof window !== "undefined") {
         try {
           const raw = window.localStorage.getItem(storageKey);
-          if (raw) localBoards = parseStoredBoards(JSON.parse(raw));
+          if (raw) localBoards = parseStoredBoards(raw);
         } catch {}
       }
 
-      // Detect any local boards that need uploading to Supabase
-      const missingInCloud = localBoards.filter((b) => {
-        if (!b.id || cloudIds.has(b.id) || deletedIds.has(b.id)) return false;
-        if (!b.title || b.title === "Ruang Kerja Baru") return false;
-        // Any board stored under this user that isn't owned by someone else belongs to this user!
-        return !b.isShared || b.userId === userId || !b.userId || b.userId === "guest";
-      });
-
-      // Also migrate any guest boards created before login
+      // Also migrate any guest or legacy boards
       if (typeof window !== "undefined") {
-        try {
-          const guestRaw = window.localStorage.getItem("biarfokus.kanban.guest.boards");
-          if (guestRaw) {
-            const guestBoards = parseStoredBoards(JSON.parse(guestRaw));
-            for (const gb of guestBoards) {
-              if (gb.id && gb.title && gb.title !== "Ruang Kerja Baru" && !deletedIds.has(gb.id) && !cloudIds.has(gb.id)) {
-                missingInCloud.push({ ...gb, userId, role: "owner" });
+        const potentialKeys = ["biarfokus.kanban.guest.boards", "biarfokus.kanban.boards"];
+        for (const pk of potentialKeys) {
+          try {
+            const raw = window.localStorage.getItem(pk);
+            if (raw) {
+              const extraBoards = parseStoredBoards(raw);
+              for (const eb of extraBoards) {
+                if (eb.id && !localBoards.some((b) => b.id === eb.id)) {
+                  localBoards.push({ ...eb, userId, role: "owner" });
+                }
+              }
+              if (pk.includes("guest")) {
+                window.localStorage.removeItem(pk);
               }
             }
-            window.localStorage.removeItem("biarfokus.kanban.guest.boards");
-          }
-        } catch {}
+          } catch {}
+        }
       }
 
-      // Explicitly upload missing local boards to Supabase and await them
+      // Build a comprehensive board map preserving all boards
+      const boardMap = new Map<string, KanbanBoard>();
+
+      // 1. First add all local boards (user-created boards are NEVER lost)
+      for (const lb of localBoards) {
+        if (lb.id && !deletedIds.has(lb.id)) {
+          boardMap.set(lb.id, {
+            ...lb,
+            userId: lb.userId || userId,
+            role: lb.role || "owner",
+          });
+        }
+      }
+
+      // 2. Merge cloud boards
+      for (const cb of cloudBoards) {
+        if (cb.id && !deletedIds.has(cb.id)) {
+          const local = boardMap.get(cb.id);
+          const isOwner = cb.userId === userId;
+          const role = isOwner ? ("owner" as const) : cb.role;
+          const resolved = { ...cb, role };
+
+          if (!local) {
+            boardMap.set(cb.id, resolved);
+          } else {
+            // Keep local lists if local has more cards or cloud lists are empty
+            const localCardCount = local.lists?.reduce((sum, l) => sum + (l.cards?.length || 0), 0) || 0;
+            const cloudCardCount = cb.lists?.reduce((sum, l) => sum + (l.cards?.length || 0), 0) || 0;
+            if (localCardCount > cloudCardCount) {
+              boardMap.set(cb.id, { ...resolved, lists: local.lists });
+            } else {
+              boardMap.set(cb.id, resolved);
+            }
+          }
+        }
+      }
+
+      // 3. Find any boards missing in Supabase cloud and upload them
+      const missingInCloud: KanbanBoard[] = [];
+      for (const [id, board] of boardMap.entries()) {
+        if (!cloudIds.has(id)) {
+          if (!board.isShared || board.userId === userId || !board.userId || board.userId === "guest") {
+            missingInCloud.push({ ...board, userId, role: "owner" });
+          }
+        }
+      }
+
       if (missingInCloud.length > 0) {
         await Promise.allSettled(
-          missingInCloud.map((b) => upsertCloudBoard(supabase, userId, { ...b, userId, role: "owner" })),
+          missingInCloud.map((b) => upsertCloudBoard(supabase, userId, b))
         );
       }
 
-      // Exclude boards marked as deleted, and ensure owned boards always keep owner role
-      const activeCloud = cloudBoards
-        .filter((b) => !deletedIds.has(b.id))
-        .map((b) => {
-          if (userId && b.userId === userId) {
-            return { ...b, role: "owner" as const };
-          }
-          return b;
-        });
-
-      const validLocals = missingInCloud.map((b) => ({
-        ...b,
-        userId,
-        role: "owner" as const,
-      }));
-
-      const merged = [...activeCloud, ...validLocals];
-
-      updateBoards(() => {
-        if (merged.length > 0) {
-          return merged;
-        }
-        return [];
-      });
-
+      const merged = Array.from(boardMap.values());
+      updateBoards(() => merged);
       setSyncStatus("synced");
     } catch (err) {
       console.warn("[BiarFokus Kanban] Cloud sync error:", err);

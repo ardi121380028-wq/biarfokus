@@ -467,14 +467,21 @@ export function parseStoredBoardId(raw: string | null): string {
   return val.replace(/^["']|["']$/g, "").trim();
 }
 
-export function parseStoredBoards(raw: string | null): KanbanBoard[] {
+export function parseStoredBoards(raw: string | null | unknown): KanbanBoard[] {
   if (!raw) return [];
   try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed
-        .filter((item): item is KanbanBoard => Boolean(item && typeof item === "object" && typeof item.id === "string"))
-        .map((item) => normalizeBoard(item));
+    if (Array.isArray(raw)) {
+      return raw
+        .filter((item): item is KanbanBoard => Boolean(item && typeof item === "object" && typeof (item as { id?: unknown }).id === "string"))
+        .map((item) => normalizeBoard(item as unknown as KanbanBoard));
+    }
+    if (typeof raw === "string") {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((item): item is KanbanBoard => Boolean(item && typeof item === "object" && typeof item.id === "string"))
+          .map((item) => normalizeBoard(item));
+      }
     }
   } catch {
     // Malformed JSON: return empty

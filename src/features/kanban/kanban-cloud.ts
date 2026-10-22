@@ -113,7 +113,7 @@ export async function upsertCloudBoard(
     }
 
     // Owned board: ensure user_id is the authenticated user's UUID (never "guest" or invalid string)
-    const payload = {
+        const payload = {
       id: board.id,
       user_id: userId,
       title: board.title || "My Board",
@@ -124,16 +124,54 @@ export async function upsertCloudBoard(
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from("kanban_boards").upsert(payload, { onConflict: "id" });
-    if (error) {
-      if (error.code === "42P01" || error.message?.includes("does not exist")) {
-        console.warn("[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor.");
-        return false;
-      }
-      console.warn("[BiarFokus Cloud] Cloud kanban upsert error:", error);
+    // 1. Try insert first (most reliable for newly created boards with RLS)
+    const { error: insertError } = await supabase.from("kanban_boards").insert(payload);
+    if (!insertError) {
+      return true;
+    }
+
+    // 2. If duplicate key error 23505 (board already exists), update it
+    if (
+      insertError.code === "23505" ||
+      insertError.message?.includes("duplicate") ||
+      insertError.message?.includes("unique") ||
+      insertError.message?.includes("already exists")
+    ) {
+      const { error: updateError } = await supabase
+        .from("kanban_boards")
+        .update({
+          title: payload.title,
+          description: payload.description,
+          background: payload.background,
+          lists: payload.lists,
+          starred: payload.starred,
+          updated_at: payload.updated_at,
+        })
+        .eq("id", board.id);
+
+      if (!updateError) return true;
+      console.warn("[BiarFokus Cloud] Cloud kanban update on duplicate error:", updateError);
       return false;
     }
-    return true;
+
+    // 3. Fallback: try upsert
+    const { error: upsertError } = await supabase.from("kanban_boards").upsert(payload, { onConflict: "id" });
+    if (!upsertError) return true;
+
+    if (
+      insertError.code === "42P01" ||
+      insertError.message?.includes("does not exist") ||
+      upsertError?.code === "42P01" ||
+      upsertError?.message?.includes("does not exist")
+    ) {
+      console.warn(
+        "[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor."
+      );
+      return false;
+    }
+
+    console.warn("[BiarFokus Cloud] Cloud kanban insert error:", insertError, "upsert error:", upsertError);
+    return false;
   } catch (err) {
     console.warn("[BiarFokus Cloud] Cloud kanban upsert skipped or failed.", err);
     return false;
