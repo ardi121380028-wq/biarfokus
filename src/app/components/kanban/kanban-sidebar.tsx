@@ -139,15 +139,6 @@ export function KanbanSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => handleNavigate("stats")}
-            title="Statistik Produktivitas"
-          >
-            <span className="nav-icon">📊</span>
-            {!isCollapsed && <span className="nav-label">Statistik</span>}
-          </button>
-          <button
-            type="button"
-            className="kanban-sidebar-nav-item"
             onClick={() => handleNavigate("pricing")}
             title="Upgrade Pro"
           >

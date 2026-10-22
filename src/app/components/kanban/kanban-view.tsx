@@ -307,7 +307,6 @@ export function KanbanView({
   }, [currentBoard.background]);
 
   const isLightBg = Boolean(
-    dark === false ||
     currentBg.isLight ||
     currentBg.textColor === "#0f172a" ||
     currentBg.textColor === "#111111"
@@ -879,7 +878,7 @@ export function KanbanView({
                           }
                         }}
                         title={canEdit ? "Klik untuk mengubah nama proyek" : currentBoard.title}
-                        style={{ cursor: canEdit ? "pointer" : "default" }}
+                        style={{ cursor: canEdit ? "pointer" : "default", color: currentBg.textColor }}
                       >
                         {currentBoard.title}
                         {canEdit && (

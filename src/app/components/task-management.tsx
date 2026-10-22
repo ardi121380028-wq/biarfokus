@@ -119,7 +119,7 @@ export function TaskManagement({
     const rowBelow = elemBelow?.closest("[data-task-index]") as HTMLElement | null;
     if (rowBelow) {
       const idx = Number(rowBelow.getAttribute("data-task-index"));
-      if (!Number.isNaN(idx)) {
+      if (!Number.isNaN(idx) && idx !== dragOverIndex) {
         setDragOverIndex(idx);
       }
     }

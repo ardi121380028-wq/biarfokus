@@ -157,15 +157,6 @@ export function CalendarSidebar({
           <button
             type="button"
             className="kanban-sidebar-nav-item"
-            onClick={() => handleNavigate("stats")}
-            title="Statistik Produktivitas"
-          >
-            <span className="nav-icon">📊</span>
-            {!isCollapsed && <span className="nav-label">Statistik</span>}
-          </button>
-          <button
-            type="button"
-            className="kanban-sidebar-nav-item"
             onClick={() => handleNavigate("pricing")}
             title="Upgrade Pro"
           >
@@ -267,37 +258,49 @@ export function CalendarSidebar({
         {!isCollapsed && <span className="kanban-sidebar-section-title">Kategori Jadwal</span>}
         {!isCollapsed && (
           <div className="cal-categories-list">
-            <label className="cal-filter-checkbox-item">
-              <input
-                type="checkbox"
-                checked={categoryFilters.event}
-                onChange={() => onToggleCategoryFilter("event")}
-                className="cal-checkbox-input"
-              />
+            <label className={`cal-filter-checkbox-item ${categoryFilters.event ? "is-active" : ""}`}>
+              <div className="cal-filter-check-wrap">
+                <input
+                  type="checkbox"
+                  checked={categoryFilters.event}
+                  onChange={() => onToggleCategoryFilter("event")}
+                  className="cal-checkbox-input"
+                />
+                <span className="cal-filter-custom-check" aria-hidden="true">✓</span>
+              </div>
               <span className="cal-filter-dot" style={{ backgroundColor: "#039be5" }} />
               <span className="cal-filter-label">Acara / Blok Fokus</span>
             </label>
 
-            <label className="cal-filter-checkbox-item">
-              <input
-                type="checkbox"
-                checked={categoryFilters.task}
-                onChange={() => onToggleCategoryFilter("task")}
-                className="cal-checkbox-input"
-              />
+            <label className={`cal-filter-checkbox-item ${categoryFilters.task ? "is-active" : ""}`}>
+              <div className="cal-filter-check-wrap">
+                <input
+                  type="checkbox"
+                  checked={categoryFilters.task}
+                  onChange={() => onToggleCategoryFilter("task")}
+                  className="cal-checkbox-input"
+                />
+                <span className="cal-filter-custom-check" aria-hidden="true">✓</span>
+              </div>
               <span className="cal-filter-dot" style={{ backgroundColor: "#33b679" }} />
               <span className="cal-filter-label">Tugas / To-do</span>
             </label>
 
-            <label className="cal-filter-checkbox-item">
-              <input
-                type="checkbox"
-                checked={categoryFilters.recurring}
-                onChange={() => onToggleCategoryFilter("recurring")}
-                className="cal-checkbox-input"
-              />
+            <label className={`cal-filter-checkbox-item ${categoryFilters.recurring ? "is-active" : ""}`}>
+              <div className="cal-filter-check-wrap">
+                <input
+                  type="checkbox"
+                  checked={categoryFilters.recurring}
+                  onChange={() => onToggleCategoryFilter("recurring")}
+                  className="cal-checkbox-input"
+                />
+                <span className="cal-filter-custom-check" aria-hidden="true">✓</span>
+              </div>
               <span className="cal-filter-dot" style={{ backgroundColor: "#8e24aa" }} />
-              <span className="cal-filter-label">Jadwal Berulang 🔁</span>
+              <span className="cal-filter-label">
+                <span>Jadwal Berulang</span>
+                <span className="cal-filter-recurring-tag">Rutin</span>
+              </span>
             </label>
           </div>
         )}

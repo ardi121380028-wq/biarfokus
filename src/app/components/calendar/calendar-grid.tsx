@@ -70,8 +70,11 @@ export function CalendarGrid({
     return () => clearInterval(timer);
   }, []);
 
-  // Global pointermove and pointerup listeners while dragging
+  // Dynamic pointermove and pointerup listeners only while actively dragging
   useEffect(() => {
+    if (!dragState) return;
+
+    let rafId: number | null = null;
     function onPointerMove(e: PointerEvent) {
       if (!dragSessionRef.current) return;
       const session = dragSessionRef.current;
@@ -83,59 +86,63 @@ export function CalendarGrid({
       }
       if (!session.hasMoved) return;
 
-      const deltaMins = Math.round((deltaY / HOUR_HEIGHT_PX) * 60);
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const deltaMins = Math.round((deltaY / HOUR_HEIGHT_PX) * 60);
 
-      // Detect target day column in Week view
-      let targetDate = session.initialDateISO;
-      if (days.length > 1) {
-        for (const d of days) {
-          const iso = toISODate(d);
-          const colEl = columnRefs.current[iso];
-          if (colEl) {
-            const rect = colEl.getBoundingClientRect();
-            if (e.clientX >= rect.left && e.clientX <= rect.right) {
-              targetDate = iso;
-              break;
+        // Detect target day column in Week view
+        let targetDate = session.initialDateISO;
+        if (days.length > 1) {
+          for (const d of days) {
+            const iso = toISODate(d);
+            const colEl = columnRefs.current[iso];
+            if (colEl) {
+              const rect = colEl.getBoundingClientRect();
+              if (e.clientX >= rect.left && e.clientX <= rect.right) {
+                targetDate = iso;
+                break;
+              }
             }
           }
         }
-      }
-      session.currentDateISO = targetDate;
+        session.currentDateISO = targetDate;
 
-      if (session.mode === "move") {
-        const { startTime, endTime } = moveEventTimeRange(
-          session.initialStartMins + deltaMins,
-          session.durationMins,
-          15,
-        );
-        session.currentStartTime = startTime;
-        session.currentEndTime = endTime;
-      } else if (session.mode === "resize-bottom") {
-        const { startTime, endTime } = resizeEventTimeRange(
-          "bottom",
-          session.initialEndMins + deltaMins,
-          session.initialStartMins,
-          15,
-          15,
-        );
-        session.currentStartTime = startTime;
-        session.currentEndTime = endTime;
-      } else if (session.mode === "resize-top") {
-        const { startTime, endTime } = resizeEventTimeRange(
-          "top",
-          session.initialStartMins + deltaMins,
-          session.initialEndMins,
-          15,
-          15,
-        );
-        session.currentStartTime = startTime;
-        session.currentEndTime = endTime;
-      }
+        if (session.mode === "move") {
+          const { startTime, endTime } = moveEventTimeRange(
+            session.initialStartMins + deltaMins,
+            session.durationMins,
+            15,
+          );
+          session.currentStartTime = startTime;
+          session.currentEndTime = endTime;
+        } else if (session.mode === "resize-bottom") {
+          const { startTime, endTime } = resizeEventTimeRange(
+            "bottom",
+            session.initialEndMins + deltaMins,
+            session.initialStartMins,
+            15,
+            15,
+          );
+          session.currentStartTime = startTime;
+          session.currentEndTime = endTime;
+        } else if (session.mode === "resize-top") {
+          const { startTime, endTime } = resizeEventTimeRange(
+            "top",
+            session.initialStartMins + deltaMins,
+            session.initialEndMins,
+            15,
+            15,
+          );
+          session.currentStartTime = startTime;
+          session.currentEndTime = endTime;
+        }
 
-      setDragState({ ...session });
+        setDragState({ ...session });
+      });
     }
 
     function onPointerUp() {
+      if (rafId) cancelAnimationFrame(rafId);
       if (!dragSessionRef.current) return;
       const session = dragSessionRef.current;
       dragSessionRef.current = null;
@@ -156,10 +163,11 @@ export function CalendarGrid({
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
     };
-  }, [days, onEventClick, onUpdateEvent]);
+  }, [dragState !== null, days, onEventClick, onUpdateEvent]);
 
   function handleStartDrag(
     e: ReactPointerEvent,
@@ -332,10 +340,15 @@ export function CalendarGrid({
                     const widthPercent = 100 / columns;
                     const leftPercent = column * widthPercent;
 
+                    const isShortEvent = displayHeight <= 58;
+                    const isTinyEvent = displayHeight <= 34;
+
                     return (
                       <div
                         key={event.id}
                         className={`cal-event-block ${
+                          isShortEvent ? "is-short-event" : ""
+                        } ${isTinyEvent ? "is-tiny-event" : ""} ${
                           isCurrentBeingDragged && dragState.hasMoved ? "is-dragging" : ""
                         }`}
                         style={{
@@ -358,33 +371,53 @@ export function CalendarGrid({
                         <div className="cal-event-accent-strip" />
 
                         <div className="cal-event-content">
-                          <strong className="cal-event-title">
-                            {event.title}
-                            {((event.recurrence?.frequency && event.recurrence.frequency !== "none") ||
-                              event.isRecurringOccurrence) && (
-                              <span className="cal-repeat-indicator" title="Jadwal rutin berulang">
-                                🔁
+                          {isShortEvent ? (
+                            <div className="cal-event-headline-row">
+                              <strong className="cal-event-title">
+                                {event.title}
+                                {((event.recurrence?.frequency && event.recurrence.frequency !== "none") ||
+                                  event.isRecurringOccurrence) && (
+                                  <span className="cal-repeat-indicator" title="Jadwal rutin berulang">
+                                    🔁
+                                  </span>
+                                )}
+                              </strong>
+                              <span className="cal-event-time">
+                                {displayStartTime}–{displayEndTime}
                               </span>
-                            )}
-                          </strong>
-                          <span className="cal-event-time">
-                            {displayStartTime} – {displayEndTime}
-                          </span>
-                          {event.linkedItemText ? (
+                            </div>
+                          ) : (
+                            <>
+                              <strong className="cal-event-title">
+                                {event.title}
+                                {((event.recurrence?.frequency && event.recurrence.frequency !== "none") ||
+                                  event.isRecurringOccurrence) && (
+                                  <span className="cal-repeat-indicator" title="Jadwal rutin berulang">
+                                    🔁
+                                  </span>
+                                )}
+                              </strong>
+                              <span className="cal-event-time">
+                                {displayStartTime} – {displayEndTime}
+                              </span>
+                            </>
+                          )}
+
+                          {!isTinyEvent && event.linkedItemText ? (
                             <span
                               className="cal-event-linked-badge cal-event-subtask-badge"
                               title={`Sub-task: ${event.linkedItemText}${event.linkedNoteTitle ? ` (${event.linkedNoteTitle})` : ""}`}
                             >
                               ☑️ {event.linkedItemText}
                             </span>
-                          ) : event.linkedNoteTitle ? (
+                          ) : !isTinyEvent && event.linkedNoteTitle ? (
                             <span
                               className="cal-event-linked-badge"
                               title={`Terhubung dengan catatan: ${event.linkedNoteTitle}`}
                             >
                               📝 {event.linkedNoteTitle}
                             </span>
-                          ) : event.linkedKanbanCardId ? (
+                          ) : !isTinyEvent && event.linkedKanbanCardId ? (
                             <span
                               className="cal-event-linked-badge cal-event-kanban-badge"
                               title={`Terhubung dengan kartu Kanban: ${event.linkedKanbanBoardTitle || "Kanban"}`}
