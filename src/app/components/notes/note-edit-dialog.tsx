@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { KeepNote } from "@/types/domain";
-import { NOTE_COLORS, type NoteDraft } from "@/features/notes/notes-service";
+import type { ChecklistItem, KeepNote } from "@/types/domain";
+import {
+  createId,
+  NOTE_COLORS,
+  type NoteDraft,
+} from "@/features/notes/notes-service";
 import { LabelSelect } from "./label-select";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { exportNoteToPdf } from "@/features/notes/note-format";
@@ -27,33 +31,30 @@ export function NoteEditDialog({
   onCreateLabel,
   onToggleArchive,
 }: NoteEditDialogProps) {
-  const [draft, setDraft] = useState<NoteDraft>({
+  const [draft, setDraft] = useState<NoteDraft>(() => ({
     title: note.title,
-    type: "text",
-    content:
-      note.content ||
-      (note.items && note.items.length > 0
-        ? note.items.map((it) => `• ${it.text}`).join("<br>")
-        : ""),
-    items: [],
+    type: note.type,
+    content: note.content || "",
+    items: note.items ? [...note.items] : [],
     color: note.color,
     labels: note.labels ? [...note.labels] : [],
     pinned: Boolean(note.pinned),
-  });
+  }));
+  const [newItemText, setNewItemText] = useState("");
+  const [collapsedDone, setCollapsedDone] = useState(true);
 
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const activeItems = (draft.items || []).filter((i) => !i.done);
+  const doneItems = (draft.items || []).filter((i) => i.done);
 
   // Sync if incoming note changes
   useEffect(() => {
     setDraft({
       title: note.title,
-      type: "text",
-      content:
-        note.content ||
-        (note.items && note.items.length > 0
-          ? note.items.map((it) => `• ${it.text}`).join("<br>")
-          : ""),
-      items: [],
+      type: note.type,
+      content: note.content || "",
+      items: note.items ? [...note.items] : [],
       color: note.color,
       labels: note.labels ? [...note.labels] : [],
       pinned: Boolean(note.pinned),
@@ -62,18 +63,30 @@ export function NoteEditDialog({
 
   function handleSaveAndClose() {
     const cleanTitle = draft.title.trim();
-    const cleanContent = (draft.content || "").trim();
+    if (draft.type === "checklist") {
+      const items = (draft.items || []).filter((it) => it.text.trim().length > 0);
+      if (!cleanTitle && items.length === 0) {
+        onDelete(note.id);
+        onClose();
+        return;
+      }
+      onSave(note.id, {
+        ...draft,
+        title: cleanTitle,
+        items,
+      });
+      onClose();
+      return;
+    }
 
-    // If completely empty, delete
+    const cleanContent = (draft.content || "").trim();
     if (!cleanTitle && !cleanContent) {
       onDelete(note.id);
       onClose();
       return;
     }
-
     onSave(note.id, {
       ...draft,
-      type: "text",
       title: cleanTitle,
       content: cleanContent,
     });
@@ -83,11 +96,37 @@ export function NoteEditDialog({
   useOutsideClick(cardRef, handleSaveAndClose);
   useEscapeKey(handleSaveAndClose);
 
+  function handleAddItem() {
+    const text = newItemText.trim();
+    if (!text) return;
+    const item: ChecklistItem = { id: createId("item"), text, done: false };
+    setDraft((prev) => ({
+      ...prev,
+      items: [...(prev.items || []), item],
+    }));
+    setNewItemText("");
+  }
+
+  function handleToggleItem(id: string) {
+    setDraft((prev) => ({
+      ...prev,
+      items: (prev.items || []).map((i) => (i.id === id ? { ...i, done: !i.done } : i)),
+    }));
+  }
+
+  function handleDeleteItem(id: string) {
+    setDraft((prev) => ({
+      ...prev,
+      items: (prev.items || []).filter((i) => i.id !== id),
+    }));
+  }
+
   function handleExportPdf() {
     exportNoteToPdf({
       title: draft.title,
-      type: "text",
+      type: draft.type,
       content: draft.content || "",
+      items: draft.items,
       labels: draft.labels,
       color: draft.color,
       updatedAt: note.updatedAt,
@@ -161,16 +200,132 @@ export function NoteEditDialog({
           </button>
         </div>
 
-        {/* Rich Note Editor Content */}
-        <div className="keep-text-editor-wrap">
-          <RichNoteEditor
-            content={draft.content || ""}
-            onChange={(html) => setDraft((prev) => ({ ...prev, content: html }))}
-            minHeight={260}
-            onDownloadPdf={handleExportPdf}
-            showPdfButton={true}
-          />
-        </div>
+        {/* Content Area: Rich Text Editor OR Interactive Checklist */}
+        {draft.type === "text" ? (
+          <div className="keep-text-editor-wrap">
+            <RichNoteEditor
+              content={draft.content || ""}
+              onChange={(html) => setDraft((prev) => ({ ...prev, content: html }))}
+              minHeight={260}
+              onDownloadPdf={handleExportPdf}
+              showPdfButton={true}
+            />
+          </div>
+        ) : (
+          <div className="keep-checklist-create-section">
+            <div className="keep-checklist-items">
+              {activeItems.map((item) => (
+                <div key={item.id} className="keep-checklist-item-row">
+                  <input
+                    type="checkbox"
+                    checked={false}
+                    onChange={() => handleToggleItem(item.id)}
+                    className="keep-checkbox"
+                  />
+                  <input
+                    type="text"
+                    value={item.text}
+                    onChange={(e) => {
+                      const text = e.target.value;
+                      setDraft((prev) => ({
+                        ...prev,
+                        items: (prev.items || []).map((i) =>
+                          i.id === item.id ? { ...i, text } : i
+                        ),
+                      }));
+                    }}
+                    className="keep-item-edit-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem(item.id)}
+                    className="keep-item-delete"
+                    aria-label="Hapus item"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="keep-checklist-add-row">
+              <span className="keep-add-icon">＋</span>
+              <input
+                type="text"
+                placeholder="Tambah item baru (Enter)..."
+                value={newItemText}
+                onChange={(e) => setNewItemText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddItem();
+                  }
+                }}
+                className="keep-checklist-add-input"
+              />
+              <button
+                type="button"
+                onClick={handleAddItem}
+                disabled={!newItemText.trim()}
+                className="keep-add-item-btn"
+              >
+                Tambah
+              </button>
+            </div>
+
+            {doneItems.length > 0 && (
+              <div className="keep-card-done-section" style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="keep-card-done-toggle"
+                  onClick={() => setCollapsedDone(!collapsedDone)}
+                >
+                  {collapsedDone ? "▶" : "▼"} {doneItems.length} item diselesaikan
+                </button>
+
+                {!collapsedDone && (
+                  <div
+                    className="keep-card-done-list"
+                    style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}
+                  >
+                    {doneItems.map((item) => (
+                      <div key={item.id} className="keep-checklist-item-row">
+                        <input
+                          type="checkbox"
+                          checked={true}
+                          onChange={() => handleToggleItem(item.id)}
+                          className="keep-checkbox"
+                        />
+                        <input
+                          type="text"
+                          value={item.text}
+                          onChange={(e) => {
+                            const text = e.target.value;
+                            setDraft((prev) => ({
+                              ...prev,
+                              items: (prev.items || []).map((i) =>
+                                i.id === item.id ? { ...i, text } : i
+                              ),
+                            }));
+                          }}
+                          className="keep-item-edit-input done"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="keep-item-delete"
+                          aria-label="Hapus item"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <LabelSelect
           value={draft.labels}

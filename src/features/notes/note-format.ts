@@ -150,19 +150,10 @@ export function parseMarkdownToHtml(markdown: string): string {
   if (!markdown || !markdown.trim()) return "";
 
   const trimmed = markdown.trim();
-  // If already HTML from rich live editor, return as-is
+  // If already HTML from rich live editor or contains rich HTML elements, return as-is
   if (
-    trimmed.startsWith("<") &&
-    (trimmed.includes("</p>") ||
-      trimmed.includes("</h1>") ||
-      trimmed.includes("</h2>") ||
-      trimmed.includes("</h3>") ||
-      trimmed.includes("</h4>") ||
-      trimmed.includes("</h5>") ||
-      trimmed.includes("</ul>") ||
-      trimmed.includes("</ol>") ||
-      trimmed.includes("</table>") ||
-      trimmed.includes("</div>"))
+    /<(p|div|h[1-6]|ul|ol|table|br|span|strong|em|b|i)\b/i.test(trimmed) &&
+    (trimmed.includes("</") || trimmed.includes("<br") || trimmed.includes("/>"))
   ) {
     return markdown;
   }
@@ -195,7 +186,8 @@ export function parseMarkdownToHtml(markdown: string): string {
   }
 
   function formatInline(text: string): string {
-    let s = escapeHtml(text);
+    const normalized = text.replace(/<br\s*\/?>/gi, "___KEEP_BR___");
+    let s = escapeHtml(normalized).replace(/___KEEP_BR___/g, "<br>");
     // Bold
     s = s.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
     // Italic

@@ -104,7 +104,13 @@ export function RichNoteEditor({
         textBeforeCaret.endsWith("\n*")
       ) {
         e.preventDefault();
-        // Delete the '-' or '*' character using standard command
+        try {
+          const range = document.createRange();
+          range.setStart(node, offset - 1);
+          range.setEnd(node, offset);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        } catch {}
         document.execCommand("delete", false);
         document.execCommand("insertUnorderedList", false);
         handleInput();
@@ -114,8 +120,14 @@ export function RichNoteEditor({
       // 2. Numbered list: typing "1." then Space
       if (textBeforeCaret === "1." || textBeforeCaret.endsWith("\n1.")) {
         e.preventDefault();
-        document.execCommand("delete", false); // delete '.'
-        document.execCommand("delete", false); // delete '1'
+        try {
+          const range = document.createRange();
+          range.setStart(node, offset - 2);
+          range.setEnd(node, offset);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        } catch {}
+        document.execCommand("delete", false);
         document.execCommand("insertOrderedList", false);
         handleInput();
         return;
@@ -127,9 +139,14 @@ export function RichNoteEditor({
         e.preventDefault();
         const hashes = headingMatch[2];
         const level = hashes.length as 1 | 2 | 3 | 4 | 5;
-        for (let i = 0; i < level; i++) {
-          document.execCommand("delete", false);
-        }
+        try {
+          const range = document.createRange();
+          range.setStart(node, offset - level);
+          range.setEnd(node, offset);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        } catch {}
+        document.execCommand("delete", false);
         try {
           const ok = document.execCommand("formatBlock", false, `h${level}`);
           if (!ok) document.execCommand("formatBlock", false, `<h${level}>`);
