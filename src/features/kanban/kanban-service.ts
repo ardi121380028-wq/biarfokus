@@ -437,6 +437,7 @@ export function normalizeBoard(raw: unknown): KanbanBoard {
 
   return {
     id: typeof b.id === "string" && b.id ? b.id : createId("board"),
+    userId: typeof b.userId === "string" ? b.userId : undefined,
     title: typeof b.title === "string" && b.title ? b.title : "Board Baru",
     description: typeof b.description === "string" ? b.description : "",
     background:
@@ -449,6 +450,7 @@ export function normalizeBoard(raw: unknown): KanbanBoard {
     role: b.role,
     isShared: Boolean(b.isShared),
     labels: Array.isArray(b.labels) ? b.labels : undefined,
+    _isLocalDraft: b._isLocalDraft !== undefined ? Boolean(b._isLocalDraft) : undefined,
     createdAt: typeof b.createdAt === "string" ? b.createdAt : now,
     updatedAt: typeof b.updatedAt === "string" ? b.updatedAt : now,
     lists,

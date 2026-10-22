@@ -39,9 +39,17 @@ export async function loadCloudBoards(
     // 1. Try server API route first (100% reliable session cookies across mobile & desktop)
     if (typeof window !== "undefined") {
       try {
+        let authHeaders: Record<string, string> = { "Content-Type": "application/json" };
+        try {
+          const session = (await supabase.auth.getSession()).data.session;
+          if (session?.access_token) {
+            authHeaders.Authorization = `Bearer ${session.access_token}`;
+          }
+        } catch {}
+
         const res = await fetch("/api/kanban/boards", {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           cache: "no-store",
           credentials: "include",
         });
@@ -110,9 +118,17 @@ export async function upsertCloudBoard(
     // 1. Try server API route first
     if (typeof window !== "undefined") {
       try {
+        let authHeaders: Record<string, string> = { "Content-Type": "application/json" };
+        try {
+          const session = (await supabase.auth.getSession()).data.session;
+          if (session?.access_token) {
+            authHeaders.Authorization = `Bearer ${session.access_token}`;
+          }
+        } catch {}
+
         const res = await fetch("/api/kanban/boards", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           credentials: "include",
           body: JSON.stringify({ board }),
         });

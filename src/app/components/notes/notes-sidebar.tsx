@@ -220,21 +220,6 @@ export function NotesSidebar({
 
           <button
             type="button"
-            className={`notes-sidebar-filter-item ${typeFilter === "checklist" ? "active" : ""}`}
-            onClick={() => handleSelectType("checklist")}
-            title="Daftar Tugas (Checklist)"
-          >
-            <span className="filter-icon">☑️</span>
-            {!isCollapsed && (
-              <>
-                <span className="filter-title">To-Do List</span>
-                <span className="filter-count">{checklistCount}</span>
-              </>
-            )}
-          </button>
-
-          <button
-            type="button"
             className={`notes-sidebar-filter-item ${typeFilter === "text" ? "active" : ""}`}
             onClick={() => handleSelectType("text")}
             title="Catatan Teks"
@@ -242,7 +227,7 @@ export function NotesSidebar({
             <span className="filter-icon">📄</span>
             {!isCollapsed && (
               <>
-                <span className="filter-title">Catatan Teks</span>
+                <span className="filter-title">Catatan Utama</span>
                 <span className="filter-count">{textCount}</span>
               </>
             )}

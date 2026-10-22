@@ -135,22 +135,12 @@ export function NoteComposer({
       >
         <div
           className="keep-create-collapsed-inner keep-create-placeholder-row"
-          onClick={() => openComposer()}
+          onClick={() => openComposer("text")}
         >
           <span className="keep-create-prompt">
-            Buat catatan baru atau to-do list...
+            Tulis catatan fokus baru...
           </span>
           <div className="keep-quick-create-actions">
-            <button
-              type="button"
-              className="keep-quick-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                openComposer("checklist");
-              }}
-            >
-              ☑️ Checklist
-            </button>
             <button
               type="button"
               className="keep-quick-btn"
@@ -159,7 +149,7 @@ export function NoteComposer({
                 openComposer("text");
               }}
             >
-              📝 Catatan
+              ✏️ Tulis Catatan
             </button>
           </div>
         </div>
@@ -192,108 +182,15 @@ export function NoteComposer({
             </button>
           </div>
 
-          <div className="keep-type-switcher">
-            <button
-              type="button"
-              className={
-                draft.type === "checklist"
-                  ? "keep-switch-btn active"
-                  : "keep-switch-btn"
-              }
-              onClick={() => setDraft((prev) => convertDraftType(prev, "checklist"))}
-            >
-              ☑️ Checklist
-            </button>
-            <button
-              type="button"
-              className={
-                draft.type === "text"
-                  ? "keep-switch-btn active"
-                  : "keep-switch-btn"
-              }
-              onClick={() => setDraft((prev) => convertDraftType(prev, "text"))}
-            >
-              📝 Teks Bebas
-            </button>
+          <div className="keep-text-editor-wrap">
+            <RichNoteEditor
+              content={draft.content || ""}
+              onChange={(html) => setDraft((prev) => ({ ...prev, type: "text", content: html }))}
+              minHeight={160}
+              onDownloadPdf={() => exportNoteToPdf(draft)}
+              showPdfButton={Boolean(draft.title || draft.content)}
+            />
           </div>
-
-          {draft.type === "text" ? (
-            <div className="keep-text-editor-wrap">
-              <RichNoteEditor
-                content={draft.content || ""}
-                onChange={(html) => setDraft((prev) => ({ ...prev, content: html }))}
-                minHeight={150}
-                onDownloadPdf={() => exportNoteToPdf(draft)}
-                showPdfButton={Boolean(draft.title || draft.content)}
-              />
-            </div>
-          ) : (
-            <div className="keep-checklist-create-section">
-              <div className="keep-checklist-items">
-                {(draft.items || []).map((item) => (
-                  <div key={item.id} className="keep-checklist-item-row">
-                    <input
-                      type="checkbox"
-                      checked={item.done}
-                      onChange={() => handleToggleItem(item.id)}
-                      className="keep-checkbox"
-                    />
-                    <input
-                      type="text"
-                      value={item.text}
-                      onChange={(e) => {
-                        const text = e.target.value;
-                        setDraft((prev) => ({
-                          ...prev,
-                          items: (prev.items || []).map((i) =>
-                            i.id === item.id ? { ...i, text } : i
-                          ),
-                        }));
-                      }}
-                      className={
-                        item.done
-                          ? "keep-item-edit-input done"
-                          : "keep-item-edit-input"
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="keep-item-delete"
-                      aria-label="Hapus item"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="keep-checklist-add-row">
-                <span className="keep-add-icon">＋</span>
-                <input
-                  type="text"
-                  placeholder="Tambah item todo (Enter)..."
-                  value={newItemText}
-                  onChange={(e) => setNewItemText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddItem();
-                    }
-                  }}
-                  className="keep-checklist-add-input"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddItem}
-                  disabled={!newItemText.trim()}
-                  className="keep-add-item-btn"
-                >
-                  Tambah
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Label selector: select existing or create new with upward placement */}
           <LabelSelect

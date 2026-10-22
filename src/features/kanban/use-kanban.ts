@@ -172,7 +172,7 @@ export function useKanban(userId?: string | null) {
         boardMap.set(cb.id, { ...cb, role });
       }
 
-      // 2. Add any local boards that are genuine un-synced local drafts (created while offline)
+      // 2. Add all genuine local boards (ensuring boards NEVER vanish on refresh)
       const missingInCloud: KanbanBoard[] = [];
       for (const lb of localBoards) {
         if (!lb.id) continue;
@@ -182,18 +182,14 @@ export function useKanban(userId?: string | null) {
         // If it's already in cloud, keep the merged version
         if (boardMap.has(lb.id)) continue;
 
-        // Only upload if it was explicitly marked as a local un-synced draft
-        if (lb._isLocalDraft === true) {
-          if (!lb.isShared || lb.userId === userId || !lb.userId || lb.userId === "guest") {
-            const draftBoard: KanbanBoard = {
-              ...lb,
-              userId,
-              role: "owner",
-            };
-            boardMap.set(lb.id, draftBoard);
-            missingInCloud.push(draftBoard);
-          }
-        }
+        // Board exists locally: ALWAYS preserve it and sync to cloud
+        const preservedBoard: KanbanBoard = {
+          ...lb,
+          userId: userId || lb.userId,
+          role: "owner",
+        };
+        boardMap.set(lb.id, preservedBoard);
+        missingInCloud.push(preservedBoard);
       }
 
       // 3. Upload genuine local drafts to Supabase cloud

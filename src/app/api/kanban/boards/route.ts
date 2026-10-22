@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   apiJson,
@@ -12,23 +13,50 @@ import type { DbKanbanBoard, KanbanBoard, KanbanMemberRole } from "@/types/domai
 const ROUTE = "/api/kanban/boards";
 const limiter = createRateLimiter({ limit: 120, windowMs: 60_000 });
 
+async function getAuthUserAndClient(request: Request) {
+  const serverClient = await getSupabaseServerClient().catch(() => null);
+  if (serverClient) {
+    try {
+      const { data } = await serverClient.auth.getUser();
+      if (data?.user) return { user: data.user, supabase: serverClient };
+    } catch {}
+  }
+
+  // Fallback to Bearer token in headers
+  const authHeader = request.headers.get("authorization");
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.slice(7).trim();
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (url && key && token) {
+      try {
+        const tokenClient = createClient(url, key, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        });
+        const { data } = await tokenClient.auth.getUser(token);
+        if (data?.user) return { user: data.user, supabase: tokenClient };
+      } catch {}
+    }
+  }
+
+  return { user: null, supabase: serverClient };
+}
+
 export async function GET(request: Request) {
   const correlationId = resolveCorrelationId(request.headers.get("x-correlation-id"));
   const limit = limiter.check(`${ROUTE}:get:${getClientKey(request.headers)}`, Date.now());
   if (!limit.allowed) return rateLimitResponse(limit, correlationId);
 
   try {
-    const supabase = await getSupabaseServerClient().catch(() => null);
+    const { user, supabase } = await getAuthUserAndClient(request);
     if (!supabase) {
       return apiJson({ error: "Supabase not configured", boards: [] }, { status: 503, correlationId });
     }
-
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData.user) {
+    if (!user) {
       return apiJson({ error: "Unauthorized", boards: [] }, { status: 401, correlationId });
     }
 
-    const userId = authData.user.id;
+    const userId = user.id;
 
     // Load boards accessible to user
     const { data: boardsData, error: boardsErr } = await supabase
@@ -80,17 +108,15 @@ export async function POST(request: Request) {
   if (!limit.allowed) return rateLimitResponse(limit, correlationId);
 
   try {
-    const supabase = await getSupabaseServerClient().catch(() => null);
+    const { user, supabase } = await getAuthUserAndClient(request);
     if (!supabase) {
       return apiJson({ error: "Supabase not configured" }, { status: 503, correlationId });
     }
-
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData.user) {
+    if (!user) {
       return apiJson({ error: "Unauthorized" }, { status: 401, correlationId });
     }
 
-    const userId = authData.user.id;
+    const userId = user.id;
     const body = (await request.json().catch(() => ({}))) as { board?: KanbanBoard };
     const board = body.board;
 
@@ -180,17 +206,15 @@ export async function DELETE(request: Request) {
   if (!limit.allowed) return rateLimitResponse(limit, correlationId);
 
   try {
-    const supabase = await getSupabaseServerClient().catch(() => null);
+    const { user, supabase } = await getAuthUserAndClient(request);
     if (!supabase) {
       return apiJson({ error: "Supabase not configured" }, { status: 503, correlationId });
     }
-
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData.user) {
+    if (!user) {
       return apiJson({ error: "Unauthorized" }, { status: 401, correlationId });
     }
 
-    const userId = authData.user.id;
+    const userId = user.id;
     const url = new URL(request.url);
     const boardId = url.searchParams.get("id")?.trim();
 

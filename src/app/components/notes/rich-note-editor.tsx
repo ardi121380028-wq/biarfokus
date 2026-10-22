@@ -16,7 +16,7 @@ type RichNoteEditorProps = {
 export function RichNoteEditor({
   content,
   onChange,
-  placeholder = "Tulis catatan fokus kamu di sini... (Heading, • Bullet, dan ⊞ Grid langsung terlihat)",
+  placeholder = "Tulis catatan fokus kamu di sini... (Heading, Bullet, dan ⊞ Grid langsung terlihat)",
   onDownloadPdf,
   showPdfButton = false,
   minHeight = 220,
@@ -104,13 +104,8 @@ export function RichNoteEditor({
         textBeforeCaret.endsWith("\n*")
       ) {
         e.preventDefault();
-        const startIdx = textBeforeCaret.lastIndexOf(
-          textBeforeCaret.endsWith("\n-") ? "\n-" : textBeforeCaret.endsWith("\n*") ? "\n*" : textBeforeCaret
-        );
-        const prefix = text.slice(0, startIdx === -1 ? 0 : startIdx + (textBeforeCaret.includes("\n") ? 1 : 0));
-        const after = text.slice(offset);
-        node.textContent = prefix + after;
-
+        // Delete the '-' or '*' character using standard command
+        document.execCommand("delete", false);
         document.execCommand("insertUnorderedList", false);
         handleInput();
         return;
@@ -119,11 +114,8 @@ export function RichNoteEditor({
       // 2. Numbered list: typing "1." then Space
       if (textBeforeCaret === "1." || textBeforeCaret.endsWith("\n1.")) {
         e.preventDefault();
-        const startIdx = textBeforeCaret.lastIndexOf("1.");
-        const prefix = text.slice(0, startIdx);
-        const after = text.slice(offset);
-        node.textContent = prefix + after;
-
+        document.execCommand("delete", false); // delete '.'
+        document.execCommand("delete", false); // delete '1'
         document.execCommand("insertOrderedList", false);
         handleInput();
         return;
@@ -135,11 +127,9 @@ export function RichNoteEditor({
         e.preventDefault();
         const hashes = headingMatch[2];
         const level = hashes.length as 1 | 2 | 3 | 4 | 5;
-        const startIdx = textBeforeCaret.lastIndexOf(hashes);
-        const prefix = text.slice(0, startIdx);
-        const after = text.slice(offset);
-        node.textContent = prefix + after;
-
+        for (let i = 0; i < level; i++) {
+          document.execCommand("delete", false);
+        }
         try {
           const ok = document.execCommand("formatBlock", false, `h${level}`);
           if (!ok) document.execCommand("formatBlock", false, `<h${level}>`);
@@ -147,24 +137,6 @@ export function RichNoteEditor({
           document.execCommand("formatBlock", false, `<h${level}>`);
         }
         handleInput();
-        return;
-      }
-
-      // 4. Todo checkbox: "[]" or "[ ]" then Space
-      if (
-        textBeforeCaret === "[]" ||
-        textBeforeCaret === "[ ]" ||
-        textBeforeCaret.endsWith("\n[]") ||
-        textBeforeCaret.endsWith("\n[ ]")
-      ) {
-        e.preventDefault();
-        const matchStr = textBeforeCaret.endsWith("[ ]") ? "[ ]" : "[]";
-        const startIdx = textBeforeCaret.lastIndexOf(matchStr);
-        const prefix = text.slice(0, startIdx);
-        const after = text.slice(offset);
-        node.textContent = prefix + after;
-
-        handleInsertTodo();
         return;
       }
     }
@@ -200,16 +172,6 @@ export function RichNoteEditor({
     executeCmd("insertHTML", tableHtml);
   }
 
-  function handleInsertTodo() {
-    const todoHtml = `
-      <div class="note-rendered-todo" contenteditable="true">
-        <span class="note-todo-checkbox">☐</span>&nbsp;<span>Tugas baru</span>
-      </div>
-      <p><br></p>
-    `;
-    executeCmd("insertHTML", todoHtml);
-  }
-
   return (
     <div className="rich-editor-wrapper rich-note-editor-container">
       {/* Editor Formatting Toolbar */}
@@ -220,6 +182,7 @@ export function RichNoteEditor({
             <button
               type="button"
               className="note-toolbar-btn dropdown-trigger"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => setShowHeadingMenu(!showHeadingMenu)}
               title="Pilih Heading (H1 - H5)"
               aria-label="Pilih Heading"
@@ -229,27 +192,57 @@ export function RichNoteEditor({
 
             {showHeadingMenu && (
               <div className="note-toolbar-dropdown-menu">
-                <button type="button" className="note-dropdown-item" onClick={() => handleHeading(1)}>
+                <button
+                  type="button"
+                  className="note-dropdown-item"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleHeading(1)}
+                >
                   <span className="heading-preview h1-preview">H1</span>
                   <span>Heading 1 (Utama)</span>
                 </button>
-                <button type="button" className="note-dropdown-item" onClick={() => handleHeading(2)}>
+                <button
+                  type="button"
+                  className="note-dropdown-item"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleHeading(2)}
+                >
                   <span className="heading-preview h2-preview">H2</span>
                   <span>Heading 2 (Sub-bab)</span>
                 </button>
-                <button type="button" className="note-dropdown-item" onClick={() => handleHeading(3)}>
+                <button
+                  type="button"
+                  className="note-dropdown-item"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleHeading(3)}
+                >
                   <span className="heading-preview h3-preview">H3</span>
                   <span>Heading 3</span>
                 </button>
-                <button type="button" className="note-dropdown-item" onClick={() => handleHeading(4)}>
+                <button
+                  type="button"
+                  className="note-dropdown-item"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleHeading(4)}
+                >
                   <span className="heading-preview h4-preview">H4</span>
                   <span>Heading 4</span>
                 </button>
-                <button type="button" className="note-dropdown-item" onClick={() => handleHeading(5)}>
+                <button
+                  type="button"
+                  className="note-dropdown-item"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleHeading(5)}
+                >
                   <span className="heading-preview h5-preview">H5</span>
                   <span>Heading 5</span>
                 </button>
-                <button type="button" className="note-dropdown-item" onClick={handleParagraph}>
+                <button
+                  type="button"
+                  className="note-dropdown-item"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={handleParagraph}
+                >
                   <span className="heading-preview" style={{ fontSize: 11 }}>P</span>
                   <span>Teks Normal</span>
                 </button>
@@ -261,6 +254,7 @@ export function RichNoteEditor({
           <button
             type="button"
             className="note-toolbar-btn"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => executeCmd("insertUnorderedList")}
             title="Bullet List (Daftar Poin)"
             aria-label="Bullet List"
@@ -271,6 +265,7 @@ export function RichNoteEditor({
           <button
             type="button"
             className="note-toolbar-btn"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => executeCmd("insertOrderedList")}
             title="Numbered List (Daftar Angka)"
             aria-label="Numbered List"
@@ -282,6 +277,7 @@ export function RichNoteEditor({
           <button
             type="button"
             className="note-toolbar-btn grid-btn"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleInsertGrid}
             title="Sisipkan Grid / Tabel Langsung"
             aria-label="Sisipkan Grid atau Tabel"
@@ -293,6 +289,7 @@ export function RichNoteEditor({
           <button
             type="button"
             className="note-toolbar-btn bold-btn"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => executeCmd("bold")}
             title="Tebal (Bold)"
             aria-label="Tebal"
@@ -303,21 +300,12 @@ export function RichNoteEditor({
           <button
             type="button"
             className="note-toolbar-btn italic-btn"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => executeCmd("italic")}
             title="Miring (Italic)"
             aria-label="Miring"
           >
             <i>I</i>
-          </button>
-
-          <button
-            type="button"
-            className="note-toolbar-btn"
-            onClick={handleInsertTodo}
-            title="Checklist Tugas"
-            aria-label="Checklist Tugas"
-          >
-            ☑ Todo
           </button>
         </div>
 
@@ -327,6 +315,7 @@ export function RichNoteEditor({
             <button
               type="button"
               className="note-toolbar-btn pdf-btn"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={onDownloadPdf}
               title="Unduh catatan sebagai PDF"
               aria-label="Unduh Catatan PDF"
