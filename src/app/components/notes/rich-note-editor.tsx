@@ -57,13 +57,117 @@ export function RichNoteEditor({
   }
 
   function handleHeading(level: 1 | 2 | 3 | 4 | 5) {
-    executeCmd("formatBlock", `<h${level}>`);
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    try {
+      const ok = document.execCommand("formatBlock", false, `h${level}`);
+      if (!ok) {
+        document.execCommand("formatBlock", false, `<h${level}>`);
+      }
+    } catch {
+      document.execCommand("formatBlock", false, `<h${level}>`);
+    }
+    handleInput();
     setShowHeadingMenu(false);
   }
 
   function handleParagraph() {
-    executeCmd("formatBlock", "<p>");
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    try {
+      const ok = document.execCommand("formatBlock", false, "p");
+      if (!ok) {
+        document.execCommand("formatBlock", false, "<p>");
+      }
+    } catch {
+      document.execCommand("formatBlock", false, "<p>");
+    }
+    handleInput();
     setShowHeadingMenu(false);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key === " ") {
+      const selection = window.getSelection();
+      if (!selection || !selection.isCollapsed || !selection.anchorNode) return;
+
+      const node = selection.anchorNode;
+      const text = node.textContent || "";
+      const offset = selection.anchorOffset;
+      const textBeforeCaret = text.slice(0, offset);
+
+      // 1. Dash or asterisk bullet list: typing "-" or "*" then Space
+      if (
+        textBeforeCaret === "-" ||
+        textBeforeCaret === "*" ||
+        textBeforeCaret.endsWith("\n-") ||
+        textBeforeCaret.endsWith("\n*")
+      ) {
+        e.preventDefault();
+        const startIdx = textBeforeCaret.lastIndexOf(
+          textBeforeCaret.endsWith("\n-") ? "\n-" : textBeforeCaret.endsWith("\n*") ? "\n*" : textBeforeCaret
+        );
+        const prefix = text.slice(0, startIdx === -1 ? 0 : startIdx + (textBeforeCaret.includes("\n") ? 1 : 0));
+        const after = text.slice(offset);
+        node.textContent = prefix + after;
+
+        document.execCommand("insertUnorderedList", false);
+        handleInput();
+        return;
+      }
+
+      // 2. Numbered list: typing "1." then Space
+      if (textBeforeCaret === "1." || textBeforeCaret.endsWith("\n1.")) {
+        e.preventDefault();
+        const startIdx = textBeforeCaret.lastIndexOf("1.");
+        const prefix = text.slice(0, startIdx);
+        const after = text.slice(offset);
+        node.textContent = prefix + after;
+
+        document.execCommand("insertOrderedList", false);
+        handleInput();
+        return;
+      }
+
+      // 3. Headings: "#", "##", "###", "####", "#####" then Space
+      const headingMatch = textBeforeCaret.match(/(^|\n)(#{1,5})$/);
+      if (headingMatch) {
+        e.preventDefault();
+        const hashes = headingMatch[2];
+        const level = hashes.length as 1 | 2 | 3 | 4 | 5;
+        const startIdx = textBeforeCaret.lastIndexOf(hashes);
+        const prefix = text.slice(0, startIdx);
+        const after = text.slice(offset);
+        node.textContent = prefix + after;
+
+        try {
+          const ok = document.execCommand("formatBlock", false, `h${level}`);
+          if (!ok) document.execCommand("formatBlock", false, `<h${level}>`);
+        } catch {
+          document.execCommand("formatBlock", false, `<h${level}>`);
+        }
+        handleInput();
+        return;
+      }
+
+      // 4. Todo checkbox: "[]" or "[ ]" then Space
+      if (
+        textBeforeCaret === "[]" ||
+        textBeforeCaret === "[ ]" ||
+        textBeforeCaret.endsWith("\n[]") ||
+        textBeforeCaret.endsWith("\n[ ]")
+      ) {
+        e.preventDefault();
+        const matchStr = textBeforeCaret.endsWith("[ ]") ? "[ ]" : "[]";
+        const startIdx = textBeforeCaret.lastIndexOf(matchStr);
+        const prefix = text.slice(0, startIdx);
+        const after = text.slice(offset);
+        node.textContent = prefix + after;
+
+        handleInsertTodo();
+        return;
+      }
+    }
   }
 
   function handleInsertGrid() {
@@ -238,6 +342,7 @@ export function RichNoteEditor({
         ref={editorRef}
         contentEditable={true}
         onInput={handleInput}
+        onKeyDown={handleKeyDown}
         className="rich-note-editor-content note-rendered-content"
         data-placeholder={placeholder}
         style={{ minHeight: `${minHeight}px` }}

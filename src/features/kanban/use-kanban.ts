@@ -176,14 +176,14 @@ export function useKanban(userId?: string | null) {
       const missingInCloud: KanbanBoard[] = [];
       for (const lb of localBoards) {
         if (!lb.id) continue;
-        if (isGtGrowthPurged && lb.id === "board-gt-growth") continue;
+        if (lb.id === "board-gt-growth") continue; // Permanently exclude old GT Growth demo board
         if (deletedIds.has(lb.id)) continue;
 
         // If it's already in cloud, keep the merged version
         if (boardMap.has(lb.id)) continue;
 
-        // If it was marked as a local un-synced draft (or if cloud had 0 boards because user was working offline)
-        if (lb._isLocalDraft || !cloudIds.has(lb.id)) {
+        // Only upload if it was explicitly marked as a local un-synced draft
+        if (lb._isLocalDraft === true) {
           if (!lb.isShared || lb.userId === userId || !lb.userId || lb.userId === "guest") {
             const draftBoard: KanbanBoard = {
               ...lb,
@@ -274,9 +274,17 @@ export function useKanban(userId?: string | null) {
     window.addEventListener("focus", handleFocusOrVisibility);
     document.addEventListener("visibilitychange", handleFocusOrVisibility);
 
+    // 4. Polling interval fallback for seamless cross-device mobile sync
+    const intervalId = window.setInterval(() => {
+      if (!isCancelled && document.visibilityState === "visible") {
+        void performCloudSync();
+      }
+    }, 10_000);
+
     return () => {
       isCancelled = true;
       void supabase.removeChannel(channel);
+      window.clearInterval(intervalId);
       window.removeEventListener("focus", handleFocusOrVisibility);
       document.removeEventListener("visibilitychange", handleFocusOrVisibility);
     };

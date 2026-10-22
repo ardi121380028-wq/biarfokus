@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import type { CalendarViewMode } from "@/features/calendar/calendar-service";
 import { getWeekNumber } from "@/features/calendar/calendar-service";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type CalendarTopbarProps = {
   anchorDate: Date;
@@ -27,6 +28,7 @@ type CalendarTopbarProps = {
   onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
   syncStatus?: "synced" | "saving" | "offline" | "error";
   onForceSync?: () => void;
+  onLogout?: () => void;
 };
 
 export function CalendarTopbar({
@@ -50,6 +52,7 @@ export function CalendarTopbar({
   onNavigate,
   syncStatus,
   onForceSync,
+  onLogout,
 }: CalendarTopbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -385,6 +388,23 @@ export function CalendarTopbar({
                   💎 Upgrade Pro
                 </button>
               )}
+              <button
+                type="button"
+                className="cal-profile-menu-item cal-profile-logout-item"
+                onClick={() => {
+                  setProfileMenuOpen(false);
+                  if (onLogout) {
+                    onLogout();
+                  } else {
+                    void getSupabaseBrowserClient().auth.signOut().then(() => {
+                      window.location.reload();
+                    });
+                  }
+                }}
+                style={{ color: "#dc2626", fontWeight: 600, borderTop: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)", marginTop: "4px", paddingTop: "8px" }}
+              >
+                🚪 Keluar
+              </button>
             </div>
           )}
         </div>

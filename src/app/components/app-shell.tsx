@@ -45,6 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setDeleteConfirmOpen,
     deletingAccount,
     handleDeleteAccount,
+    handleLogout,
     authError,
     setAuthError,
     appError,
@@ -329,6 +330,49 @@ export function AppShell({ children }: { children: ReactNode }) {
         </footer>
       )}
 
+      {/* Mobile Sticky Footer Bottom Navigation Bar */}
+      {!isWorkspaceView && (
+        <nav className="mobile-bottom-nav" aria-label="Navigasi Bawah Mobile">
+          <Link
+            href="/"
+            className={`mobile-bottom-nav-item ${pathname === "/" ? "active" : ""}`}
+          >
+            <span className="nav-icon">⏱️</span>
+            <span>Timer</span>
+          </Link>
+          <Link
+            href="/catatan"
+            className={`mobile-bottom-nav-item ${pathname.startsWith("/catatan") ? "active" : ""}`}
+          >
+            <span className="nav-icon">📝</span>
+            <span>Catatan</span>
+          </Link>
+          <Link
+            href="/kalender"
+            className={`mobile-bottom-nav-item ${pathname.startsWith("/kalender") ? "active" : ""}`}
+          >
+            <span className="nav-icon">📅</span>
+            <span>Kalender</span>
+          </Link>
+          <Link
+            href="/kanban"
+            className={`mobile-bottom-nav-item ${pathname.startsWith("/kanban") ? "active" : ""}`}
+          >
+            <span className="nav-icon">📊</span>
+            <span>Kanban</span>
+          </Link>
+          <button
+            type="button"
+            className="mobile-bottom-nav-item"
+            onClick={() => setShowSettings(true)}
+            aria-label="Pengaturan"
+          >
+            <span className="nav-icon">⚙️</span>
+            <span>Setting</span>
+          </button>
+        </nav>
+      )}
+
       {/* Quick Notes Floating Action Button (Bottom-Right) */}
       {!isWorkspaceView && (
         <button
@@ -398,6 +442,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           userName={userName}
           supabase={getSupabaseBrowserClient()}
           onSaved={setProfileDisplayName}
+          onLogout={handleLogout}
           onClose={() => setAccountOpen(false)}
         />
       )}

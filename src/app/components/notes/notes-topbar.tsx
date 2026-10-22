@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type NotesTopbarProps = {
   onToggleSidebar: () => void;
@@ -16,6 +17,7 @@ type NotesTopbarProps = {
   userAvatar?: string | null;
   onRequireLogin?: () => void;
   onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onLogout?: () => void;
 };
 
 export function NotesTopbar({
@@ -31,6 +33,7 @@ export function NotesTopbar({
   userAvatar,
   onRequireLogin,
   onNavigate,
+  onLogout,
 }: NotesTopbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -223,6 +226,23 @@ export function NotesTopbar({
                   💎 Upgrade Pro
                 </button>
               )}
+              <button
+                type="button"
+                className="cal-profile-menu-item cal-profile-logout-item"
+                onClick={() => {
+                  setProfileMenuOpen(false);
+                  if (onLogout) {
+                    onLogout();
+                  } else {
+                    void getSupabaseBrowserClient().auth.signOut().then(() => {
+                      window.location.reload();
+                    });
+                  }
+                }}
+                style={{ color: "#dc2626", fontWeight: 600, borderTop: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)", marginTop: "4px", paddingTop: "8px" }}
+              >
+                🚪 Keluar
+              </button>
             </div>
           )}
         </div>

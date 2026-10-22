@@ -36,7 +36,27 @@ export async function loadCloudBoards(
   userId: string,
 ): Promise<KanbanBoard[]> {
   try {
-    // Queries all boards accessible by the authenticated user via RLS (owned or member)
+    // 1. Try server API route first (100% reliable session cookies across mobile & desktop)
+    if (typeof window !== "undefined") {
+      try {
+        const res = await fetch("/api/kanban/boards", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          credentials: "include",
+        });
+        if (res.ok) {
+          const json = (await res.json()) as { boards?: KanbanBoard[] };
+          if (json && Array.isArray(json.boards)) {
+            return json.boards;
+          }
+        }
+      } catch {
+        // Fall back to direct browser client
+      }
+    }
+
+    // 2. Direct browser client fallback
     const { data, error } = await supabase
       .from("kanban_boards")
       .select("*")
@@ -44,7 +64,6 @@ export async function loadCloudBoards(
       .order("updated_at", { ascending: false });
 
     if (error) {
-      // If table doesn't exist yet, gracefully return empty so local fallback is used
       if (error.code === "42P01" || error.message?.includes("does not exist")) {
         console.warn("[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor.");
         return [];
@@ -88,7 +107,25 @@ export async function upsertCloudBoard(
   try {
     if (!userId || !board.id) return false;
 
-    // Check if board belongs to another user (collaborative shared board where current user is editor)
+    // 1. Try server API route first
+    if (typeof window !== "undefined") {
+      try {
+        const res = await fetch("/api/kanban/boards", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ board }),
+        });
+        if (res.ok) {
+          const json = (await res.json()) as { ok?: boolean };
+          if (json && json.ok) return true;
+        }
+      } catch {
+        // Fall back to direct browser client
+      }
+    }
+
+    // 2. Direct browser client fallback
     const isSharedCollab = Boolean(board.isShared && board.userId && board.userId !== userId);
 
     if (isSharedCollab) {
@@ -184,6 +221,15 @@ export async function deleteCloudBoard(
   boardId: string,
 ): Promise<void> {
   try {
+    if (typeof window !== "undefined") {
+      try {
+        await fetch(`/api/kanban/boards?id=${encodeURIComponent(boardId)}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+      } catch {}
+    }
+
     const { error } = await supabase
       .from("kanban_boards")
       .delete()

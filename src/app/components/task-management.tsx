@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import type { KeepNote, Task } from "@/types/domain";
 import type { LinkedNoteMeta } from "@/features/tasks/task-service";
+import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { NoteTaskPickerModal } from "./notes/note-task-picker-modal";
 
 type TaskManagementProps = {
@@ -40,6 +41,8 @@ export function TaskManagement({
   const [error, setError] = useState<string | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const taskMenuRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(taskMenuRef, () => setMenuOpen(false), menuOpen);
   const [notePickerOpen, setNotePickerOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<"task" | "completed" | "all" | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -213,12 +216,37 @@ export function TaskManagement({
         <div><p className="eyebrow">Fokus hari ini</p><h1>Eat Your Frog</h1></div>
         <div className="task-heading-actions">
           <span className="progress-count">{completedTasks}/{tasks.length}</span>
-          <div className="task-menu">
-            <button type="button" className="task-menu-button" onClick={() => setMenuOpen((open) => !open)} aria-label="Aksi task" aria-expanded={menuOpen}>⋯</button>
-            {menuOpen && <div className="task-menu-popover" role="menu">
-              <button type="button" onClick={() => requestBulkDelete("completed")} disabled={!completedTasks}>Hapus yang selesai</button>
-              <button type="button" onClick={() => requestBulkDelete("all")} disabled={!tasks.length}>Hapus semua task</button>
-            </div>}
+          <div className="task-menu" ref={taskMenuRef}>
+            <button
+              type="button"
+              className="task-menu-button"
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-label="Aksi task"
+              aria-expanded={menuOpen}
+              title="Menu Tindakan Task"
+            >
+              ⋯
+            </button>
+            {menuOpen && (
+              <div className="task-menu-popover" role="menu">
+                <button
+                  type="button"
+                  onClick={() => requestBulkDelete("completed")}
+                  disabled={!completedTasks}
+                >
+                  <span>🧹</span>
+                  <span>Hapus yang selesai ({completedTasks})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => requestBulkDelete("all")}
+                  disabled={!tasks.length}
+                >
+                  <span>🗑️</span>
+                  <span>Hapus semua task ({tasks.length})</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

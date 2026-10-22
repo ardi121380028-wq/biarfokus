@@ -130,6 +130,7 @@ export interface AppContextType {
   setDeleteConfirmOpen: (open: boolean) => void;
   deletingAccount: boolean;
   handleDeleteAccount: () => Promise<void>;
+  handleLogout: () => Promise<void>;
   authError: string | null;
   setAuthError: (err: string | null) => void;
   appError: string | null;
@@ -955,6 +956,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [deletingAccount, user]);
 
+  const handleLogout = useCallback(async () => {
+    try {
+      await getSupabaseBrowserClient().auth.signOut();
+      setUser(null);
+      setProfileDisplayName(null);
+      setAccountOpen(false);
+      setInfoOpen("Kamu telah berhasil keluar dari akun.");
+    } catch (error) {
+      setAppError(error instanceof Error ? error.message : "Gagal logout.");
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -975,6 +988,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setDeleteConfirmOpen,
       deletingAccount,
       handleDeleteAccount,
+      handleLogout,
       authError,
       setAuthError,
       appError,
@@ -1078,6 +1092,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       deletingAccount,
       focusedTask,
       handleDeleteAccount,
+      handleLogout,
       infoOpen,
       isPro,
       loginOpen,

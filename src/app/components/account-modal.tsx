@@ -12,6 +12,7 @@ type AccountModalProps = {
   supabase: SupabaseClient;
   onSaved: (displayName: string) => void;
   onClose: () => void;
+  onLogout?: () => void;
 };
 
 export function AccountModal({
@@ -20,6 +21,7 @@ export function AccountModal({
   supabase,
   onSaved,
   onClose,
+  onLogout,
 }: AccountModalProps) {
   const avatar = getSafeAvatarUrl(user?.user_metadata?.avatar_url);
   const [displayName, setDisplayName] = useState(userName);
@@ -81,17 +83,44 @@ export function AccountModal({
             {error}
           </p>
         )}
-        <div className="account-actions">
-          <button className="secondary-button" onClick={onClose} disabled={saving}>
-            Tutup
-          </button>
-          <button
-            className="apply-button"
-            onClick={() => void handleSave()}
-            disabled={saving}
-          >
-            {saving ? "Menyimpan..." : "Simpan Profil"}
-          </button>
+        <div className="account-actions" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: "10px", marginTop: "18px" }}>
+          {onLogout ? (
+            <button
+              type="button"
+              className="danger-button account-logout-btn"
+              onClick={() => {
+                onClose();
+                onLogout();
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "#dc2626",
+                color: "#ffffff",
+                borderRadius: "10px",
+                padding: "9px 14px",
+                fontSize: "13px",
+                fontWeight: 600,
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              🚪 Keluar
+            </button>
+          ) : <div />}
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button className="secondary-button" onClick={onClose} disabled={saving}>
+              Tutup
+            </button>
+            <button
+              className="apply-button"
+              onClick={() => void handleSave()}
+              disabled={saving}
+            >
+              {saving ? "Menyimpan..." : "Simpan Profil"}
+            </button>
+          </div>
         </div>
       </section>
     </div>
