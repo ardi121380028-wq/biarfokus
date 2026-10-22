@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { KanbanBoard } from "@/types/domain";
 import { BOARD_BACKGROUNDS, TEMPLATES } from "@/features/kanban/kanban-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
@@ -14,6 +14,7 @@ type KanbanBoardModalProps = {
   onClose: () => void;
   isGuest?: boolean;
   onRequireLogin?: () => void;
+  onRefreshBoards?: () => void;
 };
 
 export function KanbanBoardModal({
@@ -25,6 +26,7 @@ export function KanbanBoardModal({
   onClose,
   isGuest = false,
   onRequireLogin,
+  onRefreshBoards,
 }: KanbanBoardModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   useOutsideClick(modalRef, onClose);
@@ -34,6 +36,9 @@ export function KanbanBoardModal({
     return boards.length === 0 ? "create" : "boards";
   });
   const [newBoardTitle, setNewBoardTitle] = useState("");
+  useEffect(() => {
+    onRefreshBoards?.();
+  }, [onRefreshBoards]);
   const [selectedBg, setSelectedBg] = useState("wave-blue");
 
   function handleCreateCustomBoard() {

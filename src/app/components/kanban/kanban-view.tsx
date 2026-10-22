@@ -192,6 +192,40 @@ export function KanbanView({
   useOutsideClick(bgMenuRef, () => setBgMenuOpen(false), bgMenuOpen);
 
   // Auto open create board modal if user has 0 boards and no pending invite
+  // Dismiss invite modal immediately if user is already the owner of the board
+  useEffect(() => {
+    if (!pendingInviteCode) return;
+    let targetBoardId: string | null = null;
+    if (pendingInviteCode.startsWith("bf_inv_")) {
+      try {
+        let p = pendingInviteCode.slice("bf_inv_".length);
+        if (p.startsWith("viewer_")) p = p.slice("viewer_".length);
+        else if (p.startsWith("editor_")) p = p.slice("editor_".length);
+        const json = JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/")));
+        if (json?.b) targetBoardId = json.b;
+      } catch {}
+    }
+
+    const matchingBoard = boards.find((b) => b.id === targetBoardId);
+    const isOwnerOfInvited = matchingBoard
+      ? Boolean(userId && (matchingBoard.userId === userId || matchingBoard.role === "owner"))
+      : Boolean(activeBoard.id === targetBoardId && userId && (activeBoard.userId === userId || activeBoard.role === "owner"));
+
+    if (isOwnerOfInvited) {
+      console.log("[Kanban] User is owner of invited board; clearing invite code.");
+      setPendingInviteCode(null);
+      if (targetBoardId) selectBoard(targetBoardId);
+      if (typeof window !== "undefined" && window.history.replaceState) {
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("kanbanInvite");
+          url.searchParams.delete("invite");
+          window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+        } catch {}
+      }
+    }
+  }, [pendingInviteCode, boards, activeBoard, userId, selectBoard]);
+
   const hasAutoOpenedModal = useRef(false);
   useEffect(() => {
     if (boards.length === 0 && !pendingInviteCode && !hasAutoOpenedModal.current) {
@@ -299,14 +333,15 @@ export function KanbanView({
   const isOwner = Boolean(
     userId &&
       ((currentBoard.userId && currentBoard.userId === userId) ||
-        (!currentBoard.isShared && currentBoard.role === "owner"))
+        (!currentBoard.isShared && currentBoard.role === "owner") ||
+        (currentBoard.role === "owner"))
   );
 
   // Permission check: read-only unless user is owner, editor, or private board
   const canEdit = useMemo(() => {
+    if (isOwner) return true;
     if (previewBoard) return false;
     if (pendingInviteCode) return false;
-    if (isOwner) return true;
     if (currentBoard.role === "viewer") return false;
     if (currentBoard.role === "editor") return true;
     return !currentBoard.isShared;
@@ -1037,6 +1072,7 @@ export function KanbanView({
           onClose={() => setBoardModalOpen(false)}
           isGuest={!userId}
           onRequireLogin={onRequireLogin}
+          onRefreshBoards={forceSync}
         />
       )}
 

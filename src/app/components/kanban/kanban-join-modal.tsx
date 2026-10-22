@@ -31,9 +31,10 @@ export function KanbanJoinModal({
       ? "viewer"
       : "editor";
 
-  const [role, setRole] = useState<"editor" | "viewer">(initialRole);
+  const [role, setRole] = useState<"editor" | "viewer" | "owner">(initialRole);
   const [boardTitle, setBoardTitle] = useState<string>("Papan Proyek");
   const [ownerName, setOwnerName] = useState<string>("Pemilik Papan");
+  const [isOwnerRemote, setIsOwnerRemote] = useState<boolean>(false);
   const [previewBoard, setPreviewBoard] = useState<KanbanBoard | null>(null);
   const [loadingInfo, setLoadingInfo] = useState<boolean>(true);
 
@@ -56,13 +57,15 @@ export function KanbanJoinModal({
       .then(
         (data: {
           ok?: boolean;
-          role?: "editor" | "viewer";
+          role?: "editor" | "viewer" | "owner";
+          isOwner?: boolean;
           boardTitle?: string;
           ownerName?: string;
           board?: KanbanBoard | null;
         }) => {
           if (cancelled) return;
           if (data.ok) {
+            if (data.isOwner) setIsOwnerRemote(true);
             if (data.role) setRole(data.role);
             if (data.boardTitle) setBoardTitle(data.boardTitle);
             if (data.ownerName) setOwnerName(data.ownerName);
@@ -85,7 +88,15 @@ export function KanbanJoinModal({
   if (!inviteCode) return null;
 
   const isEditorRole = role === "editor";
-  const isOwnerOfInvitedBoard = Boolean(userId && previewBoard && previewBoard.userId === userId);
+  const isOwnerOfInvitedBoard = Boolean(isOwnerRemote || role === "owner" || (userId && previewBoard && previewBoard.userId === userId));
+
+  function handleOpenAsOwner() {
+    if (previewBoard) {
+      onJoined({ ...previewBoard, role: "owner", isShared: false });
+    } else {
+      onClose();
+    }
+  }
 
   async function handleJoin() {
     if (!inviteCode) return;

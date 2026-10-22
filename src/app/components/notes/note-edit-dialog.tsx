@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChecklistItem, KeepNote } from "@/types/domain";
 import {
   convertDraftType,
@@ -40,6 +40,14 @@ export function NoteEditDialog({
   const [newItemText, setNewItemText] = useState("");
   const [collapsedDone, setCollapsedDone] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (draft.type === "text" && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.max(220, textareaRef.current.scrollHeight)}px`;
+    }
+  }, [draft.type, draft.content]);
 
   const activeItems = (draft.items || []).filter((i) => !i.done);
   const doneItems = (draft.items || []).filter((i) => i.done);
@@ -133,11 +141,15 @@ export function NoteEditDialog({
 
         {draft.type === "text" ? (
           <textarea
+            ref={textareaRef}
             placeholder="Isi catatan..."
             value={draft.content || ""}
-            onChange={(e) => setDraft({ ...draft, content: e.target.value })}
-            rows={6}
-            className="keep-create-input keep-textarea"
+            onChange={(e) => {
+              setDraft({ ...draft, content: e.target.value });
+              e.target.style.height = "auto";
+              e.target.style.height = `${Math.max(220, e.target.scrollHeight)}px`;
+            }}
+            className="keep-create-input keep-textarea keep-edit-textarea"
           />
         ) : (
           <div className="keep-checklist-create-section">

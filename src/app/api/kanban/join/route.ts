@@ -43,6 +43,15 @@ function decodeFallbackInviteToken(
 }
 
 export async function GET(request: Request) {
+  const supabaseAuth = await getSupabaseServerClient().catch(() => null);
+  let authUser = null;
+  try {
+    if (supabaseAuth) {
+      const authRes = await supabaseAuth.auth.getUser();
+      authUser = authRes.data.user;
+    }
+  } catch {}
+  const currentUserId = authUser?.id;
   const correlationId = resolveCorrelationId(request.headers.get("x-correlation-id"));
   const url = new URL(request.url);
   const rawInviteCode = url.searchParams.get("inviteCode")?.trim() || "";
@@ -57,6 +66,7 @@ export async function GET(request: Request) {
     const fbBoard = fallback.board as Record<string, unknown> | undefined;
     const boardTitle =
       (typeof fbBoard?.title === "string" && fbBoard.title) || "Papan Proyek";
+    const isCallerOwner = Boolean(currentUserId && fallback.userId === currentUserId);
     const mappedBoard: KanbanBoard = {
       id: fallback.boardId,
       userId: fallback.userId,
@@ -72,14 +82,15 @@ export async function GET(request: Request) {
     };
 
     return apiJson(
-      {
-        ok: true,
-        boardId: fallback.boardId,
-        boardTitle,
-        role: fallback.role,
-        ownerName: fallback.ownerName || "Pemilik Papan",
-        board: mappedBoard,
-      },
+        {
+          ok: true,
+          boardId: fallback.boardId,
+          boardTitle,
+          role: isCallerOwner ? "owner" : fallback.role,
+          isOwner: isCallerOwner,
+          ownerName: isCallerOwner ? "Kamu (Pemilik)" : (fallback.ownerName || "Pemilik Papan"),
+          board: { ...mappedBoard, role: isCallerOwner ? "owner" : fallback.role, isShared: !isCallerOwner },
+        },
       { correlationId },
     );
   }

@@ -123,10 +123,33 @@ export function useKanban(userId?: string | null) {
             return b;
           });
 
-        // If cloud has boards, Cloud is the single authoritative source of truth.
-        // We DO NOT merge with stale local boards, so old template boards from previous sessions won't resurrect.
-        if (activeCloud.length > 0) {
-          return activeCloud;
+        // If cloud has boards, merge any active local boards that haven't been pushed to cloud yet
+        const activeCloudIds = new Set(activeCloud.map((b) => b.id));
+
+        // Any local boards created by the user that are NOT in cloud yet and NOT deleted:
+        // (e.g. created on desktop while offline or pending cloud sync)
+        const missingInCloud = currentLocal.filter(
+          (b) =>
+            !activeCloudIds.has(b.id) &&
+            !deletedIds.has(b.id) &&
+            (b.userId === userId || (!b.userId && !b.isShared && b.title && b.title !== "Ruang Kerja Baru")),
+        );
+
+        if (missingInCloud.length > 0) {
+          for (const b of missingInCloud) {
+            void upsertCloudBoard(supabase, userId, { ...b, userId, role: "owner" });
+          }
+        }
+
+        const validLocals = missingInCloud.map((b) => ({
+          ...b,
+          userId,
+          role: "owner" as const,
+        }));
+
+        const merged = [...activeCloud, ...validLocals];
+        if (merged.length > 0) {
+          return merged;
         }
 
         // If cloud is completely empty (first time onboarding with local boards):
@@ -458,7 +481,7 @@ export function useKanban(userId?: string | null) {
       updateBoards((current) => {
         const existing = current.find((b) => b.id === newBoard.id);
         const isOwner = Boolean(
-          userId && (newBoard.userId === userId || existing?.userId === userId)
+          userId && (newBoard.userId === userId || existing?.userId === userId || existing?.role === "owner")
         );
 
         const safeBoard: KanbanBoard = isOwner

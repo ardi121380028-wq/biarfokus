@@ -6951,3 +6951,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .task.drag-over-below {
   border-bottom: 2.5px solid var(--blue) !important;
 }
+
+
+/* Note Edit Dialog & Textarea Expansion Fix */
+.keep-edit-modal-card .keep-textarea.keep-edit-textarea {
+  min-height: 240px !important;
+  flex: 1 1 auto;
+  font-size: 14.5px;
+  line-height: 1.6;
+  resize: vertical;
+  overflow-y: hidden;
+  box-sizing: border-box;
+}
+
+.keep-edit-modal-card .keep-checklist-items {
+  max-height: none !important;
+}
+
+@media (max-width: 768px) {
+  .keep-edit-modal-card .keep-textarea.keep-edit-textarea {
+    min-height: 260px !important;
+  }
+}
