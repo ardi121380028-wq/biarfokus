@@ -86,9 +86,36 @@ export async function upsertCloudBoard(
   board: KanbanBoard,
 ): Promise<boolean> {
   try {
+    if (!userId || !board.id) return false;
+
+    // Check if board belongs to another user (collaborative shared board where current user is editor)
+    const isSharedCollab = Boolean(board.isShared && board.userId && board.userId !== userId);
+
+    if (isSharedCollab) {
+      // Editors cannot INSERT or change user_id (the owner); they can only UPDATE
+      const { error } = await supabase
+        .from("kanban_boards")
+        .update({
+          title: board.title || "My Board",
+          description: board.description || "",
+          background: board.background || "wave-blue",
+          lists: board.lists || [],
+          starred: Boolean(board.starred),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", board.id);
+
+      if (error) {
+        console.warn("[BiarFokus Cloud] Cloud kanban member update error:", error);
+        return false;
+      }
+      return true;
+    }
+
+    // Owned board: ensure user_id is the authenticated user's UUID (never "guest" or invalid string)
     const payload = {
       id: board.id,
-      user_id: board.userId || userId,
+      user_id: userId,
       title: board.title || "My Board",
       description: board.description || "",
       background: board.background || "wave-blue",
@@ -97,18 +124,18 @@ export async function upsertCloudBoard(
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from("kanban_boards").upsert(payload);
+    const { error } = await supabase.from("kanban_boards").upsert(payload, { onConflict: "id" });
     if (error) {
       if (error.code === "42P01" || error.message?.includes("does not exist")) {
         console.warn("[BiarFokus Cloud] Tabel 'kanban_boards' belum ada di Supabase. Jalankan file migrasi 'supabase/migrations/20261019100000_add_kanban_boards.sql' di Supabase SQL Editor.");
         return false;
       }
-      console.warn("Cloud kanban upsert error:", error);
+      console.warn("[BiarFokus Cloud] Cloud kanban upsert error:", error);
       return false;
     }
     return true;
   } catch (err) {
-    console.warn("Cloud kanban upsert skipped or failed.", err);
+    console.warn("[BiarFokus Cloud] Cloud kanban upsert skipped or failed.", err);
     return false;
   }
 }
