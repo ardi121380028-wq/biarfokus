@@ -233,9 +233,20 @@ export function KanbanJoinModal({
               </div>
               <button
                 type="button"
-                className="kanban-secondary-btn"
+                className="kanban-secondary-btn kanban-join-preview-btn"
                 onClick={handleOpenPreview}
-                style={{ padding: "7px 14px", fontSize: 12.5, flexShrink: 0, fontWeight: 600 }}
+                style={{
+                  padding: "8px 16px",
+                  fontSize: 12.5,
+                  flexShrink: 0,
+                  fontWeight: 700,
+                  background: "var(--paper)",
+                  color: "var(--ink)",
+                  border: "1.5px solid color-mix(in srgb, var(--ink) 24%, transparent)",
+                  borderRadius: 10,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                  cursor: "pointer",
+                }}
               >
                 Buka Pratinjau →
               </button>

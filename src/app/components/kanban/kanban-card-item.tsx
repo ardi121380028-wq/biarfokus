@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import type { KanbanCard } from "@/types/domain";
 
 type KanbanCardItemProps = {
@@ -12,6 +12,7 @@ type KanbanCardItemProps = {
   onSendToFrog?: (card: KanbanCard) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>, cardId: string, listId: string, index: number) => void;
   onDragEnd: (e: DragEvent<HTMLDivElement>) => void;
+  onDirectMoveCard?: (sourceListId: string, destListId: string, sourceIndex: number, destIndex: number) => void;
 };
 
 export function KanbanCardItem({
@@ -23,13 +24,82 @@ export function KanbanCardItem({
   onSendToFrog,
   onDragStart,
   onDragEnd,
+  onDirectMoveCard,
 }: KanbanCardItemProps) {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+  const [touchDragging, setTouchDragging] = useState(false);
+  const [touchOffset, setTouchOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const touchMovedSignificantly = useRef(false);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
     }
   }, []);
+
+  function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+    if (readOnly) return;
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    touchMovedSignificantly.current = false;
+  }
+
+  function handleTouchMove(e: React.TouchEvent<HTMLDivElement>) {
+    if (readOnly || !touchStartPos.current) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartPos.current.x;
+    const dy = touch.clientY - touchStartPos.current.y;
+
+    if (!touchMovedSignificantly.current) {
+      if (Math.hypot(dx, dy) > 12) {
+        touchMovedSignificantly.current = true;
+        setTouchDragging(true);
+      }
+    }
+
+    if (touchMovedSignificantly.current) {
+      setTouchOffset({ x: dx, y: dy });
+      const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+      const colBelow = elemBelow?.closest("[data-list-id]") as HTMLElement | null;
+      document.querySelectorAll(".kanban-column-container.touch-target-col").forEach((el) => {
+        if (el !== colBelow) el.classList.remove("touch-target-col");
+      });
+      if (colBelow) {
+        colBelow.classList.add("touch-target-col");
+      }
+    }
+  }
+
+  function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
+    if (readOnly) return;
+    document.querySelectorAll(".kanban-column-container.touch-target-col").forEach((el) => {
+      el.classList.remove("touch-target-col");
+    });
+
+    if (touchMovedSignificantly.current && touchStartPos.current) {
+      const touch = e.changedTouches[0];
+      const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+      const colBelow = elemBelow?.closest("[data-list-id]") as HTMLElement | null;
+      const targetListId = colBelow?.getAttribute("data-list-id");
+
+      if (targetListId && targetListId !== listId && onDirectMoveCard) {
+        onDirectMoveCard(listId, targetListId, index, 9999);
+      }
+    }
+
+    touchStartPos.current = null;
+    setTouchDragging(false);
+    setTouchOffset({ x: 0, y: 0 });
+  }
+
+  function handleClick() {
+    if (touchMovedSignificantly.current) {
+      touchMovedSignificantly.current = false;
+      return;
+    }
+    onClick(card, listId);
+  }
 
   // Compute checklist stats defensively
   const checklists = Array.isArray(card.checklists) ? card.checklists : [];
@@ -103,13 +173,26 @@ export function KanbanCardItem({
 
   return (
     <div
-      className={`kanban-card-item ${readOnly ? "is-readonly" : ""}`}
+      className={`kanban-card-item ${readOnly ? "is-readonly" : ""} ${touchDragging ? "is-touch-dragging" : ""}`}
+      style={
+        touchDragging
+          ? {
+              transform: `translate3d(${touchOffset.x}px, ${touchOffset.y}px, 0)`,
+              zIndex: 99999,
+              pointerEvents: "none",
+            }
+          : undefined
+      }
       draggable={!readOnly && !isTouchDevice}
       onDragStart={(e) => {
         if (!readOnly) onDragStart(e, card.id, listId, index);
       }}
       onDragEnd={onDragEnd}
-      onClick={() => onClick(card, listId)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      onClick={handleClick}
       role="button"
       tabIndex={0}
       aria-label={`Kartu: ${card.title}`}

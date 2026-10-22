@@ -184,7 +184,7 @@ button:active:not(:disabled) {
   .settings-fab { display:none; }
 }
 /* Google Keep-style Notes System (Modal & Page View) */
-.keep-backdrop { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:16px; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+.keep-backdrop { position:fixed; inset:0; z-index:9999; display:grid; place-items:center; padding:16px; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
 .keep-notes-modal-dialog { position:relative; width:min(940px,94vw); height:min(720px,90vh); display:flex; flex-direction:column; border-radius:24px; background:var(--paper); color:var(--ink); padding:24px 28px; box-shadow:0 25px 80px rgba(0,0,0,0.45); overflow:hidden; box-sizing:border-box; }
 .keep-page-view { min-height:680px; padding:32px 36px; border-radius:26px; }
 .keep-container { display:flex; flex-direction:column; height:100%; min-width:0; }
@@ -339,7 +339,7 @@ button:active:not(:disabled) {
 
 /* Checklist Item Creation */
 .keep-checklist-create-section { display:flex; flex-direction:column; gap:6px; }
-.keep-checklist-items { display:flex; flex-direction:column; gap:4px; max-height:200px; overflow-y:auto; }
+.keep-checklist-items { display:flex; flex-direction:column; gap:4px; max-height:min(440px, 50vh); overflow-y:auto; }
 .keep-checklist-item-row { display:flex; align-items:center; gap:8px; padding:2px 0; animation:keepChecklistSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .keep-checkbox { width:16px; height:16px; accent-color:var(--blue); cursor:pointer; }
 @keyframes keepChecklistSlideIn { from { opacity:0; transform:translateY(-3px); } to { opacity:1; transform:translateY(0); } }
@@ -418,8 +418,8 @@ button:active:not(:disabled) {
 .keep-empty-placeholder p { font-size:13px; max-width:340px; margin:0 auto; line-height:1.5; }
 
 /* Edit Note Modal Backdrop */
-.keep-edit-modal-backdrop { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.6); display:grid; place-items:center; padding:16px; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
-.keep-edit-modal-card { width:min(580px,94vw); max-height:88vh; border-radius:20px; padding:24px; box-shadow:0 25px 80px rgba(0,0,0,0.4); display:flex; flex-direction:column; gap:12px; overflow-y:auto; color:var(--ink); background:var(--paper); box-sizing:border-box; }
+.keep-edit-modal-backdrop { position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.6); display:grid; place-items:center; padding:16px; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+.keep-edit-modal-card { width:min(580px,94vw); min-height:min(500px, 78vh); max-height:88vh; border-radius:20px; padding:24px; box-shadow:0 25px 80px rgba(0,0,0,0.4); display:flex; flex-direction:column; gap:12px; overflow-y:auto; color:var(--ink); background:var(--paper); box-sizing:border-box; }
 
 /* Dark mode pastel card adaptations (like Google Keep dark mode) */
 .app.dark .keep-note-card[style*="#faafa8"],
@@ -2295,7 +2295,8 @@ button:active:not(:disabled) {
 .kanban-dialog-card {
   position: relative;
   width: min(780px, 95vw);
-  max-height: 88vh;
+  min-height: 560px;
+  max-height: 90vh;
   border-radius: 28px;
   background: #1c222c;
   color: #dee4ea;
@@ -6799,5 +6800,117 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   /* Hide duplicate sidebar on mobile since controls are accessible in quick toolbar */
   .kanban-dialog-sidebar {
     display: none !important;
+  }
+}
+
+
+/* UX REFINEMENT: Soft Theme, Drag & Drop, Height & Overlap Fixes */
+/* 1. Light Board Thumbnail Cards in Board Switcher Modal */
+.kanban-board-card-thumb.light-board-card {
+  color: #0f172a !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.14) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+.kanban-board-card-thumb.light-board-card .board-card-title {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+.kanban-board-card-thumb.light-board-card .board-card-footer {
+  color: #475569 !important;
+}
+.kanban-board-card-thumb.light-board-card .board-del-btn {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+}
+
+/* 2. Popover Box in Light Mode (Labels, Members, etc.) */
+.kanban-light-card .kanban-popover-box {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.18) !important;
+}
+.kanban-light-card .kanban-popover-head {
+  color: #0f172a !important;
+}
+.kanban-light-card .kanban-popover-head button {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #475569 !important;
+}
+.kanban-light-card .kanban-popover-head button:hover {
+  background: rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+}
+.kanban-light-card .kanban-text-btn.create-label-trigger {
+  color: #0284c7 !important;
+  background: rgba(2, 132, 199, 0.08) !important;
+  border: 1px dashed rgba(2, 132, 199, 0.35) !important;
+}
+.kanban-light-card .kanban-text-btn.create-label-trigger:hover {
+  background: rgba(2, 132, 199, 0.15) !important;
+}
+
+/* 3. Touch Dragging Cues for Mobile */
+.kanban-card-item.is-touch-dragging {
+  opacity: 0.92 !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45) !important;
+  transform: scale(1.04) !important;
+  cursor: grabbing !important;
+}
+.kanban-column-container.touch-target-col {
+  outline: 2.5px dashed #0079bf !important;
+  background: rgba(0, 121, 191, 0.12) !important;
+}
+
+/* 4. Keep Popover responsiveness */
+.keep-label-picker-popover {
+  max-width: min(260px, 90vw);
+}
+
+/* 5. Mobile Overrides for Notes Modal & Kanban Card */
+@media (max-width: 768px) {
+  .keep-backdrop {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+  .keep-notes-modal-dialog {
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    padding: 16px 14px calc(env(safe-area-inset-bottom, 16px) + 16px) !important;
+  }
+  .keep-header-title small {
+    display: none !important;
+  }
+  .keep-header-bar {
+    padding-bottom: 8px !important;
+    gap: 8px !important;
+  }
+  .keep-edit-modal-card {
+    width: 100% !important;
+    min-height: 85vh !important;
+    max-height: 94vh !important;
+    border-radius: 22px 22px 0 0 !important;
+  }
+  .keep-checklist-items {
+    max-height: 50vh !important;
+  }
+  .kanban-dialog-card {
+    min-height: 85vh !important;
+    height: 88vh !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .keep-label-picker-popover {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: 100%;
+  }
+  .kanban-labels-popover {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }

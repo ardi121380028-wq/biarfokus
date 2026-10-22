@@ -144,12 +144,16 @@ export function KanbanBoardModal({
               const isActive = cleanBoardId === cleanActiveId;
               const lists = Array.isArray(b.lists) ? b.lists : [];
               const totalCards = lists.reduce((acc, l) => acc + (Array.isArray(l.cards) ? l.cards.length : 0), 0);
+              const isLight = Boolean(bg.isLight || bg.textColor === "#0f172a" || bg.textColor === "#111111");
 
               return (
                 <div
                   key={b.id}
-                  className={`kanban-board-card-thumb ${isActive ? "active-board" : ""}`}
-                  style={{ background: bg.value }}
+                  className={`kanban-board-card-thumb ${isActive ? "active-board" : ""} ${isLight ? "light-board-card" : ""}`}
+                  style={{
+                    background: bg.value,
+                    color: isLight ? "#0f172a" : "#ffffff",
+                  }}
                   onClick={() => {
                     onSelectBoard(b.id);
                     onClose();
@@ -158,10 +162,10 @@ export function KanbanBoardModal({
                   tabIndex={0}
                 >
                   <div className="board-card-head">
-                    <span className="board-card-title">{b.title}</span>
+                    <span className="board-card-title" style={{ color: isLight ? "#0f172a" : "#ffffff" }}>{b.title}</span>
                     {isActive && <span className="active-badge">Aktif ✓</span>}
                   </div>
-                  <div className="board-card-footer">
+                  <div className="board-card-footer" style={{ color: isLight ? "#475569" : "rgba(255,255,255,0.85)" }}>
                     <span>
                       {b.lists.length} kolom · {totalCards} kartu
                     </span>
@@ -169,6 +173,10 @@ export function KanbanBoardModal({
                       <button
                         type="button"
                         className="board-del-btn"
+                        style={{
+                          background: isLight ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.45)",
+                          color: isLight ? "#0f172a" : "#ffffff",
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (confirm(`Hapus board "${b.title}"?`)) {

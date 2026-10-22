@@ -928,6 +928,7 @@ export function KanbanView({
                     onDragStartCard={handleDragStartCard}
                     onDragEndCard={handleDragEndCard}
                     onDropCard={handleDropCard}
+                    onDirectMoveCard={moveCard}
                   />
                 ))}
 

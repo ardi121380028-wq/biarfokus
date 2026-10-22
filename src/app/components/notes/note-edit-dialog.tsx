@@ -38,7 +38,11 @@ export function NoteEditDialog({
     pinned: Boolean(note.pinned),
   });
   const [newItemText, setNewItemText] = useState("");
+  const [collapsedDone, setCollapsedDone] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const activeItems = (draft.items || []).filter((i) => !i.done);
+  const doneItems = (draft.items || []).filter((i) => i.done);
 
   function handleSaveAndClose() {
     onSave(note.id, draft);
@@ -138,11 +142,11 @@ export function NoteEditDialog({
         ) : (
           <div className="keep-checklist-create-section">
             <div className="keep-checklist-items">
-              {(draft.items || []).map((item) => (
+              {activeItems.map((item) => (
                 <div key={item.id} className="keep-checklist-item-row">
                   <input
                     type="checkbox"
-                    checked={item.done}
+                    checked={false}
                     onChange={() => handleToggleItem(item.id)}
                     className="keep-checkbox"
                   />
@@ -158,11 +162,7 @@ export function NoteEditDialog({
                         ),
                       }));
                     }}
-                    className={
-                      item.done
-                        ? "keep-item-edit-input done"
-                        : "keep-item-edit-input"
-                    }
+                    className="keep-item-edit-input"
                   />
                   <button
                     type="button"
@@ -200,6 +200,55 @@ export function NoteEditDialog({
                 Tambah
               </button>
             </div>
+
+            {doneItems.length > 0 && (
+              <div className="keep-card-done-section" style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="keep-card-done-toggle"
+                  onClick={() => setCollapsedDone(!collapsedDone)}
+                >
+                  {collapsedDone ? "▶" : "▼"} {doneItems.length} item diselesaikan
+                </button>
+
+                {!collapsedDone && (
+                  <div className="keep-card-done-list" style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
+                    {doneItems.map((item) => (
+                      <div key={item.id} className="keep-checklist-item-row">
+                        <input
+                          type="checkbox"
+                          checked={true}
+                          onChange={() => handleToggleItem(item.id)}
+                          className="keep-checkbox"
+                        />
+                        <input
+                          type="text"
+                          value={item.text}
+                          onChange={(e) => {
+                            const text = e.target.value;
+                            setDraft((prev) => ({
+                              ...prev,
+                              items: (prev.items || []).map((i) =>
+                                i.id === item.id ? { ...i, text } : i
+                              ),
+                            }));
+                          }}
+                          className="keep-item-edit-input done"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="keep-item-delete"
+                          aria-label="Hapus item"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
