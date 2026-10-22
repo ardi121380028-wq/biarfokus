@@ -17,6 +17,7 @@ type KanbanColumnProps = {
   onDragEndCard: (e: DragEvent<HTMLDivElement>) => void;
   onDropCard: (destListId: string, dropIndex: number) => void;
   onDirectMoveCard?: (sourceListId: string, destListId: string, sourceIndex: number, destIndex: number) => void;
+  allLists?: { id: string; title: string }[];
 };
 
 export function KanbanColumn({
@@ -31,6 +32,7 @@ export function KanbanColumn({
   onDragEndCard,
   onDropCard,
   onDirectMoveCard,
+  allLists,
 }: KanbanColumnProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(list.title);
@@ -189,6 +191,7 @@ export function KanbanColumn({
             onDragStart={onDragStartCard}
             onDragEnd={onDragEndCard}
             onDirectMoveCard={onDirectMoveCard}
+            allLists={allLists}
           />
         ))}
 

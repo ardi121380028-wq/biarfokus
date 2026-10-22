@@ -260,6 +260,7 @@ export type KanbanBoard = {
   memberCount?: number;
   members?: KanbanBoardMember[];
   isShared?: boolean;
+  _isLocalDraft?: boolean;
   createdAt: string;
   updatedAt: string;
 };

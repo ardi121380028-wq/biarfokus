@@ -963,6 +963,7 @@ export function KanbanView({
                     onDragEndCard={handleDragEndCard}
                     onDropCard={handleDropCard}
                     onDirectMoveCard={moveCard}
+                    allLists={displayedLists.map((l) => ({ id: l.id, title: l.title }))}
                   />
                 ))}
 

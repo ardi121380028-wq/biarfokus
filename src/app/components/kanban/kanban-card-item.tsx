@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import type { KanbanCard } from "@/types/domain";
+import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 
 type KanbanCardItemProps = {
   card: KanbanCard;
@@ -13,6 +14,7 @@ type KanbanCardItemProps = {
   onDragStart: (e: DragEvent<HTMLDivElement>, cardId: string, listId: string, index: number) => void;
   onDragEnd: (e: DragEvent<HTMLDivElement>) => void;
   onDirectMoveCard?: (sourceListId: string, destListId: string, sourceIndex: number, destIndex: number) => void;
+  allLists?: { id: string; title: string }[];
 };
 
 export function KanbanCardItem({
@@ -25,12 +27,18 @@ export function KanbanCardItem({
   onDragStart,
   onDragEnd,
   onDirectMoveCard,
+  allLists,
 }: KanbanCardItemProps) {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const [touchDragging, setTouchDragging] = useState(false);
   const [touchOffset, setTouchOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const touchMovedSignificantly = useRef(false);
+  const [showMoveMenu, setShowMoveMenu] = useState(false);
+  const moveMenuRef = useRef<HTMLDivElement>(null);
+
+  useOutsideClick(moveMenuRef, () => setShowMoveMenu(false), showMoveMenu);
+  useEscapeKey(() => setShowMoveMenu(false), showMoveMenu);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -38,21 +46,22 @@ export function KanbanCardItem({
     }
   }, []);
 
-  function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+  function handlePointerDown(e: React.PointerEvent<HTMLButtonElement>) {
     if (readOnly) return;
-    const touch = e.touches[0];
-    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    touchStartPos.current = { x: e.clientX, y: e.clientY };
     touchMovedSignificantly.current = false;
   }
 
-  function handleTouchMove(e: React.TouchEvent<HTMLDivElement>) {
+  function handlePointerMove(e: React.PointerEvent<HTMLButtonElement>) {
     if (readOnly || !touchStartPos.current) return;
-    const touch = e.touches[0];
-    const dx = touch.clientX - touchStartPos.current.x;
-    const dy = touch.clientY - touchStartPos.current.y;
+    const dx = e.clientX - touchStartPos.current.x;
+    const dy = e.clientY - touchStartPos.current.y;
 
     if (!touchMovedSignificantly.current) {
-      if (Math.hypot(dx, dy) > 12) {
+      if (Math.hypot(dx, dy) > 8) {
         touchMovedSignificantly.current = true;
         setTouchDragging(true);
       }
@@ -60,7 +69,7 @@ export function KanbanCardItem({
 
     if (touchMovedSignificantly.current) {
       setTouchOffset({ x: dx, y: dy });
-      const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+      const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
       const colBelow = elemBelow?.closest("[data-list-id]") as HTMLElement | null;
       document.querySelectorAll(".kanban-column-container.touch-target-col").forEach((el) => {
         if (el !== colBelow) el.classList.remove("touch-target-col");
@@ -71,15 +80,18 @@ export function KanbanCardItem({
     }
   }
 
-  function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
+  function handlePointerUp(e: React.PointerEvent<HTMLButtonElement>) {
     if (readOnly) return;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+
     document.querySelectorAll(".kanban-column-container.touch-target-col").forEach((el) => {
       el.classList.remove("touch-target-col");
     });
 
     if (touchMovedSignificantly.current && touchStartPos.current) {
-      const touch = e.changedTouches[0];
-      const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+      const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
       const colBelow = elemBelow?.closest("[data-list-id]") as HTMLElement | null;
       const targetListId = colBelow?.getAttribute("data-list-id");
 
@@ -188,10 +200,6 @@ export function KanbanCardItem({
         if (!readOnly) onDragStart(e, card.id, listId, index);
       }}
       onDragEnd={onDragEnd}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -311,6 +319,62 @@ export function KanbanCardItem({
             >
               🐸
             </button>
+          )}
+
+          {/* Mobile Move Actions (Quick column dropdown & Touch drag grip) */}
+          {!readOnly && allLists && allLists.length > 1 && (
+            <div className="kanban-card-mobile-actions" onClick={(e) => e.stopPropagation()}>
+              <div ref={moveMenuRef} style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  className={`kanban-card-move-trigger ${showMoveMenu ? "active" : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMoveMenu(!showMoveMenu);
+                  }}
+                  title="Pindahkan kartu ke kolom lain"
+                >
+                  ⇄ Pindah
+                </button>
+                {showMoveMenu && (
+                  <div className="kanban-card-move-popover">
+                    <span style={{ fontSize: "10px", fontWeight: "700", color: "var(--muted)", padding: "4px 8px", textTransform: "uppercase" }}>
+                      Pindahkan ke:
+                    </span>
+                    {allLists.map((col) => (
+                      <button
+                        key={col.id}
+                        type="button"
+                        className={`kanban-card-move-item ${col.id === listId ? "is-current" : ""}`}
+                        onClick={() => {
+                          setShowMoveMenu(false);
+                          if (col.id !== listId && onDirectMoveCard) {
+                            onDirectMoveCard(listId, col.id, index, 9999);
+                          }
+                        }}
+                      >
+                        <span>{col.title}</span>
+                        {col.id === listId && <span>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Touch Drag Grip */}
+              <button
+                type="button"
+                className="kanban-card-drag-handle"
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                title="Tahan dan geser untuk memindahkan kartu"
+                aria-label="Geser kartu"
+              >
+                ⠿
+              </button>
+            </div>
           )}
         </div>
       </div>

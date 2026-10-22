@@ -107,7 +107,7 @@ export function RichNoteEditor({
   }
 
   return (
-    <div className="rich-editor-wrapper">
+    <div className="rich-editor-wrapper rich-note-editor-container">
       {/* Editor Formatting Toolbar */}
       <div className="note-toolbar-container" role="toolbar" aria-label="Toolbar Format Catatan">
         <div className="note-toolbar-group">

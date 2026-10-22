@@ -112,6 +112,8 @@ export function useKanban(userId?: string | null) {
       const deletedIds = getDeletedBoardIds(userId);
       const cloudIds = new Set(cloudBoards.map((b) => b.id));
 
+      const isGtGrowthPurged = typeof window !== "undefined" && window.localStorage.getItem("biarfokus.kanban.gt_growth_purged") === "true";
+
       // Read current local boards from storage safely
       const storageKey = getStorageKey(userId);
       let localBoards: KanbanBoard[] = [];
@@ -122,7 +124,7 @@ export function useKanban(userId?: string | null) {
         } catch {}
       }
 
-      // Also migrate any guest or legacy boards
+      // Migrate any guest boards (once only, then purge key so it never resurrects)
       if (typeof window !== "undefined") {
         const potentialKeys = ["biarfokus.kanban.guest.boards", "biarfokus.kanban.boards"];
         for (const pk of potentialKeys) {
@@ -131,13 +133,12 @@ export function useKanban(userId?: string | null) {
             if (raw) {
               const extraBoards = parseStoredBoards(raw);
               for (const eb of extraBoards) {
-                if (eb.id && !localBoards.some((b) => b.id === eb.id)) {
-                  localBoards.push({ ...eb, userId, role: "owner" });
+                if (eb.id && eb.id !== "board-gt-growth" && !localBoards.some((b) => b.id === eb.id) && !deletedIds.has(eb.id)) {
+                  localBoards.push({ ...eb, userId, role: "owner", _isLocalDraft: true });
                 }
               }
-              if (pk.includes("guest")) {
-                window.localStorage.removeItem(pk);
-              }
+              // Immediately remove legacy and guest keys so stale boards don't linger forever
+              window.localStorage.removeItem(pk);
             }
           } catch {}
         }
@@ -146,54 +147,72 @@ export function useKanban(userId?: string | null) {
       // Build a comprehensive board map preserving all boards
       const boardMap = new Map<string, KanbanBoard>();
 
-      // 1. First add all local boards (user-created boards are NEVER lost)
-      for (const lb of localBoards) {
-        if (lb.id && !deletedIds.has(lb.id)) {
-          boardMap.set(lb.id, {
-            ...lb,
-            userId: lb.userId || userId,
-            role: lb.role || "owner",
-          });
-        }
-      }
-
-      // 2. Merge cloud boards
+      // 1. Add all authoritative cloud boards (excluding explicitly deleted/purged ones)
       for (const cb of cloudBoards) {
-        if (cb.id && !deletedIds.has(cb.id)) {
-          const local = boardMap.get(cb.id);
-          const isOwner = cb.userId === userId;
-          const role = isOwner ? ("owner" as const) : cb.role;
-          const resolved = { ...cb, role };
-
-          if (!local) {
-            boardMap.set(cb.id, resolved);
-          } else {
-            // Keep local lists if local has more cards or cloud lists are empty
-            const localCardCount = local.lists?.reduce((sum, l) => sum + (l.cards?.length || 0), 0) || 0;
-            const cloudCardCount = cb.lists?.reduce((sum, l) => sum + (l.cards?.length || 0), 0) || 0;
-            if (localCardCount > cloudCardCount) {
-              boardMap.set(cb.id, { ...resolved, lists: local.lists });
-            } else {
-              boardMap.set(cb.id, resolved);
-            }
+        if (!cb.id) continue;
+        if (isGtGrowthPurged && cb.id === "board-gt-growth") {
+          void deleteCloudBoard(supabase, userId, cb.id);
+          continue;
+        }
+        if (deletedIds.has(cb.id)) {
+          void deleteCloudBoard(supabase, userId, cb.id);
+          continue;
+        }
+        const isOwner = cb.userId === userId;
+        const role = isOwner ? ("owner" as const) : cb.role;
+        const local = localBoards.find((l) => l.id === cb.id);
+        if (local && local.lists && local.lists.length > 0) {
+          const localCardCount = local.lists.reduce((sum, l) => sum + (l.cards?.length || 0), 0);
+          const cloudCardCount = cb.lists?.reduce((sum, l) => sum + (l.cards?.length || 0), 0) || 0;
+          if (localCardCount > cloudCardCount) {
+            boardMap.set(cb.id, { ...cb, role, lists: local.lists });
+            continue;
           }
         }
+        boardMap.set(cb.id, { ...cb, role });
       }
 
-      // 3. Find any boards missing in Supabase cloud and upload them
+      // 2. Add any local boards that are genuine un-synced local drafts (created while offline)
       const missingInCloud: KanbanBoard[] = [];
-      for (const [id, board] of boardMap.entries()) {
-        if (!cloudIds.has(id)) {
-          if (!board.isShared || board.userId === userId || !board.userId || board.userId === "guest") {
-            missingInCloud.push({ ...board, userId, role: "owner" });
+      for (const lb of localBoards) {
+        if (!lb.id) continue;
+        if (isGtGrowthPurged && lb.id === "board-gt-growth") continue;
+        if (deletedIds.has(lb.id)) continue;
+
+        // If it's already in cloud, keep the merged version
+        if (boardMap.has(lb.id)) continue;
+
+        // If it was marked as a local un-synced draft (or if cloud had 0 boards because user was working offline)
+        if (lb._isLocalDraft || !cloudIds.has(lb.id)) {
+          if (!lb.isShared || lb.userId === userId || !lb.userId || lb.userId === "guest") {
+            const draftBoard: KanbanBoard = {
+              ...lb,
+              userId,
+              role: "owner",
+            };
+            boardMap.set(lb.id, draftBoard);
+            missingInCloud.push(draftBoard);
           }
         }
       }
 
+      // 3. Upload genuine local drafts to Supabase cloud
       if (missingInCloud.length > 0) {
-        await Promise.allSettled(
+        const uploadResults = await Promise.allSettled(
           missingInCloud.map((b) => upsertCloudBoard(supabase, userId, b))
         );
+        uploadResults.forEach((res, idx) => {
+          if (res.status === "fulfilled" && res.value) {
+            const uploadedBoard = missingInCloud[idx];
+            if (uploadedBoard) {
+              const current = boardMap.get(uploadedBoard.id);
+              if (current) {
+                delete current._isLocalDraft;
+                boardMap.set(uploadedBoard.id, current);
+              }
+            }
+          }
+        });
       }
 
       const merged = Array.from(boardMap.values());
@@ -281,18 +300,26 @@ export function useKanban(userId?: string | null) {
       try {
         const supabase = getSupabaseBrowserClient();
         const ok = await upsertCloudBoard(supabase, userId, board);
+        if (ok) {
+          updateBoards((current) =>
+            current.map((b) => (b.id === board.id ? { ...b, _isLocalDraft: false } : b))
+          );
+        }
         setSyncStatus(ok ? "synced" : "error");
       } catch (err) {
         console.warn("Could not sync kanban board to cloud:", err);
         setSyncStatus("error");
       }
     },
-    [userId],
+    [userId, updateBoards],
   );
 
   const createBoard = useCallback(
     (title: string, background?: string, templateKey?: string) => {
-      const board = createNewBoard(title, background, templateKey);
+      const board: KanbanBoard = {
+        ...createNewBoard(title, background, templateKey),
+        _isLocalDraft: true,
+      };
       if (userId) {
         board.userId = userId;
         board.role = "owner";
@@ -326,6 +353,10 @@ export function useKanban(userId?: string | null) {
     (boardId: string) => {
       markBoardDeleted(boardId, userId);
 
+      if (boardId === "board-gt-growth" && typeof window !== "undefined") {
+        window.localStorage.setItem("biarfokus.kanban.gt_growth_purged", "true");
+      }
+
       updateBoards((current) => {
         const next = current.filter((b) => b.id !== boardId);
         return next;
@@ -338,21 +369,22 @@ export function useKanban(userId?: string | null) {
         });
       }
 
-      // Also clean up from guest storage if any ghost copy remains
+      // Also clean up from legacy storage keys so no ghost copy remains
       if (typeof window !== "undefined") {
-        try {
-          const guestKey = "biarfokus.kanban.guest.boards";
-          const raw = window.localStorage.getItem(guestKey);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-              window.localStorage.setItem(
-                guestKey,
-                JSON.stringify(parsed.filter((b: { id?: string }) => b?.id !== boardId)),
-              );
+        for (const storageKeyName of ["biarfokus.kanban.guest.boards", "biarfokus.kanban.boards"]) {
+          try {
+            const raw = window.localStorage.getItem(storageKeyName);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                window.localStorage.setItem(
+                  storageKeyName,
+                  JSON.stringify(parsed.filter((b: { id?: string }) => b?.id !== boardId)),
+                );
+              }
             }
-          }
-        } catch {}
+          } catch {}
+        }
       }
 
       if (userId) {
