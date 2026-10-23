@@ -27,15 +27,13 @@ const NAV_LINKS = [
 
 function isDarkPageBg(color: string, isDarkTheme: boolean): boolean {
   if (isDarkTheme) return true;
-  if (!color || !color.startsWith("#")) return false;
-  const hex = color.replace("#", "");
-  const num = parseInt(hex, 16);
-  if (isNaN(num)) return false;
-  const r = (num >> 16) & 255;
-  const g = (num >> 8) & 255;
-  const b = num & 255;
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return lum < 0.65;
+  if (!color) return false;
+  const clean = color.trim().toLowerCase();
+  // Abu-abu / default neutral gray (#e8e8e8) pakai teks gelap, selain itu (pink, hijau, biru, oranye, kuning) pakai teks putih
+  if (clean === "#e8e8e8" || clean === "#ffffff" || clean === "#f5f5f5" || clean === "#eeeeee") {
+    return false;
+  }
+  return true;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {

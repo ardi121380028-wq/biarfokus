@@ -2,14 +2,14 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "BiarFokus — Pomodoro & Task Focus",
+    name: "BiarFokus",
     short_name: "BiarFokus",
     description:
       "BiarFokus membantu kamu fokus dan menyelesaikan setiap pekerjaan dengan Pomodoro timer.",
     start_url: "/",
     display: "standalone",
-    background_color: "#e8e8e8",
-    theme_color: "#f77fa5",
+    background_color: "#ffffff",
+    theme_color: "#ec4899",
     lang: "id",
     icons: [
       {
@@ -33,10 +33,17 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     shortcuts: [
       {
-        name: "Catatan Baru",
+        name: "Catatan & Checklist",
         short_name: "Catatan",
         description: "Buka atau buat catatan cepat di BiarFokus",
-        url: "/notes",
+        url: "/catatan",
+        icons: [{ src: "/biarfokus-icon.png", sizes: "192x192" }],
+      },
+      {
+        name: "Kalender Fokus",
+        short_name: "Kalender",
+        description: "Lihat jadwal sesi fokus dan agenda tugas",
+        url: "/kalender",
         icons: [{ src: "/biarfokus-icon.png", sizes: "192x192" }],
       },
       {
@@ -44,13 +51,6 @@ export default function manifest(): MetadataRoute.Manifest {
         short_name: "Kanban",
         description: "Kelola alur tugas dan proyek di papan Kanban",
         url: "/kanban",
-        icons: [{ src: "/biarfokus-icon.png", sizes: "192x192" }],
-      },
-      {
-        name: "Kalender Fokus",
-        short_name: "Kalender",
-        description: "Lihat jadwal sesi fokus dan agenda tugas",
-        url: "/calendar",
         icons: [{ src: "/biarfokus-icon.png", sizes: "192x192" }],
       },
       {

@@ -276,251 +276,257 @@ export function SettingsModal({
 
           {/* TAB 2: POMODORO / TIMER */}
           {activeTab === "pomodoro" && (
-            <>
-              {/* Custom Durations Section */}
-              <div className="settings-section">
-                <p className="settings-section-title">CUSTOM WAKTU FOKUS (MENIT)</p>
-                <p className="settings-help" style={{ margin: "0 0 12px" }}>
-                  Tentukan durasi bebas sesuai ritme kerja kamu.
-                </p>
+            <div className="settings-pomodoro-layout">
+              {/* Left Column: Durations, Presets & Cycles */}
+              <div className="settings-pomodoro-col">
+                {/* Custom Durations Section */}
+                <div className="settings-section">
+                  <p className="settings-section-title">CUSTOM WAKTU FOKUS (MENIT)</p>
+                  <p className="settings-help" style={{ margin: "0 0 10px" }}>
+                    Tentukan durasi bebas sesuai ritme kerja kamu.
+                  </p>
 
-                <div className="settings-custom-durations-grid">
-                  <div className="duration-input-box">
-                    <label htmlFor="pomo-input">Fokus (Pomodoro)</label>
-                    <div className="duration-input-stepper">
-                      <input
-                        id="pomo-input"
-                        type="number"
-                        min={1}
-                        max={180}
-                        value={customPomoMin}
-                        onChange={(e) => {
-                          const v = parseInt(e.target.value, 10) || 1;
-                          handleApplyCustomMinutes(v, customShortMin, customLongMin);
-                        }}
-                      />
-                      <span className="stepper-unit">menit</span>
+                  <div className="settings-custom-durations-grid">
+                    <div className="duration-input-box">
+                      <label htmlFor="pomo-input">Fokus (Pomodoro)</label>
+                      <div className="duration-input-stepper">
+                        <input
+                          id="pomo-input"
+                          type="number"
+                          min={1}
+                          max={180}
+                          value={customPomoMin}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10) || 1;
+                            handleApplyCustomMinutes(v, customShortMin, customLongMin);
+                          }}
+                        />
+                        <span className="stepper-unit">menit</span>
+                      </div>
+                    </div>
+
+                    <div className="duration-input-box">
+                      <label htmlFor="short-input">Istirahat Pendek</label>
+                      <div className="duration-input-stepper">
+                        <input
+                          id="short-input"
+                          type="number"
+                          min={1}
+                          max={60}
+                          value={customShortMin}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10) || 1;
+                            handleApplyCustomMinutes(customPomoMin, v, customLongMin);
+                          }}
+                        />
+                        <span className="stepper-unit">menit</span>
+                      </div>
+                    </div>
+
+                    <div className="duration-input-box">
+                      <label htmlFor="long-input">Istirahat Panjang</label>
+                      <div className="duration-input-stepper">
+                        <input
+                          id="long-input"
+                          type="number"
+                          min={1}
+                          max={120}
+                          value={customLongMin}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10) || 1;
+                            handleApplyCustomMinutes(customPomoMin, customShortMin, v);
+                          }}
+                        />
+                        <span className="stepper-unit">menit</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="duration-input-box">
-                    <label htmlFor="short-input">Istirahat Pendek</label>
-                    <div className="duration-input-stepper">
-                      <input
-                        id="short-input"
-                        type="number"
-                        min={1}
-                        max={60}
-                        value={customShortMin}
-                        onChange={(e) => {
-                          const v = parseInt(e.target.value, 10) || 1;
-                          handleApplyCustomMinutes(customPomoMin, v, customLongMin);
-                        }}
-                      />
-                      <span className="stepper-unit">menit</span>
-                    </div>
-                  </div>
-
-                  <div className="duration-input-box">
-                    <label htmlFor="long-input">Istirahat Panjang</label>
-                    <div className="duration-input-stepper">
-                      <input
-                        id="long-input"
-                        type="number"
-                        min={1}
-                        max={120}
-                        value={customLongMin}
-                        onChange={(e) => {
-                          const v = parseInt(e.target.value, 10) || 1;
-                          handleApplyCustomMinutes(customPomoMin, customShortMin, v);
-                        }}
-                      />
-                      <span className="stepper-unit">menit</span>
+                  {/* Quick Presets */}
+                  <div style={{ marginTop: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
+                      Template Durasi Cepat
+                    </span>
+                    <div className="settings-presets-row" style={{ marginTop: 6 }}>
+                      <button
+                        type="button"
+                        className="settings-preset-chip"
+                        onClick={() => handleApplyCustomMinutes(25, 5, 15)}
+                      >
+                        🎯 Klasik (25/5/15)
+                      </button>
+                      <button
+                        type="button"
+                        className="settings-preset-chip"
+                        onClick={() => handleApplyCustomMinutes(50, 10, 30)}
+                      >
+                        🧠 Deep Work (50/10/30)
+                      </button>
+                      <button
+                        type="button"
+                        className="settings-preset-chip"
+                        onClick={() => handleApplyCustomMinutes(15, 3, 10)}
+                      >
+                        ⚡ Kilat (15/3/10)
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Quick Presets */}
-                <div style={{ marginTop: 14 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-                    Template Durasi Cepat
-                  </span>
-                  <div className="settings-presets-row" style={{ marginTop: 6 }}>
-                    <button
-                      type="button"
-                      className="settings-preset-chip"
-                      onClick={() => handleApplyCustomMinutes(25, 5, 15)}
-                    >
-                      🎯 Klasik (25/5/15)
-                    </button>
-                    <button
-                      type="button"
-                      className="settings-preset-chip"
-                      onClick={() => handleApplyCustomMinutes(50, 10, 30)}
-                    >
-                      🧠 Deep Work (50/10/30)
-                    </button>
-                    <button
-                      type="button"
-                      className="settings-preset-chip"
-                      onClick={() => handleApplyCustomMinutes(15, 3, 10)}
-                    >
-                      ⚡ Kilat (15/3/10)
-                    </button>
+                {/* Interval & Daily Goal */}
+                <div className="settings-section">
+                  <p className="settings-section-title">SIKLUS & TARGET</p>
+                  <div className="setting-row">
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Interval Istirahat Panjang</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Sesi istirahat panjang dimulai setiap {longBreakInterval} sesi.
+                      </p>
+                    </div>
+                    <div className="interval-options" role="group">
+                      {[2, 3, 4, 5, 6].map((count) => (
+                        <button
+                          key={count}
+                          type="button"
+                          className={longBreakInterval === count ? "interval-chip active" : "interval-chip"}
+                          onClick={() => setLongBreakInterval(count)}
+                        >
+                          {count} sesi
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="setting-row" style={{ marginTop: 8 }}>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Target Harian Pomodoro</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Target: {dailyGoalPomodoros} sesi (~{Math.round(((dailyGoalPomodoros * customPomoMin) / 60) * 10) / 10} jam).
+                      </p>
+                    </div>
+                    <div className="interval-options" role="group">
+                      {[4, 6, 8, 10, 12].map((count) => (
+                        <button
+                          key={count}
+                          type="button"
+                          className={dailyGoalPomodoros === count ? "interval-chip active" : "interval-chip"}
+                          onClick={() => setDailyGoalPomodoros(count)}
+                        >
+                          {count}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Interval & Daily Goal */}
-              <div className="settings-section">
-                <p className="settings-section-title">SIKLUS & TARGET</p>
-                <div className="setting-row">
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Interval Istirahat Panjang</span>
-                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Sesi istirahat panjang dimulai setiap kelipatan {longBreakInterval} sesi Pomodoro.
-                    </p>
-                  </div>
-                  <div className="interval-options" role="group">
-                    {[2, 3, 4, 5, 6].map((count) => (
-                      <button
-                        key={count}
-                        type="button"
-                        className={longBreakInterval === count ? "interval-chip active" : "interval-chip"}
-                        onClick={() => setLongBreakInterval(count)}
-                      >
-                        {count} sesi
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              {/* Right Column: Sound, Alarms & Audio Tone Cards */}
+              <div className="settings-pomodoro-col">
+                {/* Sound & Alarm */}
+                <div className="settings-section">
+                  <p className="settings-section-title">SUARA & ALARM</p>
 
-                <div className="setting-row" style={{ marginTop: 12 }}>
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Target Harian Pomodoro</span>
-                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Target harian: {dailyGoalPomodoros} sesi (~{Math.round(((dailyGoalPomodoros * customPomoMin) / 60) * 10) / 10} jam fokus).
-                    </p>
-                  </div>
-                  <div className="interval-options" role="group">
-                    {[4, 6, 8, 10, 12].map((count) => (
-                      <button
-                        key={count}
-                        type="button"
-                        className={dailyGoalPomodoros === count ? "interval-chip active" : "interval-chip"}
-                        onClick={() => setDailyGoalPomodoros(count)}
-                      >
-                        {count}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Sound & Alarm */}
-              <div className="settings-section">
-                <p className="settings-section-title">SUARA & ALARM</p>
-
-                <div className="setting-row">
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Suara Alarm Selesai</span>
-                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Bunyi saat waktu fokus atau istirahat berakhir.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={`settings-contrast-toggle ${soundEnabled ? "active" : ""}`}
-                    onClick={() => setSoundEnabled(!soundEnabled)}
-                  >
-                    {soundEnabled ? "Aktif" : "Bisu"}
-                  </button>
-                </div>
-
-                <div className="setting-row" style={{ marginTop: 10 }}>
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Ulangi Alarm (Repeat Alarm)</span>
-                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Terus berbunyi berulang sampai tombol timer diklik.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={`settings-contrast-toggle ${repeatAlarm ? "active" : ""}`}
-                    onClick={() => setRepeatAlarm(!repeatAlarm)}
-                  >
-                    {repeatAlarm ? "Aktif" : "Sekali"}
-                  </button>
-                </div>
-
-                <div className="setting-row" style={{ marginTop: 10 }}>
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Detak Jam (Clock Ticking)</span>
-                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Detik lembut setiap detik selama timer berjalan.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={`settings-contrast-toggle ${tickingSoundEnabled ? "active" : ""}`}
-                    onClick={() => setTickingSoundEnabled(!tickingSoundEnabled)}
-                  >
-                    {tickingSoundEnabled ? "Aktif" : "Mati"}
-                  </button>
-                </div>
-
-                <div className="setting-row" style={{ marginTop: 10 }}>
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Mulai Otomatis Sesi Berikutnya</span>
-                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Langsung mulai timer istirahat saat fokus selesai.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={`settings-contrast-toggle ${autoStart ? "active" : ""}`}
-                    onClick={() => setAutoStart(!autoStart)}
-                  >
-                    {autoStart ? "Aktif" : "Manual"}
-                  </button>
-                </div>
-
-                {/* Alarm Sound Picker */}
-                <div style={{ marginTop: 14 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-                    Pilihan Nada Alarm
-                  </span>
-                  <div className="alarm-options" role="radiogroup" style={{ marginTop: 8 }}>
-                    {ALARM_SOUND_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.type}
-                        type="button"
-                        role="radio"
-                        aria-checked={alarmSound === opt.type}
-                        className={alarmSound === opt.type ? "alarm-option-card active" : "alarm-option-card"}
-                        onClick={() => setAlarmSound(opt.type)}
-                      >
-                        <div className="alarm-option-header">
-                          <strong>{opt.label}</strong>
-                          {alarmSound === opt.type && <span className="alarm-check">✓ Dipilih</span>}
-                        </div>
-                        <p>{opt.description}</p>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="alarm-test-wrap" style={{ marginTop: 10 }}>
+                  <div className="setting-row">
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Suara Alarm Selesai</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Bunyi saat waktu fokus atau istirahat berakhir.
+                      </p>
+                    </div>
                     <button
                       type="button"
-                      className={`settings-contrast-btn ${isPlayingPreview ? "playing" : ""}`}
-                      onClick={toggleAlarmPreview}
+                      className={`settings-contrast-toggle ${soundEnabled ? "active" : ""}`}
+                      onClick={() => setSoundEnabled(!soundEnabled)}
                     >
-                      {isPlayingPreview ? "⏹ Hentikan Bunyi" : "▶ Uji Nada Alarm"}
+                      {soundEnabled ? "Aktif" : "Bisu"}
                     </button>
+                  </div>
+
+                  <div className="setting-row" style={{ marginTop: 8 }}>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Ulangi Alarm (Repeat Alarm)</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Terus berbunyi berulang sampai timer diklik.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${repeatAlarm ? "active" : ""}`}
+                      onClick={() => setRepeatAlarm(!repeatAlarm)}
+                    >
+                      {repeatAlarm ? "Aktif" : "Sekali"}
+                    </button>
+                  </div>
+
+                  <div className="setting-row" style={{ marginTop: 8 }}>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Detak Jam (Clock Ticking)</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Detik lembut setiap detik timer aktif.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${tickingSoundEnabled ? "active" : ""}`}
+                      onClick={() => setTickingSoundEnabled(!tickingSoundEnabled)}
+                    >
+                      {tickingSoundEnabled ? "Aktif" : "Mati"}
+                    </button>
+                  </div>
+
+                  <div className="setting-row" style={{ marginTop: 8 }}>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Mulai Otomatis Sesi</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Langsung mulai istirahat saat fokus selesai.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${autoStart ? "active" : ""}`}
+                      onClick={() => setAutoStart(!autoStart)}
+                    >
+                      {autoStart ? "Aktif" : "Manual"}
+                    </button>
+                  </div>
+
+                  {/* Alarm Sound Picker */}
+                  <div style={{ marginTop: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
+                      Pilihan Nada Alarm
+                    </span>
+                    <div className="alarm-options" role="radiogroup" style={{ marginTop: 6 }}>
+                      {ALARM_SOUND_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.type}
+                          type="button"
+                          role="radio"
+                          aria-checked={alarmSound === opt.type}
+                          className={alarmSound === opt.type ? "alarm-option-card active" : "alarm-option-card"}
+                          onClick={() => setAlarmSound(opt.type)}
+                        >
+                          <div className="alarm-option-header">
+                            <strong>{opt.label}</strong>
+                            {alarmSound === opt.type && <span className="alarm-check">✓ Dipilih</span>}
+                          </div>
+                          <p>{opt.description}</p>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="alarm-test-wrap" style={{ marginTop: 10 }}>
+                      <button
+                        type="button"
+                        className={`settings-contrast-btn ${isPlayingPreview ? "playing" : ""}`}
+                        onClick={toggleAlarmPreview}
+                      >
+                        {isPlayingPreview ? "⏹ Hentikan Bunyi" : "▶ Uji Nada Alarm"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
 
           {/* TAB 3: CATATAN */}
