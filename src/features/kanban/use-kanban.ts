@@ -129,7 +129,11 @@ export function useKanban(userId?: string | null) {
 
       // Migrate any guest boards (once only, then purge key so it never resurrects)
       if (typeof window !== "undefined") {
-        const potentialKeys = ["biarfokus.kanban.guest.boards", "biarfokus.kanban.boards"];
+        const potentialKeys = [
+          "biarfokus.kanban.guest.boards",
+          "biarfokus.kanban.boards",
+          "biarfokus.kanban_boards",
+        ];
         for (const pk of potentialKeys) {
           try {
             const raw = window.localStorage.getItem(pk);
@@ -382,7 +386,11 @@ export function useKanban(userId?: string | null) {
 
       // Also clean up from legacy storage keys so no ghost copy remains
       if (typeof window !== "undefined") {
-        for (const storageKeyName of ["biarfokus.kanban.guest.boards", "biarfokus.kanban.boards"]) {
+        for (const storageKeyName of [
+          "biarfokus.kanban.guest.boards",
+          "biarfokus.kanban.boards",
+          "biarfokus.kanban_boards",
+        ]) {
           try {
             const raw = window.localStorage.getItem(storageKeyName);
             if (raw) {
