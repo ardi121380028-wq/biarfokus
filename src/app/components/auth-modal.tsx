@@ -43,6 +43,7 @@ function GoogleIcon() {
 export function AuthModal({ mode, setMode, onClose }: AuthModalProps) {
   const { setTermsModalOpen } = useAppContext();
   const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
@@ -56,8 +57,18 @@ export function AuthModal({ mode, setMode, onClose }: AuthModalProps) {
     setStatus(null);
     try {
       const supabase = getSupabaseBrowserClient();
+      const displayName = username.trim() || email.split("@")[0] || "Teman Fokus";
       const result = isSignUp
-        ? await supabase.auth.signUp({ email, password })
+        ? await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: displayName,
+                name: displayName,
+              },
+            },
+          })
         : await supabase.auth.signInWithPassword({ email, password });
       if (result.error) {
         setError(result.error.message);
@@ -123,7 +134,17 @@ export function AuthModal({ mode, setMode, onClose }: AuthModalProps) {
         <span>Lanjutkan dengan Google</span>
       </button>
       <div className="auth-divider"><span>OR</span></div>
-      {isSignUp && <label className="auth-field">Username<input required placeholder="e.g ardikharisma_" /></label>}
+      {isSignUp && (
+        <label className="auth-field">
+          Nama / Username
+          <input
+            required
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            placeholder="e.g ardikharisma_"
+          />
+        </label>
+      )}
       <label className="auth-field">Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="e.g hello@example.com" /></label>
       <label className="auth-field">Password<div className="password-field"><input required type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="***********" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Tampilkan password">{showPassword ? "◉" : "◌"}</button></div></label>
       {!isSignUp && <button className="forgot-button" onClick={() => void resetPassword()}>Forgot Password?</button>}

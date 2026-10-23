@@ -171,7 +171,7 @@ export function PricingView({
 
           <button
             type="button"
-            className="secondary-button plan-cta-btn"
+            className="plan-cta-btn free-cta"
             onClick={onGoTimer}
           >
             {userId && !isPro ? "Paket Aktif Kamu" : "Mulai Gratis Sekarang"}

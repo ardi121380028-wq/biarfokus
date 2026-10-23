@@ -234,28 +234,50 @@ export function StatsView({
           {activeRange.title}
         </span>
       </div>
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span>Fokus {activeRange.label.toLowerCase()}</span>
-          <strong>{formatFocusTime(summary.focusSeconds)}</strong>
-          <small>Data sesi Pomodoro selesai</small>
-        </div>
-        <div className="stat-card">
-          <span>Pomodoro selesai</span>
-          <strong>{summary.pomodoroCount}</strong>
-          <small>{activeRange.title}</small>
-        </div>
-        <div className="stat-card">
-          <span>Streak fokus</span>
-          <strong>{streaks.current} hari</strong>
-          <small>Terbaik: {streaks.longest} hari (1 tahun terakhir)</small>
-        </div>
-        <div className="stat-card">
-          <span>Tugas selesai</span>
-          <strong>{completedTasks}</strong>
-          <small>Dari task aktifmu</small>
-        </div>
-      </div>
+      {(() => {
+        const avgFocusPerDay = Math.round(summary.focusSeconds / Math.max(summary.series.length, 1));
+        const sortedDays = [...summary.series].sort((a, b) => b.focusSeconds - a.focusSeconds);
+        const peakDayEntry = sortedDays[0];
+        const peakDayLabel =
+          peakDayEntry && peakDayEntry.focusSeconds > 0
+            ? `${dayLabels[getWeekdayIndex(peakDayEntry.day)]} (${formatFocusTime(peakDayEntry.focusSeconds)})`
+            : "Belum ada sesi";
+
+        return (
+          <div className="stat-grid">
+            <div className="stat-card">
+              <span>Total Waktu Fokus</span>
+              <strong>{formatFocusTime(summary.focusSeconds)}</strong>
+              <small>Data sesi Pomodoro selesai</small>
+            </div>
+            <div className="stat-card">
+              <span>Rata-rata Harian</span>
+              <strong>{formatFocusTime(avgFocusPerDay)}</strong>
+              <small>Konsistensi fokus harian</small>
+            </div>
+            <div className="stat-card">
+              <span>Pomodoro Selesai</span>
+              <strong>{summary.pomodoroCount}</strong>
+              <small>{activeRange.title}</small>
+            </div>
+            <div className="stat-card">
+              <span>Streak Fokus</span>
+              <strong>{streaks.current} hari</strong>
+              <small>Terbaik: {streaks.longest} hari</small>
+            </div>
+            <div className="stat-card">
+              <span>Tugas Selesai</span>
+              <strong>{completedTasks}</strong>
+              <small>Dari task aktifmu</small>
+            </div>
+            <div className="stat-card">
+              <span>Hari Paling Produktif</span>
+              <strong>{peakDayLabel}</strong>
+              <small>Puncak fokus terbaikmu</small>
+            </div>
+          </div>
+        );
+      })()}
       <div className="chart-card">
         <div className="chart-labels">
           {dense

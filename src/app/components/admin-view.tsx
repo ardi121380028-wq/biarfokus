@@ -332,7 +332,7 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
                     </div>
                     <div>
                       <div className="admin-user-title-row">
-                        <strong>{item.displayName || "Pengguna Tanpa Nama"}</strong>
+                        <strong>{item.displayName || `Pengguna #${item.id.slice(0, 6)}`}</strong>
                         {isCurrentUser && <span className="admin-self-badge">Kamu</span>}
                         <span className={item.role === "admin" ? "admin-role-badge is-admin" : "admin-role-badge"}>
                           {item.role === "admin" ? "Admin" : "User"}

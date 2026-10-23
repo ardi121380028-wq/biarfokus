@@ -164,12 +164,17 @@ export function CalendarSidebar({
           </button>
           <button
             type="button"
-            className="kanban-sidebar-nav-item"
+            className="kanban-sidebar-nav-item sidebar-upgrade-pro-btn"
             onClick={() => handleNavigate("pricing")}
-            title="Upgrade Pro"
+            title="Upgrade Pro (Akses Penuh)"
           >
             <span className="nav-icon">💎</span>
-            {!isCollapsed && <span className="nav-label">Upgrade Pro</span>}
+            {!isCollapsed && (
+              <>
+                <span className="nav-label">Upgrade Pro</span>
+                <span className="pro-sparkle-pill">PRO ✨</span>
+              </>
+            )}
           </button>
         </nav>
       </div>

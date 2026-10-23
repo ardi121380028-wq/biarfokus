@@ -25,6 +25,9 @@ export function AccountModal({
 }: AccountModalProps) {
   const avatar = getSafeAvatarUrl(user?.user_metadata?.avatar_url);
   const [displayName, setDisplayName] = useState(userName);
+  const [birthDate, setBirthDate] = useState<string>(
+    (user?.user_metadata?.birth_date as string) || "",
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +37,11 @@ export function AccountModal({
     setError(null);
     try {
       const savedName = await updateDisplayName(supabase, user.id, displayName);
+      await supabase.auth.updateUser({
+        data: {
+          birth_date: birthDate.trim(),
+        },
+      });
       onSaved(savedName);
       onClose();
     } catch (saveError) {
@@ -105,6 +113,22 @@ export function AccountModal({
             </div>
             <span className="account-input-hint">
               Nama ini akan ditampilkan pada Kalender, Catatan, dan Kartu Kanban kamu.
+            </span>
+          </label>
+
+          <label className="account-field-label" style={{ marginTop: "14px" }}>
+            <span>Tanggal Lahir (Opsional)</span>
+            <div className="account-input-wrap">
+              <input
+                type="date"
+                value={birthDate}
+                onChange={(event) => setBirthDate(event.target.value)}
+                disabled={saving}
+                className="account-display-input"
+              />
+            </div>
+            <span className="account-input-hint">
+              Tanggal lahirmu disimpan aman untuk database profil &amp; kejutan fokus di hari ulang tahunmu.
             </span>
           </label>
         </div>
