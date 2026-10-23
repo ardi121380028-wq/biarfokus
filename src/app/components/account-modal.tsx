@@ -46,7 +46,7 @@ export function AccountModal({
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <section
-        className="account-modal"
+        className="account-modal-card"
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-title"
@@ -56,67 +56,94 @@ export function AccountModal({
           ×
         </button>
 
-        <p className="account-kicker" id="account-title">
-          PENGATURAN AKUN
-        </p>
-        <div className="account-profile">
-          {avatar ? (
-            <Image src={avatar} alt="" width={92} height={92} unoptimized />
-          ) : (
-            <div className="account-avatar">{userName.charAt(0).toUpperCase()}</div>
-          )}
+        {/* Modal Header */}
+        <div className="account-card-header">
+          <div className="account-header-badge">👤</div>
           <div>
-            <label className="auth-field">
-              Display name
+            <h2 id="account-title" className="account-header-title">Profil &amp; Akun</h2>
+            <p className="account-header-sub">Kelola informasi identitas dan akun BiarFokus kamu</p>
+          </div>
+        </div>
+
+        {/* Profile Card Summary Banner */}
+        <div className="account-identity-banner">
+          <div className="account-avatar-wrapper">
+            {avatar ? (
+              <Image src={avatar} alt="" width={68} height={68} className="account-avatar-img" unoptimized />
+            ) : (
+              <div className="account-avatar-placeholder">{userName.charAt(0).toUpperCase()}</div>
+            )}
+            <span className="account-avatar-status" title="Akun Aktif" />
+          </div>
+
+          <div className="account-identity-info">
+            <div className="account-identity-name-row">
+              <strong className="account-identity-name">{displayName || "Pengguna BiarFokus"}</strong>
+              <span className="account-plan-badge">✨ Paket Free</span>
+            </div>
+            <p className="account-identity-email">
+              <span>📧</span> {user?.email || "Tidak ada email"}
+            </p>
+          </div>
+        </div>
+
+        {/* Edit Form */}
+        <div className="account-form-body">
+          <label className="account-field-label">
+            <span>Nama Tampilan (Display Name)</span>
+            <div className="account-input-wrap">
               <input
+                type="text"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 maxLength={80}
+                placeholder="Masukkan nama tampilan kamu..."
                 disabled={saving}
+                className="account-display-input"
               />
-            </label>
-            <p>{user?.email}</p>
-          </div>
+              <span className="account-char-count">{displayName.length}/80</span>
+            </div>
+            <span className="account-input-hint">
+              Nama ini akan ditampilkan pada Kalender, Catatan, dan Kartu Kanban kamu.
+            </span>
+          </label>
         </div>
+
         {error && (
-          <p className="task-error" role="alert">
+          <p className="task-error" role="alert" style={{ margin: "0 24px 14px" }}>
             {error}
           </p>
         )}
-        <div className="account-actions" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: "10px", marginTop: "18px" }}>
+
+        {/* Actions Footer */}
+        <div className="account-card-footer">
           {onLogout ? (
             <button
               type="button"
-              className="danger-button account-logout-btn"
+              className="account-logout-action-btn"
               onClick={() => {
                 onClose();
                 onLogout();
               }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "#dc2626",
-                color: "#ffffff",
-                borderRadius: "10px",
-                padding: "9px 14px",
-                fontSize: "13px",
-                fontWeight: 600,
-                border: "none",
-                cursor: "pointer",
-              }}
             >
-              🚪 Keluar
+              🚪 Keluar Akun
             </button>
           ) : <div />}
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button className="secondary-button" onClick={onClose} disabled={saving}>
-              Tutup
+
+          <div className="account-footer-right">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Batal
             </button>
             <button
+              type="button"
               className="apply-button"
               onClick={() => void handleSave()}
-              disabled={saving}
+              disabled={saving || !displayName.trim()}
             >
               {saving ? "Menyimpan..." : "Simpan Profil"}
             </button>

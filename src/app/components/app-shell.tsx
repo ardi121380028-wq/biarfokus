@@ -42,18 +42,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
+  const [splashStep, setSplashStep] = useState(0);
 
   // 3-Second branded startup splash on desktop and mobile PWA
   useEffect(() => {
+    const s1 = setTimeout(() => setSplashStep(1), 850);
+    const s2 = setTimeout(() => setSplashStep(2), 1700);
     const fadeTimer = setTimeout(() => {
       setSplashFading(true);
-    }, 2400);
+    }, 2500);
 
     const doneTimer = setTimeout(() => {
       setShowSplash(false);
-    }, 2800);
+    }, 2950);
 
     return () => {
+      clearTimeout(s1);
+      clearTimeout(s2);
       clearTimeout(fadeTimer);
       clearTimeout(doneTimer);
     };
@@ -360,24 +365,46 @@ export function AppShell({ children }: { children: ReactNode }) {
         </footer>
       )}
 
-      {/* 3-Second Startup Branded Loading Splash for Desktop & PWA Mobile */}
+      {/* Premium Startup Branded Loading Splash for Desktop & PWA Mobile */}
       {showSplash && (
         <div
           className={`app-startup-splash ${splashFading ? "is-fading" : ""}`}
           aria-label="Memuat aplikasi BiarFokus..."
         >
+          {/* Subtle Ambient Radial Aurora Background */}
+          <div className="app-splash-aurora" aria-hidden="true" />
+
           <div className="app-startup-splash-content">
-            <div className="app-startup-logo-wrap">
-              <img
-                src={dark ? "/biarfokus-logo-dark.png" : "/biarfokus-logo-light.png"}
-                alt="BiarFokus"
-                className="app-startup-logo-img"
-              />
+            {/* Elevated Frosted Glass Card */}
+            <div className="app-splash-card">
+              <div className="app-startup-logo-wrap">
+                <img
+                  src={dark ? "/biarfokus-logo-dark.png" : "/biarfokus-logo-light.png"}
+                  alt="BiarFokus"
+                  className="app-startup-logo-img"
+                />
+              </div>
+
+              {/* Dynamic Loading Progress Bar */}
+              <div className="app-splash-progress-track">
+                <div className="app-splash-progress-bar" />
+              </div>
+
+              {/* Dynamic Step Text */}
+              <div className="app-splash-step-text">
+                <span className="app-splash-pulse-dot" />
+                <span>
+                  {splashStep === 0 && "Memuat workspace produktivitas..."}
+                  {splashStep === 1 && "Sinkronisasi catatan & jadwal..."}
+                  {splashStep === 2 && "Menyiapkan ruang fokus kamu..."}
+                </span>
+              </div>
             </div>
-            <div className="app-startup-beam-track">
-              <div className="app-startup-beam-fill" />
-            </div>
-            <span className="app-startup-tagline">Menyiapkan workspace fokus kamu...</span>
+
+            {/* Subtle Minimalist Tagline */}
+            <p className="app-splash-quote">
+              &ldquo;Fokus pada satu hal sampai selesai.&rdquo;
+            </p>
           </div>
         </div>
       )}

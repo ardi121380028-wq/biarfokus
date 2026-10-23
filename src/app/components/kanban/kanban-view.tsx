@@ -15,6 +15,7 @@ import { KanbanCardDialog } from "./kanban-card-dialog";
 import { KanbanBoardModal } from "./kanban-board-modal";
 import { KanbanShareModal } from "./kanban-share-modal";
 import { KanbanJoinModal } from "./kanban-join-modal";
+import { useAppContext } from "@/app/providers/app-provider";
 
 type KanbanViewProps = {
   userId?: string | null;
@@ -93,6 +94,11 @@ export function KanbanView({
     }
     return false;
   });
+
+  const { handleLogout } = useAppContext();
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(profileMenuRef, () => setProfileMenuOpen(false));
 
   function toggleSidebar() {
     setSidebarCollapsed((prev) => {
@@ -746,35 +752,101 @@ export function KanbanView({
               </button>
             )}
 
-            {/* Profile Avatar on Top Right (Trello-style!) */}
-            {user ? (
-              <button
-                type="button"
-                className="kanban-top-profile-avatar-btn"
-                onClick={onOpenProfile}
-                title={`Profil Akun: ${userName || "Pengguna"}`}
-                aria-label="Buka profil akun"
-              >
-                {userAvatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={userAvatar} alt="" className="kanban-avatar-img" />
-                ) : (
-                  <span className="kanban-avatar-fallback">
-                    {(userName || "U").charAt(0).toUpperCase()}
-                  </span>
-                )}
-                <span className="kanban-avatar-status-dot" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="kanban-bar-btn kanban-signin-pill"
-                onClick={onRequireLogin}
-                title="Masuk ke Akun BiarFokus"
-              >
-                🔐 Masuk
-              </button>
-            )}
+            {/* Profile Avatar Dropdown Menu (Consistent across Kanban, Calendar, and Notes) */}
+            <div className="cal-topbar-profile-wrap" ref={profileMenuRef}>
+              {user ? (
+                <button
+                  type="button"
+                  className="cal-topbar-avatar-btn"
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  title={`Menu Akun: ${userName || "Pengguna"}`}
+                  aria-label="Menu akun"
+                >
+                  {userAvatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={userAvatar} alt="" className="cal-topbar-avatar-img" />
+                  ) : (
+                    <span className="cal-topbar-avatar-initial">
+                      {(userName || "U").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="cal-topbar-login-btn"
+                  onClick={onRequireLogin || onOpenProfile}
+                  title="Masuk ke Akun BiarFokus"
+                >
+                  Masuk
+                </button>
+              )}
+
+              {profileMenuOpen && (
+                <div className="cal-topbar-profile-menu">
+                  <div className="cal-profile-menu-header">
+                    <strong>{userName || "Akun Saya"}</strong>
+                    <span className="cal-profile-menu-sub">BiarFokus Workspace</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="cal-profile-menu-item"
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      onOpenProfile?.();
+                    }}
+                  >
+                    👤 Profil &amp; Akun
+                  </button>
+                  <button
+                    type="button"
+                    className="cal-profile-menu-item"
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      onNavigate?.("stats");
+                    }}
+                  >
+                    📊 Statistik
+                  </button>
+                  {onOpenSettings && (
+                    <button
+                      type="button"
+                      className="cal-profile-menu-item"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onOpenSettings();
+                      }}
+                    >
+                      ⚙️ Pengaturan
+                    </button>
+                  )}
+                  {onNavigate && (
+                    <button
+                      type="button"
+                      className="cal-profile-menu-item"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onNavigate("pricing");
+                      }}
+                    >
+                      💎 Upgrade Pro
+                    </button>
+                  )}
+                  {handleLogout && (
+                    <button
+                      type="button"
+                      className="cal-profile-menu-item danger"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        void handleLogout();
+                      }}
+                    >
+                      🚪 Keluar
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
