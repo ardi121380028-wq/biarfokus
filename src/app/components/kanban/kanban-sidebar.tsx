@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { KanbanBoard } from "@/types/domain";
+import { useAppContext } from "@/app/providers/app-provider";
 
 type KanbanSidebarProps = {
   isCollapsed: boolean;
@@ -32,6 +33,7 @@ export function KanbanSidebar({
   dark,
   onToggleDark,
 }: KanbanSidebarProps) {
+  const { isPro } = useAppContext();
   const [searchBoard, setSearchBoard] = useState("");
 
   const filteredBoards = boards.filter((b) =>
@@ -146,15 +148,17 @@ export function KanbanSidebar({
           </button>
           <button
             type="button"
-            className="kanban-sidebar-nav-item sidebar-upgrade-pro-btn"
+            className={`kanban-sidebar-nav-item ${isPro ? "sidebar-pro-active-btn" : "sidebar-upgrade-pro-btn"}`}
             onClick={() => handleNavigate("pricing")}
-            title="Upgrade Pro (Akses Penuh)"
+            title={isPro ? "Akun BiarFokus Pro Aktif (Akses Tanpa Batas)" : "Upgrade Pro (Akses Penuh)"}
           >
-            <span className="nav-icon">💎</span>
+            <span className="nav-icon">{isPro ? "👑" : "💎"}</span>
             {!isCollapsed && (
               <>
-                <span className="nav-label">Upgrade Pro</span>
-                <span className="pro-sparkle-pill">PRO ✨</span>
+                <span className="nav-label">{isPro ? "BiarFokus Pro" : "Upgrade Pro"}</span>
+                <span className={`pro-sparkle-pill ${isPro ? "active-pro" : ""}`}>
+                  {isPro ? "AKTIF ⭐" : "PRO ✨"}
+                </span>
               </>
             )}
           </button>

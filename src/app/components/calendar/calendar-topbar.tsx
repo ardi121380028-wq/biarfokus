@@ -5,6 +5,7 @@ import type { CalendarViewMode } from "@/features/calendar/calendar-service";
 import { getWeekNumber } from "@/features/calendar/calendar-service";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useAppContext } from "@/app/providers/app-provider";
 
 type CalendarTopbarProps = {
   anchorDate: Date;
@@ -54,6 +55,7 @@ export function CalendarTopbar({
   onForceSync,
   onLogout,
 }: CalendarTopbarProps) {
+  const { isPro } = useAppContext();
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -313,22 +315,30 @@ export function CalendarTopbar({
         {/* Profile Avatar & Dropdown */}
         <div className="cal-topbar-profile-wrap" ref={profileMenuRef}>
           {userName ? (
-            <button
-              type="button"
-              className="cal-topbar-avatar-btn"
-              onClick={() => setProfileMenuOpen((prev) => !prev)}
-              aria-label="Menu akun"
-              title={userName}
-            >
-              {userAvatar ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={userAvatar} alt={userName} className="cal-topbar-avatar-img" />
-              ) : (
-                <span className="cal-topbar-avatar-initial">
-                  {userName.charAt(0).toUpperCase()}
+            <div className="cal-topbar-profile-btn-row">
+              {isPro && (
+                <span className="topbar-pro-pill" title="Akun BiarFokus Pro Aktif">
+                  PRO ⭐
                 </span>
               )}
-            </button>
+              <button
+                type="button"
+                className="cal-topbar-avatar-btn"
+                onClick={() => setProfileMenuOpen((prev) => !prev)}
+                aria-label="Menu akun"
+                title={userName}
+              >
+                {userAvatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={userAvatar} alt={userName} className="cal-topbar-avatar-img" />
+                ) : (
+                  <span className="cal-topbar-avatar-initial">
+                    {userName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
+              </button>
+            </div>
           ) : (
             <button
               type="button"

@@ -69,6 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const {
     user,
     userRole,
+    isPro,
     userName,
     userAvatar,
     loginOpen,
@@ -246,6 +247,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             {user ? (
               <div className="profile-area">
+                {isPro && (
+                  <span className="topbar-pro-pill" title="Akun BiarFokus Pro Aktif">
+                    PRO ⭐
+                  </span>
+                )}
                 <button
                   className="profile-button"
                   onClick={() => setProfileMenuOpen((open) => !open)}
@@ -257,6 +263,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   ) : (
                     <span>{userName.charAt(0).toUpperCase()}</span>
                   )}
+                  {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
                 </button>
                 {profileMenuOpen && (
                   <ProfileMenu
@@ -611,6 +618,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <AccountModal
           user={user}
           userName={userName}
+          isPro={isPro}
           supabase={getSupabaseBrowserClient()}
           onSaved={setProfileDisplayName}
           onLogout={handleLogout}

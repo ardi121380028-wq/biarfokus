@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 type AccountModalProps = {
   user: User | null;
   userName: string;
+  isPro?: boolean;
   supabase: SupabaseClient;
   onSaved: (displayName: string) => void;
   onClose: () => void;
@@ -18,6 +19,7 @@ type AccountModalProps = {
 export function AccountModal({
   user,
   userName,
+  isPro = false,
   supabase,
   onSaved,
   onClose,
@@ -87,7 +89,9 @@ export function AccountModal({
           <div className="account-identity-info">
             <div className="account-identity-name-row">
               <strong className="account-identity-name">{displayName || "Pengguna BiarFokus"}</strong>
-              <span className="account-plan-badge">✨ Paket Free</span>
+              <span className={`account-plan-badge ${isPro ? "is-pro" : ""}`}>
+                {isPro ? "💎 Paket Pro ⭐" : "✨ Paket Free"}
+              </span>
             </div>
             <p className="account-identity-email">
               <span>📧</span> {user?.email || "Tidak ada email"}
@@ -124,7 +128,7 @@ export function AccountModal({
                 value={birthDate}
                 onChange={(event) => setBirthDate(event.target.value)}
                 disabled={saving}
-                className="account-display-input"
+                className="account-display-input account-date-input"
               />
             </div>
             <span className="account-input-hint">

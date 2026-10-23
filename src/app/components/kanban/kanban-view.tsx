@@ -45,6 +45,7 @@ export function KanbanView({
   onSendToFrog,
   onRequireLogin,
 }: KanbanViewProps) {
+  const { isPro } = useAppContext();
   const {
     boards,
     activeBoard,
@@ -755,22 +756,30 @@ export function KanbanView({
             {/* Profile Avatar Dropdown Menu (Consistent across Kanban, Calendar, and Notes) */}
             <div className="cal-topbar-profile-wrap" ref={profileMenuRef}>
               {user ? (
-                <button
-                  type="button"
-                  className="cal-topbar-avatar-btn"
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  title={`Menu Akun: ${userName || "Pengguna"}`}
-                  aria-label="Menu akun"
-                >
-                  {userAvatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={userAvatar} alt="" className="cal-topbar-avatar-img" />
-                  ) : (
-                    <span className="cal-topbar-avatar-initial">
-                      {(userName || "U").charAt(0).toUpperCase()}
+                <div className="cal-topbar-profile-btn-row">
+                  {isPro && (
+                    <span className="topbar-pro-pill" title="Akun BiarFokus Pro Aktif">
+                      PRO ⭐
                     </span>
                   )}
-                </button>
+                  <button
+                    type="button"
+                    className="cal-topbar-avatar-btn"
+                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                    title={`Menu Akun: ${userName || "Pengguna"}`}
+                    aria-label="Menu akun"
+                  >
+                    {userAvatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={userAvatar} alt="" className="cal-topbar-avatar-img" />
+                    ) : (
+                      <span className="cal-topbar-avatar-initial">
+                        {(userName || "U").charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"
@@ -820,7 +829,18 @@ export function KanbanView({
                       ⚙️ Pengaturan
                     </button>
                   )}
-                  {onNavigate && (
+                  {isPro ? (
+                    <button
+                      type="button"
+                      className="cal-profile-menu-item"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onNavigate?.("pricing");
+                      }}
+                    >
+                      👑 BiarFokus Pro (Aktif)
+                    </button>
+                  ) : onNavigate && (
                     <button
                       type="button"
                       className="cal-profile-menu-item"

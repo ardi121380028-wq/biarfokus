@@ -6,6 +6,7 @@ import {
   getMonthGrid,
   isSameDay,
 } from "@/features/calendar/calendar-service";
+import { useAppContext } from "@/app/providers/app-provider";
 
 type CalendarSidebarProps = {
   isCollapsed: boolean;
@@ -38,6 +39,7 @@ export function CalendarSidebar({
   dark,
   onToggleDark,
 }: CalendarSidebarProps) {
+  const { isPro } = useAppContext();
   // Mini calendar month navigation
   const [miniMonthAnchor, setMiniMonthAnchor] = useState<Date>(() => new Date(anchorDate));
 
@@ -164,15 +166,17 @@ export function CalendarSidebar({
           </button>
           <button
             type="button"
-            className="kanban-sidebar-nav-item sidebar-upgrade-pro-btn"
+            className={`kanban-sidebar-nav-item ${isPro ? "sidebar-pro-active-btn" : "sidebar-upgrade-pro-btn"}`}
             onClick={() => handleNavigate("pricing")}
-            title="Upgrade Pro (Akses Penuh)"
+            title={isPro ? "Akun BiarFokus Pro Aktif (Akses Tanpa Batas)" : "Upgrade Pro (Akses Penuh)"}
           >
-            <span className="nav-icon">💎</span>
+            <span className="nav-icon">{isPro ? "👑" : "💎"}</span>
             {!isCollapsed && (
               <>
-                <span className="nav-label">Upgrade Pro</span>
-                <span className="pro-sparkle-pill">PRO ✨</span>
+                <span className="nav-label">{isPro ? "BiarFokus Pro" : "Upgrade Pro"}</span>
+                <span className={`pro-sparkle-pill ${isPro ? "active-pro" : ""}`}>
+                  {isPro ? "AKTIF ⭐" : "PRO ✨"}
+                </span>
               </>
             )}
           </button>
