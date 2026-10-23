@@ -157,7 +157,7 @@ export function AccountModal({
           <div className="account-footer-right">
             <button
               type="button"
-              className="secondary-button"
+              className="account-cancel-btn"
               onClick={onClose}
               disabled={saving}
             >
@@ -165,7 +165,7 @@ export function AccountModal({
             </button>
             <button
               type="button"
-              className="apply-button"
+              className="account-save-btn"
               onClick={() => void handleSave()}
               disabled={saving || !displayName.trim()}
             >

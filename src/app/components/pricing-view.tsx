@@ -218,7 +218,7 @@ export function PricingView({
           {isPro ? (
             <button
               type="button"
-              className="primary-button plan-cta-btn"
+              className="plan-cta-btn pro-cta is-active-pro"
               onClick={() =>
                 subscription.stripe_customer_id
                   ? void handleManageBilling()
@@ -227,21 +227,21 @@ export function PricingView({
               disabled={loadingAction !== null}
             >
               {subscription.stripe_customer_id
-                ? "Kelola di Portal Langganan"
-                : "Paket Pro Sudah Aktif ✓"}
+                ? "⚙️ Kelola di Portal Langganan"
+                : "✨ Paket Pro Sudah Aktif ✓"}
             </button>
           ) : (
             <button
               type="button"
-              className="primary-button plan-cta-btn pro-cta"
+              className="plan-cta-btn pro-cta"
               onClick={() => void handleUpgrade()}
               disabled={loadingAction !== null}
             >
               {loadingAction === "checkout"
                 ? "Menyiapkan Pembayaran..."
                 : billingCycle === "yearly"
-                  ? "Upgrade ke Pro (Hemat 42%)"
-                  : "Upgrade ke Pro Sekarang"}
+                  ? "🚀 Upgrade ke Pro (Hemat 42%)"
+                  : "🚀 Upgrade ke Pro Sekarang"}
             </button>
           )}
         </div>
