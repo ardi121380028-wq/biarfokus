@@ -68,6 +68,7 @@ export function KanbanCardDialog({
   useEscapeKey(onClose);
 
   const [title, setTitle] = useState(card.title);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [description, setDescription] = useState(card.description || "");
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [newCommentText, setNewCommentText] = useState("");
@@ -442,20 +443,49 @@ export function KanbanCardDialog({
         <div className="kanban-dialog-header">
           <div className="kanban-dialog-title-area">
             {card.coverEmoji && <span className="kanban-header-emoji">{card.coverEmoji}</span>}
-            <div style={{ flex: 1 }}>
-              <input
-                id="kanban-dialog-title"
-                type="text"
-                className="kanban-dialog-title-input"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleTitleBlur();
-                }}
-                readOnly={readOnly}
-                aria-label="Judul kartu"
-              />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {isEditingTitle && !readOnly ? (
+                <input
+                  id="kanban-dialog-title"
+                  type="text"
+                  className="kanban-dialog-title-input is-editing"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onBlur={() => {
+                    handleTitleBlur();
+                    setIsEditingTitle(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleTitleBlur();
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  autoFocus
+                  aria-label="Judul kartu"
+                />
+              ) : (
+                <div
+                  className="kanban-dialog-title-display-box"
+                  onClick={() => {
+                    if (!readOnly) setIsEditingTitle(true);
+                  }}
+                  role={readOnly ? undefined : "button"}
+                  tabIndex={readOnly ? undefined : 0}
+                  onKeyDown={(e) => {
+                    if (!readOnly && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      setIsEditingTitle(true);
+                    }
+                  }}
+                  title={readOnly ? undefined : "Ketuk untuk mengubah judul kartu"}
+                >
+                  <h2 className="kanban-dialog-title-display">
+                    {title.trim() || "Kartu Tanpa Judul"}
+                  </h2>
+                  {!readOnly && <span className="kanban-dialog-title-edit-hint" aria-hidden="true">✏️</span>}
+                </div>
+              )}
               <p className="kanban-dialog-crumb">
                 dalam kolom <strong>{listTitle}</strong>
               </p>

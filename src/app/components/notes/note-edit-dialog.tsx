@@ -45,6 +45,8 @@ export function NoteEditDialog({
 
   const cardRef = useRef<HTMLDivElement>(null);
 
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+
   const activeItems = (draft.items || []).filter((i) => !i.done);
   const doneItems = (draft.items || []).filter((i) => i.done);
 
@@ -59,6 +61,7 @@ export function NoteEditDialog({
       labels: note.labels ? [...note.labels] : [],
       pinned: Boolean(note.pinned),
     });
+    setIsEditingTitle(false);
   }, [note]);
 
   function handleSaveAndClose() {
@@ -179,16 +182,46 @@ export function NoteEditDialog({
           </div>
         </div>
 
-        {/* Title Row */}
+        {/* Title Row: Clean Display by default, tap/click to edit without keyboard jumps */}
         <div className="keep-create-title-row">
-          <input
-            type="text"
-            placeholder="Judul catatan..."
-            value={draft.title}
-            onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-            className="keep-create-input keep-title-input"
-            autoFocus
-          />
+          {isEditingTitle ? (
+            <input
+              type="text"
+              placeholder="Judul catatan..."
+              value={draft.title}
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+              onBlur={() => setIsEditingTitle(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setIsEditingTitle(false);
+              }}
+              className="keep-create-input keep-title-input is-editing"
+              autoFocus
+            />
+          ) : (
+            <div
+              className="keep-title-display-box"
+              onClick={() => setIsEditingTitle(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsEditingTitle(true);
+                }
+              }}
+              title="Ketuk untuk mengubah judul catatan"
+              aria-label="Judul catatan. Ketuk untuk mengubah judul."
+            >
+              <h2 className="keep-title-display">
+                {draft.title.trim() ? (
+                  draft.title
+                ) : (
+                  <span className="keep-title-placeholder">Judul catatan (ketuk untuk edit)...</span>
+                )}
+              </h2>
+              <span className="keep-title-edit-hint" aria-hidden="true">✏️</span>
+            </div>
+          )}
           <button
             type="button"
             className={`keep-pin-btn keep-desktop-pin ${draft.pinned ? "active" : ""}`}

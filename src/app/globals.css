@@ -7813,6 +7813,127 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow: none !important;
 }
 
+/* Inherit Note Background in Note Detail & Composer (No Jarring Opaque White Box) */
+.keep-edit-modal-card .rich-note-editor-container,
+.keep-create-box .rich-note-editor-container {
+  background: transparent !important;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent) !important;
+}
+
+.keep-edit-modal-card .rich-note-editor-content,
+.keep-create-box .rich-note-editor-content {
+  background: transparent !important;
+}
+
+.keep-edit-modal-card .note-toolbar-container,
+.keep-create-box .note-toolbar-container {
+  background: color-mix(in srgb, var(--ink) 5%, transparent) !important;
+  border-color: color-mix(in srgb, var(--ink) 10%, transparent) !important;
+}
+
+.keep-edit-modal-card .note-toolbar-btn,
+.keep-create-box .note-toolbar-btn {
+  background: color-mix(in srgb, var(--ink) 6%, transparent) !important;
+  border-color: color-mix(in srgb, var(--ink) 12%, transparent) !important;
+  color: var(--ink) !important;
+}
+
+.keep-edit-modal-card .note-toolbar-btn:hover:not(:disabled),
+.keep-create-box .note-toolbar-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 12%, transparent) !important;
+}
+
+.keep-edit-modal-card .note-toolbar-dropdown-menu,
+.keep-create-box .note-toolbar-dropdown-menu {
+  background: var(--paper) !important;
+}
+
+/* Note Edit Dialog - Title Display & Click-to-Edit */
+.keep-title-display-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 6px;
+  margin: -4px -6px 6px -6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  user-select: text;
+}
+
+.keep-title-display-box:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.keep-title-display {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+  flex: 1;
+}
+
+.keep-title-placeholder {
+  color: color-mix(in srgb, var(--ink) 45%, transparent);
+  font-weight: 500;
+  font-style: italic;
+}
+
+.keep-title-edit-hint {
+  font-size: 13px;
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.keep-title-display-box:hover .keep-title-edit-hint {
+  opacity: 0.8;
+}
+
+/* Kanban Card Dialog - Title Display & Click-to-Edit */
+.kanban-dialog-title-display-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.kanban-dialog-title-display-box:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.kanban-dialog-title-display {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+.kanban-dialog-title-edit-hint {
+  font-size: 13px;
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+  color: var(--muted);
+}
+
+.kanban-dialog-title-display-box:hover .kanban-dialog-title-edit-hint {
+  opacity: 0.8;
+}
+
 /* Kanban Mobile Move Card Action & Handle */
 .kanban-card-mobile-actions {
   display: flex;
@@ -8434,11 +8555,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
   }
 
-  .keep-title-input {
+  .keep-title-input,
+  .keep-title-display {
     font-size: 22px !important;
-    font-weight: 600 !important;
-    padding: 4px 0 !important;
-    margin-bottom: 6px !important;
+    font-weight: 700 !important;
+    padding: 2px 0 !important;
+    margin-bottom: 4px !important;
+    line-height: 1.3 !important;
   }
 
   .keep-text-editor-wrap {
