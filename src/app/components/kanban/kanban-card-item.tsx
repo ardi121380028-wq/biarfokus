@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type DragEvent } from "react";
+import { createPortal } from "react-dom";
 import type { KanbanCard } from "@/types/domain";
-import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
+import { useEscapeKey } from "@/lib/hooks/use-dismiss";
 
 type KanbanCardItemProps = {
   card: KanbanCard;
@@ -30,17 +31,17 @@ export function KanbanCardItem({
   allLists,
 }: KanbanCardItemProps) {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const [touchDragging, setTouchDragging] = useState(false);
   const [touchOffset, setTouchOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const touchMovedSignificantly = useRef(false);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
-  const moveMenuRef = useRef<HTMLDivElement>(null);
 
-  useOutsideClick(moveMenuRef, () => setShowMoveMenu(false), showMoveMenu);
   useEscapeKey(() => setShowMoveMenu(false), showMoveMenu);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== "undefined") {
       setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
     }
@@ -321,10 +322,10 @@ export function KanbanCardItem({
             </button>
           )}
 
-          {/* Mobile Move Actions (Quick column dropdown & Touch drag grip) */}
+          {/* Mobile Move Actions (Quick column dropdown & Touch drag grip) - Hidden on Desktop */}
           {!readOnly && allLists && allLists.length > 1 && (
-            <div className="kanban-card-mobile-actions" onClick={(e) => e.stopPropagation()}>
-              <div ref={moveMenuRef} style={{ position: "relative" }}>
+            <div className="kanban-card-mobile-actions lg:hidden" onClick={(e) => e.stopPropagation()}>
+              <div>
                 <button
                   type="button"
                   className={`kanban-card-move-trigger ${showMoveMenu ? "active" : ""}`}
@@ -336,29 +337,6 @@ export function KanbanCardItem({
                 >
                   ⇄ Pindah
                 </button>
-                {showMoveMenu && (
-                  <div className="kanban-card-move-popover">
-                    <span style={{ fontSize: "10px", fontWeight: "700", color: "var(--muted)", padding: "4px 8px", textTransform: "uppercase" }}>
-                      Pindahkan ke:
-                    </span>
-                    {allLists.map((col) => (
-                      <button
-                        key={col.id}
-                        type="button"
-                        className={`kanban-card-move-item ${col.id === listId ? "is-current" : ""}`}
-                        onClick={() => {
-                          setShowMoveMenu(false);
-                          if (col.id !== listId && onDirectMoveCard) {
-                            onDirectMoveCard(listId, col.id, index, 9999);
-                          }
-                        }}
-                      >
-                        <span>{col.title}</span>
-                        {col.id === listId && <span>✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Touch Drag Grip */}
@@ -378,6 +356,91 @@ export function KanbanCardItem({
           )}
         </div>
       </div>
+
+      {/* Mobile Move Action Modal / Bottom Sheet (Portaled to document.body so it NEVER gets clipped) */}
+      {showMoveMenu && mounted && allLists && allLists.length > 1 && createPortal(
+        <div
+          className="kanban-mobile-move-backdrop"
+          role="presentation"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMoveMenu(false);
+          }}
+        >
+          <div
+            className="kanban-mobile-move-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`move-title-${card.id}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="kanban-mobile-move-grabber" />
+
+            <div className="kanban-mobile-move-header">
+              <div className="kanban-mobile-move-header-text">
+                <h3 id={`move-title-${card.id}`} className="kanban-mobile-move-title">
+                  Pindahkan Kartu
+                </h3>
+                <p className="kanban-mobile-move-subtitle" title={card.title}>
+                  {card.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="kanban-mobile-move-close"
+                onClick={() => setShowMoveMenu(false)}
+                aria-label="Tutup menu pindah kartu"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="kanban-mobile-move-list">
+              <span className="kanban-mobile-move-label">PILIH KOLOM TUJUAN</span>
+              {allLists.map((col) => {
+                const isCurrent = col.id === listId;
+                return (
+                  <button
+                    key={col.id}
+                    type="button"
+                    className={`kanban-mobile-move-option ${isCurrent ? "is-current" : ""}`}
+                    disabled={isCurrent}
+                    onClick={() => {
+                      setShowMoveMenu(false);
+                      if (!isCurrent && onDirectMoveCard) {
+                        onDirectMoveCard(listId, col.id, index, 9999);
+                      }
+                    }}
+                  >
+                    <div className="kanban-mobile-move-option-info">
+                      <span className="kanban-mobile-move-option-icon">
+                        {isCurrent ? "📍" : "📋"}
+                      </span>
+                      <span className="kanban-mobile-move-option-title">{col.title}</span>
+                    </div>
+                    {isCurrent ? (
+                      <span className="kanban-mobile-move-badge-current">Kolom Saat Ini</span>
+                    ) : (
+                      <span className="kanban-mobile-move-arrow">→</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="kanban-mobile-move-footer">
+              <button
+                type="button"
+                className="kanban-mobile-move-cancel-btn"
+                onClick={() => setShowMoveMenu(false)}
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

@@ -40,7 +40,11 @@ This file serves as a single-source handoff for any developer or AI assistant co
 │       ├── 20261018223000_add_notes_and_calendar_events.sql   # keep_notes, keep_labels, calendar_events + RLS
 │       ├── 20261018233000_add_linked_item_text_and_site_visits.sql # Sub-task linking & site_visits analytics table
 │       ├── 20261019090000_add_linked_note_to_tasks.sql        # Eat Your Frog linked note & checklist item columns
-│       └── 20261019100000_add_kanban_boards.sql               # Project Canban boards table + RLS
+│       ├── 20261019100000_add_kanban_boards.sql               # Project Canban boards table + RLS
+│       ├── 20261019143000_add_kanban_members_and_invites.sql  # Multi-user collaboration, invites, and roles
+│       ├── 20261019230000_add_calendar_recurrence.sql         # Calendar recurring events
+│       ├── 20261019233000_add_calendar_kanban_link.sql        # Calendar to Kanban linking
+│       └── 20261023133000_fix_kanban_rls_and_sync.sql         # Non-recursive RLS & seamless cross-device sync
 └── src/
     ├── proxy.ts                # Next.js 16 request proxy refreshing Supabase auth cookies
     ├── types/

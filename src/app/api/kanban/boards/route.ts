@@ -156,44 +156,38 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    // Try insert first
+    // 1. Direct upsert (atomic & standard)
+    const { error: upsertErr } = await supabase.from("kanban_boards").upsert(payload, { onConflict: "id" });
+    if (!upsertErr) {
+      return apiJson({ ok: true, id: board.id }, { correlationId });
+    }
+
+    // 2. Fallback: update if already exists
+    const { data: updateData, error: updateErr } = await supabase
+      .from("kanban_boards")
+      .update({
+        title: payload.title,
+        description: payload.description,
+        background: payload.background,
+        lists: payload.lists,
+        starred: payload.starred,
+        updated_at: payload.updated_at,
+      })
+      .eq("id", board.id)
+      .eq("user_id", userId)
+      .select("id");
+
+    if (!updateErr && updateData && updateData.length > 0) {
+      return apiJson({ ok: true, id: board.id }, { correlationId });
+    }
+
+    // 3. Fallback: insert if not exists
     const { error: insertErr } = await supabase.from("kanban_boards").insert(payload);
     if (!insertErr) {
       return apiJson({ ok: true, id: board.id }, { correlationId });
     }
 
-    // If duplicate, update
-    if (
-      insertErr.code === "23505" ||
-      insertErr.message?.includes("duplicate") ||
-      insertErr.message?.includes("unique") ||
-      insertErr.message?.includes("already exists")
-    ) {
-      const { error: updateErr } = await supabase
-        .from("kanban_boards")
-        .update({
-          title: payload.title,
-          description: payload.description,
-          background: payload.background,
-          lists: payload.lists,
-          starred: payload.starred,
-          updated_at: payload.updated_at,
-        })
-        .eq("id", board.id);
-
-      if (updateErr) {
-        return apiJson({ error: updateErr.message }, { status: 500, correlationId });
-      }
-      return apiJson({ ok: true, id: board.id }, { correlationId });
-    }
-
-    // Fallback upsert
-    const { error: upsertErr } = await supabase.from("kanban_boards").upsert(payload, { onConflict: "id" });
-    if (upsertErr) {
-      return apiJson({ error: upsertErr.message }, { status: 500, correlationId });
-    }
-
-    return apiJson({ ok: true, id: board.id }, { correlationId });
+    return apiJson({ error: upsertErr.message || insertErr.message }, { status: 500, correlationId });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     return apiJson({ error: message }, { status: 500, correlationId });
@@ -227,6 +221,13 @@ export async function DELETE(request: Request) {
       .delete()
       .eq("id", boardId)
       .eq("user_id", userId);
+
+    try {
+      await supabase
+        .from("kanban_board_members")
+        .delete()
+        .eq("board_id", boardId);
+    } catch {}
 
     if (delErr) {
       return apiJson({ error: delErr.message }, { status: 500, correlationId });

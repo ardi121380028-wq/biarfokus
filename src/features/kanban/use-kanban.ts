@@ -179,7 +179,7 @@ export function useKanban(userId?: string | null) {
         boardMap.set(cb.id, { ...cb, role });
       }
 
-      // 2. Add all genuine local boards (ensuring boards NEVER vanish on refresh)
+      // 2. Add genuine local drafts (ensuring only unsynced new drafts are uploaded)
       const missingInCloud: KanbanBoard[] = [];
       for (const lb of localBoards) {
         if (!lb.id) continue;
@@ -189,7 +189,15 @@ export function useKanban(userId?: string | null) {
         // If it's already in cloud, keep the merged version
         if (boardMap.has(lb.id)) continue;
 
-        // Board exists locally: ALWAYS preserve it and sync to cloud
+        // If board was previously synced (!lb._isLocalDraft) but is missing from cloudBoards,
+        // it means the board was deleted on another device or in the cloud.
+        // Mark it deleted locally and prune it so mobile never resurrects it!
+        if (!lb._isLocalDraft) {
+          markBoardDeleted(lb.id, userId);
+          continue;
+        }
+
+        // Board is a genuine new local draft created offline: preserve it and sync to cloud
         const preservedBoard: KanbanBoard = {
           ...lb,
           userId: userId || lb.userId,
@@ -263,8 +271,16 @@ export function useKanban(userId?: string | null) {
           schema: "public",
           table: "kanban_boards",
         },
-        () => {
+        (payload: { eventType?: string; old?: Record<string, unknown> }) => {
           if (!isCancelled) {
+            if (payload.eventType === "DELETE") {
+              const oldId = (payload.old as { id?: string })?.id;
+              if (oldId) {
+                markBoardDeleted(oldId, userId);
+                updateBoards((current) => current.filter((b) => b.id !== oldId));
+                setActiveBoardIdRaw((prev) => (prev === oldId ? "" : prev));
+              }
+            }
             void performCloudSync();
           }
         },
@@ -307,6 +323,16 @@ export function useKanban(userId?: string | null) {
     }
     return resolved;
   }, [boards, activeBoardId, userId]);
+
+  // Auto-select first valid board when boards load from cloud or change
+  useEffect(() => {
+    if (boards.length > 0) {
+      const exists = boards.some((b) => b.id === activeBoardId);
+      if (!exists && boards[0]?.id) {
+        selectBoard(boards[0].id);
+      }
+    }
+  }, [boards, activeBoardId, selectBoard]);
 
   const syncBoardToCloud = useCallback(
     async (board: KanbanBoard) => {
