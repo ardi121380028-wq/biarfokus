@@ -18,6 +18,7 @@ import { NotesModal } from "@/app/components/notes-modal";
 import { isAdminRole } from "@/features/admin/admin-service";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { trackSiteVisit } from "@/features/analytics/visitor-tracker";
+import { ProBadge } from "@/app/components/ui/pro-badge";
 
 const NAV_LINKS = [
   { href: "/", label: "Timer" },
@@ -247,11 +248,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             {user ? (
               <div className="profile-area">
-                {isPro && (
-                  <span className="topbar-pro-pill" title="Akun BiarFokus Pro Aktif">
-                    PRO ⭐
-                  </span>
-                )}
+                {isPro && <ProBadge size="sm" />}
                 <button
                   className="profile-button"
                   onClick={() => setProfileMenuOpen((open) => !open)}

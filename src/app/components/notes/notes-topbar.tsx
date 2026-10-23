@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAppContext } from "@/app/providers/app-provider";
+import { ProBadge } from "@/app/components/ui/pro-badge";
 
 type NotesTopbarProps = {
   onToggleSidebar: () => void;
@@ -154,11 +155,7 @@ export function NotesTopbar({
         <div className="cal-topbar-profile-wrap" ref={profileMenuRef}>
           {userName ? (
             <div className="cal-topbar-profile-btn-row">
-              {isPro && (
-                <span className="topbar-pro-pill" title="Akun BiarFokus Pro Aktif">
-                  PRO ⭐
-                </span>
-              )}
+              {isPro && <ProBadge size="sm" />}
               <button
                 type="button"
                 className="cal-topbar-avatar-btn"

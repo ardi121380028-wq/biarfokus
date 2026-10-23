@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { getSafeAvatarUrl, updateDisplayName } from "@/features/profile/profile-service";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { ProBadge } from "@/app/components/ui/pro-badge";
 
 type AccountModalProps = {
   user: User | null;
@@ -89,9 +90,11 @@ export function AccountModal({
           <div className="account-identity-info">
             <div className="account-identity-name-row">
               <strong className="account-identity-name">{displayName || "Pengguna BiarFokus"}</strong>
-              <span className={`account-plan-badge ${isPro ? "is-pro" : ""}`}>
-                {isPro ? "💎 Paket Pro ⭐" : "✨ Paket Free"}
-              </span>
+              {isPro ? (
+                <ProBadge size="md" />
+              ) : (
+                <span className="free-plan-badge">Free</span>
+              )}
             </div>
             <p className="account-identity-email">
               <span>📧</span> {user?.email || "Tidak ada email"}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAppContext } from "@/app/providers/app-provider";
+import { ProBadge } from "@/app/components/ui/pro-badge";
 
 type NotesSidebarProps = {
   isCollapsed: boolean;
@@ -181,9 +182,11 @@ export function NotesSidebar({
             {!isCollapsed && (
               <>
                 <span className="nav-label">{isPro ? "BiarFokus Pro" : "Upgrade Pro"}</span>
-                <span className={`pro-sparkle-pill ${isPro ? "active-pro" : ""}`}>
-                  {isPro ? "AKTIF ⭐" : "PRO ✨"}
-                </span>
+                {isPro ? (
+                  <ProBadge size="sm" />
+                ) : (
+                  <span className="pro-sparkle-pill">PRO ✨</span>
+                )}
               </>
             )}
           </button>

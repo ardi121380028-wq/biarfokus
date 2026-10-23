@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { KanbanBoard } from "@/types/domain";
 import { useAppContext } from "@/app/providers/app-provider";
+import { ProBadge } from "@/app/components/ui/pro-badge";
 
 type KanbanSidebarProps = {
   isCollapsed: boolean;
@@ -156,9 +157,11 @@ export function KanbanSidebar({
             {!isCollapsed && (
               <>
                 <span className="nav-label">{isPro ? "BiarFokus Pro" : "Upgrade Pro"}</span>
-                <span className={`pro-sparkle-pill ${isPro ? "active-pro" : ""}`}>
-                  {isPro ? "AKTIF ⭐" : "PRO ✨"}
-                </span>
+                {isPro ? (
+                  <ProBadge size="sm" />
+                ) : (
+                  <span className="pro-sparkle-pill">PRO ✨</span>
+                )}
               </>
             )}
           </button>

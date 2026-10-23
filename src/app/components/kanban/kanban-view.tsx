@@ -16,6 +16,7 @@ import { KanbanBoardModal } from "./kanban-board-modal";
 import { KanbanShareModal } from "./kanban-share-modal";
 import { KanbanJoinModal } from "./kanban-join-modal";
 import { useAppContext } from "@/app/providers/app-provider";
+import { ProBadge } from "@/app/components/ui/pro-badge";
 
 type KanbanViewProps = {
   userId?: string | null;
@@ -757,11 +758,7 @@ export function KanbanView({
             <div className="cal-topbar-profile-wrap" ref={profileMenuRef}>
               {user ? (
                 <div className="cal-topbar-profile-btn-row">
-                  {isPro && (
-                    <span className="topbar-pro-pill" title="Akun BiarFokus Pro Aktif">
-                      PRO ⭐
-                    </span>
-                  )}
+                  {isPro && <ProBadge size="sm" />}
                   <button
                     type="button"
                     className="cal-topbar-avatar-btn"
