@@ -73,9 +73,10 @@ export function KanbanBoardModal({
           </div>
           <button
             type="button"
-            className="kanban-dialog-close-btn"
+            className="kanban-board-modal-close-btn"
             onClick={onClose}
-            aria-label="Tutup"
+            aria-label="Tutup Workspace & Boards"
+            title="Tutup (Esc)"
           >
             ✕
           </button>
@@ -209,6 +210,18 @@ export function KanbanBoardModal({
             </div>
           </div>
           )}
+
+          {/* Bottom Footer Dismiss for Mobile/Desktop */}
+          <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              className="kanban-secondary-btn"
+              onClick={onClose}
+              style={{ padding: "8px 20px", fontSize: 13, borderRadius: 12 }}
+            >
+              Tutup
+            </button>
+          </div>
           </>
         )}
 

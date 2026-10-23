@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { CalendarEvent } from "@/types/domain";
 import {
+  DEFAULT_EVENT_COLOR,
   getCurrentTimeTop,
   getEventsForDate,
   HOUR_HEIGHT_PX,
@@ -356,7 +357,7 @@ export function CalendarGrid({
                           height: `${displayHeight}px`,
                           left: `calc(${leftPercent}% + 2px)`,
                           width: `calc(${widthPercent}% - 4px)`,
-                          backgroundColor: event.color,
+                          backgroundColor: event.color || DEFAULT_EVENT_COLOR,
                         }}
                         onPointerDown={(e) => handleStartDrag(e, event, "move")}
                       >
@@ -456,7 +457,7 @@ export function CalendarGrid({
                         }px`,
                         left: "4px",
                         right: "4px",
-                        backgroundColor: dragState.event.color,
+                        backgroundColor: dragState.event.color || DEFAULT_EVENT_COLOR,
                       }}
                     >
                       <div className="cal-event-accent-strip" />

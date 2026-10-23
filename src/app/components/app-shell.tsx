@@ -40,6 +40,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashFading, setSplashFading] = useState(false);
+
+  // 3-Second branded startup splash on desktop and mobile PWA
+  useEffect(() => {
+    const fadeTimer = setTimeout(() => {
+      setSplashFading(true);
+    }, 2400);
+
+    const doneTimer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2800);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(doneTimer);
+    };
+  }, []);
 
   const {
     user,
@@ -342,48 +360,114 @@ export function AppShell({ children }: { children: ReactNode }) {
         </footer>
       )}
 
-      {/* Mobile Sticky Footer Bottom Navigation Bar */}
-      {!isWorkspaceView && (
-        <nav className="mobile-bottom-nav" aria-label="Navigasi Bawah Mobile">
-          <Link
-            href="/"
-            className={`mobile-bottom-nav-item ${pathname === "/" ? "active" : ""}`}
-          >
-            <span className="nav-icon">⏱️</span>
-            <span>Timer</span>
-          </Link>
-          <Link
-            href="/catatan"
-            className={`mobile-bottom-nav-item ${pathname.startsWith("/catatan") ? "active" : ""}`}
-          >
-            <span className="nav-icon">📝</span>
-            <span>Catatan</span>
-          </Link>
-          <Link
-            href="/kalender"
-            className={`mobile-bottom-nav-item ${pathname.startsWith("/kalender") ? "active" : ""}`}
-          >
-            <span className="nav-icon">📅</span>
-            <span>Kalender</span>
-          </Link>
-          <Link
-            href="/kanban"
-            className={`mobile-bottom-nav-item ${pathname.startsWith("/kanban") ? "active" : ""}`}
-          >
-            <span className="nav-icon">📊</span>
-            <span>Kanban</span>
-          </Link>
-          <button
-            type="button"
-            className="mobile-bottom-nav-item"
-            onClick={() => setShowSettings(true)}
-            aria-label="Pengaturan"
-          >
-            <span className="nav-icon">⚙️</span>
-            <span>Setting</span>
-          </button>
-        </nav>
+      {/* 3-Second Startup Branded Loading Splash for Desktop & PWA Mobile */}
+      {showSplash && (
+        <div
+          className={`app-startup-splash ${splashFading ? "is-fading" : ""}`}
+          aria-label="Memuat aplikasi BiarFokus..."
+        >
+          <div className="app-startup-splash-content">
+            <div className="app-startup-logo-wrap">
+              <img
+                src={dark ? "/biarfokus-logo-dark.png" : "/biarfokus-logo-light.png"}
+                alt="BiarFokus"
+                className="app-startup-logo-img"
+              />
+            </div>
+            <div className="app-startup-beam-track">
+              <div className="app-startup-beam-fill" />
+            </div>
+            <span className="app-startup-tagline">Menyiapkan workspace fokus kamu...</span>
+          </div>
+        </div>
       )}
+
+      {/* Mobile Sticky Footer Bottom Navigation Bar - Universal across ALL pages */}
+      <nav className="mobile-bottom-nav" aria-label="Navigasi Bawah Mobile">
+        <Link
+          href="/"
+          className={`mobile-bottom-nav-item ${pathname === "/" ? "active" : ""}`}
+        >
+          <span className="nav-icon">⏱️</span>
+          <span>Timer</span>
+        </Link>
+        <Link
+          href="/catatan"
+          className={`mobile-bottom-nav-item ${pathname.startsWith("/catatan") ? "active" : ""}`}
+        >
+          <span className="nav-icon">📝</span>
+          <span>Catatan</span>
+        </Link>
+        <Link
+          href="/kalender"
+          className={`mobile-bottom-nav-item ${pathname.startsWith("/kalender") ? "active" : ""}`}
+        >
+          <span className="nav-icon">📅</span>
+          <span>Kalender</span>
+        </Link>
+        <Link
+          href="/kanban"
+          className={`mobile-bottom-nav-item ${pathname.startsWith("/kanban") ? "active" : ""}`}
+        >
+          <span className="nav-icon">📊</span>
+          <span>Kanban</span>
+        </Link>
+        <button
+          type="button"
+          className="mobile-bottom-nav-item"
+          onClick={() => setShowSettings(true)}
+          aria-label="Pengaturan"
+        >
+          <span className="nav-icon">⚙️</span>
+          <span>Setting</span>
+        </button>
+      </nav>
+
+      {/* Desktop Interactive Floating Bottom Dock */}
+      <nav className="desktop-floating-dock" aria-label="Navigasi Cepat Desktop">
+        <Link
+          href="/"
+          className={`desktop-dock-item ${pathname === "/" ? "active" : ""}`}
+          title="Timer Fokus (Pomodoro)"
+        >
+          <span className="dock-icon">⏱️</span>
+          <span className="dock-label">Timer</span>
+        </Link>
+        <Link
+          href="/catatan"
+          className={`desktop-dock-item ${pathname.startsWith("/catatan") ? "active" : ""}`}
+          title="Catatan & Todo (Keep)"
+        >
+          <span className="dock-icon">📝</span>
+          <span className="dock-label">Catatan</span>
+        </Link>
+        <Link
+          href="/kalender"
+          className={`desktop-dock-item ${pathname.startsWith("/kalender") ? "active" : ""}`}
+          title="Kalender & Time-blocking"
+        >
+          <span className="dock-icon">📅</span>
+          <span className="dock-label">Kalender</span>
+        </Link>
+        <Link
+          href="/kanban"
+          className={`desktop-dock-item ${pathname.startsWith("/kanban") ? "active" : ""}`}
+          title="Project Kanban Board"
+        >
+          <span className="dock-icon">📊</span>
+          <span className="dock-label">Kanban</span>
+        </Link>
+        <div className="desktop-dock-divider" />
+        <button
+          type="button"
+          className="desktop-dock-item"
+          onClick={() => setShowSettings(true)}
+          title="Pengaturan Aplikasi"
+        >
+          <span className="dock-icon">⚙️</span>
+          <span className="dock-label">Setting</span>
+        </button>
+      </nav>
 
       {/* Quick Notes Floating Action Button (Bottom-Right) */}
       {!isWorkspaceView && (

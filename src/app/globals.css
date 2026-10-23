@@ -587,17 +587,57 @@ button:active:not(:disabled) {
 /* Main Calendar Scroll Grid */
 .cal-grid-wrapper { flex:1; border:1px solid color-mix(in srgb,var(--ink) 12%,transparent); border-radius:20px; background:var(--paper); overflow:hidden; display:flex; flex-direction:column; min-height:560px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
 .cal-main-scroll { overflow-y:auto; overflow-x:auto; flex:1; height:600px; position:relative; }
-.cal-date-columns-header { display:flex; border-bottom:1px solid color-mix(in srgb,var(--ink) 12%,transparent); background:color-mix(in srgb,var(--ink) 3%,var(--paper)); position:sticky; top:0; z-index:10; }
-.cal-time-axis-spacer { width:70px; flex:none; border-right:1px solid color-mix(in srgb,var(--ink) 10%,transparent); }
-.cal-columns-row { flex:1; display:flex; min-width:0; }
-.cal-day-header { flex:1; text-align:center; padding:10px 6px; border-right:1px solid color-mix(in srgb,var(--ink) 10%,transparent); min-width:140px; }
+.cal-date-columns-header {
+  display: flex;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  background: var(--paper) !important;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  width: max-content;
+  min-width: 100%;
+}
+.cal-time-axis-spacer {
+  width: 70px;
+  flex: none;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: var(--paper) !important;
+  position: sticky;
+  left: 0;
+  z-index: 35;
+}
+.cal-columns-row {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  background: var(--paper) !important;
+}
+.cal-day-header {
+  flex: 1;
+  text-align: center;
+  padding: 10px 6px;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  min-width: 140px;
+  background: var(--paper) !important;
+  position: relative;
+  z-index: 30;
+}
 .cal-day-name { display:block; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:bold; }
 .cal-day-number { display:inline-grid; place-items:center; font-size:16px; color:var(--ink); font-weight:bold; margin-top:2px; width:30px; height:30px; border-radius:50%; }
 .cal-day-header.is-today .cal-day-number { background:var(--blue); color:#fff; }
 
 /* Grid Body */
 .cal-grid-body { display:flex; position:relative; min-width:0; }
-.cal-time-axis { width:70px; flex:none; border-right:1px solid color-mix(in srgb,var(--ink) 10%,transparent); user-select:none; }
+.cal-time-axis {
+  width: 70px;
+  flex: none;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: var(--paper) !important;
+  position: sticky;
+  left: 0;
+  z-index: 25;
+  user-select: none;
+}
 .cal-time-label { font-size:11px; color:var(--muted); text-align:right; padding-right:10px; transform:translateY(-8px); box-sizing:border-box; font-variant-numeric:tabular-nums; }
 .cal-columns-body { flex:1; display:flex; position:relative; min-width:0; }
 .cal-column { flex:1; position:relative; border-right:1px solid color-mix(in srgb,var(--ink) 8%,transparent); min-width:140px; }
@@ -1065,8 +1105,17 @@ button:active:not(:disabled) {
   z-index: 50;
   transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   user-select: none;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.kanban-workspace-sidebar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .kanban-workspace-sidebar.is-collapsed {
@@ -9090,5 +9139,211 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .app.has-dark-page-bg .footer small {
   color: rgba(255, 255, 255, 0.8) !important;
 }
+
+/* ========================================================================== */
+/* 3-Second Startup Branded Loading Splash Screen (Desktop & Mobile PWA)       */
+/* ========================================================================== */
+.app-startup-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper, #ffffff);
+  color: var(--ink, #111111);
+  opacity: 1;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s ease;
+  pointer-events: auto;
+}
+
+.app-startup-splash.is-fading {
+  opacity: 0;
+  transform: scale(1.02);
+  pointer-events: none;
+}
+
+.app-startup-splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  max-width: 90vw;
+  animation: appSplashContentIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.app-startup-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: appLogoPulse 2s ease-in-out infinite;
+}
+
+.app-startup-logo-img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
+
+.app-startup-beam-track {
+  width: 140px;
+  height: 3.5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink, #111) 10%, transparent);
+  overflow: hidden;
+  position: relative;
+}
+
+.app-startup-beam-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #ec4899, #3b82f6, transparent);
+  animation: appLoadingBeam 1.3s ease-in-out infinite;
+}
+
+.app-startup-tagline {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted, #777777);
+  letter-spacing: -0.2px;
+}
+
+@keyframes appSplashContentIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================================================== */
+/* Desktop Interactive Floating Bottom Dock                                  */
+/* ========================================================================== */
+.desktop-floating-dock {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .desktop-floating-dock {
+    display: flex;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 950;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--paper) 86%, transparent);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .desktop-floating-dock:hover {
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    transform: translateX(-50%) translateY(-2px);
+  }
+
+  .desktop-dock-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 9999px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  .desktop-dock-item:hover {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
+    transform: translateY(-1px) scale(1.03);
+  }
+
+  .desktop-dock-item.active {
+    color: #ffffff !important;
+    background: var(--blue, #3b82f6) !important;
+    box-shadow: 0 3px 12px color-mix(in srgb, var(--blue, #3b82f6) 45%, transparent);
+  }
+
+  .desktop-dock-item .dock-icon {
+    font-size: 16px;
+    line-height: 1;
+    display: inline-block;
+    transition: transform 0.18s ease;
+  }
+
+  .desktop-dock-item:hover .dock-icon {
+    transform: scale(1.15);
+  }
+
+  .desktop-dock-divider {
+    width: 1px;
+    height: 20px;
+    background: color-mix(in srgb, var(--ink) 14%, transparent);
+    margin: 0 2px;
+  }
+}
+
+/* Safe bottom clearance for universal mobile bottom nav */
+@media (max-width: 768px) {
+  .cal-workspace-content {
+    padding-bottom: 66px !important;
+  }
+  .board-container {
+    padding-bottom: 74px !important;
+  }
+  .notes-workspace-content {
+    padding-bottom: 74px !important;
+  }
+  .keep-container {
+    padding-bottom: 74px !important;
+  }
+}
+
+/* Kanban Board Switcher Close Button */
+.kanban-board-modal-close-btn {
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.kanban-board-modal-close-btn:hover {
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  color: var(--ink);
+  transform: scale(1.08);
+}
+
 
 
