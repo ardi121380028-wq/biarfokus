@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useAppContext } from "@/app/providers/app-provider";
 
 type AuthModalProps = {
   mode: "sign-in" | "sign-up";
@@ -40,6 +41,7 @@ function GoogleIcon() {
 }
 
 export function AuthModal({ mode, setMode, onClose }: AuthModalProps) {
+  const { setTermsModalOpen } = useAppContext();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -126,7 +128,31 @@ export function AuthModal({ mode, setMode, onClose }: AuthModalProps) {
       <label className="auth-field">Password<div className="password-field"><input required type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="***********" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Tampilkan password">{showPassword ? "◉" : "◌"}</button></div></label>
       {!isSignUp && <button className="forgot-button" onClick={() => void resetPassword()}>Forgot Password?</button>}
       <button className="auth-submit" onClick={() => void submitAuth()} disabled={loading}>{loading ? "Please wait..." : isSignUp ? "Sign Up" : "Sign In"}</button>
-      <small>By continuing, I agree to the <a href="#terms">Terms of service</a> and <a href="#privacy">Privacy policy</a>.</small>
+      <small>
+        Dengan melanjutkan, kamu menyetujui{" "}
+        <button
+          type="button"
+          className="auth-legal-link"
+          onClick={() => {
+            onClose();
+            setTermsModalOpen(true);
+          }}
+        >
+          Ketentuan Layanan (TOS)
+        </button>{" "}
+        dan{" "}
+        <button
+          type="button"
+          className="auth-legal-link"
+          onClick={() => {
+            onClose();
+            setTermsModalOpen(true);
+          }}
+        >
+          Kebijakan Privasi
+        </button>
+        .
+      </small>
       {error && <p className="auth-status auth-error">{error}</p>}
       {status && <p className="auth-status">{status}</p>}
       <p className="auth-switch">{isSignUp ? "Already Have Account?" : "Do not have an account?"} <button onClick={() => { setMode(isSignUp ? "sign-in" : "sign-up"); setError(null); setStatus(null); }}>{isSignUp ? "Sign In" : "Create Account"}</button></p>

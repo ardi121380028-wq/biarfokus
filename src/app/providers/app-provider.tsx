@@ -208,6 +208,10 @@ export interface AppContextType {
   setAboutModalOpen: (open: boolean) => void;
   pomodoroModalOpen: boolean;
   setPomodoroModalOpen: (open: boolean) => void;
+  termsModalOpen: boolean;
+  setTermsModalOpen: (open: boolean) => void;
+  faqModalOpen: boolean;
+  setFaqModalOpen: (open: boolean) => void;
   notesOpen: boolean;
   setNotesOpen: (open: boolean) => void;
   menuOpen: boolean;
@@ -266,6 +270,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [infoOpen, setInfoOpen] = useState<string | null>(null);
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
   const [pomodoroModalOpen, setPomodoroModalOpen] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [faqModalOpen, setFaqModalOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -1061,6 +1067,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAboutModalOpen,
       pomodoroModalOpen,
       setPomodoroModalOpen,
+      termsModalOpen,
+      setTermsModalOpen,
+      faqModalOpen,
+      setFaqModalOpen,
       notesOpen,
       setNotesOpen,
       menuOpen,
@@ -1083,6 +1093,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       changeMode,
       completedPomodoros,
       completedTasks,
+      faqModalOpen,
+      termsModalOpen,
       dailyGoalPomodoros,
       dark,
       deleteAllTasks,
