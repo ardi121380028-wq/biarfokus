@@ -25,6 +25,19 @@ const NAV_LINKS = [
   { href: "/upgrade", label: "Pro" },
 ] as const;
 
+function isDarkPageBg(color: string, isDarkTheme: boolean): boolean {
+  if (isDarkTheme) return true;
+  if (!color || !color.startsWith("#")) return false;
+  const hex = color.replace("#", "");
+  const num = parseInt(hex, 16);
+  if (isNaN(num)) return false;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum < 0.65;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -108,17 +121,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     return pathname.startsWith(href);
   }
 
+  const isDarkBg = isDarkPageBg(selectedColor, dark);
+
   return (
     <main
-      className={
-        isWorkspaceView
-          ? dark
-            ? "app dark kanban-workspace-mode"
-            : "app kanban-workspace-mode"
-          : dark
-            ? "app dark"
-            : "app"
-      }
+      className={[
+        "app",
+        dark ? "dark" : "",
+        isWorkspaceView ? "kanban-workspace-mode" : "",
+        isDarkBg ? "has-dark-page-bg" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={
         {
           "--accent": selectedColor,
@@ -305,7 +319,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Footer for standard views */}
       {!isWorkspaceView && (
-        <footer className="footer">
+        <footer className={`footer ${isDarkBg ? "footer-contrast-light" : ""}`}>
           <div>
             <strong>BiarFokus</strong>
             <span>Bantu kamu fokus selesain setiap pekerjaan.</span>

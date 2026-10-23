@@ -6,11 +6,13 @@ import {
   convertDraftType,
   createEmptyDraft,
   createId,
+  getNoteBackgroundColor,
   isDraftEmpty,
   NOTE_COLORS,
   type NoteDraft,
 } from "@/features/notes/notes-service";
 import { exportNoteToPdf } from "@/features/notes/note-format";
+import { useAppContext } from "@/app/providers/app-provider";
 import { LabelSelect } from "./label-select";
 import { RichNoteEditor } from "./rich-note-editor";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
@@ -119,13 +121,17 @@ export function NoteComposer({
     }));
   }
 
+  const { dark } = useAppContext();
+  const effectiveBg = getNoteBackgroundColor(draft.color, dark);
+
   return (
     <div
       ref={containerRef}
       className={`keep-create-box ${isExpanded ? "is-expanded" : ""} ${
         isFullyExpanded ? "is-fully-expanded" : ""
       }`}
-      style={{ background: draft.color }}
+      style={{ background: effectiveBg }}
+      data-note-color={draft.color}
     >
       {/* Collapsed Placeholder Row: folds up smoothly with CSS grid */}
       <div

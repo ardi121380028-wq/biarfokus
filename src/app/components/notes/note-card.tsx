@@ -3,7 +3,10 @@
 import { useState } from "react";
 import type { KeepNote } from "@/types/domain";
 import { exportNoteToPdf } from "@/features/notes/note-format";
+import { getNoteBackgroundColor } from "@/features/notes/notes-service";
+import { useAppContext } from "@/app/providers/app-provider";
 import { NoteContentRenderer } from "./note-content-renderer";
+import { DeleteNoteModal } from "./delete-note-modal";
 
 type NoteCardProps = {
   note: KeepNote;
@@ -23,19 +26,25 @@ export function NoteCard({
   onDelete,
 }: NoteCardProps) {
   const [collapsedDone, setCollapsedDone] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { dark } = useAppContext();
 
   const isChecklist = note.type === "checklist" && Array.isArray(note.items);
   const activeItems = isChecklist ? (note.items || []).filter((i) => !i.done) : [];
   const doneItems = isChecklist ? (note.items || []).filter((i) => i.done) : [];
 
+  const effectiveBg = getNoteBackgroundColor(note.color, dark);
+
   return (
-    <div
-      className="keep-note-card"
-      style={{ background: note.color }}
-      onClick={() => onEdit(note)}
-    >
-      <div className="keep-card-top">
-        <h4 className="keep-card-title">{note.title || "(Tanpa judul)"}</h4>
+    <>
+      <div
+        className="keep-note-card"
+        style={{ background: effectiveBg }}
+        data-note-color={note.color}
+        onClick={() => onEdit(note)}
+      >
+        <div className="keep-card-top">
+          <h4 className="keep-card-title">{note.title || "(Tanpa judul)"}</h4>
         <button
           type="button"
           className={note.pinned ? "keep-pin-btn active" : "keep-pin-btn"}
@@ -169,7 +178,7 @@ export function NoteCard({
           <button
             type="button"
             className="keep-icon-action"
-            onClick={() => onDelete(note.id)}
+            onClick={() => setShowDeleteConfirm(true)}
             title="Hapus catatan"
             aria-label="Hapus catatan"
           >
@@ -178,5 +187,16 @@ export function NoteCard({
         </div>
       </div>
     </div>
+
+    <DeleteNoteModal
+      isOpen={showDeleteConfirm}
+      title={note.title}
+      onConfirm={() => {
+        setShowDeleteConfirm(false);
+        onDelete(note.id);
+      }}
+      onCancel={() => setShowDeleteConfirm(false)}
+    />
+  </>
   );
 }

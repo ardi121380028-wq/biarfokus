@@ -25,6 +25,26 @@ export const NOTE_COLORS = [
   { name: "Pink", bg: "#f6e2dd", border: "#e9bfb4" },
 ];
 
+/** Dark-mode Google Keep color mapping */
+export const DARK_NOTE_COLORS_MAP: Record<string, string> = {
+  "#faafa8": "#5c2b29",
+  "#f39f76": "#614a19",
+  "#fff8b8": "#555018",
+  "#e2f6d3": "#345920",
+  "#b4ddd3": "#16504b",
+  "#d4e4ed": "#2d555e",
+  "#d3bfdb": "#42275e",
+  "#f6e2dd": "#5b2245",
+};
+
+export function getNoteBackgroundColor(color?: string, isDark?: boolean): string {
+  if (!color || color === DEFAULT_NOTE_COLOR) return DEFAULT_NOTE_COLOR;
+  if (isDark && DARK_NOTE_COLORS_MAP[color.toLowerCase()]) {
+    return DARK_NOTE_COLORS_MAP[color.toLowerCase()];
+  }
+  return color;
+}
+
 export const EMPTY_NOTES: KeepNote[] = [];
 
 export type NoteDraft = Omit<KeepNote, "id" | "updatedAt">;

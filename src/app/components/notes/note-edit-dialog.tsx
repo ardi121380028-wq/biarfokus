@@ -4,13 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import type { ChecklistItem, KeepNote } from "@/types/domain";
 import {
   createId,
+  getNoteBackgroundColor,
   NOTE_COLORS,
   type NoteDraft,
 } from "@/features/notes/notes-service";
 import { LabelSelect } from "./label-select";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { exportNoteToPdf } from "@/features/notes/note-format";
+import { useAppContext } from "@/app/providers/app-provider";
 import { RichNoteEditor } from "./rich-note-editor";
+import { DeleteNoteModal } from "./delete-note-modal";
 
 type NoteEditDialogProps = {
   note: KeepNote;
@@ -40,12 +43,20 @@ export function NoteEditDialog({
     labels: note.labels ? [...note.labels] : [],
     pinned: Boolean(note.pinned),
   }));
+
+  // Undo & Redo stacks
+  const [history, setHistory] = useState<NoteDraft[]>([]);
+  const [redoStack, setRedoStack] = useState<NoteDraft[]>([]);
+
   const [newItemText, setNewItemText] = useState("");
   const [collapsedDone, setCollapsedDone] = useState(true);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [checklistMenuOpen, setChecklistMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const checklistMenuRef = useRef<HTMLDivElement>(null);
+  const { dark } = useAppContext();
 
   const activeItems = (draft.items || []).filter((i) => !i.done);
   const doneItems = (draft.items || []).filter((i) => i.done);
@@ -61,8 +72,61 @@ export function NoteEditDialog({
       labels: note.labels ? [...note.labels] : [],
       pinned: Boolean(note.pinned),
     });
+    setHistory([]);
+    setRedoStack([]);
     setIsEditingTitle(false);
   }, [note]);
+
+  // Helper to commit changes with undo history
+  function commitDraftChange(updater: (prev: NoteDraft) => NoteDraft) {
+    setDraft((current) => {
+      const next = updater(current);
+      setHistory((prevH) => [...prevH.slice(-49), current]);
+      setRedoStack([]);
+      return next;
+    });
+  }
+
+  function handleUndo() {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setHistory((prevH) => prevH.slice(0, -1));
+    setRedoStack((prevR) => [...prevR, draft]);
+    setDraft(previous);
+  }
+
+  function handleRedo() {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setRedoStack((prevR) => prevR.slice(0, -1));
+    setHistory((prevH) => [...prevH, draft]);
+    setDraft(next);
+  }
+
+  // Keyboard shortcuts: Ctrl+Z / Cmd+Z for undo, Ctrl+Y / Cmd+Shift+Z for redo
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+      if (!modifier) return;
+
+      if (e.key.toLowerCase() === "z") {
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleRedo();
+        } else {
+          e.preventDefault();
+          handleUndo();
+        }
+      } else if (e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        handleRedo();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [history, redoStack, draft]);
 
   function handleSaveAndClose() {
     const cleanTitle = draft.title.trim();
@@ -97,13 +161,14 @@ export function NoteEditDialog({
   }
 
   useOutsideClick(cardRef, handleSaveAndClose);
+  useOutsideClick(checklistMenuRef, () => setChecklistMenuOpen(false));
   useEscapeKey(handleSaveAndClose);
 
   function handleAddItem() {
     const text = newItemText.trim();
     if (!text) return;
     const item: ChecklistItem = { id: createId("item"), text, done: false };
-    setDraft((prev) => ({
+    commitDraftChange((prev) => ({
       ...prev,
       items: [...(prev.items || []), item],
     }));
@@ -111,14 +176,14 @@ export function NoteEditDialog({
   }
 
   function handleToggleItem(id: string) {
-    setDraft((prev) => ({
+    commitDraftChange((prev) => ({
       ...prev,
       items: (prev.items || []).map((i) => (i.id === id ? { ...i, done: !i.done } : i)),
     }));
   }
 
   function handleDeleteItem(id: string) {
-    setDraft((prev) => ({
+    commitDraftChange((prev) => ({
       ...prev,
       items: (prev.items || []).filter((i) => i.id !== id),
     }));
@@ -136,12 +201,15 @@ export function NoteEditDialog({
     });
   }
 
+  const effectiveBg = getNoteBackgroundColor(draft.color, dark);
+
   return (
     <div className="keep-edit-modal-backdrop" role="presentation">
       <div
         ref={cardRef}
         className="keep-edit-modal-card"
-        style={{ background: draft.color }}
+        style={{ background: effectiveBg }}
+        data-note-color={draft.color}
         role="dialog"
         aria-label="Edit Catatan"
       >
@@ -157,6 +225,26 @@ export function NoteEditDialog({
             ←
           </button>
           <div className="keep-edit-mobile-actions">
+            <button
+              type="button"
+              className="keep-edit-icon-btn keep-undo-btn"
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+            >
+              ↶
+            </button>
+            <button
+              type="button"
+              className="keep-edit-icon-btn keep-redo-btn"
+              onClick={handleRedo}
+              disabled={redoStack.length === 0}
+              title="Redo (Ctrl+Y)"
+              aria-label="Redo"
+            >
+              ↷
+            </button>
             <button
               type="button"
               className={draft.pinned ? "keep-pin-btn active" : "keep-pin-btn"}
@@ -178,6 +266,49 @@ export function NoteEditDialog({
               >
                 {note.archived ? "📤" : "📦"}
               </button>
+            )}
+            {draft.type === "checklist" && (
+              <div className="keep-checklist-menu-anchor" ref={checklistMenuRef}>
+                <button
+                  type="button"
+                  className="keep-edit-icon-btn keep-3dots-btn"
+                  onClick={() => setChecklistMenuOpen(!checklistMenuOpen)}
+                  title="Opsi checklist"
+                  aria-label="Opsi checklist"
+                >
+                  ⋮
+                </button>
+                {checklistMenuOpen && (
+                  <div className="keep-checklist-dropdown">
+                    <button
+                      type="button"
+                      className="keep-checklist-dropdown-item"
+                      onClick={() => {
+                        commitDraftChange((prev) => ({
+                          ...prev,
+                          items: (prev.items || []).filter((i) => !i.done),
+                        }));
+                        setChecklistMenuOpen(false);
+                      }}
+                    >
+                      🧹 Hapus task yang sudah selesai
+                    </button>
+                    <button
+                      type="button"
+                      className="keep-checklist-dropdown-item danger"
+                      onClick={() => {
+                        commitDraftChange((prev) => ({
+                          ...prev,
+                          items: [],
+                        }));
+                        setChecklistMenuOpen(false);
+                      }}
+                    >
+                      🗑️ Hapus semua task
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -222,15 +353,82 @@ export function NoteEditDialog({
               <span className="keep-title-edit-hint" aria-hidden="true">✏️</span>
             </div>
           )}
-          <button
-            type="button"
-            className={`keep-pin-btn keep-desktop-pin ${draft.pinned ? "active" : ""}`}
-            onClick={() => setDraft({ ...draft, pinned: !draft.pinned })}
-            title={draft.pinned ? "Lepaskan sematan" : "Sematkan"}
-            aria-label={draft.pinned ? "Lepaskan sematan" : "Sematkan"}
-          >
-            📌
-          </button>
+
+          <div className="keep-desktop-title-actions">
+            <button
+              type="button"
+              className="keep-edit-icon-btn keep-undo-btn"
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+            >
+              ↶
+            </button>
+            <button
+              type="button"
+              className="keep-edit-icon-btn keep-redo-btn"
+              onClick={handleRedo}
+              disabled={redoStack.length === 0}
+              title="Redo (Ctrl+Y)"
+              aria-label="Redo"
+            >
+              ↷
+            </button>
+            <button
+              type="button"
+              className={`keep-pin-btn keep-desktop-pin ${draft.pinned ? "active" : ""}`}
+              onClick={() => setDraft({ ...draft, pinned: !draft.pinned })}
+              title={draft.pinned ? "Lepaskan sematan" : "Sematkan"}
+              aria-label={draft.pinned ? "Lepaskan sematan" : "Sematkan"}
+            >
+              📌
+            </button>
+
+            {draft.type === "checklist" && (
+              <div className="keep-checklist-menu-anchor" ref={checklistMenuRef}>
+                <button
+                  type="button"
+                  className="keep-edit-icon-btn keep-3dots-btn"
+                  onClick={() => setChecklistMenuOpen(!checklistMenuOpen)}
+                  title="Opsi checklist"
+                  aria-label="Opsi checklist"
+                >
+                  ⋮
+                </button>
+                {checklistMenuOpen && (
+                  <div className="keep-checklist-dropdown">
+                    <button
+                      type="button"
+                      className="keep-checklist-dropdown-item"
+                      onClick={() => {
+                        commitDraftChange((prev) => ({
+                          ...prev,
+                          items: (prev.items || []).filter((i) => !i.done),
+                        }));
+                        setChecklistMenuOpen(false);
+                      }}
+                    >
+                      🧹 Hapus task yang sudah selesai
+                    </button>
+                    <button
+                      type="button"
+                      className="keep-checklist-dropdown-item danger"
+                      onClick={() => {
+                        commitDraftChange((prev) => ({
+                          ...prev,
+                          items: [],
+                        }));
+                        setChecklistMenuOpen(false);
+                      }}
+                    >
+                      🗑️ Hapus semua task
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Content Area: Rich Text Editor OR Interactive Checklist */}
@@ -411,10 +609,7 @@ export function NoteEditDialog({
             <button
               type="button"
               className="keep-delete-btn"
-              onClick={() => {
-                onDelete(note.id);
-                onClose();
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
             >
               🗑️ Hapus
             </button>
@@ -428,6 +623,17 @@ export function NoteEditDialog({
           </div>
         </div>
       </div>
+
+      <DeleteNoteModal
+        isOpen={showDeleteConfirm}
+        title={draft.title}
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          onDelete(note.id);
+          onClose();
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }
