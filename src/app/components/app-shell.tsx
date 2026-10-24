@@ -333,9 +333,36 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               </div>
             ) : (
-              <button className="login-button" onClick={() => setLoginOpen(true)}>
-                🔐 Sign In
-              </button>
+              <div className="profile-area guest-area">
+                <button
+                  type="button"
+                  className="profile-button-wrap guest-profile-btn"
+                  onClick={() => setLoginOpen(true)}
+                  aria-label="Masuk ke Akun BiarFokus"
+                  title="Masuk / Daftar Akun"
+                >
+                  <div className="profile-button guest-avatar">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                  <div className="profile-user-col">
+                    <span className="profile-user-name">Masuk</span>
+                    <span className="profile-free-pill guest-pill">Akun</span>
+                  </div>
+                </button>
+              </div>
             )}
           </div>
         </header>
