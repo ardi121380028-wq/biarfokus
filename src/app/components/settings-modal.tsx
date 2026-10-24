@@ -13,6 +13,7 @@ import {
   saveLocalSettings,
   type UserSettings,
 } from "@/features/settings/settings-service";
+import { useAppContext } from "@/app/providers/app-provider";
 
 const presetClassic: TimerDurations = { pomodoro: 25 * 60, short: 5 * 60, long: 15 * 60 };
 const presetDeepWork: TimerDurations = { pomodoro: 50 * 60, short: 10 * 60, long: 30 * 60 };
@@ -84,6 +85,7 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const { setInfoOpen } = useAppContext();
 
   // Additional settings state
   const [language, setLanguage] = useState<"id" | "en">("id");
@@ -319,15 +321,19 @@ export function SettingsModal({
                 <p className="settings-section-title">BAHASA &amp; FORMAT WAKTU</p>
                 <div className="setting-row">
                   <div>
-                    <span style={{ fontWeight: 600 }}>Bahasa Antarmuka</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontWeight: 600 }}>Bahasa Antarmuka</span>
+                      <span className="settings-coming-soon-pill">Segera Hadir</span>
+                    </div>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Pilih bahasa aplikasi untuk kenyamanan kerja kamu.
+                      Pilih bahasa aplikasi untuk kenyamanan kerja kamu (saat ini aktif dalam Bahasa Indonesia).
                     </p>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <button
                       type="button"
-                      className={`settings-contrast-toggle ${language === "id" ? "active" : ""}`}
+                      className="settings-contrast-toggle active"
+                      title="Bahasa aktif: Indonesia"
                       onClick={() => {
                         setLanguage("id");
                         handleUpdateExtraSetting("language", "id");
@@ -337,13 +343,16 @@ export function SettingsModal({
                     </button>
                     <button
                       type="button"
-                      className={`settings-contrast-toggle ${language === "en" ? "active" : ""}`}
+                      className="settings-contrast-toggle"
+                      style={{ opacity: 0.65, cursor: "pointer" }}
                       onClick={() => {
-                        setLanguage("en");
-                        handleUpdateExtraSetting("language", "en");
+                        setInfoOpen?.(
+                          "Dukungan antarmuka bahasa Inggris sedang disiapkan dan akan segera hadir di pembaruan berikutnya!"
+                        );
                       }}
+                      title="Dukungan bahasa Inggris segera hadir (Coming Soon)"
                     >
-                      🇬🇧 English
+                      🇬🇧 English <span style={{ fontSize: "10px", marginLeft: "4px", color: "var(--muted)", fontWeight: 600 }}>(Soon)</span>
                     </button>
                   </div>
                 </div>

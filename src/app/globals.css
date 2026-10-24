@@ -8457,6 +8457,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #ffffff !important;
 }
 
+.settings-coming-soon-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pink, #ec4899) 14%, transparent);
+  color: var(--pink, #ec4899);
+  border: 1px solid color-mix(in srgb, var(--pink, #ec4899) 30%, transparent);
+}
+
 .interval-chip.active,
 .app.dark .interval-chip.active {
   background: #ec4899 !important;
