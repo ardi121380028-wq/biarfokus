@@ -24,7 +24,6 @@ const CYCLING_FEATURES: CyclingFeature[] = [
 export function LandingSection() {
   const [activeTab, setActiveTab] = useState<HubTab>("pomodoro");
   const [cyclerIdx, setCyclerIdx] = useState(0);
-  const [isHeadingHovered, setIsHeadingHovered] = useState(false);
 
   // Live Timer Simulation
   const [previewSeconds, setPreviewSeconds] = useState(1488); // 24:48
@@ -57,6 +56,34 @@ export function LandingSection() {
       setNotesItemChecked((prev) => !prev);
     }, 4200);
     return () => clearInterval(timer);
+  }, []);
+
+  // Listen to cross-component tab switch events (e.g. from topbar navigation when guest clicks features)
+  useEffect(() => {
+    function handleSwitchTab(e: Event) {
+      const customEvent = e as CustomEvent<{ tab: HubTab }>;
+      if (customEvent.detail?.tab) {
+        setActiveTab(customEvent.detail.tab);
+        scrollToShowcase();
+      }
+    }
+
+    window.addEventListener("biarfokus:switch-landing-tab", handleSwitchTab);
+    return () => window.removeEventListener("biarfokus:switch-landing-tab", handleSwitchTab);
+  }, []);
+
+  // Check URL query param "?tab=..." on initial load
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab") as HubTab | null;
+      if (tabParam && ["pomodoro", "calendar", "kanban", "notes"].includes(tabParam)) {
+        setActiveTab(tabParam);
+        setTimeout(() => {
+          scrollToShowcase();
+        }, 180);
+      }
+    }
   }, []);
 
   function formatPreviewTime(totalSec: number) {
@@ -175,22 +202,11 @@ export function LandingSection() {
               ✨ Ekosistem Produktivitas All-in-One
             </span>
 
-            {/* Interactive Heading Wrapper with Glossy AI Gradient & Hover Micro-Icons */}
-            <div
-              className="landing-hero-heading-wrap"
-              onMouseEnter={() => setIsHeadingHovered(true)}
-              onMouseLeave={() => setIsHeadingHovered(false)}
-              onClick={() => {
-                setActiveTab(currentFeature.tab);
-                scrollToShowcase();
-              }}
-              role="button"
-              tabIndex={0}
-              title="Arahkan kursor atau klik untuk melihat fitur ekosistem"
-            >
+            {/* Heading Wrapper with Glossy AI Gradient & Orbiting Micro-Icons */}
+            <div className="landing-hero-heading-wrap">
               {/* Cycling Pill Badge */}
               <div className="landing-heading-interactive-bar">
-                <div className={`landing-heading-cycler-pill ${isHeadingHovered ? "is-hovered" : ""}`}>
+                <div className="landing-heading-cycler-pill">
                   <span className="cycler-ai-sparkle">✦</span>
                   <span className="cycler-icon" key={currentFeature.id}>{currentFeature.icon}</span>
                   <span className="cycler-label">{currentFeature.label}</span>

@@ -234,27 +234,23 @@ export function AuthModal({ mode, setMode, onClose }: AuthModalProps) {
       <button className="auth-submit" onClick={() => void submitAuth()} disabled={loading}>{loading ? "Please wait..." : isSignUp ? "Sign Up" : "Sign In"}</button>
       <small>
         Dengan melanjutkan, kamu menyetujui{" "}
-        <button
-          type="button"
+        <a
+          href="/ketentuan"
+          target="_blank"
+          rel="noopener noreferrer"
           className="auth-legal-link"
-          onClick={() => {
-            onClose();
-            setTermsModalOpen(true);
-          }}
         >
           Ketentuan Layanan (TOS)
-        </button>{" "}
+        </a>{" "}
         dan{" "}
-        <button
-          type="button"
+        <a
+          href="/ketentuan"
+          target="_blank"
+          rel="noopener noreferrer"
           className="auth-legal-link"
-          onClick={() => {
-            onClose();
-            setTermsModalOpen(true);
-          }}
         >
           Kebijakan Privasi
-        </button>
+        </a>
         .
       </small>
       {error && <p className="auth-status auth-error">{error}</p>}

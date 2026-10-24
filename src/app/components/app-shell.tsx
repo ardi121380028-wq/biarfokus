@@ -174,6 +174,36 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const isDarkBg = isDarkPageBg(selectedColor, dark);
 
+  const handleNavClick = (e: React.MouseEvent, href: string) => {
+    // If logged in, or navigating to home or pricing, allow default navigation
+    if (user || href === "/" || href === "/upgrade") {
+      if (href === "/" && pathname === "/") {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      return;
+    }
+
+    // Guest user clicked Catatan, Kalender, or Kanban
+    e.preventDefault();
+    let targetTab: "notes" | "calendar" | "kanban" = "notes";
+    if (href === "/kalender") targetTab = "calendar";
+    else if (href === "/kanban") targetTab = "kanban";
+    else if (href === "/catatan") targetTab = "notes";
+
+    if (pathname === "/") {
+      window.dispatchEvent(
+        new CustomEvent("biarfokus:switch-landing-tab", { detail: { tab: targetTab } })
+      );
+      const el = document.getElementById("ekosistem-showcase");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else {
+      router.push(`/?tab=${targetTab}#ekosistem-showcase`);
+    }
+  };
+
   return (
     <main
       className={[
@@ -214,6 +244,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={href}
                 href={href}
+                onClick={(e) => handleNavClick(e, href)}
                 className={isNavActive(href) ? "nav-link active" : "nav-link"}
               >
                 {label}
@@ -390,12 +421,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               <button type="button" onClick={() => setPomodoroModalOpen(true)}>
                 Apa itu Pomodoro?
               </button>
-              <button type="button" onClick={() => setAboutModalOpen(true)}>
+              <Link href="/tentang" className="footer-link-btn">
                 Tentang Kami
-              </button>
-              <button type="button" onClick={() => setTermsModalOpen(true)}>
+              </Link>
+              <Link href="/ketentuan" className="footer-link-btn">
                 Ketentuan Layanan
-              </button>
+              </Link>
               <button type="button" onClick={() => setFaqModalOpen(true)}>
                 FAQ
               </button>

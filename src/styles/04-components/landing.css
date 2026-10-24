@@ -369,15 +369,10 @@
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  cursor: pointer;
+  cursor: default;
   user-select: none;
   padding: 4px 12px;
   border-radius: 24px;
-  transition: background-color 0.25s ease;
-}
-
-.landing-hero-heading-wrap:hover {
-  background: color-mix(in srgb, var(--ink) 2%, transparent);
 }
 
 .landing-heading-interactive-bar {
@@ -400,12 +395,6 @@
   font-weight: 600;
   color: var(--ink);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.landing-heading-cycler-pill.is-hovered {
-  transform: translateY(-2px) scale(1.03);
-  border-color: color-mix(in srgb, var(--ink) 24%, transparent);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 .cycler-ai-sparkle {
@@ -463,9 +452,6 @@
   filter: none !important; /* Clean & crisp, no purple shadow */
 }
 
-.landing-hero-heading-wrap:hover .landing-hero-ai-gradient {
-  filter: none !important;
-}
 
 @keyframes aiGlossyFlow {
   0% { background-position: 0% 50%; }
