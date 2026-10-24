@@ -13,6 +13,7 @@ import type { TimerMode } from "@/types/domain";
 function HomeContent() {
   const router = useRouter();
   const {
+    user,
     mode,
     seconds,
     running,
@@ -114,7 +115,7 @@ function HomeContent() {
         />
       </div>
 
-      <LandingSection />
+      {!user && <LandingSection />}
 
       {zenMode && (
         <div className="zen-overlay" role="dialog" aria-modal="true" aria-label="Mode Zen Fokus">

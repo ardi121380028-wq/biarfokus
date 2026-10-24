@@ -23,17 +23,22 @@ export function LandingSection() {
 
   return (
     <>
-      {/* 1. Only the clean, clickable teaser button appears below the timer */}
+      {/* 1. Only the clean, clickable teaser button with rotating Gemini iridescent border */}
       <div className="landing-bridge-trigger">
         <button
           type="button"
-          className="landing-bridge-btn"
+          className="landing-gemini-btn-wrapper"
           onClick={scrollToShowcase}
           aria-label="Lihat fitur ekosistem BiarFokus"
         >
-          <span className="landing-bridge-sparkle">✨</span>
-          <span className="landing-bridge-text">Jelajahi Ekosistem BiarFokus</span>
-          <span className="landing-bridge-arrow">↓</span>
+          {/* Animated Gemini conic rotating gradient */}
+          <span className="landing-gemini-glow" aria-hidden="true" />
+          {/* Inner surface */}
+          <span className="landing-gemini-inner">
+            <span className="landing-gemini-sparkle">✨</span>
+            <span className="landing-gemini-text">Jelajahi Ekosistem BiarFokus</span>
+            <span className="landing-gemini-arrow-box">↓</span>
+          </span>
         </button>
       </div>
 

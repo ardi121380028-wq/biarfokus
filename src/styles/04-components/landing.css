@@ -1,19 +1,81 @@
 /* ========================================================================== */
-/* Tier 4: Modern SaaS Landing Page (Notion / Linear Aesthetics - Redesigned) */
+/* Tier 4: Modern SaaS Landing Page (Notion / Linear Aesthetics - Gemini Glow)*/
 /* ========================================================================== */
 
-/* Bridge Trigger below Timer & To-Do */
+/* Bridge Trigger centered below Timer & To-Do Cards */
 .landing-bridge-trigger {
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 32px 0 100px; /* Generous bottom margin so headline NEVER peeks into first viewport */
+  margin-top: clamp(24px, 3.5vh, 44px);
+  margin-bottom: 0;
   position: relative;
   z-index: 10;
 }
 
-.landing-bridge-btn {
+/* Outer wrapper with rotating Gemini conic iridescent gradient border */
+.landing-gemini-btn-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.2px; /* thickness of the glowing border */
+  border-radius: 9999px;
+  background: transparent;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 0 18px rgba(59, 130, 246, 0.2);
+  cursor: pointer;
+  border: none;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+  font-family: inherit;
+  outline: none;
+}
+
+.landing-gemini-btn-wrapper:hover {
+  transform: translateY(-2px) scale(1.025);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 0 28px rgba(247, 127, 165, 0.45);
+}
+
+.landing-gemini-btn-wrapper:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+/* Gemini Rotating Conic Gradient */
+.landing-gemini-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 260%;
+  height: 400%;
+  background: conic-gradient(
+    from 0deg,
+    #f77fa5 0deg,
+    #f6c832 65deg,
+    #22c55e 130deg,
+    #38bdf8 190deg,
+    #1875d1 240deg,
+    #a855f7 300deg,
+    #f77fa5 360deg
+  );
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: geminiRotate 3.5s linear infinite;
+  z-index: 1;
+}
+
+@keyframes geminiRotate {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Inner button surface */
+.landing-gemini-inner {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -21,56 +83,71 @@
   border-radius: 9999px;
   background: var(--paper);
   color: var(--ink);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  border: 1.5px solid color-mix(in srgb, var(--ink) 14%, transparent);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
-  cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: inherit;
+  transition: background-color 0.2s ease;
 }
 
-.landing-bridge-btn:hover {
-  transform: translateY(2px);
-  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
-  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
-}
-
-.landing-bridge-sparkle {
-  font-size: 14px;
-}
-
-.landing-bridge-text {
-  color: var(--ink);
-}
-
-.landing-bridge-arrow {
+.landing-gemini-sparkle {
+  font-size: 15px;
   display: inline-block;
-  font-size: 13px;
-  color: var(--muted);
-  transition: transform 0.2s ease;
-  animation: landingArrowFloat 1.8s ease-in-out infinite;
+  animation: geminiSparkle 2s ease-in-out infinite alternate;
 }
 
-@keyframes landingArrowFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(3px); }
+@keyframes geminiSparkle {
+  0% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+  100% { transform: scale(1.18) rotate(12deg); filter: brightness(1.25); }
+}
+
+.landing-gemini-text {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.landing-gemini-arrow-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+  transition: all 0.2s ease;
+  animation: geminiArrowBounce 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+.landing-gemini-btn-wrapper:hover .landing-gemini-arrow-box {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+@keyframes geminiArrowBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3.5px);
+  }
 }
 
 /* ========================================================================== */
-/* Main Showcase Section (Revealed on Scroll)                                 */
+/* Main Showcase Section (Guaranteed 100% Below the Fold on First Screen)     */
 /* ========================================================================== */
 
 .landing-section-wrapper {
   width: min(100%, 1160px);
-  margin: 0 auto 56px;
+  margin: 0 auto 60px;
+  /* Generous padding-top ensures the heading NEVER peeks into the initial viewport */
+  padding-top: clamp(220px, 35vh, 420px);
   display: flex;
   flex-direction: column;
   gap: 80px;
   position: relative;
-  scroll-margin-top: 40px;
+  scroll-margin-top: 30px;
 }
 
 /* Header & Value Proposition */
