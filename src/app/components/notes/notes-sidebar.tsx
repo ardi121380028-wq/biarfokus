@@ -46,13 +46,17 @@ export function NotesSidebar({
   dark,
   onToggleDark,
 }: NotesSidebarProps) {
-  const { isPro } = useAppContext();
+  const { isPro, user, setLoginOpen } = useAppContext();
   const [newLabelInput, setNewLabelInput] = useState("");
   const [showAddLabel, setShowAddLabel] = useState(false);
 
   function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       if (!isCollapsed) onToggleCollapse();
+    }
+    if (view === "calendar" && !user) {
+      setLoginOpen(true);
+      return;
     }
     onNavigate?.(view);
   }

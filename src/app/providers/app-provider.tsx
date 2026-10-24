@@ -113,6 +113,7 @@ function playClickSound() {
 export interface AppContextType {
   // Auth & Profile
   user: User | null;
+  authLoading: boolean;
   userRole: UserRole;
   subscription: UserSubscription;
   isPro: boolean;
@@ -249,6 +250,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Auth State
   const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole>("user");
   const [subscription, setSubscription] = useState<UserSubscription>(() => createDefaultSubscription());
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
@@ -334,6 +336,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setProfileDisplayName(result.data.user?.user_metadata.display_name ?? null);
       } catch (error) {
         console.error("Gagal memuat sesi akun; melanjutkan sebagai guest.", error);
+      } finally {
+        setAuthLoading(false);
       }
     }
     void loadUser();
@@ -341,6 +345,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       (_event: AuthChangeEvent, session: Session | null) => {
         setUser(session?.user ?? null);
         setProfileDisplayName(session?.user?.user_metadata.display_name ?? null);
+        setAuthLoading(false);
       },
     );
     return () => listener.subscription.unsubscribe();
@@ -979,6 +984,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       user,
+      authLoading,
       userRole,
       subscription,
       isPro,
@@ -1090,6 +1096,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ambientSound,
       appError,
       authError,
+      authLoading,
       authMode,
       autoStart,
       changeMode,

@@ -28,15 +28,27 @@ function KanbanContent() {
           router.push("/");
           break;
         case "notes":
+          if (!user) {
+            setLoginOpen(true);
+            return;
+          }
           router.push("/catatan");
           break;
         case "calendar":
+          if (!user) {
+            setLoginOpen(true);
+            return;
+          }
           router.push("/kalender");
           break;
         case "kanban":
           router.push("/kanban");
           break;
         case "stats":
+          if (!user) {
+            setLoginOpen(true);
+            return;
+          }
           router.push("/statistik");
           break;
         case "pricing":
@@ -49,7 +61,7 @@ function KanbanContent() {
           router.push("/");
       }
     },
-    [router],
+    [router, user, setLoginOpen],
   );
 
   return (

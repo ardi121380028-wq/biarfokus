@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/app/providers/app-provider";
 import { CalendarView } from "@/app/components/calendar-view";
@@ -9,6 +9,7 @@ function KalenderContent() {
   const router = useRouter();
   const {
     user,
+    authLoading,
     userName,
     userAvatar,
     userRole,
@@ -19,6 +20,13 @@ function KalenderContent() {
     setLoginOpen,
   } = useAppContext();
 
+  // Prompt login immediately if user is not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setLoginOpen(true);
+    }
+  }, [authLoading, user, setLoginOpen]);
+
   const handleNavigate = useCallback(
     (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => {
       switch (view) {
@@ -26,6 +34,10 @@ function KalenderContent() {
           router.push("/");
           break;
         case "notes":
+          if (!user) {
+            setLoginOpen(true);
+            return;
+          }
           router.push("/catatan");
           break;
         case "calendar":
@@ -35,6 +47,10 @@ function KalenderContent() {
           router.push("/kanban");
           break;
         case "stats":
+          if (!user) {
+            setLoginOpen(true);
+            return;
+          }
           router.push("/statistik");
           break;
         case "pricing":
@@ -47,8 +63,39 @@ function KalenderContent() {
           router.push("/");
       }
     },
-    [router],
+    [router, user, setLoginOpen],
   );
+
+  // Auth gate for guests
+  if (!authLoading && !user) {
+    return (
+      <div className="auth-gate-container">
+        <div className="auth-gate-card">
+          <div className="auth-gate-icon">📅</div>
+          <h2>Masuk untuk Mengakses Time-Blocking Kalender</h2>
+          <p>
+            Fitur penjadwalan blok waktu dan sinkronisasi sesi fokus terhubung dengan akun BiarFokus kamu.
+          </p>
+          <div className="auth-gate-actions">
+            <button
+              type="button"
+              className="auth-gate-primary-btn"
+              onClick={() => setLoginOpen(true)}
+            >
+              🔐 Masuk / Buat Akun Sekarang
+            </button>
+            <button
+              type="button"
+              className="auth-gate-secondary-btn"
+              onClick={() => router.push("/")}
+            >
+              ← Kembali ke Timer Fokus
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <CalendarView
@@ -63,7 +110,13 @@ function KalenderContent() {
       onOpenProfile={() => setAccountOpen(true)}
       onOpenStats={() => router.push("/statistik")}
       onNavigate={handleNavigate}
-      onNavigateToNotes={() => router.push("/catatan")}
+      onNavigateToNotes={() => {
+        if (!user) {
+          setLoginOpen(true);
+          return;
+        }
+        router.push("/catatan");
+      }}
       onRequireLogin={() => setLoginOpen(true)}
     />
   );

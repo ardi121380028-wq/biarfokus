@@ -35,7 +35,7 @@ export function KanbanSidebar({
   dark,
   onToggleDark,
 }: KanbanSidebarProps) {
-  const { isPro } = useAppContext();
+  const { isPro, user, setLoginOpen } = useAppContext();
   const [searchBoard, setSearchBoard] = useState("");
 
   const filteredBoards = boards.filter((b) =>
@@ -45,6 +45,10 @@ export function KanbanSidebar({
   function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       if (!isCollapsed) onToggleCollapse();
+    }
+    if ((view === "notes" || view === "calendar") && !user) {
+      setLoginOpen(true);
+      return;
     }
     onNavigate(view);
   }

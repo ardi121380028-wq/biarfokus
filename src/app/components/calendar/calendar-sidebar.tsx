@@ -41,7 +41,7 @@ export function CalendarSidebar({
   dark,
   onToggleDark,
 }: CalendarSidebarProps) {
-  const { isPro } = useAppContext();
+  const { isPro, user, setLoginOpen } = useAppContext();
   // Mini calendar month navigation
   const [miniMonthAnchor, setMiniMonthAnchor] = useState<Date>(() => new Date(anchorDate));
 
@@ -63,6 +63,10 @@ export function CalendarSidebar({
   function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       if (!isCollapsed) onToggleCollapse();
+    }
+    if (view === "notes" && !user) {
+      setLoginOpen(true);
+      return;
     }
     onNavigate?.(view);
   }
