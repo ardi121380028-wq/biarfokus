@@ -256,6 +256,48 @@
   border-radius: 999px;
 }
 
+.about-roles-badge.not-available {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.about-no-roles-card {
+  text-align: center;
+  padding: 36px 24px;
+  background: var(--paper);
+  border: 1px dashed color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 20px;
+  max-width: 680px;
+  margin: 0 auto 12px;
+}
+
+.about-no-roles-icon {
+  font-size: 36px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.about-no-roles-card h4 {
+  font-size: 17.5px;
+  font-weight: 750;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+
+.about-no-roles-card p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--muted);
+  max-width: 560px;
+  margin: 0 auto 20px;
+}
+
+.about-no-roles-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
 .about-roles-list {
   display: flex;
   flex-direction: column;

@@ -304,7 +304,7 @@ export function LandingSection() {
                   <span className="landing-mockup-dot green" />
                 </div>
                 <div className="landing-mockup-title">
-                  biarfokus.com / {activeTab}
+                  biarfokus.site / {activeTab}
                 </div>
                 <div style={{ width: "42px" }} />
               </div>

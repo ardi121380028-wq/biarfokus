@@ -120,78 +120,28 @@ export default function TentangPage() {
           </div>
         </div>
 
-        {/* Mock Open Roles */}
+        {/* Careers Section - Sedang Tidak Tersedia */}
         <div className="about-roles-heading">
-          <h3>Peluang Karir Terbuka</h3>
-          <span className="about-roles-badge">🟢 4 Posisi Terbuka (Full Remote)</span>
+          <h3>Peluang Karir</h3>
+          <span className="about-roles-badge not-available">🔴 Sedang Tidak Tersedia</span>
         </div>
 
-        <div className="about-roles-list">
-          <div className="about-role-item">
-            <div className="about-role-info">
-              <h4>Senior Frontend Craftsman (Next.js &amp; React)</h4>
-              <div className="about-role-tags">
-                <span className="about-role-tag remote">🌐 100% Remote</span>
-                <span className="about-role-tag">Full-Time</span>
-                <span className="about-role-tag">Design Systems · Micro-interactions</span>
-              </div>
-            </div>
-            <a href="mailto:karir@biarfokus.com?subject=Lamaran:%20Senior%20Frontend%20Craftsman" className="about-apply-btn">
-              Kirim Lamaran →
-            </a>
-          </div>
-
-          <div className="about-role-item">
-            <div className="about-role-info">
-              <h4>Product Designer &amp; UX Specialist</h4>
-              <div className="about-role-tags">
-                <span className="about-role-tag remote">🌐 100% Remote</span>
-                <span className="about-role-tag">Full-Time / Kontrak</span>
-                <span className="about-role-tag">Figma · Zen UI · Prototyping</span>
-              </div>
-            </div>
-            <a href="mailto:karir@biarfokus.com?subject=Lamaran:%20Product%20Designer" className="about-apply-btn">
-              Kirim Lamaran →
-            </a>
-          </div>
-
-          <div className="about-role-item">
-            <div className="about-role-info">
-              <h4>Backend &amp; Cloud Reliability Engineer</h4>
-              <div className="about-role-tags">
-                <span className="about-role-tag remote">🌐 100% Remote</span>
-                <span className="about-role-tag">Full-Time</span>
-                <span className="about-role-tag">Supabase · PostgreSQL · API Security</span>
-              </div>
-            </div>
-            <a href="mailto:karir@biarfokus.com?subject=Lamaran:%20Backend%20Engineer" className="about-apply-btn">
-              Kirim Lamaran →
-            </a>
-          </div>
-
-          <div className="about-role-item">
-            <div className="about-role-info">
-              <h4>Community &amp; Focus Advocate Lead</h4>
-              <div className="about-role-tags">
-                <span className="about-role-tag remote">🌐 100% Remote</span>
-                <span className="about-role-tag">Fleksibel / Part-Time</span>
-                <span className="about-role-tag">Edukasi Produktivitas · Social Media</span>
-              </div>
-            </div>
-            <a href="mailto:karir@biarfokus.com?subject=Lamaran:%20Community%20Lead" className="about-apply-btn">
-              Kirim Lamaran →
-            </a>
-          </div>
-        </div>
-
-        {/* Footer info for careers */}
-        <div className="about-careers-footer">
+        <div className="about-no-roles-card">
+          <span className="about-no-roles-icon" aria-hidden="true">🌱</span>
+          <h4>Saat ini belum ada posisi baru yang dibuka</h4>
           <p>
-            Tidak menemukan posisi yang pas tetapi merasa memiliki visi yang sama? Kami selalu terbuka menyambut orang-orang berbakat yang peduli pada produktivitas yang sehat.
+            Tim kerja kami saat ini sudah terisi penuh untuk fase pengembangan produk. Walaupun begitu, kami selalu senang terhubung dengan kreator dan pegiat produktivitas yang sevisi. Ikuti pembaruan terbaru atau hubungi kami melalui media sosial resmi.
           </p>
-          <a href="mailto:karir@biarfokus.com" className="about-contact-mail">
-            ✉️ Hubungi kami di karir@biarfokus.com
-          </a>
+          <div className="about-no-roles-actions">
+            <a
+              href="https://www.instagram.com/biarfokus.id/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="about-apply-btn"
+            >
+              📸 Ikuti @biarfokus.id di Instagram →
+            </a>
+          </div>
         </div>
       </section>
 

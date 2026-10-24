@@ -140,7 +140,7 @@ export default function KetentuanPage() {
             <div className="legal-section-block">
               <h3>5. Hubungi Tim Perlindungan Data</h3>
               <p>
-                Jika kamu memiliki pertanyaan, klarifikasi, atau masukan terkait kebijakan privasi ini, silakan hubungi tim kami via Instagram resmi <strong>@biarfokus.id</strong> atau email ke <strong>support@biarfokus.com</strong>.
+                Jika kamu memiliki pertanyaan, klarifikasi, atau masukan terkait kebijakan privasi ini, silakan hubungi tim kami via Instagram resmi <strong>@biarfokus.id</strong> atau email ke <strong>support@biarfokus.site</strong>.
               </p>
             </div>
           </div>
