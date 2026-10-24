@@ -775,7 +775,6 @@ export function KanbanView({
                           {(userName || "U").charAt(0).toUpperCase()}
                         </span>
                       )}
-                      {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
                     </div>
                     <div className="profile-user-col">
                       <span className="profile-user-name" title={userName || "Pengguna"}>

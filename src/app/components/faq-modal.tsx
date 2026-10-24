@@ -136,7 +136,7 @@ export function FaqModal({ onClose }: FaqModalProps) {
             Masih butuh bantuan? Hubungi kami di Instagram{" "}
             <strong>@biarfokus.id</strong>
           </span>
-          <button type="button" className="primary-button" onClick={onClose}>
+          <button type="button" className="info-modal-confirm-btn" onClick={onClose}>
             Tutup
           </button>
         </div>

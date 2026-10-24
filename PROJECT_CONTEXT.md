@@ -301,3 +301,40 @@ npm run typecheck # Runs tsc --noEmit
 npm run lint      # Runs ESLint
 npm run build     # Runs production Next.js build (verifies prerendering under cacheComponents: true)
 ```
+
+---
+
+## 8. Skema Arsitektur CSS Skalabel (Hingga Jutaan Pengguna)
+
+Untuk menjaga performa rendering tetap 60fps tanpa layout thrashing dan mempermudah pemeliharaan jangka panjang tanpa konflik spesifisitas (`!important` wars), BiarFokus menerapkan skema arsitektur CSS 5-Tier (Design Tokens, Reset, Layout Shell, Feature Modules, Universal Utilities):
+
+```
+src/
+├── styles/
+│   ├── 01-tokens.css         # CSS Variables (Colors, Typography, Radius, Shadows, Z-Indices)
+│   ├── 02-reset.css          # Modern Box Model, Smooth Scrollbar, Touch Momentum
+│   ├── 03-layout.css         # App Shell, Desktop Topbar, Responsive Drawer, Mobile Bottom Nav
+│   ├── 04-components/        # Feature Modules terisolasi
+│   │   ├── timer.css         # Pomodoro display, dial, breathing animation
+│   │   ├── notes.css         # Google Keep-style cards, tags, masonry grid, editor
+│   │   ├── calendar.css      # Time-blocking grid, day/week view, mini month picker
+│   │   ├── kanban.css        # Board columns, drag-pan canvas, card dialogs
+│   │   ├── modals.css        # Settings, profile account, auth, terms, faq
+│   │   └── splash.css        # 3 Loading styles (minimal, pro aurora, classic)
+│   └── 05-utilities.css      # Reusable helpers & animations
+└── app/
+    └── globals.css           # Master entry point mengimpor tier di atas secara modular
+```
+
+### Prinsip Utama Skalabilitas CSS:
+1. **Z-Index Layer Hierarchy Baku:**
+   - Layer 0: Page Canvas & Base Content (`z-index: 0..10`)
+   - Layer 1: Fixed Navigation & Topbars (`z-index: 80..90`)
+   - Layer 2: Mobile Drawer Backdrops (`z-index: 850`)
+   - Layer 3: Mobile Sidebar Drawer (`z-index: 900`)
+   - Layer 4: Floating Quick Action (FAB) & Popovers (`z-index: 950..1200`)
+   - Layer 5: Universal Modals & Critical Dialogs (`z-index: 99999`)
+2. **Zero-Conflict Micro-Animations:** Gunakan property GPU-accelerated (`transform`, `opacity`, `filter`) dan hindari animasi layout (`height`, `top`, `margin`) untuk mencegah re-layout 60fps.
+3. **No Unintentional Label Propagation:** Elemen checklist kartu tidak dibungkus `<label>` menyeluruh agar klik pada teks tugas membuka editor catatan, sementara checkbox icon secara eksklusif menangani aksi toggle cepat.
+4. **Clean Singular Desktop UX:** Navigasi desktop dipusatkan pada Topbar; dock mengambang bawah di-disable di desktop untuk mencegah penumpukan ganda dan pemblokiran tabel tagihan/konten.
+

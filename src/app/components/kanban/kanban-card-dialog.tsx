@@ -1243,7 +1243,7 @@ export function KanbanCardDialog({
               const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
               return (
-                <div key={chk.id} className="kanban-dialog-section">
+                <div key={chk.id} className="kanban-dialog-section kanban-checklist-section">
                   <div className="kanban-section-head-row">
                     <span className="kanban-section-title">☑️ {chk.title}</span>
                     {!readOnly && (
@@ -1258,18 +1258,20 @@ export function KanbanCardDialog({
                   </div>
 
                   {/* Progress bar */}
-                  <div className="kanban-checklist-progress">
-                    <span className="progress-pct">{pct}%</span>
-                    <div className="progress-bar-track">
-                      <div
-                        className="progress-bar-fill"
-                        style={{
-                          width: `${pct}%`,
-                          background: pct === 100 ? "#61bd4f" : "var(--blue)",
-                        }}
-                      />
+                  {chk.items.length > 0 && (
+                    <div className="kanban-checklist-progress">
+                      <span className="progress-pct">{pct}%</span>
+                      <div className="progress-bar-track">
+                        <div
+                          className="progress-bar-fill"
+                          style={{
+                            width: `${pct}%`,
+                            background: pct === 100 ? "#22c55e" : "var(--blue)",
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Items list */}
                   <div className="kanban-checklist-items">

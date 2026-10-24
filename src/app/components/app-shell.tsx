@@ -19,6 +19,7 @@ import { isAdminRole } from "@/features/admin/admin-service";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { trackSiteVisit } from "@/features/analytics/visitor-tracker";
 import { ProBadge } from "@/app/components/ui/pro-badge";
+import { loadLocalSettings } from "@/features/settings/settings-service";
 
 const NAV_LINKS = [
   { href: "/", label: "Timer" },
@@ -46,6 +47,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
   const [splashStep, setSplashStep] = useState(0);
+  const [loadingStyle, setLoadingStyle] = useState<"minimal" | "pro" | "classic">("classic");
+
+  // Load user loading style preference
+  useEffect(() => {
+    try {
+      const s = loadLocalSettings();
+      if (s.loadingStyle) setLoadingStyle(s.loadingStyle);
+    } catch {
+      // fallback to classic
+    }
+  }, []);
 
   // 3-Second branded startup splash on desktop and mobile PWA
   useEffect(() => {
@@ -261,7 +273,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                     ) : (
                       <span>{userName.charAt(0).toUpperCase()}</span>
                     )}
-                    {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
                   </div>
                   <div className="profile-user-col">
                     <span className="profile-user-name" title={userName || "Pengguna"}>
@@ -397,44 +408,110 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Premium Startup Branded Loading Splash for Desktop & PWA Mobile */}
       {showSplash && (
         <div
-          className={`app-startup-splash ${splashFading ? "is-fading" : ""}`}
+          className={`app-startup-splash ${splashFading ? "is-fading" : ""} splash-${loadingStyle}`}
           aria-label="Memuat aplikasi BiarFokus..."
         >
           {/* Subtle Ambient Radial Aurora Background */}
           <div className="app-splash-aurora" aria-hidden="true" />
 
-          <div className="app-startup-splash-content">
-            {/* Elevated Frosted Glass Card */}
-            <div className="app-splash-card">
-              <div className="app-startup-logo-wrap">
+          {loadingStyle === "minimal" && (
+            <div className="app-splash-minimal-content">
+              <div className="app-splash-minimal-logo">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={dark ? "/biarfokus-logo-dark.png" : "/biarfokus-logo-light.png"}
                   alt="BiarFokus"
-                  className="app-startup-logo-img"
+                  className="app-startup-logo-img minimal-img"
                 />
               </div>
 
-              {/* Dynamic Loading Progress Bar */}
-              <div className="app-splash-progress-track">
-                <div className="app-splash-progress-bar" />
+              {/* Shifting dynamic animated rainbow progress bar */}
+              <div className="app-splash-rainbow-track">
+                <div className="app-splash-rainbow-fill" />
               </div>
 
-              {/* Dynamic Step Text */}
-              <div className="app-splash-step-text">
-                <span className="app-splash-pulse-dot" />
+              <div className="app-splash-step-text minimal">
+                <span className="app-splash-pulse-dot rainbow-dot" />
                 <span>
-                  {splashStep === 0 && "Memuat workspace produktivitas..."}
+                  {splashStep === 0 && "Memuat ruang produktivitas..."}
                   {splashStep === 1 && "Sinkronisasi catatan & jadwal..."}
-                  {splashStep === 2 && "Menyiapkan ruang fokus kamu..."}
+                  {splashStep === 2 && "Menyiapkan workspace kamu..."}
                 </span>
               </div>
             </div>
+          )}
 
-            {/* Subtle Minimalist Tagline */}
-            <p className="app-splash-quote">
-              &ldquo;Fokus pada satu hal sampai selesai.&rdquo;
-            </p>
-          </div>
+          {loadingStyle === "pro" && (
+            <div className="app-splash-pro-content">
+              <div className="app-splash-pro-card">
+                <div className="app-splash-pro-badge-row">
+                  <span className="pro-sparkle">✨</span>
+                  <span className="pro-badge-text">BIARFOKUS PRO WORKSPACE</span>
+                  <span className="pro-stars">★★★★★</span>
+                </div>
+
+                <div className="app-startup-logo-wrap pro-logo">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/biarfokus-logo-dark.png"
+                    alt="BiarFokus Pro"
+                    className="app-startup-logo-img"
+                  />
+                </div>
+
+                <div className="app-splash-pro-aurora-ring" aria-hidden="true" />
+
+                <div className="app-splash-pro-track">
+                  <div className="app-splash-pro-bar" />
+                </div>
+
+                <div className="app-splash-step-text pro">
+                  <span className="pro-pulse-orb" />
+                  <span>
+                    {splashStep === 0 && "Inisialisasi Cloud Prioritas Ultra Cepat..."}
+                    {splashStep === 1 && "Sinkronisasi Real-Time Multi-Device..."}
+                    {splashStep === 2 && "Ruang Kerja Pro Siap Dipakai."}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {loadingStyle === "classic" && (
+            <div className="app-startup-splash-content">
+              {/* Elevated Frosted Glass Card */}
+              <div className="app-splash-card">
+                <div className="app-startup-logo-wrap">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={dark ? "/biarfokus-logo-dark.png" : "/biarfokus-logo-light.png"}
+                    alt="BiarFokus"
+                    className="app-startup-logo-img"
+                  />
+                </div>
+
+                {/* Dynamic Loading Progress Bar */}
+                <div className="app-splash-progress-track">
+                  <div className="app-splash-progress-bar" />
+                </div>
+
+                {/* Dynamic Step Text */}
+                <div className="app-splash-step-text">
+                  <span className="app-splash-pulse-dot" />
+                  <span>
+                    {splashStep === 0 && "Memuat workspace produktivitas..."}
+                    {splashStep === 1 && "Sinkronisasi catatan & jadwal..."}
+                    {splashStep === 2 && "Menyiapkan ruang fokus kamu..."}
+                  </span>
+                </div>
+              </div>
+
+              {/* Subtle Minimalist Tagline */}
+              <p className="app-splash-quote">
+                &ldquo;Fokus pada satu hal sampai selesai.&rdquo;
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -476,52 +553,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <span className="nav-icon">⚙️</span>
           <span>Setting</span>
-        </button>
-      </nav>
-
-      {/* Desktop Interactive Floating Bottom Dock */}
-      <nav className="desktop-floating-dock" aria-label="Navigasi Cepat Desktop">
-        <Link
-          href="/"
-          className={`desktop-dock-item ${pathname === "/" ? "active" : ""}`}
-          title="Timer Fokus (Pomodoro)"
-        >
-          <span className="dock-icon">⏱️</span>
-          <span className="dock-label">Timer</span>
-        </Link>
-        <Link
-          href="/catatan"
-          className={`desktop-dock-item ${pathname.startsWith("/catatan") ? "active" : ""}`}
-          title="Catatan & Todo (Keep)"
-        >
-          <span className="dock-icon">📝</span>
-          <span className="dock-label">Catatan</span>
-        </Link>
-        <Link
-          href="/kalender"
-          className={`desktop-dock-item ${pathname.startsWith("/kalender") ? "active" : ""}`}
-          title="Kalender & Time-blocking"
-        >
-          <span className="dock-icon">📅</span>
-          <span className="dock-label">Kalender</span>
-        </Link>
-        <Link
-          href="/kanban"
-          className={`desktop-dock-item ${pathname.startsWith("/kanban") ? "active" : ""}`}
-          title="Project Kanban Board"
-        >
-          <span className="dock-icon">📊</span>
-          <span className="dock-label">Kanban</span>
-        </Link>
-        <div className="desktop-dock-divider" />
-        <button
-          type="button"
-          className="desktop-dock-item"
-          onClick={() => setShowSettings(true)}
-          title="Pengaturan Aplikasi"
-        >
-          <span className="dock-icon">⚙️</span>
-          <span className="dock-label">Setting</span>
         </button>
       </nav>
 

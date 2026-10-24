@@ -30,24 +30,47 @@ export function AccountModal({
 }: AccountModalProps) {
   const avatar = getSafeAvatarUrl(user?.user_metadata?.avatar_url);
   const [displayName, setDisplayName] = useState(userName);
-  const [birthDate, setBirthDate] = useState<string>(
-    (user?.user_metadata?.birth_date as string) || "",
-  );
+  const [birthDate, setBirthDate] = useState<string>(() => {
+    return (user?.user_metadata?.birth_date as string) || "";
+  });
+  const [occupation, setOccupation] = useState<string>(() => {
+    if (user?.user_metadata?.occupation) return user.user_metadata.occupation as string;
+    if (typeof window !== "undefined") {
+      return window.localStorage.getItem("biarfokus.profile.occupation") || "";
+    }
+    return "";
+  });
+  const [statusBio, setStatusBio] = useState<string>(() => {
+    if (user?.user_metadata?.status_bio) return user.user_metadata.status_bio as string;
+    if (typeof window !== "undefined") {
+      return window.localStorage.getItem("biarfokus.profile.status_bio") || "";
+    }
+    return "";
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
-    if (!user) return;
     setSaving(true);
     setError(null);
     try {
-      const savedName = await updateDisplayName(supabase, user.id, displayName);
-      await supabase.auth.updateUser({
-        data: {
-          birth_date: birthDate.trim(),
-        },
-      });
-      onSaved(savedName);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("biarfokus.profile.occupation", occupation.trim());
+        window.localStorage.setItem("biarfokus.profile.status_bio", statusBio.trim());
+      }
+      if (user) {
+        const savedName = await updateDisplayName(supabase, user.id, displayName);
+        await supabase.auth.updateUser({
+          data: {
+            birth_date: birthDate.trim(),
+            occupation: occupation.trim(),
+            status_bio: statusBio.trim(),
+          },
+        });
+        onSaved(savedName);
+      } else {
+        onSaved(displayName);
+      }
       onClose();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Gagal menyimpan profil.");
@@ -74,7 +97,7 @@ export function AccountModal({
           <div className="account-header-badge">👤</div>
           <div>
             <h2 id="account-title" className="account-header-title">Profil &amp; Akun</h2>
-            <p className="account-header-sub">Kelola informasi identitas dan akun BiarFokus kamu</p>
+            <p className="account-header-sub">Kelola informasi identitas, profesi, dan status fokus kamu</p>
           </div>
         </div>
 
@@ -98,6 +121,12 @@ export function AccountModal({
                 <span className="free-plan-badge">Free</span>
               )}
             </div>
+            {occupation && (
+              <span className="account-identity-role">💼 {occupation}</span>
+            )}
+            {statusBio && (
+              <p className="account-identity-status-bio">✨ &ldquo;{statusBio}&rdquo;</p>
+            )}
             <p className="account-identity-email">
               <span>📧</span> {user?.email || "Tidak ada email"}
             </p>
@@ -125,19 +154,52 @@ export function AccountModal({
             </span>
           </label>
 
+          <div className="account-form-grid-row">
+            <label className="account-field-label">
+              <span>Pekerjaan / Profesi</span>
+              <div className="account-input-wrap">
+                <input
+                  type="text"
+                  value={occupation}
+                  onChange={(event) => setOccupation(event.target.value)}
+                  maxLength={60}
+                  placeholder="Misal: Software Engineer, Desainer, Mahasiswa..."
+                  disabled={saving}
+                  className="account-display-input"
+                />
+              </div>
+            </label>
+
+            <label className="account-field-label">
+              <span>Tanggal Lahir (Opsional)</span>
+              <div className="account-input-wrap">
+                <input
+                  type="date"
+                  value={birthDate}
+                  onChange={(event) => setBirthDate(event.target.value)}
+                  disabled={saving}
+                  className="account-display-input account-date-input"
+                />
+              </div>
+            </label>
+          </div>
+
           <label className="account-field-label" style={{ marginTop: "14px" }}>
-            <span>Tanggal Lahir (Opsional)</span>
+            <span>Status / Bio Fokus Singkat</span>
             <div className="account-input-wrap">
               <input
-                type="date"
-                value={birthDate}
-                onChange={(event) => setBirthDate(event.target.value)}
+                type="text"
+                value={statusBio}
+                onChange={(event) => setStatusBio(event.target.value)}
+                maxLength={100}
+                placeholder="Misal: Sedang menyelesaikan skripsi 🚀 / Deep work jam 9-12"
                 disabled={saving}
-                className="account-display-input account-date-input"
+                className="account-display-input"
               />
+              <span className="account-char-count">{statusBio.length}/100</span>
             </div>
             <span className="account-input-hint">
-              Tanggal lahirmu disimpan aman untuk database profil &amp; kejutan fokus di hari ulang tahunmu.
+              Status ini memberi motivasi personal pada dashboard profil kamu.
             </span>
           </label>
         </div>

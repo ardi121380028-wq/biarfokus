@@ -162,7 +162,7 @@ export function TermsModal({ initialTab = "tos", onClose }: TermsModalProps) {
         </div>
 
         <div className="info-modal-footer">
-          <button type="button" className="primary-button" onClick={onClose}>
+          <button type="button" className="info-modal-confirm-btn" onClick={onClose}>
             Saya Mengerti
           </button>
         </div>

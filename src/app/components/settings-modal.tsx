@@ -100,6 +100,7 @@ export function SettingsModal({
   const [kanbanShowDueDate, setKanbanShowDueDate] = useState(true);
   const [kanbanFrogIntegration, setKanbanFrogIntegration] = useState(true);
   const [kanbanMobileQuickMove, setKanbanMobileQuickMove] = useState(true);
+  const [loadingStyle, setLoadingStyle] = useState<"minimal" | "pro" | "classic">("classic");
 
   useEffect(() => {
     const s = loadLocalSettings();
@@ -110,6 +111,7 @@ export function SettingsModal({
     if (s.calendarDefaultDuration) setCalendarDefaultDuration(s.calendarDefaultDuration);
     if (typeof s.calendarConfirmDelete === "boolean") setCalendarConfirmDelete(s.calendarConfirmDelete);
     if (typeof s.kanbanConfirmDelete === "boolean") setKanbanConfirmDelete(s.kanbanConfirmDelete);
+    if (s.loadingStyle) setLoadingStyle(s.loadingStyle);
   }, []);
 
   function handleUpdateExtraSetting<K extends keyof UserSettings>(key: K, val: UserSettings[K]) {
@@ -370,6 +372,69 @@ export function SettingsModal({
                       12 Jam (02:30 PM)
                     </button>
                   </div>
+                </div>
+              </div>
+
+              <div className="settings-section">
+                <p className="settings-section-title">GAYA LAYAR LOADING (SPLASH SCREEN)</p>
+                <p className="settings-help" style={{ margin: "0 0 12px" }}>
+                  Pilih animasi tampilan pembuka (startup) aplikasi sesuai preferensi estetikamu:
+                </p>
+
+                <div className="loading-styles-grid">
+                  <button
+                    type="button"
+                    className={`loading-style-card ${loadingStyle === "minimal" ? "active" : ""}`}
+                    onClick={() => {
+                      setLoadingStyle("minimal");
+                      handleUpdateExtraSetting("loadingStyle", "minimal");
+                    }}
+                  >
+                    <div className="loading-style-preview">
+                      <span className="style-icon">⚡</span>
+                      <div className="prev-rainbow-bar" />
+                    </div>
+                    <div className="loading-style-info">
+                      <strong>Minimalis (Pelangi Dinamis)</strong>
+                      <span>Hanya logo &amp; teks dengan bar pelangi gradasi dinamis.</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`loading-style-card ${loadingStyle === "pro" ? "active" : ""}`}
+                    onClick={() => {
+                      setLoadingStyle("pro");
+                      handleUpdateExtraSetting("loadingStyle", "pro");
+                    }}
+                  >
+                    <div className="loading-style-preview pro-prev">
+                      <span className="style-icon">✨</span>
+                      <span className="prev-pro-pill">PRO ⭐</span>
+                    </div>
+                    <div className="loading-style-info">
+                      <strong>Pro Aurora (Glassmorphism Mewah)</strong>
+                      <span>Aura gelap bercahaya, badge Pro gold, dan ring pulse.</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`loading-style-card ${loadingStyle === "classic" ? "active" : ""}`}
+                    onClick={() => {
+                      setLoadingStyle("classic");
+                      handleUpdateExtraSetting("loadingStyle", "classic");
+                    }}
+                  >
+                    <div className="loading-style-preview classic-prev">
+                      <span className="style-icon">🏛️</span>
+                      <span className="prev-classic-text">&ldquo;Fokus...&rdquo;</span>
+                    </div>
+                    <div className="loading-style-info">
+                      <strong>Klasik (BiarFokus Orisinal)</strong>
+                      <span>Kartu fokus minimalis dengan kutipan produktivitas harian.</span>
+                    </div>
+                  </button>
                 </div>
               </div>
 

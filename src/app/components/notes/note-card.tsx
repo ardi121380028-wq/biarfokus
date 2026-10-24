@@ -63,15 +63,28 @@ export function NoteCard({
         <div className="keep-card-checklist" onClick={(e) => e.stopPropagation()}>
           {activeItems.map((item) => (
             <div key={item.id} className="keep-card-item-row">
-              <label className="keep-card-item">
+              <div className="keep-card-item">
                 <input
                   type="checkbox"
                   checked={false}
-                  onChange={() => onToggleItem(note.id, item.id)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    onToggleItem(note.id, item.id);
+                  }}
                   className="keep-checkbox"
+                  aria-label={`Selesaikan ${item.text}`}
                 />
-                <span className="keep-card-item-text">{item.text}</span>
-              </label>
+                <span
+                  className="keep-card-item-text"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(note);
+                  }}
+                  title="Buka catatan untuk diedit"
+                >
+                  {item.text}
+                </span>
+              </div>
               <button
                 type="button"
                 className="keep-frog-pill-btn"
@@ -110,17 +123,28 @@ export function NoteCard({
               {!collapsedDone && (
                 <div className="keep-card-done-list">
                   {doneItems.map((item) => (
-                    <label key={item.id} className="keep-card-item">
+                    <div key={item.id} className="keep-card-item">
                       <input
                         type="checkbox"
                         checked={true}
-                        onChange={() => onToggleItem(note.id, item.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          onToggleItem(note.id, item.id);
+                        }}
                         className="keep-checkbox"
+                        aria-label={`Batalkan selesai ${item.text}`}
                       />
-                      <span className="keep-card-item-text done">
+                      <span
+                        className="keep-card-item-text done"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(note);
+                        }}
+                        title="Buka catatan untuk diedit"
+                      >
                         {item.text}
                       </span>
-                    </label>
+                    </div>
                   ))}
                 </div>
               )}

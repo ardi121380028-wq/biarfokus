@@ -22,6 +22,7 @@ export type UserSettings = {
   calendarDefaultDuration?: number;
   calendarConfirmDelete?: boolean;
   kanbanConfirmDelete?: boolean;
+  loadingStyle?: "minimal" | "pro" | "classic";
 };
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -42,6 +43,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   calendarDefaultDuration: 60,
   calendarConfirmDelete: true,
   kanbanConfirmDelete: true,
+  loadingStyle: "classic",
 };
 
 export function normalizeSettings(value: unknown): UserSettings {
@@ -98,6 +100,10 @@ export function normalizeSettings(value: unknown): UserSettings {
     typeof s.calendarConfirmDelete === "boolean" ? s.calendarConfirmDelete : true;
   const kanbanConfirmDelete =
     typeof s.kanbanConfirmDelete === "boolean" ? s.kanbanConfirmDelete : true;
+  const loadingStyle =
+    s.loadingStyle === "minimal" || s.loadingStyle === "pro"
+      ? s.loadingStyle
+      : "classic";
 
   return {
     selectedColor: typeof s.selectedColor === "string" ? s.selectedColor : DEFAULT_SETTINGS.selectedColor,
@@ -117,6 +123,7 @@ export function normalizeSettings(value: unknown): UserSettings {
     calendarDefaultDuration,
     calendarConfirmDelete,
     kanbanConfirmDelete,
+    loadingStyle,
   };
 }
 
