@@ -6,6 +6,7 @@ type ProfileMenuProps = {
   userName: string;
   isPro?: boolean;
   isAdmin: boolean;
+  onClose?: () => void;
   onAccount: () => void;
   onStats?: () => void;
   onSettings?: () => void;
@@ -18,6 +19,7 @@ export function ProfileMenu({
   userName,
   isPro = false,
   isAdmin,
+  onClose,
   onAccount,
   onStats,
   onSettings,
@@ -76,6 +78,9 @@ export function ProfileMenu({
         href="/subscription"
         className="cal-profile-menu-item"
         role="menuitem"
+        onClick={() => {
+          if (onClose) onClose();
+        }}
         style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}
       >
         💳 Riwayat &amp; Langganan

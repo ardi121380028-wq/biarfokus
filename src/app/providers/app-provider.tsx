@@ -513,7 +513,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Save Settings
   useEffect(() => {
     if (!settingsHydratedRef.current) return;
+    const current = loadLocalSettings();
     const settings: UserSettings = {
+      ...current,
       selectedColor,
       autoStart,
       soundEnabled,

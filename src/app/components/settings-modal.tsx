@@ -111,7 +111,12 @@ export function SettingsModal({
     if (s.calendarDefaultDuration) setCalendarDefaultDuration(s.calendarDefaultDuration);
     if (typeof s.calendarConfirmDelete === "boolean") setCalendarConfirmDelete(s.calendarConfirmDelete);
     if (typeof s.kanbanConfirmDelete === "boolean") setKanbanConfirmDelete(s.kanbanConfirmDelete);
-    if (s.loadingStyle) setLoadingStyle(s.loadingStyle);
+    const explicitLoading = typeof window !== "undefined" ? window.localStorage.getItem("biarfokus.loading_style") : null;
+    if (explicitLoading === "minimal" || explicitLoading === "pro" || explicitLoading === "classic") {
+      setLoadingStyle(explicitLoading);
+    } else if (s.loadingStyle) {
+      setLoadingStyle(s.loadingStyle);
+    }
   }, []);
 
   function handleUpdateExtraSetting<K extends keyof UserSettings>(key: K, val: UserSettings[K]) {
@@ -396,7 +401,7 @@ export function SettingsModal({
                     </div>
                     <div className="loading-style-info">
                       <strong>Minimalis (Pelangi Dinamis)</strong>
-                      <span>Hanya logo &amp; teks dengan bar pelangi gradasi dinamis.</span>
+                      <span>Hanya logo besar dengan bar pelangi tipis tanpa teks.</span>
                     </div>
                   </button>
 
@@ -410,11 +415,11 @@ export function SettingsModal({
                   >
                     <div className="loading-style-preview pro-prev">
                       <span className="style-icon">✨</span>
-                      <span className="prev-pro-pill">PRO ⭐</span>
+                      <span className="prev-pro-pill">PRO LUXURY</span>
                     </div>
                     <div className="loading-style-info">
-                      <strong>Pro Aurora (Glassmorphism Mewah)</strong>
-                      <span>Aura gelap bercahaya, badge Pro gold, dan ring pulse.</span>
+                      <strong>Pro Aurora (Layar Gelap &amp; Laser Mewah)</strong>
+                      <span>Layar gelap immersif unboxed, ambient aurora glow, dan laser neon dinamis.</span>
                     </div>
                   </button>
 

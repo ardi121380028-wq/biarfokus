@@ -1,0 +1,25 @@
+/* ========================================================================== */
+/* Tier 1: Design Tokens & System Variables (BiarFokus)                       */
+/* ========================================================================== */
+
+:root {
+  /* Core Color Palette */
+  --ink: #111111;
+  --muted: #777777;
+  --paper: #ffffff;
+  --page: #e8e8e8;
+  --pink: #f77fa5;
+  --accent: #f77fa5;
+  --yellow: #f6c832;
+  --blue: #1875d1;
+
+  /* Z-Index Hierarchy Layering */
+  --z-canvas: 1;
+  --z-topbar: 80;
+  --z-drawer-backdrop: 850;
+  --z-drawer-sidebar: 900;
+  --z-floating-dock: 950;
+  --z-popover: 1200;
+  --z-modal: 99999;
+  --z-splash: 100000;
+}

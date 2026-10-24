@@ -49,15 +49,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [splashStep, setSplashStep] = useState(0);
   const [loadingStyle, setLoadingStyle] = useState<"minimal" | "pro" | "classic">("classic");
 
-  // Load user loading style preference
+  // Load user loading style preference with resilient fallback
   useEffect(() => {
     try {
+      const explicit = typeof window !== "undefined" ? window.localStorage.getItem("biarfokus.loading_style") : null;
+      if (explicit === "minimal" || explicit === "pro" || explicit === "classic") {
+        setLoadingStyle(explicit);
+        return;
+      }
       const s = loadLocalSettings();
       if (s.loadingStyle) setLoadingStyle(s.loadingStyle);
     } catch {
       // fallback to classic
     }
   }, []);
+
+  // Close profile dropdown menu on route change
+  useEffect(() => {
+    setProfileMenuOpen(false);
+  }, [pathname]);
 
   // 3-Second branded startup splash on desktop and mobile PWA
   useEffect(() => {
@@ -290,6 +300,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     userName={userName}
                     isPro={isPro}
                     isAdmin={isAdminRole(userRole)}
+                    onClose={() => setProfileMenuOpen(false)}
                     onAccount={() => {
                       setAccountOpen(true);
                       setProfileMenuOpen(false);
@@ -425,54 +436,48 @@ export function AppShell({ children }: { children: ReactNode }) {
                 />
               </div>
 
-              {/* Shifting dynamic animated rainbow progress bar */}
+              {/* Shifting dynamic animated thin rainbow progress bar */}
               <div className="app-splash-rainbow-track">
                 <div className="app-splash-rainbow-fill" />
-              </div>
-
-              <div className="app-splash-step-text minimal">
-                <span className="app-splash-pulse-dot rainbow-dot" />
-                <span>
-                  {splashStep === 0 && "Memuat ruang produktivitas..."}
-                  {splashStep === 1 && "Sinkronisasi catatan & jadwal..."}
-                  {splashStep === 2 && "Menyiapkan workspace kamu..."}
-                </span>
               </div>
             </div>
           )}
 
           {loadingStyle === "pro" && (
-            <div className="app-splash-pro-content">
-              <div className="app-splash-pro-card">
-                <div className="app-splash-pro-badge-row">
-                  <span className="pro-sparkle">✨</span>
-                  <span className="pro-badge-text">BIARFOKUS PRO WORKSPACE</span>
-                  <span className="pro-stars">★★★★★</span>
-                </div>
+            <div className="app-splash-pro-luxury">
+              {/* Luxury Dynamic Aurora Glow Behind Logo */}
+              <div className="pro-luxury-aurora-glow" aria-hidden="true" />
 
-                <div className="app-startup-logo-wrap pro-logo">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/biarfokus-logo-dark.png"
-                    alt="BiarFokus Pro"
-                    className="app-startup-logo-img"
-                  />
-                </div>
+              {/* Glowing Specular Logo */}
+              <div className="pro-luxury-logo-wrap">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/biarfokus-logo-dark.png"
+                  alt="BiarFokus Pro"
+                  className="pro-luxury-logo-img"
+                />
+              </div>
 
-                <div className="app-splash-pro-aurora-ring" aria-hidden="true" />
+              {/* Luxury Tracked Label */}
+              <div className="pro-luxury-badge">
+                <span className="pro-luxury-sparkle">✦</span>
+                <span className="pro-luxury-text">BIARFOKUS PRO WORKSPACE</span>
+                <span className="pro-luxury-sparkle">✦</span>
+              </div>
 
-                <div className="app-splash-pro-track">
-                  <div className="app-splash-pro-bar" />
-                </div>
+              {/* Laser Neon Light Track with moving light head */}
+              <div className="pro-luxury-laser-track">
+                <div className="pro-luxury-laser-beam" />
+              </div>
 
-                <div className="app-splash-step-text pro">
-                  <span className="pro-pulse-orb" />
-                  <span>
-                    {splashStep === 0 && "Inisialisasi Cloud Prioritas Ultra Cepat..."}
-                    {splashStep === 1 && "Sinkronisasi Real-Time Multi-Device..."}
-                    {splashStep === 2 && "Ruang Kerja Pro Siap Dipakai."}
-                  </span>
-                </div>
+              {/* Elegant Minimal Monospace / Tracked Micro-Status */}
+              <div className="pro-luxury-status">
+                <span className="pro-luxury-pulse" />
+                <span className="pro-luxury-status-text">
+                  {splashStep === 0 && "INITIALIZING ULTRA ENGINE..."}
+                  {splashStep === 1 && "SYNCING ENCRYPTED CLOUD..."}
+                  {splashStep === 2 && "WORKSPACE READY"}
+                </span>
               </div>
             </div>
           )}

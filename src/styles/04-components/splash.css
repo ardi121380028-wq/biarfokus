@@ -1,0 +1,491 @@
+/* ========================================================================== */
+/* Tier 4 (Component Module): Startup Loading Splash Screens                  */
+/* BiarFokus Modern Visual Experience: Minimalist, Pro Aurora Luxury, Classic */
+/* ========================================================================== */
+
+/* Base Overlay Container */
+.app-startup-splash {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-splash, 100000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper, #ffffff);
+  color: var(--ink, #111111);
+  opacity: 1;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s ease;
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.app-startup-splash.is-fading {
+  opacity: 0;
+  transform: scale(1.03);
+  pointer-events: none;
+}
+
+/* Subtle Aurora Ambient Glow */
+.app-splash-aurora {
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--pink, #ec4899) 25%, transparent) 0%,
+    color-mix(in srgb, var(--blue, #3b82f6) 20%, transparent) 45%,
+    transparent 70%
+  );
+  filter: blur(60px);
+  -webkit-filter: blur(60px);
+  animation: appSplashAuroraPulse 4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes appSplashAuroraPulse {
+  0% { transform: scale(0.9) translate(-10px, -10px); opacity: 0.7; }
+  100% { transform: scale(1.2) translate(15px, 15px); opacity: 1; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Option 1: Minimalist Dynamic Rainbow (No Text, Big Logo, Thin Laser Bar)   */
+/* -------------------------------------------------------------------------- */
+.app-splash-minimal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 24px;
+}
+
+.app-splash-minimal-logo {
+  margin-bottom: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app-startup-logo-img.minimal-img {
+  width: min(280px, 75vw);
+  max-width: 280px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.08));
+  animation: appLogoPulse 2.4s ease-in-out infinite;
+}
+
+.app-splash-rainbow-track {
+  width: 135px;
+  height: 3.5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.app-splash-rainbow-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #ec4899 0%,
+    #8b5cf6 20%,
+    #06b6d4 40%,
+    #10b981 60%,
+    #f59e0b 80%,
+    #ec4899 100%
+  );
+  background-size: 200% 100%;
+  animation: rainbow-shift 2.2s linear infinite, rainbow-fill 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes rainbow-shift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes rainbow-fill {
+  0% { width: 0%; }
+  50% { width: 65%; }
+  100% { width: 100%; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Option 2: Pro Aurora Luxury Unboxed (Deep Obsidian Immersion & Laser Neon) */
+/* -------------------------------------------------------------------------- */
+.app-startup-splash.splash-pro {
+  background: #08080c !important;
+  color: #ffffff !important;
+}
+
+.app-splash-pro-luxury {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  text-align: center;
+  position: relative;
+  max-width: 92vw;
+}
+
+.pro-luxury-aurora-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, 90vw);
+  height: min(520px, 90vw);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.32) 0%,
+    rgba(236, 72, 153, 0.20) 35%,
+    rgba(6, 182, 212, 0.12) 60%,
+    transparent 75%
+  );
+  filter: blur(75px);
+  -webkit-filter: blur(75px);
+  pointer-events: none;
+  animation: proAuroraMeshPulse 5s ease-in-out infinite alternate;
+}
+
+@keyframes proAuroraMeshPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.18);
+    opacity: 1;
+  }
+}
+
+.pro-luxury-logo-wrap {
+  position: relative;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.22));
+  animation: proLogoFloat 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes proLogoFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-6px); }
+}
+
+.pro-luxury-logo-img {
+  width: min(220px, 64vw);
+  height: auto;
+  object-fit: contain;
+}
+
+.pro-luxury-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #f1f5f9;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+.pro-luxury-sparkle {
+  color: #fbbf24;
+  font-size: 11px;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.7);
+}
+
+.pro-luxury-laser-track {
+  width: 190px;
+  height: 2.5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.pro-luxury-laser-beam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 45%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent 0%, #38bdf8 30%, #ec4899 70%, #ffffff 100%);
+  box-shadow: 0 0 14px #38bdf8, 0 0 8px #ec4899;
+  animation: proLaserTraveling 1.6s ease-in-out infinite;
+}
+
+@keyframes proLaserTraveling {
+  0% {
+    left: -45%;
+    width: 35%;
+  }
+  50% {
+    left: 30%;
+    width: 55%;
+  }
+  100% {
+    left: 105%;
+    width: 35%;
+  }
+}
+
+.pro-luxury-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.pro-luxury-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 10px #38bdf8;
+  animation: proPulseGlow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes proPulseGlow {
+  from {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  to {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Option 3: Classic BiarFokus Frosted Glass                                  */
+/* -------------------------------------------------------------------------- */
+.app-startup-splash-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  max-width: 90vw;
+  animation: appSplashContentIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.app-splash-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 38px 46px;
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--paper) 78%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.app-startup-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: appLogoPulse 2.4s ease-in-out infinite;
+}
+
+.app-startup-logo-img {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+}
+
+@keyframes appLogoPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.app-splash-progress-track {
+  width: 180px;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  overflow: hidden;
+  position: relative;
+}
+
+.app-splash-progress-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6);
+  box-shadow: 0 0 12px color-mix(in srgb, #ec4899 70%, transparent);
+  animation: appSplashBeam 1.5s ease-in-out infinite;
+}
+
+@keyframes appSplashBeam {
+  0% { left: -45%; width: 35%; }
+  50% { left: 25%; width: 55%; }
+  100% { left: 105%; width: 35%; }
+}
+
+.app-splash-step-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: -0.1px;
+}
+
+.app-splash-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ec4899;
+  box-shadow: 0 0 8px #ec4899;
+  animation: appSplashDotPing 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes appSplashDotPing {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.3); opacity: 1; }
+}
+
+.app-splash-quote {
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.8;
+  font-style: italic;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+@keyframes appSplashContentIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Settings Modal: Loading Style Picker Grid                                  */
+/* -------------------------------------------------------------------------- */
+.loading-styles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .loading-styles-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.loading-style-card {
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.loading-style-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--ink));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.loading-style-card.active {
+  border: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--paper));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.loading-style-preview {
+  height: 52px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px;
+}
+
+.loading-style-preview.pro-prev {
+  background: #08080c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 16px rgba(139, 92, 246, 0.2);
+}
+
+.prev-rainbow-bar {
+  width: 60px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ec4899, #8b5cf6, #06b6d4, #10b981);
+}
+
+.prev-pro-pill {
+  font-size: 8.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fbbf24;
+  letter-spacing: 1px;
+}
+
+.prev-classic-text {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.loading-style-info strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.loading-style-info span {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  display: block;
+}

@@ -143,36 +143,68 @@ export function KanbanShareModal({
 
   // Calculate clean, accurate list of members ensuring owner's profile is always rendered
   const effectiveMembers = useMemo(() => {
-    const ownerName = userName || userEmail || "Kamu (Pemilik)";
+    const isCurrentUserOwner = board.role === "owner" || (Boolean(userId) && board.userId === userId);
+    const myDisplayName = userName || userEmail || "Kamu";
 
     if (members.length > 0) {
-      return members.map((m) => {
-        if (m.userId === userId || m.role === "owner") {
+      const mapped = members.map((m) => {
+        const isMe = Boolean(userId && m.userId === userId);
+        const isOwnerMember = m.role === "owner";
+
+        if (isMe) {
           return {
             ...m,
-            displayName: (m.displayName && m.displayName !== "Kamu" && m.displayName !== "Anggota")
-              ? m.displayName
-              : ownerName,
-            avatarUrl: m.avatarUrl || userAvatar || null,
+            displayName: myDisplayName,
+            avatarUrl: userAvatar || m.avatarUrl || null,
           };
         }
+
+        if (isOwnerMember) {
+          if (isCurrentUserOwner) {
+            return {
+              ...m,
+              displayName: myDisplayName,
+              avatarUrl: userAvatar || m.avatarUrl || null,
+            };
+          }
+
+          const validOwnerName =
+            m.displayName && m.displayName !== "Anggota" && m.displayName !== "Kamu"
+              ? m.displayName
+              : "Pemilik Papan";
+
+          return {
+            ...m,
+            displayName: validOwnerName,
+            avatarUrl: m.avatarUrl || null,
+          };
+        }
+
         return m;
+      });
+
+      return mapped.sort((a, b) => {
+        if (a.role === "owner") return -1;
+        if (b.role === "owner") return 1;
+        if (a.role === "editor" && b.role === "viewer") return -1;
+        if (a.role === "viewer" && b.role === "editor") return 1;
+        return 0;
       });
     }
 
     // Default owner fallback
     return [
       {
-        id: `owner-${userId || "me"}`,
+        id: `owner-${isCurrentUserOwner ? userId || "me" : board.userId || "owner"}`,
         boardId: board.id,
-        userId: userId || "me",
+        userId: isCurrentUserOwner ? userId || "me" : board.userId || "owner",
         role: "owner" as const,
         joinedAt: board.createdAt || new Date().toISOString(),
-        displayName: ownerName,
-        avatarUrl: userAvatar || null,
+        displayName: isCurrentUserOwner ? myDisplayName : "Pemilik Papan",
+        avatarUrl: isCurrentUserOwner ? userAvatar || null : null,
       },
     ];
-  }, [members, userId, userName, userAvatar, userEmail, board.id, board.createdAt]);
+  }, [members, userId, userName, userAvatar, userEmail, board.id, board.role, board.userId, board.createdAt]);
 
   if (!isOpen) return null;
 

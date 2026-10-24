@@ -414,7 +414,7 @@ export default function FiturPage() {
             </div>
             <div>
               <span className="fitur-category-kicker">WORKFLOW HARIAN</span>
-              <h2>Panduan Alur Kerja 4 Langkah "Flow State"</h2>
+              <h2>Panduan Alur Kerja 4 Langkah &ldquo;Flow State&rdquo;</h2>
               <p>Rekomendasi rutinitas kerja harian terbaik untuk memaksimalkan hasil dengan BiarFokus.</p>
             </div>
           </div>

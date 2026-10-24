@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   apiJson,
@@ -293,7 +294,16 @@ export async function GET(request: Request) {
     const profilesMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
 
     if (userIds.length > 0) {
-      const { data: profiles } = await supabase
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const profileClient =
+        supabaseUrl && serviceRoleKey
+          ? createClient(supabaseUrl, serviceRoleKey, {
+              auth: { persistSession: false, autoRefreshToken: false },
+            })
+          : supabase;
+
+      const { data: profiles } = await profileClient
         .from("profiles")
         .select("id, display_name, avatar_url")
         .in("id", userIds);
@@ -304,17 +314,59 @@ export async function GET(request: Request) {
           avatar_url: p.avatar_url,
         });
       });
+
+      // If owner display name is missing, try admin user lookup if service role is available
+      if (
+        boardRow?.user_id &&
+        !profilesMap.get(boardRow.user_id)?.display_name &&
+        supabaseUrl &&
+        serviceRoleKey
+      ) {
+        try {
+          const adminSupabase = profileClient;
+          const { data: userData } = await adminSupabase.auth.admin.getUserById(boardRow.user_id);
+          if (userData?.user) {
+            const adminName =
+              (typeof userData.user.user_metadata?.full_name === "string" && userData.user.user_metadata.full_name) ||
+              (typeof userData.user.user_metadata?.name === "string" && userData.user.user_metadata.name) ||
+              userData.user.email?.split("@")[0] ||
+              null;
+            const adminAvatar =
+              typeof userData.user.user_metadata?.avatar_url === "string"
+                ? userData.user.user_metadata.avatar_url
+                : null;
+            if (adminName) {
+              profilesMap.set(boardRow.user_id, {
+                display_name: adminName,
+                avatar_url: adminAvatar,
+              });
+            }
+          }
+        } catch {}
+      }
     }
 
     const members = uniqueRawMembers.map((m) => {
       const prof = profilesMap.get(m.user_id);
-      const isCurrentUser = m.user_id === authData?.user?.id;
+      const isCurrentUser = Boolean(authData?.user?.id && m.user_id === authData.user.id);
       const currentUserName =
-        authData?.user?.user_metadata?.full_name ||
-        authData?.user?.user_metadata?.name ||
+        (typeof authData?.user?.user_metadata?.full_name === "string" && authData.user.user_metadata.full_name) ||
+        (typeof authData?.user?.user_metadata?.name === "string" && authData.user.user_metadata.name) ||
         authData?.user?.email?.split("@")[0] ||
         "Kamu";
-      const currentUserAvatar = authData?.user?.user_metadata?.avatar_url || null;
+      const currentUserAvatar =
+        typeof authData?.user?.user_metadata?.avatar_url === "string"
+          ? authData.user.user_metadata.avatar_url
+          : null;
+
+      let displayName = "Anggota";
+      if (isCurrentUser) {
+        displayName = currentUserName;
+      } else if (prof?.display_name) {
+        displayName = prof.display_name;
+      } else if (m.role === "owner") {
+        displayName = "Pemilik Utama";
+      }
 
       return {
         id: m.id,
@@ -322,8 +374,10 @@ export async function GET(request: Request) {
         userId: m.user_id,
         role: m.role,
         joinedAt: m.joined_at,
-        displayName: prof?.display_name || (isCurrentUser ? currentUserName : "Anggota"),
-        avatarUrl: prof?.avatar_url || (isCurrentUser ? currentUserAvatar : null),
+        displayName,
+        avatarUrl: isCurrentUser
+          ? (currentUserAvatar || prof?.avatar_url || null)
+          : (prof?.avatar_url || null),
       };
     });
 

@@ -141,8 +141,16 @@ export function loadLocalSettings(): UserSettings {
   }
 }
 
-export function saveLocalSettings(settings: UserSettings) {
-  window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+export function saveLocalSettings(settings: Partial<UserSettings> | UserSettings) {
+  if (typeof window === "undefined") return;
+  const current = loadLocalSettings();
+  const merged = normalizeSettings({ ...current, ...settings });
+  window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
+  if (merged.loadingStyle) {
+    try {
+      window.localStorage.setItem("biarfokus.loading_style", merged.loadingStyle);
+    } catch {}
+  }
 }
 
 export async function loadUserSettings(
