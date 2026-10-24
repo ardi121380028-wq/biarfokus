@@ -2,54 +2,92 @@
 
 type ProfileMenuProps = {
   userName: string;
+  isPro?: boolean;
   isAdmin: boolean;
   onAccount: () => void;
   onStats?: () => void;
+  onSettings?: () => void;
   onPremium: () => void;
   onAdmin: () => void;
-  onShortcuts: () => void;
   onSignOut: () => void;
-  onDelete: () => void;
 };
 
 export function ProfileMenu({
   userName,
+  isPro = false,
   isAdmin,
   onAccount,
   onStats,
+  onSettings,
   onPremium,
   onAdmin,
-  onShortcuts,
   onSignOut,
-  onDelete,
 }: ProfileMenuProps) {
   return (
-    <div className="profile-menu" role="menu">
-      <strong>{userName}</strong>
-      <button onClick={onAccount} role="menuitem">
-        ♟ <span>Account</span>
+    <div className="cal-topbar-profile-menu app-shell-profile-menu" role="menu">
+      <div className="cal-profile-menu-header">
+        <strong>{userName || "Akun Saya"}</strong>
+        <span className="cal-profile-menu-sub">BiarFokus Workspace</span>
+      </div>
+
+      <button
+        type="button"
+        className="cal-profile-menu-item"
+        onClick={onAccount}
+        role="menuitem"
+      >
+        👤 Profil &amp; Akun
       </button>
+
       {onStats && (
-        <button onClick={onStats} role="menuitem">
-          📊 <span>Statistik</span>
+        <button
+          type="button"
+          className="cal-profile-menu-item"
+          onClick={onStats}
+          role="menuitem"
+        >
+          📊 Statistik
         </button>
       )}
-      <button onClick={onPremium} role="menuitem">
-        ♛ <span>Premium</span>
+
+      {onSettings && (
+        <button
+          type="button"
+          className="cal-profile-menu-item"
+          onClick={onSettings}
+          role="menuitem"
+        >
+          ⚙️ Pengaturan
+        </button>
+      )}
+
+      <button
+        type="button"
+        className="cal-profile-menu-item"
+        onClick={onPremium}
+        role="menuitem"
+      >
+        {isPro ? "👑 BiarFokus Pro (Aktif)" : "💎 Upgrade Pro"}
       </button>
+
       {isAdmin && (
-        <button onClick={onAdmin} role="menuitem">
-          ▦ <span>Admin</span>
+        <button
+          type="button"
+          className="cal-profile-menu-item"
+          onClick={onAdmin}
+          role="menuitem"
+        >
+          🎛️ Admin Dashboard
         </button>
       )}
-      <button onClick={onSignOut} role="menuitem">
-        ↪ <span>Logout</span>
-      </button>
-      <button onClick={onShortcuts} role="menuitem">
-        ⌨ <span>Shortcuts</span>
-      </button>
-      <button onClick={onDelete} role="menuitem">
-        ♲ <span>Delete Account</span>
+
+      <button
+        type="button"
+        className="cal-profile-menu-item cal-profile-logout-item danger"
+        onClick={onSignOut}
+        role="menuitem"
+      >
+        🚪 Keluar
       </button>
     </div>
   );

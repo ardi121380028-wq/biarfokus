@@ -15,6 +15,7 @@ type AccountModalProps = {
   onSaved: (displayName: string) => void;
   onClose: () => void;
   onLogout?: () => void;
+  onDeleteAccount?: () => void;
 };
 
 export function AccountModal({
@@ -25,6 +26,7 @@ export function AccountModal({
   onSaved,
   onClose,
   onLogout,
+  onDeleteAccount,
 }: AccountModalProps) {
   const avatar = getSafeAvatarUrl(user?.user_metadata?.avatar_url);
   const [displayName, setDisplayName] = useState(userName);
@@ -148,18 +150,30 @@ export function AccountModal({
 
         {/* Actions Footer */}
         <div className="account-card-footer">
-          {onLogout ? (
-            <button
-              type="button"
-              className="account-logout-action-btn"
-              onClick={() => {
-                onClose();
-                onLogout();
-              }}
-            >
-              🚪 Keluar Akun
-            </button>
-          ) : <div />}
+          <div className="account-footer-left">
+            {onLogout && (
+              <button
+                type="button"
+                className="account-logout-action-btn"
+                onClick={() => {
+                  onClose();
+                  onLogout();
+                }}
+              >
+                🚪 Keluar Akun
+              </button>
+            )}
+            {onDeleteAccount && (
+              <button
+                type="button"
+                className="account-delete-action-btn"
+                onClick={onDeleteAccount}
+                title="Hapus akun permanen"
+              >
+                🗑️ Hapus Akun
+              </button>
+            )}
+          </div>
 
           <div className="account-footer-right">
             <button

@@ -1,7 +1,45 @@
 @import "tailwindcss";
 
 :root { --ink:#111; --muted:#777; --paper:#fff; --page:#e8e8e8; --pink:#f77fa5; --accent:#f77fa5; --yellow:#f6c832; --blue:#1875d1; }
-* { box-sizing:border-box; }
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ink) 22%, transparent) transparent;
+}
+
+/* Modern Minimal Custom Scrollbar (fixes giant Windows default scrollbar) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--ink) 22%, transparent);
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 html,body { max-width:100%; overflow-x:hidden; }
 body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", sans-serif; }
 button,input { font:inherit; }
@@ -11145,6 +11183,132 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 5px 8px !important;
   }
 }
+
+/* ==========================================================================
+   Footer Spacing & Floating Dock Safe Margin
+   ========================================================================== */
+.footer {
+  padding-bottom: 96px !important;
+}
+
+.footer-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-social-icons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding-bottom: 110px !important;
+  }
+  .footer-right {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .footer-links {
+    justify-content: flex-start;
+  }
+  .footer-social-icons {
+    justify-content: flex-start;
+  }
+}
+
+/* ==========================================================================
+   Account Modal Delete Button & Profile Menu Danger Items
+   ========================================================================== */
+.account-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.account-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-delete-action-btn {
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.account-delete-action-btn:hover {
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+}
+
+.cal-profile-logout-item.danger,
+.cal-profile-menu-item.danger {
+  color: #dc2626 !important;
+  font-weight: 600;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.cal-profile-logout-item.danger:hover,
+.cal-profile-menu-item.danger:hover {
+  background: rgba(220, 38, 38, 0.08) !important;
+  color: #b91c1c !important;
+}
+
+.admin-user-delete-btn {
+  border: 1px solid color-mix(in srgb, #dc2626 25%, transparent);
+  background: rgba(220, 38, 38, 0.05);
+  color: #dc2626;
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s ease;
+  margin-left: 6px;
+}
+
+.admin-user-delete-btn:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.15);
+  border-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+.admin-user-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 
 

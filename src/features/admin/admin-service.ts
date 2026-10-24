@@ -392,3 +392,25 @@ export async function postUpdateUserPlanToApi(
   }
 }
 
+export async function postDeleteUserByAdminToApi(
+  targetUserId: string,
+): Promise<void> {
+  const response = await fetch("/api/admin/users", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ userId: targetUserId }),
+  });
+
+  const payload = (await response.json()) as {
+    error?: string;
+    correlationId?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(formatApiError(payload, "Gagal menghapus akun pengguna."));
+  }
+}
+

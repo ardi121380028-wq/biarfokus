@@ -8,6 +8,7 @@ import {
   fetchAdminOverviewFromApi,
   fetchAdminUsersFromApi,
   postAdminAuditLogToApi,
+  postDeleteUserByAdminToApi,
   postUpdateUserPlanToApi,
 } from "@/features/admin/admin-service";
 
@@ -34,6 +35,8 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
   const [loading, setLoading] = useState(true);
   const [recording, setRecording] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [deleteTargetUser, setDeleteTargetUser] = useState<AdminUserItem | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -134,6 +137,32 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
       );
     } finally {
       setUpdatingUserId(null);
+    }
+  }
+
+  async function handleConfirmDeleteUser() {
+    if (!deleteTargetUser || deletingUserId) return;
+    const target = deleteTargetUser;
+    setDeletingUserId(target.id);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await postDeleteUserByAdminToApi(target.id);
+      setUsers((current) => current.filter((u) => u.id !== target.id));
+      setDeleteTargetUser(null);
+      setSuccessMessage(
+        `Akun ${target.displayName || target.id.slice(0, 8)} berhasil dihapus secara permanen.`,
+      );
+      await loadData();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Gagal menghapus akun pengguna.",
+      );
+    } finally {
+      setDeletingUserId(null);
     }
   }
 
@@ -472,6 +501,18 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
                               ? "Turunkan ke Free"
                               : "Jadikan Pro"}
                         </button>
+                        {!isCurrentUser && (
+                          <button
+                            type="button"
+                            className="admin-user-delete-btn"
+                            onClick={() => setDeleteTargetUser(item)}
+                            title="Hapus akun pengguna ini permanen"
+                            aria-label={`Hapus akun ${item.displayName || item.id}`}
+                            disabled={deletingUserId === item.id}
+                          >
+                            🗑️
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -506,6 +547,57 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
               </div>
             )}
           </section>
+        </div>
+      )}
+      {/* Delete User Confirmation Modal for Admin */}
+      {deleteTargetUser && (
+        <div
+          className="auth-modal-backdrop"
+          onClick={() => {
+            if (!deletingUserId) setDeleteTargetUser(null);
+          }}
+        >
+          <div
+            className="auth-modal delete-confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-delete-confirm-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="modal-close-btn"
+              onClick={() => setDeleteTargetUser(null)}
+              aria-label="Tutup konfirmasi"
+              disabled={Boolean(deletingUserId)}
+            >
+              ×
+            </button>
+            <h2 id="admin-delete-confirm-title">Hapus Akun Pengguna?</h2>
+            <p>
+              Tindakan ini permanen. Semua data tugas, pomodoro, dan riwayat untuk{" "}
+              <strong>{deleteTargetUser.displayName || `Pengguna #${deleteTargetUser.id.slice(0, 8)}`}</strong>{" "}
+              akan dihapus dan tidak bisa dikembalikan.
+            </p>
+            <div className="auth-modal-actions">
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => setDeleteTargetUser(null)}
+                disabled={Boolean(deletingUserId)}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className="danger-button"
+                onClick={() => void handleConfirmDeleteUser()}
+                disabled={Boolean(deletingUserId)}
+              >
+                {deletingUserId ? "Menghapus..." : "Ya, Hapus Akun"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
