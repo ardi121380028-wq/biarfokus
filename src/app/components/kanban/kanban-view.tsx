@@ -709,11 +709,11 @@ export function KanbanView({
               {isFullscreen ? "⤓" : "⛶"}
             </button>
 
-            {/* Theme Toggle Button (matching homepage image 2) */}
+            {/* Theme Toggle Button (Desktop Only) */}
             {onToggleDark && (
               <button
                 type="button"
-                className="icon-button modern-theme-btn kanban-topbar-icon-btn"
+                className="icon-button modern-theme-btn kanban-topbar-icon-btn topbar-desktop-only"
                 onClick={onToggleDark}
                 aria-label="Ganti mode gelap/terang"
                 title={dark ? "Mode Terang" : "Mode Gelap"}
@@ -738,11 +738,11 @@ export function KanbanView({
               </button>
             )}
 
-            {/* Settings Button */}
+            {/* Settings Button (Desktop Only) */}
             {onOpenSettings && (
               <button
                 type="button"
-                className="icon-button modern-shortcut-btn kanban-topbar-icon-btn"
+                className="icon-button modern-shortcut-btn kanban-topbar-icon-btn topbar-desktop-only"
                 onClick={onOpenSettings}
                 aria-label="Pengaturan"
                 title="Pengaturan"
@@ -758,23 +758,34 @@ export function KanbanView({
             <div className="cal-topbar-profile-wrap" ref={profileMenuRef}>
               {user ? (
                 <div className="cal-topbar-profile-btn-row">
-                  {isPro && <ProBadge size="sm" />}
                   <button
                     type="button"
-                    className="cal-topbar-avatar-btn"
+                    className="profile-button-wrap"
                     onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                     title={`Menu Akun: ${userName || "Pengguna"}`}
                     aria-label="Menu akun"
                   >
-                    {userAvatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={userAvatar} alt="" className="cal-topbar-avatar-img" />
-                    ) : (
-                      <span className="cal-topbar-avatar-initial">
-                        {(userName || "U").charAt(0).toUpperCase()}
+                    <div className="cal-topbar-avatar-btn">
+                      {userAvatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={userAvatar} alt="" className="cal-topbar-avatar-img" />
+                      ) : (
+                        <span className="cal-topbar-avatar-initial">
+                          {(userName || "U").charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
+                    </div>
+                    <div className="profile-user-col">
+                      <span className="profile-user-name" title={userName || "Pengguna"}>
+                        {userName || "Pengguna"}
                       </span>
-                    )}
-                    {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
+                      {isPro ? (
+                        <ProBadge size="sm" />
+                      ) : (
+                        <span className="profile-free-pill">Free</span>
+                      )}
+                    </div>
                   </button>
                 </div>
               ) : (

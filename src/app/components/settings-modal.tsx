@@ -132,7 +132,7 @@ export function SettingsModal({
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={handleClose}>
+    <div className="modal-backdrop settings-modal-backdrop" role="presentation" onClick={handleClose}>
       <section
         className="settings-modal"
         role="dialog"
@@ -143,6 +143,17 @@ export function SettingsModal({
         <button className="modal-close" onClick={handleClose} aria-label="Tutup pengaturan">
           ×
         </button>
+
+        {/* Dedicated Native Mobile Page Header */}
+        <div className="settings-mobile-page-header">
+          <button type="button" className="settings-mobile-back-btn" onClick={handleClose}>
+            ← Kembali
+          </button>
+          <span className="settings-mobile-header-title">Pengaturan</span>
+          <button type="button" className="settings-mobile-done-btn" onClick={handleClose}>
+            Selesai
+          </button>
+        </div>
 
         <aside className="settings-sidebar">
           <span className="settings-kicker">BiarFokus Workspace</span>

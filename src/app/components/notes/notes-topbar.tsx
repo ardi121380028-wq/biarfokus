@@ -106,11 +106,11 @@ export function NotesTopbar({
           )}
         </div>
 
-        {/* Theme Toggle */}
+        {/* Theme Toggle (Desktop Only) */}
         {onToggleDark && (
           <button
             type="button"
-            className="cal-topbar-icon-btn modern-theme-btn"
+            className="cal-topbar-icon-btn modern-theme-btn topbar-desktop-only"
             onClick={onToggleDark}
             aria-label="Ganti mode gelap/terang"
             title={dark ? "Mode Terang" : "Mode Gelap"}
@@ -135,11 +135,11 @@ export function NotesTopbar({
           </button>
         )}
 
-        {/* Settings button */}
+        {/* Settings button (Desktop Only) */}
         {onOpenSettings && (
           <button
             type="button"
-            className="cal-topbar-icon-btn modern-shortcut-btn"
+            className="cal-topbar-icon-btn modern-shortcut-btn topbar-desktop-only"
             onClick={onOpenSettings}
             aria-label="Pengaturan"
             title="Pengaturan"
@@ -155,23 +155,34 @@ export function NotesTopbar({
         <div className="cal-topbar-profile-wrap" ref={profileMenuRef}>
           {userName ? (
             <div className="cal-topbar-profile-btn-row">
-              {isPro && <ProBadge size="sm" />}
               <button
                 type="button"
-                className="cal-topbar-avatar-btn"
+                className="profile-button-wrap"
                 onClick={() => setProfileMenuOpen((prev) => !prev)}
                 aria-label="Menu akun"
                 title={userName}
               >
-                {userAvatar ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={userAvatar} alt={userName} className="cal-topbar-avatar-img" />
-                ) : (
-                  <span className="cal-topbar-avatar-initial">
-                    {userName.charAt(0).toUpperCase()}
+                <div className="cal-topbar-avatar-btn">
+                  {userAvatar ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={userAvatar} alt={userName} className="cal-topbar-avatar-img" />
+                  ) : (
+                    <span className="cal-topbar-avatar-initial">
+                      {userName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
+                </div>
+                <div className="profile-user-col">
+                  <span className="profile-user-name" title={userName}>
+                    {userName}
                   </span>
-                )}
-                {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
+                  {isPro ? (
+                    <ProBadge size="sm" />
+                  ) : (
+                    <span className="profile-free-pill">Free</span>
+                  )}
+                </div>
               </button>
             </div>
           ) : (

@@ -200,7 +200,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
           <div className="top-actions">
             <button
-              className="icon-button modern-theme-btn"
+              className="icon-button modern-theme-btn topbar-desktop-only"
               onClick={() => setDark(!dark)}
               aria-label="Ganti tema"
               title={dark ? "Mode Terang" : "Mode Gelap"}
@@ -224,7 +224,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             </button>
             <button
-              className="icon-button shortcut-button modern-shortcut-btn"
+              className="icon-button shortcut-button modern-shortcut-btn topbar-desktop-only"
               onClick={() => setShortcutsOpen(true)}
               aria-label="Keyboard shortcuts"
               title="Pintasan Keyboard (?)"
@@ -248,19 +248,31 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             {user ? (
               <div className="profile-area">
-                {isPro && <ProBadge size="sm" />}
                 <button
-                  className="profile-button"
+                  type="button"
+                  className="profile-button-wrap"
                   onClick={() => setProfileMenuOpen((open) => !open)}
                   aria-label="Buka menu akun"
                   aria-expanded={profileMenuOpen}
                 >
-                  {userAvatar ? (
-                    <Image src={userAvatar} alt="" width={42} height={42} unoptimized />
-                  ) : (
-                    <span>{userName.charAt(0).toUpperCase()}</span>
-                  )}
-                  {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
+                  <div className="profile-button">
+                    {userAvatar ? (
+                      <Image src={userAvatar} alt="" width={42} height={42} unoptimized />
+                    ) : (
+                      <span>{userName.charAt(0).toUpperCase()}</span>
+                    )}
+                    {isPro && <span className="profile-pro-dot" title="Pro Aktif" />}
+                  </div>
+                  <div className="profile-user-col">
+                    <span className="profile-user-name" title={userName || "Pengguna"}>
+                      {userName || "Pengguna"}
+                    </span>
+                    {isPro ? (
+                      <ProBadge size="sm" />
+                    ) : (
+                      <span className="profile-free-pill">Free</span>
+                    )}
+                  </div>
                 </button>
                 {profileMenuOpen && (
                   <ProfileMenu
@@ -306,43 +318,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 🔐 Sign In
               </button>
             )}
-            <button
-              className="menu-button"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Buka menu"
-              aria-expanded={menuOpen}
-            >
-              ☰
-            </button>
           </div>
         </header>
-      )}
-
-      {/* Mobile nav for standard views */}
-      {!isWorkspaceView && menuOpen && (
-        <nav className="mobile-nav" aria-label="Navigasi mobile">
-          {NAV_LINKS.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={isNavActive(href) ? "nav-link active" : "nav-link"}
-              onClick={() => setMenuOpen(false)}
-            >
-              {label}
-            </Link>
-          ))}
-          {!user && (
-            <button
-              className="mobile-login-button"
-              onClick={() => {
-                setLoginOpen(true);
-                setMenuOpen(false);
-              }}
-            >
-              🔐 Sign In
-            </button>
-          )}
-        </nav>
       )}
 
       {/* Page Content */}
@@ -407,7 +384,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Tentang Kami
               </button>
               <button type="button" onClick={() => setTermsModalOpen(true)}>
-                TOS
+                Ketentuan Layanan
               </button>
               <button type="button" onClick={() => setFaqModalOpen(true)}>
                 FAQ
@@ -548,15 +525,32 @@ export function AppShell({ children }: { children: ReactNode }) {
         </button>
       </nav>
 
-      {/* Quick Notes Floating Action Button (Bottom-Right) */}
+      {/* Quick Notes Floating Action Button (Bottom-Right, 3D Glowing Orb) */}
       {!isWorkspaceView && (
         <button
+          type="button"
           className="notes-fab"
           onClick={() => setNotesOpen(true)}
           aria-label="Catatan Fokus Cepat"
           title="Buka Catatan Fokus Cepat (Keep)"
         >
-          ✏️
+          <span className="notes-fab-gloss" aria-hidden="true" />
+          <svg
+            className="notes-fab-icon"
+            viewBox="0 0 24 24"
+            width="22"
+            height="22"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+          <span className="notes-fab-sparkle" aria-hidden="true">✦</span>
         </button>
       )}
 
