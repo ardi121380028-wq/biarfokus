@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAppContext } from "@/app/providers/app-provider";
@@ -247,6 +248,14 @@ export function NotesTopbar({
                   💎 Upgrade Pro
                 </button>
               )}
+              <Link
+                href="/subscription"
+                className="cal-profile-menu-item"
+                onClick={() => setProfileMenuOpen(false)}
+                style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}
+              >
+                💳 Riwayat &amp; Langganan
+              </Link>
               <button
                 type="button"
                 className="cal-profile-menu-item cal-profile-logout-item"

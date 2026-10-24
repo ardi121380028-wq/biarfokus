@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import type { CalendarViewMode } from "@/features/calendar/calendar-service";
 import { getWeekNumber } from "@/features/calendar/calendar-service";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
@@ -409,6 +410,14 @@ export function CalendarTopbar({
                   💎 Upgrade Pro
                 </button>
               )}
+              <Link
+                href="/subscription"
+                className="cal-profile-menu-item"
+                onClick={() => setProfileMenuOpen(false)}
+                style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}
+              >
+                💳 Riwayat &amp; Langganan
+              </Link>
               <button
                 type="button"
                 className="cal-profile-menu-item cal-profile-logout-item"

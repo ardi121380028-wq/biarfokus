@@ -24,6 +24,7 @@ import { CalendarGrid } from "./calendar-grid";
 import { CalendarMonthView } from "./calendar-month-view";
 import { CalendarYearView } from "./calendar-year-view";
 import { CalendarEventModal } from "./calendar-event-modal";
+import { loadLocalSettings } from "@/features/settings/settings-service";
 
 type CalendarViewProps = {
   userId?: string | null;
@@ -99,7 +100,13 @@ export function CalendarView({
   }
 
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
-  const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(() => {
+    if (typeof window !== "undefined") {
+      const saved = loadLocalSettings().calendarDefaultView;
+      if (saved === "day" || saved === "week" || saved === "month") return saved;
+    }
+    return "day";
+  });
   const [searchQuery, setSearchQuery] = useState("");
 
   // Modal state

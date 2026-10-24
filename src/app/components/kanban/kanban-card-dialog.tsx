@@ -1302,18 +1302,33 @@ export function KanbanCardDialog({
                     ))}
 
                     {!readOnly && (
-                      <input
-                        type="text"
-                        placeholder="+ Tambah butir checklist (Enter)..."
-                        className="kanban-subtask-input"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            const target = e.currentTarget;
-                            handleAddItemToChecklist(chk.id, target.value);
-                            target.value = "";
+                      <form
+                        className="kanban-add-checklist-item-form"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const input = e.currentTarget.elements.namedItem("itemText") as HTMLInputElement | null;
+                          if (input && input.value.trim()) {
+                            handleAddItemToChecklist(chk.id, input.value.trim());
+                            input.value = "";
                           }
                         }}
-                      />
+                      >
+                        <input
+                          name="itemText"
+                          type="text"
+                          enterKeyHint="done"
+                          placeholder="+ Tambah butir checklist..."
+                          className="kanban-subtask-input kanban-checklist-add-input"
+                          autoComplete="off"
+                        />
+                        <button
+                          type="submit"
+                          className="kanban-add-item-btn"
+                          title="Tambah butir checklist"
+                        >
+                          + Tambah
+                        </button>
+                      </form>
                     )}
                   </div>
                 </div>

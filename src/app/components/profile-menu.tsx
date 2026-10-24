@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 type ProfileMenuProps = {
   userName: string;
   isPro?: boolean;
@@ -69,6 +71,15 @@ export function ProfileMenu({
       >
         {isPro ? "👑 BiarFokus Pro (Aktif)" : "💎 Upgrade Pro"}
       </button>
+
+      <Link
+        href="/subscription"
+        className="cal-profile-menu-item"
+        role="menuitem"
+        style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}
+      >
+        💳 Riwayat &amp; Langganan
+      </Link>
 
       {isAdmin && (
         <button

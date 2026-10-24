@@ -15,6 +15,13 @@ export type UserSettings = {
   longBreakInterval: number;
   dailyGoalPomodoros: number;
   tickingSoundEnabled: boolean;
+  language?: "id" | "en";
+  timeFormat?: "24" | "12";
+  notesDefaultView?: "grid" | "list";
+  calendarDefaultView?: "day" | "week" | "month";
+  calendarDefaultDuration?: number;
+  calendarConfirmDelete?: boolean;
+  kanbanConfirmDelete?: boolean;
 };
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -28,6 +35,13 @@ export const DEFAULT_SETTINGS: UserSettings = {
   longBreakInterval: 4,
   dailyGoalPomodoros: 8,
   tickingSoundEnabled: false,
+  language: "id",
+  timeFormat: "24",
+  notesDefaultView: "grid",
+  calendarDefaultView: "day",
+  calendarDefaultDuration: 60,
+  calendarConfirmDelete: true,
+  kanbanConfirmDelete: true,
 };
 
 export function normalizeSettings(value: unknown): UserSettings {
@@ -69,6 +83,22 @@ export function normalizeSettings(value: unknown): UserSettings {
   const tickingSoundEnabled =
     typeof s.tickingSoundEnabled === "boolean" ? s.tickingSoundEnabled : false;
 
+  const language = s.language === "en" ? "en" : "id";
+  const timeFormat = s.timeFormat === "12" ? "12" : "24";
+  const notesDefaultView = s.notesDefaultView === "list" ? "list" : "grid";
+  const calendarDefaultView =
+    s.calendarDefaultView === "week" || s.calendarDefaultView === "month"
+      ? s.calendarDefaultView
+      : "day";
+  const calendarDefaultDuration =
+    s.calendarDefaultDuration === 15 || s.calendarDefaultDuration === 30 || s.calendarDefaultDuration === 60
+      ? s.calendarDefaultDuration
+      : 60;
+  const calendarConfirmDelete =
+    typeof s.calendarConfirmDelete === "boolean" ? s.calendarConfirmDelete : true;
+  const kanbanConfirmDelete =
+    typeof s.kanbanConfirmDelete === "boolean" ? s.kanbanConfirmDelete : true;
+
   return {
     selectedColor: typeof s.selectedColor === "string" ? s.selectedColor : DEFAULT_SETTINGS.selectedColor,
     autoStart: typeof s.autoStart === "boolean" ? s.autoStart : DEFAULT_SETTINGS.autoStart,
@@ -80,6 +110,13 @@ export function normalizeSettings(value: unknown): UserSettings {
     longBreakInterval,
     dailyGoalPomodoros,
     tickingSoundEnabled,
+    language,
+    timeFormat,
+    notesDefaultView,
+    calendarDefaultView,
+    calendarDefaultDuration,
+    calendarConfirmDelete,
+    kanbanConfirmDelete,
   };
 }
 

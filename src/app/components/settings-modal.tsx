@@ -8,6 +8,11 @@ import {
   stopAlarmSound,
   type AlarmSoundType,
 } from "@/features/audio/alarm-sound";
+import {
+  loadLocalSettings,
+  saveLocalSettings,
+  type UserSettings,
+} from "@/features/settings/settings-service";
 
 const presetClassic: TimerDurations = { pomodoro: 25 * 60, short: 5 * 60, long: 15 * 60 };
 const presetDeepWork: TimerDurations = { pomodoro: 50 * 60, short: 10 * 60, long: 30 * 60 };
@@ -79,6 +84,39 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+
+  // Additional settings state
+  const [language, setLanguage] = useState<"id" | "en">("id");
+  const [timeFormat, setTimeFormat] = useState<"24" | "12">("24");
+  const [notesDefaultView, setNotesDefaultView] = useState<"grid" | "list">("grid");
+  const [notesConfirmDelete, setNotesConfirmDelete] = useState(true);
+  const [notesAutoCopy, setNotesAutoCopy] = useState(true);
+  const [calendarDefaultView, setCalendarDefaultView] = useState<"day" | "week" | "month">("day");
+  const [calendarDefaultDuration, setCalendarDefaultDuration] = useState<number>(60);
+  const [calendarConfirmDelete, setCalendarConfirmDelete] = useState(true);
+  const [calendarKanbanSync, setCalendarKanbanSync] = useState(true);
+  const [kanbanConfirmDelete, setKanbanConfirmDelete] = useState(true);
+  const [kanbanShowPIC, setKanbanShowPIC] = useState(true);
+  const [kanbanShowDueDate, setKanbanShowDueDate] = useState(true);
+  const [kanbanFrogIntegration, setKanbanFrogIntegration] = useState(true);
+  const [kanbanMobileQuickMove, setKanbanMobileQuickMove] = useState(true);
+
+  useEffect(() => {
+    const s = loadLocalSettings();
+    if (s.language) setLanguage(s.language);
+    if (s.timeFormat) setTimeFormat(s.timeFormat);
+    if (s.notesDefaultView) setNotesDefaultView(s.notesDefaultView);
+    if (s.calendarDefaultView) setCalendarDefaultView(s.calendarDefaultView);
+    if (s.calendarDefaultDuration) setCalendarDefaultDuration(s.calendarDefaultDuration);
+    if (typeof s.calendarConfirmDelete === "boolean") setCalendarConfirmDelete(s.calendarConfirmDelete);
+    if (typeof s.kanbanConfirmDelete === "boolean") setKanbanConfirmDelete(s.kanbanConfirmDelete);
+  }, []);
+
+  function handleUpdateExtraSetting<K extends keyof UserSettings>(key: K, val: UserSettings[K]) {
+    const current = loadLocalSettings();
+    const updated = { ...current, [key]: val };
+    saveLocalSettings(updated);
+  }
 
   // Local state for custom duration inputs (in minutes)
   const [customPomoMin, setCustomPomoMin] = useState(Math.round(timerDurations.pomodoro / 60));
@@ -267,6 +305,71 @@ export function SettingsModal({
                   >
                     {notificationsEnabled ? "Aktif" : "Nonaktif"}
                   </button>
+                </div>
+              </div>
+
+              <div className="settings-section">
+                <p className="settings-section-title">BAHASA &amp; FORMAT WAKTU</p>
+                <div className="setting-row">
+                  <div>
+                    <span style={{ fontWeight: 600 }}>Bahasa Antarmuka</span>
+                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                      Pilih bahasa aplikasi untuk kenyamanan kerja kamu.
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${language === "id" ? "active" : ""}`}
+                      onClick={() => {
+                        setLanguage("id");
+                        handleUpdateExtraSetting("language", "id");
+                      }}
+                    >
+                      🇮🇩 Indonesia
+                    </button>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${language === "en" ? "active" : ""}`}
+                      onClick={() => {
+                        setLanguage("en");
+                        handleUpdateExtraSetting("language", "en");
+                      }}
+                    >
+                      🇬🇧 English
+                    </button>
+                  </div>
+                </div>
+
+                <div className="setting-row" style={{ marginTop: 10 }}>
+                  <div>
+                    <span style={{ fontWeight: 600 }}>Format Jam &amp; Waktu</span>
+                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                      Tampilan jam di kalender, timer, dan kartu tenggat waktu.
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${timeFormat === "24" ? "active" : ""}`}
+                      onClick={() => {
+                        setTimeFormat("24");
+                        handleUpdateExtraSetting("timeFormat", "24");
+                      }}
+                    >
+                      24 Jam (14:30)
+                    </button>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${timeFormat === "12" ? "active" : ""}`}
+                      onClick={() => {
+                        setTimeFormat("12");
+                        handleUpdateExtraSetting("timeFormat", "12");
+                      }}
+                    >
+                      12 Jam (02:30 PM)
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -544,65 +647,78 @@ export function SettingsModal({
           {activeTab === "catatan" && (
             <>
               <div className="settings-section">
-                <p className="settings-section-title">EDITOR CATATAN</p>
+                <p className="settings-section-title">TAMPILAN &amp; TATA LETAK CATATAN</p>
                 <div className="setting-row">
                   <div>
-                    <span style={{ fontWeight: 600 }}>WYSIWYG Live Preview</span>
+                    <span style={{ fontWeight: 600 }}>Tampilan Default Catatan</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Setiap teks, heading, dan daftar poin langsung terformat tanpa tombol pratinjau terpisah.
+                      Pilih format kisi kartu atau daftar vertikal saat membuka catatan.
                     </p>
                   </div>
-                  <span className="settings-badge-ok">Aktif</span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${notesDefaultView === "grid" ? "active" : ""}`}
+                      onClick={() => {
+                        setNotesDefaultView("grid");
+                        handleUpdateExtraSetting("notesDefaultView", "grid");
+                      }}
+                    >
+                      ⊞ Grid Kotak
+                    </button>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${notesDefaultView === "list" ? "active" : ""}`}
+                      onClick={() => {
+                        setNotesDefaultView("list");
+                        handleUpdateExtraSetting("notesDefaultView", "list");
+                      }}
+                    >
+                      ☰ Daftar Vertikal
+                    </button>
+                  </div>
                 </div>
 
                 <div className="setting-row" style={{ marginTop: 10 }}>
                   <div>
-                    <span style={{ fontWeight: 600 }}>Live Markdown Shortcuts</span>
+                    <span style={{ fontWeight: 600 }}>Konfirmasi Sebelum Hapus Catatan</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Ketik <code>-</code> atau <code>*</code> lalu spasi untuk membuat daftar poin otomatis.
+                      Tampilkan dialog peringatan konfirmasi agar catatan tidak terhapus tidak sengaja.
                     </p>
                   </div>
-                  <span className="settings-badge-ok">Aktif</span>
-                </div>
-
-                <div className="setting-row" style={{ marginTop: 10 }}>
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Heading Cepat (#)</span>
-                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Ketik <code>#</code>, <code>##</code>, <code>###</code> lalu spasi untuk heading 1–3.
-                    </p>
-                  </div>
-                  <span className="settings-badge-ok">Aktif</span>
-                </div>
-
-                <div className="setting-row" style={{ marginTop: 10 }}>
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Tabel / Grid Bawaan</span>
-                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Tombol ⊞ Grid menyisipkan tabel langsung di area catatan.
-                    </p>
-                  </div>
-                  <span className="settings-badge-ok">Aktif</span>
+                  <button
+                    type="button"
+                    className={`settings-contrast-toggle ${notesConfirmDelete ? "active" : ""}`}
+                    onClick={() => setNotesConfirmDelete(!notesConfirmDelete)}
+                  >
+                    {notesConfirmDelete ? "Aktif" : "Nonaktif"}
+                  </button>
                 </div>
               </div>
 
               <div className="settings-section">
-                <p className="settings-section-title">PENYIMPANAN CATATAN</p>
+                <p className="settings-section-title">PENYIMPANAN &amp; EKSPOR</p>
                 <div className="setting-row">
                   <div>
-                    <span style={{ fontWeight: 600 }}>Simpan Otomatis (Auto-Save)</span>
+                    <span style={{ fontWeight: 600 }}>Salin Teks ke Clipboard saat Ekspor</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Setiap perubahan huruf tersimpan langsung tanpa perlu menekan tombol simpan.
+                      Otomatis salin ringkasan catatan saat menekan tombol ekspor atau bagikan.
                     </p>
                   </div>
-                  <span className="settings-badge-ok">Aktif</span>
+                  <button
+                    type="button"
+                    className={`settings-contrast-toggle ${notesAutoCopy ? "active" : ""}`}
+                    onClick={() => setNotesAutoCopy(!notesAutoCopy)}
+                  >
+                    {notesAutoCopy ? "Aktif" : "Nonaktif"}
+                  </button>
                 </div>
 
                 <div className="setting-row" style={{ marginTop: 10 }}>
                   <div>
-                    <span style={{ fontWeight: 600 }}>Ekspor Format PDF</span>
+                    <span style={{ fontWeight: 600 }}>Format Ekspor PDF &amp; Markdown</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Unduh catatan rapi dengan judul dan format heading langsung ke dokumen PDF.
+                      Mendukung ekspor langsung ke format PDF dan format teks Markdown (.md).
                     </p>
                   </div>
                   <span className="settings-badge-ok">Tersedia</span>
@@ -615,48 +731,126 @@ export function SettingsModal({
           {activeTab === "kalender" && (
             <>
               <div className="settings-section">
-                <p className="settings-section-title">TAMPILAN WAKTU KALENDER</p>
+                <p className="settings-section-title">TAMPILAN AWAL KALENDER</p>
                 <div className="setting-row">
                   <div>
-                    <span style={{ fontWeight: 600 }}>Format Jam</span>
+                    <span style={{ fontWeight: 600 }}>Tampilan Default Kalender</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Format waktu 24 jam (14:00) atau 12 jam (02:00 PM).
+                      Mode waktu yang otomatis terbuka pertama kali saat membuka menu Kalender.
                     </p>
                   </div>
-                  <span className="settings-contrast-toggle active">24 Jam</span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${calendarDefaultView === "day" ? "active" : ""}`}
+                      onClick={() => {
+                        setCalendarDefaultView("day");
+                        handleUpdateExtraSetting("calendarDefaultView", "day");
+                      }}
+                    >
+                      Hari (Day)
+                    </button>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${calendarDefaultView === "week" ? "active" : ""}`}
+                      onClick={() => {
+                        setCalendarDefaultView("week");
+                        handleUpdateExtraSetting("calendarDefaultView", "week");
+                      }}
+                    >
+                      Minggu (Week)
+                    </button>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${calendarDefaultView === "month" ? "active" : ""}`}
+                      onClick={() => {
+                        setCalendarDefaultView("month");
+                        handleUpdateExtraSetting("calendarDefaultView", "month");
+                      }}
+                    >
+                      Bulan (Month)
+                    </button>
+                  </div>
                 </div>
 
                 <div className="setting-row" style={{ marginTop: 10 }}>
                   <div>
-                    <span style={{ fontWeight: 600 }}>Hari Pertama dalam Pekan</span>
+                    <span style={{ fontWeight: 600 }}>Durasi Standar Jadwal Baru</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Mulai kolom kalender dari hari Senin atau Minggu.
+                      Durasi bawaan saat mengklik kalender untuk menambah acara baru.
                     </p>
                   </div>
-                  <span className="settings-contrast-toggle active">Senin</span>
-                </div>
-
-                <div className="setting-row" style={{ marginTop: 10 }}>
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Durasi Default Jadwal Baru</span>
-                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Durasi standar ketika mengklik tanggal untuk membuat jadwal.
-                    </p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${calendarDefaultDuration === 15 ? "active" : ""}`}
+                      onClick={() => {
+                        setCalendarDefaultDuration(15);
+                        handleUpdateExtraSetting("calendarDefaultDuration", 15);
+                      }}
+                    >
+                      15m
+                    </button>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${calendarDefaultDuration === 30 ? "active" : ""}`}
+                      onClick={() => {
+                        setCalendarDefaultDuration(30);
+                        handleUpdateExtraSetting("calendarDefaultDuration", 30);
+                      }}
+                    >
+                      30m
+                    </button>
+                    <button
+                      type="button"
+                      className={`settings-contrast-toggle ${calendarDefaultDuration === 60 ? "active" : ""}`}
+                      onClick={() => {
+                        setCalendarDefaultDuration(60);
+                        handleUpdateExtraSetting("calendarDefaultDuration", 60);
+                      }}
+                    >
+                      60m
+                    </button>
                   </div>
-                  <span className="settings-contrast-toggle active">60 Menit</span>
                 </div>
               </div>
 
               <div className="settings-section">
-                <p className="settings-section-title">INTEGRASI JADWAL</p>
+                <p className="settings-section-title">PENGELOLAAN &amp; INTEGRASI JADWAL</p>
                 <div className="setting-row">
                   <div>
-                    <span style={{ fontWeight: 600 }}>Jadwalkan Kartu Kanban</span>
+                    <span style={{ fontWeight: 600 }}>Konfirmasi Sebelum Hapus Jadwal</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Kartu kanban dengan tenggat waktu otomatis muncul di tampilan kalender.
+                      Tampilkan notifikasi peringatan sebelum acara kalender dihapus permanen.
                     </p>
                   </div>
-                  <span className="settings-badge-ok">Aktif</span>
+                  <button
+                    type="button"
+                    className={`settings-contrast-toggle ${calendarConfirmDelete ? "active" : ""}`}
+                    onClick={() => {
+                      const next = !calendarConfirmDelete;
+                      setCalendarConfirmDelete(next);
+                      handleUpdateExtraSetting("calendarConfirmDelete", next);
+                    }}
+                  >
+                    {calendarConfirmDelete ? "Aktif" : "Nonaktif"}
+                  </button>
+                </div>
+
+                <div className="setting-row" style={{ marginTop: 10 }}>
+                  <div>
+                    <span style={{ fontWeight: 600 }}>Integrasi Otomatis Kartu Kanban</span>
+                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                      Kartu kanban yang memiliki rentang tanggal tenggat otomatis tampil di kalender.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className={`settings-contrast-toggle ${calendarKanbanSync ? "active" : ""}`}
+                    onClick={() => setCalendarKanbanSync(!calendarKanbanSync)}
+                  >
+                    {calendarKanbanSync ? "Aktif" : "Nonaktif"}
+                  </button>
                 </div>
               </div>
             </>
@@ -666,46 +860,94 @@ export function SettingsModal({
           {activeTab === "kanban" && (
             <>
               <div className="settings-section">
-                <p className="settings-section-title">PENGATURAN KANBAN WORKSPACE</p>
+                <p className="settings-section-title">PENGATURAN KARTU &amp; PAPAN PROYEK</p>
 
                 <div className="setting-row">
                   <div>
-                    <span style={{ fontWeight: 600 }}>Sinkronisasi Cloud Dua Arah (Bidirectional)</span>
+                    <span style={{ fontWeight: 600 }}>Konfirmasi Sebelum Hapus Kartu</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Papan kanban di komputer dan hp tersinkron otomatis secara real-time.
+                      Mencegah kartu proyek tidak sengaja terhapus dengan peringatan konfirmasi.
                     </p>
                   </div>
-                  <span className="settings-badge-ok">Aktif</span>
+                  <button
+                    type="button"
+                    className={`settings-contrast-toggle ${kanbanConfirmDelete ? "active" : ""}`}
+                    onClick={() => {
+                      const next = !kanbanConfirmDelete;
+                      setKanbanConfirmDelete(next);
+                      handleUpdateExtraSetting("kanbanConfirmDelete", next);
+                    }}
+                  >
+                    {kanbanConfirmDelete ? "Aktif" : "Nonaktif"}
+                  </button>
                 </div>
 
                 <div className="setting-row" style={{ marginTop: 10 }}>
                   <div>
                     <span style={{ fontWeight: 600 }}>Tampilkan Avatar PIC pada Kartu</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Inisial atau foto penanggung jawab kartu di pojok kanan bawah.
+                      Tampilkan inisial atau foto penanggung jawab kartu di pojok kanan bawah.
                     </p>
                   </div>
-                  <span className="settings-badge-ok">Aktif</span>
+                  <button
+                    type="button"
+                    className={`settings-contrast-toggle ${kanbanShowPIC ? "active" : ""}`}
+                    onClick={() => setKanbanShowPIC(!kanbanShowPIC)}
+                  >
+                    {kanbanShowPIC ? "Aktif" : "Nonaktif"}
+                  </button>
                 </div>
 
                 <div className="setting-row" style={{ marginTop: 10 }}>
                   <div>
-                    <span style={{ fontWeight: 600 }}>Integrasi Eat Your Frog 🐸</span>
+                    <span style={{ fontWeight: 600 }}>Tampilkan Badge Tanggal Tenggat</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Shortcut langsung untuk menjadikan kartu sebagai target fokus harian.
+                      Tampilkan tanggal jatuh tempo pada kartu proyek untuk memudahkan tracking.
                     </p>
                   </div>
-                  <span className="settings-badge-ok">Aktif</span>
+                  <button
+                    type="button"
+                    className={`settings-contrast-toggle ${kanbanShowDueDate ? "active" : ""}`}
+                    onClick={() => setKanbanShowDueDate(!kanbanShowDueDate)}
+                  >
+                    {kanbanShowDueDate ? "Aktif" : "Nonaktif"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="settings-section">
+                <p className="settings-section-title">FITUR WORKFLOW PRODUKTIVITAS</p>
+
+                <div className="setting-row">
+                  <div>
+                    <span style={{ fontWeight: 600 }}>Integrasi Tombol Eat Your Frog 🐸</span>
+                    <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                      Shortcut 1-klik untuk menjadikan kartu tugas prioritas sebagai fokus harian utama.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className={`settings-contrast-toggle ${kanbanFrogIntegration ? "active" : ""}`}
+                    onClick={() => setKanbanFrogIntegration(!kanbanFrogIntegration)}
+                  >
+                    {kanbanFrogIntegration ? "Aktif" : "Nonaktif"}
+                  </button>
                 </div>
 
                 <div className="setting-row" style={{ marginTop: 10 }}>
                   <div>
-                    <span style={{ fontWeight: 600 }}>Pindah Kolom Satu Sentuhan di Mobile</span>
+                    <span style={{ fontWeight: 600 }}>Tombol Pindah Cepat Kolom di Mobile</span>
                     <p className="settings-help" style={{ margin: "2px 0 0" }}>
-                      Tombol ⇄ Pindah mempermudah memindahkan tugas antar kolom tanpa perlu drag di layar hp.
+                      Tombol ⇄ mempermudah pindah kolom antar To Do / In Progress / Done di HP.
                     </p>
                   </div>
-                  <span className="settings-badge-ok">Aktif</span>
+                  <button
+                    type="button"
+                    className={`settings-contrast-toggle ${kanbanMobileQuickMove ? "active" : ""}`}
+                    onClick={() => setKanbanMobileQuickMove(!kanbanMobileQuickMove)}
+                  >
+                    {kanbanMobileQuickMove ? "Aktif" : "Nonaktif"}
+                  </button>
                 </div>
               </div>
             </>

@@ -336,6 +336,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="footer-right">
             <div className="footer-links">
+              <Link href="/fitur" className="footer-link-btn">
+                Fitur &amp; Panduan
+              </Link>
               <button type="button" onClick={() => setPomodoroModalOpen(true)}>
                 Apa itu Pomodoro?
               </button>

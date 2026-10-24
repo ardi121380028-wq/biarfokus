@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import type { KanbanBoard, KanbanBoardMember, KanbanCard, KanbanList, UserRole } from "@/types/domain";
 import { BOARD_BACKGROUNDS } from "@/features/kanban/kanban-service";
@@ -860,6 +861,14 @@ export function KanbanView({
                       💎 Upgrade Pro
                     </button>
                   )}
+                  <Link
+                    href="/subscription"
+                    className="cal-profile-menu-item"
+                    onClick={() => setProfileMenuOpen(false)}
+                    style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}
+                  >
+                    💳 Riwayat &amp; Langganan
+                  </Link>
                   {handleLogout && (
                     <button
                       type="button"
