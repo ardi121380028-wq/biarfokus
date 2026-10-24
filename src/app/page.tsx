@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppContext } from "@/app/providers/app-provider";
 import { TimerPanel } from "@/app/components/timer-panel";
 import { TaskManagement } from "@/app/components/task-management";
+import { LandingSection } from "@/app/components/landing-section";
 import { AMBIENT_SOUND_OPTIONS } from "@/features/audio/ambient-sound";
 import { formatTime } from "@/features/timer/timer-utils";
 import type { TimerMode } from "@/types/domain";
@@ -112,6 +113,8 @@ function HomeContent() {
           onOpenNotes={() => router.push("/catatan")}
         />
       </div>
+
+      <LandingSection />
 
       {zenMode && (
         <div className="zen-overlay" role="dialog" aria-modal="true" aria-label="Mode Zen Fokus">
