@@ -11116,30 +11116,213 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
   .cal-workspace-topbar {
     z-index: 100 !important;
-    padding: 0 10px !important;
+    padding: 0 8px !important;
+    gap: 6px !important;
+    height: 52px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+    position: relative !important;
   }
 
   .cal-topbar-left {
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
-    flex-shrink: 0 !important;
-    min-width: fit-content !important;
+    gap: 4px !important;
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
 
   .cal-topbar-hamburger-btn {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 34px !important;
-    height: 34px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
     font-size: 16px !important;
+    flex-shrink: 0 !important;
+    border-radius: 50% !important;
+  }
+
+  .cal-topbar-today-btn {
+    display: none !important;
+  }
+
+  .cal-topbar-nav-arrows {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    margin: 0 !important;
     flex-shrink: 0 !important;
   }
 
+  .cal-topbar-arrow-btn {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    font-size: 15px !important;
+    flex-shrink: 0 !important;
+    border-radius: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .cal-topbar-heading-wrap {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    flex: 0 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .cal-topbar-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    letter-spacing: -0.02em !important;
+    max-width: 110px !important;
+  }
+
+  .cal-topbar-week-badge {
+    display: none !important;
+  }
+
   .cal-topbar-right {
+    display: flex !important;
+    align-items: center !important;
     gap: 5px !important;
     flex-shrink: 0 !important;
+    min-width: 0 !important;
+  }
+
+  /* Cloud sync on mobile: hide when synced, show when saving/offline/error */
+  .cal-sync-status-badge.synced {
+    display: none !important;
+  }
+
+  .cal-sync-status-badge {
+    padding: 3px 6px !important;
+    font-size: 11px !important;
+    border-radius: 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .cal-sync-status-badge .cal-sync-status-text {
+    display: none !important;
+  }
+
+  /* Search toggle */
+  .cal-topbar-search-toggle {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 12px !important;
+    flex-shrink: 0 !important;
+    border-radius: 8px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+  }
+
+  /* Modern View Mode Switcher on Mobile */
+  .cal-topbar-view-switcher {
+    flex-shrink: 0 !important;
+  }
+
+  .cal-modern-view-btn {
+    padding: 4px 7px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    gap: 3px !important;
+    border-radius: 10px !important;
+    flex-shrink: 0 !important;
+    height: 30px !important;
+  }
+
+  .cal-view-btn-icon {
+    font-size: 12px !important;
+  }
+
+  .cal-view-btn-label {
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    max-width: 55px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .cal-view-chevron {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  /* Profile Avatar in Mobile Topbar: Hide text name & badge pill, keep sleek 30px avatar */
+  .cal-topbar-profile-wrap {
+    flex-shrink: 0 !important;
+  }
+
+  .cal-topbar-profile-wrap .profile-button-wrap {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .cal-topbar-profile-wrap .profile-user-col {
+    display: none !important;
+  }
+
+  .cal-topbar-avatar-btn,
+  .cal-topbar-avatar-img {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    font-size: 12px !important;
+    flex-shrink: 0 !important;
+    border-radius: 50% !important;
+  }
+
+  .cal-topbar-login-btn {
+    padding: 4px 10px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    border-radius: 12px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .cal-topbar-search-box.is-open {
+    position: absolute !important;
+    left: 6px !important;
+    right: 6px !important;
+    top: 5px !important;
+    bottom: 5px !important;
+    background: var(--paper) !important;
+    z-index: 200 !important;
+    border-radius: 12px !important;
+    border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    padding: 2px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .cal-topbar-title {
+    max-width: 80px !important;
+    font-size: 13px !important;
+  }
+  .cal-view-btn-label {
+    display: none !important;
   }
 }
 
