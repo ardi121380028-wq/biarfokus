@@ -6,6 +6,7 @@
 @import "../styles/04-components/auth.css";
 @import "../styles/04-components/notes.css";
 @import "../styles/04-components/calendar.css";
+@import "../styles/04-components/admin-docs.css";
 
 :root { --ink:#111; --muted:#777; --paper:#fff; --page:#e8e8e8; --pink:#f77fa5; --accent:#f77fa5; --yellow:#f6c832; --blue:#1875d1; }
 * {
