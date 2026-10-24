@@ -6420,7 +6420,7 @@ button:active:not(:disabled) {
 
 .cal-topbar-profile-menu {
   position: absolute;
-  top: 44px;
+  top: calc(100% + 6px);
   right: 0;
   width: 200px;
   background: var(--paper);
@@ -6428,7 +6428,7 @@ button:active:not(:disabled) {
   border-radius: 16px;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
   padding: 8px;
-  z-index: 999;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -7219,7 +7219,7 @@ button:active:not(:disabled) {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 999;
+  z-index: 9999;
   min-width: 150px;
   background: var(--paper);
   border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
@@ -11115,14 +11115,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   .cal-workspace-topbar {
-    z-index: 100 !important;
+    z-index: 250 !important;
     padding: 0 8px !important;
     gap: 6px !important;
     height: 52px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     position: relative !important;
   }
 
@@ -11200,6 +11200,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     gap: 5px !important;
     flex-shrink: 0 !important;
     min-width: 0 !important;
+    overflow: visible !important;
+    position: relative !important;
   }
 
   /* Cloud sync on mobile: hide when synced, show when saving/offline/error */
@@ -11234,6 +11236,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   /* Modern View Mode Switcher on Mobile */
   .cal-topbar-view-switcher {
     flex-shrink: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
   }
 
   .cal-modern-view-btn {
@@ -11264,9 +11268,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     height: 10px !important;
   }
 
+  .cal-modern-view-dropdown {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    min-width: 140px !important;
+    z-index: 9999 !important;
+    background: var(--paper) !important;
+    border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.35) !important;
+    padding: 5px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+  }
+
   /* Profile Avatar in Mobile Topbar: Hide text name & badge pill, keep sleek 30px avatar */
   .cal-topbar-profile-wrap {
     flex-shrink: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
   }
 
   .cal-topbar-profile-wrap .profile-button-wrap {
@@ -11288,6 +11310,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-size: 12px !important;
     flex-shrink: 0 !important;
     border-radius: 50% !important;
+  }
+
+  .cal-topbar-profile-menu {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    width: 210px !important;
+    max-width: calc(100vw - 16px) !important;
+    z-index: 9999 !important;
+    background: var(--paper) !important;
+    border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.38) !important;
+    padding: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
   }
 
   .cal-topbar-login-btn {
