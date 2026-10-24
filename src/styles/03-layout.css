@@ -157,17 +157,22 @@
   }
   .keep-notes-modal-dialog {
     width: 100vw !important;
-    height: 92dvh !important;
-    max-height: 92dvh !important;
+    height: auto !important;
+    max-height: 88dvh !important;
     border-radius: 22px 22px 0 0 !important;
-    padding: 16px 14px calc(env(safe-area-inset-bottom, 12px) + 8px) !important;
+    padding: 16px 14px 14px !important;
     box-sizing: border-box !important;
     margin: 0 !important;
   }
+  .keep-container {
+    height: auto !important;
+    max-height: calc(88dvh - 28px) !important;
+  }
   .keep-scroll-body {
     flex: 1 1 auto !important;
+    max-height: calc(88dvh - 185px) !important;
     overflow-y: auto !important;
-    padding-bottom: 12px !important;
+    padding-bottom: 6px !important;
     min-height: 0 !important;
     overscroll-behavior: contain;
   }

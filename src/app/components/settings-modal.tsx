@@ -100,7 +100,7 @@ export function SettingsModal({
   const [kanbanShowDueDate, setKanbanShowDueDate] = useState(true);
   const [kanbanFrogIntegration, setKanbanFrogIntegration] = useState(true);
   const [kanbanMobileQuickMove, setKanbanMobileQuickMove] = useState(true);
-  const [loadingStyle, setLoadingStyle] = useState<"minimal" | "pro" | "classic">("classic");
+  const [loadingStyle, setLoadingStyle] = useState<"minimal" | "pro" | "classic">("minimal");
 
   useEffect(() => {
     const s = loadLocalSettings();

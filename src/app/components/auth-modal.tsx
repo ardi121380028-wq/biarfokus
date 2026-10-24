@@ -75,7 +75,11 @@ export function AuthModal({ mode, setMode, onClose }: AuthModalProps) {
         return;
       }
       if (isSignUp) {
-        setStatus("Akun dibuat. Cek email kamu untuk verifikasi sebelum login.");
+        if (result.data?.session) {
+          onClose();
+          return;
+        }
+        setStatus("Akun berhasil dibuat. Cek email kamu untuk verifikasi sebelum login.");
         return;
       }
       onClose();

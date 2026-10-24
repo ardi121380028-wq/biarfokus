@@ -50,7 +50,16 @@
 
 /* -------------------------------------------------------------------------- */
 /* Option 1: Minimalist Dynamic Rainbow (No Text, Big Logo, Thin Laser Bar)   */
+/* Ultra-Clean Pure White Canvas                                              */
 /* -------------------------------------------------------------------------- */
+.app-startup-splash.splash-minimal {
+  background: #ffffff !important;
+}
+
+.app-startup-splash.splash-minimal .app-splash-aurora {
+  display: none !important;
+}
+
 .app-splash-minimal-content {
   display: flex;
   flex-direction: column;

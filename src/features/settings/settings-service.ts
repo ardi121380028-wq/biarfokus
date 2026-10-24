@@ -43,7 +43,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   calendarDefaultDuration: 60,
   calendarConfirmDelete: true,
   kanbanConfirmDelete: true,
-  loadingStyle: "classic",
+  loadingStyle: "minimal",
 };
 
 export function normalizeSettings(value: unknown): UserSettings {
@@ -101,9 +101,9 @@ export function normalizeSettings(value: unknown): UserSettings {
   const kanbanConfirmDelete =
     typeof s.kanbanConfirmDelete === "boolean" ? s.kanbanConfirmDelete : true;
   const loadingStyle =
-    s.loadingStyle === "minimal" || s.loadingStyle === "pro"
+    s.loadingStyle === "classic" || s.loadingStyle === "pro"
       ? s.loadingStyle
-      : "classic";
+      : "minimal";
 
   return {
     selectedColor: typeof s.selectedColor === "string" ? s.selectedColor : DEFAULT_SETTINGS.selectedColor,

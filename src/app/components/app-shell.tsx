@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
   const [splashStep, setSplashStep] = useState(0);
-  const [loadingStyle, setLoadingStyle] = useState<"minimal" | "pro" | "classic">("classic");
+  const [loadingStyle, setLoadingStyle] = useState<"minimal" | "pro" | "classic">("minimal");
 
   // Load user loading style preference with resilient fallback
   useEffect(() => {

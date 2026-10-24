@@ -1436,7 +1436,7 @@ button:active:not(:disabled) {
   .cal-actions-right { justify-content: space-between; width: 100%; gap: 6px; }
   .cal-create-event-btn { padding: 6px 14px; font-size: 12px; }
 
-  .keep-notes-modal-dialog { width: 96vw; height: 92vh; padding: 16px 14px; border-radius: 18px; }
+  .keep-notes-modal-dialog { width: 100vw; height: auto; max-height: 88dvh; padding: 16px 14px 14px; border-radius: 22px 22px 0 0; }
   .keep-page-view { padding: 20px 14px; border-radius: 20px; }
   .keep-header-bar { gap: 10px; }
   .keep-search-box { flex: 1; min-width: 120px; }
@@ -7883,10 +7883,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
   .keep-notes-modal-dialog {
     width: 100vw !important;
-    height: 92dvh !important;
-    max-height: 92dvh !important;
+    height: auto !important;
+    max-height: 88dvh !important;
     border-radius: 22px 22px 0 0 !important;
-    padding: 16px 14px calc(env(safe-area-inset-bottom, 12px) + 8px) !important;
+    padding: 16px 14px 14px !important;
     box-sizing: border-box !important;
   }
   .keep-header-title small {
