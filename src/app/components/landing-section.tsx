@@ -1,8 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
+type HubTab = "pomodoro" | "calendar" | "kanban" | "notes";
+
 export function LandingSection() {
+  const [activeTab, setActiveTab] = useState<HubTab>("pomodoro");
+
+  function scrollToShowcase() {
+    if (typeof window !== "undefined") {
+      const el = document.getElementById("ekosistem-showcase");
+      el?.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+
   function scrollToTop() {
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -10,243 +22,392 @@ export function LandingSection() {
   }
 
   return (
-    <section className="landing-section-wrapper" aria-label="Eksplorasi Ekosistem BiarFokus">
-      {/* Subtle Scroll Bridge Indicator */}
-      <div className="landing-scroll-bridge">
-        <div className="landing-bridge-pill">
-          ✨ Ekosistem Produktivitas All-in-One
-        </div>
-        <div className="landing-bridge-arrow">↓</div>
+    <>
+      {/* 1. Only the clean, clickable teaser button appears below the timer */}
+      <div className="landing-bridge-trigger">
+        <button
+          type="button"
+          className="landing-bridge-btn"
+          onClick={scrollToShowcase}
+          aria-label="Lihat fitur ekosistem BiarFokus"
+        >
+          <span className="landing-bridge-sparkle">✨</span>
+          <span className="landing-bridge-text">Jelajahi Ekosistem BiarFokus</span>
+          <span className="landing-bridge-arrow">↓</span>
+        </button>
       </div>
 
-      {/* Hero Header */}
-      <div className="landing-hero">
-        <h2>
-          Bukan Sekadar Timer Biasa.{" "}
-          <span className="gradient-text">Satu Ruang Kerja untuk Seluruh Harimu.</span>
-        </h2>
-        <p>
-          BiarFokus menyatukan <strong>Focus Pomodoro</strong>, <strong>Time-Blocking Kalender</strong>,{" "}
-          <strong>Kanban Kolaboratif</strong>, dan <strong>Catatan Cepat Keep</strong> ke dalam satu aplikasi yang tenang, cepat, dan 100% bebas distraksi iklan.
-        </p>
-        <div className="landing-hero-actions">
-          <button type="button" className="landing-cta-primary" onClick={scrollToTop}>
-            🚀 Mulai Fokus Sekarang (Gratis)
-          </button>
-          <Link href="/fitur" className="landing-cta-secondary">
-            📖 Pelajari Panduan Alur Kerja →
-          </Link>
-        </div>
-      </div>
-
-      {/* Modern Bento Grid (Notion / Linear Style) */}
-      <div className="landing-bento-grid">
-        {/* Bento 1: Pomodoro & Zen Audio (Col-8) */}
-        <div className="landing-bento-card col-8">
-          <div>
-            <span className="landing-bento-badge pink">⏱️ Focus Engine</span>
-            <h3>Teknik Pomodoro Saintifik &amp; Suara Alam Penenang</h3>
-            <p>
-              Kerja 25 menit dengan intensitas tinggi, diselingi 5 menit istirahat teratur. Terbukti secara neurologis menjaga energi mental dan mencegah kejenuhan (burnout). Dilengkapi suara latar binaural untuk memblokir kebisingan ruangan.
-            </p>
-          </div>
-          <div className="landing-bento-preview">
-            <span style={{ fontSize: "12px", fontWeight: "700", color: "var(--muted)" }}>
-              🎧 Pilihan Suara Alam Terintegrasi:
+      {/* 2. Main Showcase Section: Only revealed on scroll */}
+      <section
+        id="ekosistem-showcase"
+        className="landing-section-wrapper"
+        aria-label="Eksplorasi Ekosistem BiarFokus"
+      >
+        {/* Hero Header */}
+        <div className="landing-hero">
+          <span className="landing-eyebrow-badge">
+            ✨ Ekosistem Produktivitas All-in-One
+          </span>
+          <h2>
+            Bukan Sekadar Timer Biasa.
+            <span className="landing-hero-highlight">
+              Satu Ruang Kerja untuk Seluruh Harimu.
             </span>
-            <div className="landing-sound-pills">
-              <span className="landing-sound-pill">🌧️ Hujan Deras</span>
-              <span className="landing-sound-pill">🌲 Hutan Hening</span>
-              <span className="landing-sound-pill">🌊 Ombak Laut</span>
-              <span className="landing-sound-pill">☕ Suasana Kafe</span>
-              <span className="landing-sound-pill">📻 White Noise</span>
-              <span className="landing-sound-pill">🧘 Mode Zen (Full Screen)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Bento 2: Time-Blocking Calendar (Col-4) */}
-        <div className="landing-bento-card col-4">
-          <div>
-            <span className="landing-bento-badge yellow">📅 Time-Blocking</span>
-            <h3>Kalender Blok Waktu</h3>
-            <p>
-              Kuasai harimu sebelum hari menguasaimu. Jadwalkan blok waktu spesifik untuk tugas-tugas penting dengan sinkronisasi ke timer.
-            </p>
-          </div>
-          <div className="landing-bento-preview">
-            <div style={{ background: "var(--paper)", border: "1px solid color-mix(in srgb, var(--ink) 10%, transparent)", borderRadius: "10px", padding: "10px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "700", color: "#854d0e", marginBottom: "4px" }}>
-                09:00 - 10:30 · Deep Work
-              </div>
-              <strong style={{ fontSize: "12.5px", color: "var(--ink)", display: "block" }}>
-                Selesaikan Arsitektur SaaS
-              </strong>
-              <small style={{ color: "var(--muted)", fontSize: "11px" }}>3 Sesi Pomodoro terjadwal</small>
-            </div>
-          </div>
-        </div>
-
-        {/* Bento 3: Frog & Kanban Board (Col-4) */}
-        <div className="landing-bento-card col-4">
-          <div>
-            <span className="landing-bento-badge green">🐸 Eat That Frog</span>
-            <h3>Prioritas Frog &amp; Kanban</h3>
-            <p>
-              Tuntaskan tugas terberat di pagi hari. Visualisasikan pekerjaan tim dalam papan kartu drag-and-drop kolaboratif.
-            </p>
-          </div>
-          <div className="landing-bento-preview">
-            <div className="landing-mini-kanban">
-              <div className="landing-mini-col">
-                <div className="landing-mini-col-header">TO-DO</div>
-                <div className="landing-mini-item frog">🐸 Audit Skema</div>
-              </div>
-              <div className="landing-mini-col">
-                <div className="landing-mini-col-header">PROGRES</div>
-                <div className="landing-mini-item">Landing Page</div>
-              </div>
-              <div className="landing-mini-col">
-                <div className="landing-mini-col-header">SELESAI</div>
-                <div className="landing-mini-item" style={{ borderLeftColor: "#16a34a" }}>✓ Setup Auth</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bento 4: Google Keep-Style Notes (Col-8) */}
-        <div className="landing-bento-card col-8">
-          <div>
-            <span className="landing-bento-badge blue">📝 Google Keep Style</span>
-            <h3>Catatan Cepat &amp; Checklist Terintegrasi</h3>
-            <p>
-              Jangan biarkan ide cemerlang menguap saat kamu sedang fokus. Tangkap catatan rapat, to-do checklist, dan referensi penting dengan kode warna pastel tepat di samping timermu.
-            </p>
-          </div>
-          <div className="landing-bento-preview">
-            <div className="landing-mini-notes">
-              <div className="landing-mini-note-card" style={{ background: "#fef08a", border: "1px solid #fde047" }}>
-                <strong>📌 Checklist Launching</strong>
-                <ul style={{ margin: "6px 0 0 16px", padding: 0, fontSize: "11.5px" }}>
-                  <li>☑️ Setup security headers HTTP</li>
-                  <li>☑️ Testing unit test 99/99 lolos</li>
-                  <li>⬜ Supavisor connection pooler</li>
-                </ul>
-              </div>
-              <div className="landing-mini-note-card" style={{ background: "#bfdbfe", border: "1px solid #93c5fd" }}>
-                <strong>💡 Ide Fitur Mendatang</strong>
-                <p style={{ margin: "4px 0 0", fontSize: "11.5px" }}>
-                  Integrasi Google Calendar dua arah dan export laporan produktivitas PDF untuk tim.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Impact Stats Banner */}
-      <div className="landing-stats-grid">
-        <div className="landing-stat-card">
-          <div className="landing-stat-number">25.000+</div>
-          <div className="landing-stat-label">Sesi Fokus Diselesaikan</div>
-        </div>
-        <div className="landing-stat-card">
-          <div className="landing-stat-number">100%</div>
-          <div className="landing-stat-label">Bebas Iklan &amp; Banner Pelacak</div>
-        </div>
-        <div className="landing-stat-card">
-          <div className="landing-stat-number">4 in 1</div>
-          <div className="landing-stat-label">Ekosistem Alat Produktivitas</div>
-        </div>
-        <div className="landing-stat-card">
-          <div className="landing-stat-number">0 Detik</div>
-          <div className="landing-stat-label">Waktu Setup (Instan Digunakan)</div>
-        </div>
-      </div>
-
-      {/* Feature Comparison Table: BiarFokus vs Ordinary Apps */}
-      <div className="landing-compare-section">
-        <div className="landing-compare-header">
-          <h3>Kenapa Pengguna Memilih BiarFokus?</h3>
+          </h2>
           <p>
-            Bandingkan keunggulan BiarFokus dengan aplikasi stopwatch sederhana atau website timer konvensional.
+            BiarFokus menggabungkan <strong>Timer Pomodoro Saintifik</strong>,{" "}
+            <strong>Time-Blocking Kalender</strong>, <strong>Kanban Kolaboratif</strong>, dan{" "}
+            <strong>Catatan Cepat Keep</strong> ke dalam satu aplikasi yang tenang dan 100% bebas gangguan iklan.
           </p>
+          <div className="landing-hero-actions">
+            <button
+              type="button"
+              className="landing-cta-primary"
+              onClick={scrollToTop}
+            >
+              ⏱️ Mulai Sesi Fokus Sekarang (Gratis)
+            </button>
+            <Link href="/fitur" className="landing-cta-secondary">
+              📖 Panduan Alur Kerja →
+            </Link>
+          </div>
         </div>
 
-        <div className="landing-compare-table-wrapper">
-          <table className="landing-compare-table">
-            <thead>
-              <tr>
-                <th>Fitur &amp; Kemampuan</th>
-                <th className="highlight">BiarFokus</th>
-                <th>Stopwatch Biasa</th>
-                <th>Web Pomodoro Iklanan</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Fokus Pomodoro Berstandar Saintifik</strong></td>
-                <td className="highlight">✅ Ya (Siklus 4 Sesi)</td>
-                <td>❌ Tidak (Hanya Stopwatch)</td>
-                <td>✅ Ya</td>
-              </tr>
-              <tr>
-                <td><strong>100% Bebas Iklan Banner &amp; Pop-up</strong></td>
-                <td className="highlight">✅ Bersih Tanpa Iklan</td>
-                <td>✅ Tanpa Iklan</td>
-                <td>❌ Penuh Iklan Mengganggu</td>
-              </tr>
-              <tr>
-                <td><strong>Time-Blocking Kalender Terintegrasi</strong></td>
-                <td className="highlight">✅ Ada</td>
-                <td>❌ Tidak Ada</td>
-                <td>❌ Tidak Ada</td>
-              </tr>
-              <tr>
-                <td><strong>Project Kanban Kolaboratif (Tim)</strong></td>
-                <td className="highlight">✅ Ada (Undang Teman)</td>
-                <td>❌ Tidak Ada</td>
-                <td>❌ Tidak Ada</td>
-              </tr>
-              <tr>
-                <td><strong>Catatan Pastel Model Google Keep</strong></td>
-                <td className="highlight">✅ Ada (Warna &amp; Checklist)</td>
-                <td>❌ Tidak Ada</td>
-                <td>❌ Tidak Ada</td>
-              </tr>
-              <tr>
-                <td><strong>Audio Alam Penenang (Ambient Soundscapes)</strong></td>
-                <td className="highlight">✅ Gratis &amp; Langsung Tersedia</td>
-                <td>❌ Tidak Ada</td>
-                <td>🔒 Wajib Bayar Mahal</td>
-              </tr>
-              <tr>
-                <td><strong>Dukungan Instalasi Mobile PWA</strong></td>
-                <td className="highlight">✅ iOS &amp; Android Ready</td>
-                <td>❌ Hanya Web</td>
-                <td>❌ Hanya Web</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        {/* Interactive Notion / Linear Feature Showcase */}
+        <div className="landing-interactive-hub">
+          {/* Tab Selector */}
+          <div className="landing-hub-nav" role="tablist" aria-label="Pilih Fitur">
+            <button
+              type="button"
+              className={`landing-hub-tab-btn ${activeTab === "pomodoro" ? "active" : ""}`}
+              onClick={() => setActiveTab("pomodoro")}
+            >
+              <span>⏱️</span> Pomodoro &amp; Zen Audio
+            </button>
+            <button
+              type="button"
+              className={`landing-hub-tab-btn ${activeTab === "calendar" ? "active" : ""}`}
+              onClick={() => setActiveTab("calendar")}
+            >
+              <span>📅</span> Time-Blocking Kalender
+            </button>
+            <button
+              type="button"
+              className={`landing-hub-tab-btn ${activeTab === "kanban" ? "active" : ""}`}
+              onClick={() => setActiveTab("kanban")}
+            >
+              <span>📋</span> Project Kanban &amp; Frog
+            </button>
+            <button
+              type="button"
+              className={`landing-hub-tab-btn ${activeTab === "notes" ? "active" : ""}`}
+              onClick={() => setActiveTab("notes")}
+            >
+              <span>📝</span> Catatan Model Keep
+            </button>
+          </div>
 
-      {/* Big Notion-Style Call To Action Card */}
-      <div className="landing-cta-banner">
-        <span className="landing-bridge-pill">🚀 Siap Memulai?</span>
-        <h2>Tingkatkan Produktivitasmu Hari Ini Tanpa Burnout</h2>
-        <p>
-          Mulai sesi fokus pertamamu sekarang juga. Tanpa perlu download software yang rumit, langsung berjalan mulus di browsermu.
-        </p>
-        <div className="landing-hero-actions">
-          <button type="button" className="landing-cta-primary" onClick={scrollToTop}>
-            ⏱️ Mulai Sesi Fokus Sekarang
-          </button>
-          <Link href="/upgrade" className="landing-cta-secondary">
-            👑 Lihat Keuntungan Akun Pro →
-          </Link>
+          {/* Mockup Frame (Mac Window Frame) */}
+          <div className="landing-mockup-frame">
+            <div className="landing-mockup-header">
+              <div className="landing-mockup-dots">
+                <span className="landing-mockup-dot red" />
+                <span className="landing-mockup-dot yellow" />
+                <span className="landing-mockup-dot green" />
+              </div>
+              <div className="landing-mockup-title">
+                biarfokus.com / {activeTab}
+              </div>
+              <div style={{ width: "42px" }} />
+            </div>
+
+            <div className="landing-mockup-body">
+              {/* TAB 1: POMODORO */}
+              {activeTab === "pomodoro" && (
+                <>
+                  <div className="landing-mockup-content">
+                    <h3>Teknik Pomodoro Saintifik &amp; Suara Alam Penenang</h3>
+                    <p>
+                      Siklus kerja 25 menit fokus dan 5 menit jeda menjaga kejernihan pikiranmu sepanjang hari tanpa risiko kejenuhan mental.
+                    </p>
+                    <ul className="landing-mockup-bullets">
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Siklus otomatis: Pomodoro, Istirahat Pendek, dan Istirahat Panjang teratur.</span>
+                      </li>
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Suara latar ambient: Hujan deras, hutan tropis, ombak laut, dan white noise.</span>
+                      </li>
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Mode Zen layar penuh untuk menghilangkan semua distraksi di sekelilingmu.</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="landing-mockup-visual">
+                    <div style={{ textAlign: "center", padding: "12px 0" }}>
+                      <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
+                        Pratinjau Mode Fokus
+                      </span>
+                      <div style={{ font: "bold 56px Georgia, serif", color: "var(--ink)", margin: "4px 0 10px" }}>
+                        25:00
+                      </div>
+                      <button
+                        type="button"
+                        className="start-button"
+                        style={{ width: "auto", padding: "8px 24px", fontSize: "13px", margin: "0 auto", display: "inline-block" }}
+                        onClick={scrollToTop}
+                      >
+                        START FOCUS
+                      </button>
+                    </div>
+                    <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap", marginTop: "6px" }}>
+                      <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "999px", background: "var(--paper)", border: "1px solid color-mix(in srgb, var(--ink) 12%, transparent)", color: "var(--ink)" }}>
+                        🌧️ Hujan
+                      </span>
+                      <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "999px", background: "var(--paper)", border: "1px solid color-mix(in srgb, var(--ink) 12%, transparent)", color: "var(--ink)" }}>
+                        🌲 Hutan
+                      </span>
+                      <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "999px", background: "var(--paper)", border: "1px solid color-mix(in srgb, var(--ink) 12%, transparent)", color: "var(--ink)" }}>
+                        🌊 Ombak
+                      </span>
+                      <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "999px", background: "var(--paper)", border: "1px solid color-mix(in srgb, var(--ink) 12%, transparent)", color: "var(--ink)" }}>
+                        ☕ Kafe
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* TAB 2: CALENDAR */}
+              {activeTab === "calendar" && (
+                <>
+                  <div className="landing-mockup-content">
+                    <h3>Time-Blocking: Kendalikan Jam Kerjamu</h3>
+                    <p>
+                      Petakan harimu ke dalam blok-blok waktu terencana. Selesaikan pekerjaan tepat waktu tanpa tergesa-gesa.
+                    </p>
+                    <ul className="landing-mockup-bullets">
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Jadwalkan sesi fokus langsung ke slot jam kerja harian dan mingguan.</span>
+                      </li>
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Kode warna kategori kegiatan: Deep work, meeting, review, dan istirahat.</span>
+                      </li>
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Terhubung langsung dengan daftar tugas harianmu.</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="landing-mockup-visual">
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div style={{ background: "color-mix(in srgb, var(--blue) 12%, var(--paper))", borderLeft: "4px solid var(--blue)", borderRadius: "8px", padding: "10px 12px" }}>
+                        <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--blue)" }}>08:30 - 10:30 · DEEP WORK</div>
+                        <strong style={{ fontSize: "13px", color: "var(--ink)", display: "block" }}>Selesaikan Fitur SaaS &amp; Refactor</strong>
+                        <small style={{ color: "var(--muted)", fontSize: "11px" }}>4 Sesi Pomodoro terjadwal</small>
+                      </div>
+                      <div style={{ background: "color-mix(in srgb, var(--yellow) 16%, var(--paper))", borderLeft: "4px solid #ca8a04", borderRadius: "8px", padding: "10px 12px" }}>
+                        <div style={{ fontSize: "11px", fontWeight: "700", color: "#854d0e" }}>11:00 - 12:00 · REVIEW</div>
+                        <strong style={{ fontSize: "13px", color: "var(--ink)", display: "block" }}>Evaluasi Metrik &amp; Kanban Tim</strong>
+                        <small style={{ color: "var(--muted)", fontSize: "11px" }}>2 Sesi Pomodoro</small>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* TAB 3: KANBAN */}
+              {activeTab === "kanban" && (
+                <>
+                  <div className="landing-mockup-content">
+                    <h3>Eat That Frog &amp; Kanban Kolaboratif</h3>
+                    <p>
+                      Kuasai tugas terberat dan terpenting di awal hari (*Eat That Frog*). Visualisasikan alur proyek tim secara transparan.
+                    </p>
+                    <ul className="landing-mockup-bullets">
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Fitur penanda Frog untuk memprioritaskan tugas berdampak paling besar.</span>
+                      </li>
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Kolaborasi tim tanpa ribet lewat kode invite instan.</span>
+                      </li>
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Drag &amp; drop kartu tugas antar kolom To-Do, In Progress, dan Selesai.</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="landing-mockup-visual">
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                      <div style={{ background: "var(--paper)", borderRadius: "10px", padding: "10px", border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)" }}>
+                        <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--muted)", marginBottom: "6px" }}>TO-DO</div>
+                        <div style={{ padding: "8px", background: "color-mix(in srgb, #22c55e 12%, var(--paper))", borderLeft: "3px solid #22c55e", borderRadius: "6px", fontSize: "12px", fontWeight: "600", color: "var(--ink)" }}>
+                          🐸 Audit Skema DB
+                        </div>
+                      </div>
+                      <div style={{ background: "var(--paper)", borderRadius: "10px", padding: "10px", border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)" }}>
+                        <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--muted)", marginBottom: "6px" }}>IN PROGRESS</div>
+                        <div style={{ padding: "8px", background: "color-mix(in srgb, var(--blue) 10%, var(--paper))", borderLeft: "3px solid var(--blue)", borderRadius: "6px", fontSize: "12px", fontWeight: "600", color: "var(--ink)" }}>
+                          ⚡ Polish Landing Page
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* TAB 4: NOTES */}
+              {activeTab === "notes" && (
+                <>
+                  <div className="landing-mockup-content">
+                    <h3>Catatan Cepat Google Keep di Samping Timermu</h3>
+                    <p>
+                      Jangan biarkan inspirasi penting hilang saat kamu sedang fokus. Tangkap ide mendadak tanpa harus meninggalkan timer.
+                    </p>
+                    <ul className="landing-mockup-bullets">
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Pilihan warna pastel untuk membedakan kategori catatan secara visual.</span>
+                      </li>
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Mode to-do checklist interaktif dan pin catatan penting di baris teratas.</span>
+                      </li>
+                      <li>
+                        <span className="landing-mockup-check">✓</span>
+                        <span>Ekspor catatan rapi ke format PDF dan teks untuk dibagikan.</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="landing-mockup-visual">
+                    <div style={{ background: "#fef08a", border: "1px solid #fde047", borderRadius: "12px", padding: "14px", color: "#111" }}>
+                      <strong style={{ fontSize: "13px", display: "block", marginBottom: "6px" }}>📌 Catatan Cepat Rapat</strong>
+                      <div style={{ fontSize: "12px", lineHeight: "1.5" }}>
+                        <div>☑️ Pasang HTTP security headers</div>
+                        <div>☑️ Living design system hub</div>
+                        <div>⬜ Siapkan launch ke 100k pengguna</div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+
+        {/* Three Key Value Pillars (Linear Style) */}
+        <div className="landing-pillars-grid">
+          <div className="landing-pillar-card">
+            <div className="landing-pillar-icon">⚡</div>
+            <h4>Instan Tanpa Wajib Login</h4>
+            <p>
+              Buka website dan langsung mulai sesi timermu dalam 2 detik. Semua riwayat tersimpan aman di browsermu tanpa wajib registrasi.
+            </p>
+          </div>
+          <div className="landing-pillar-card">
+            <div className="landing-pillar-icon">🛡️</div>
+            <h4>100% Bebas Iklan &amp; Banner</h4>
+            <p>
+              Fokusmu tidak akan pernah terganggu oleh pop-up iklan banner yang menjengkelkan. Pengalaman bekerja yang bersih dan tenang.
+            </p>
+          </div>
+          <div className="landing-pillar-card">
+            <div className="landing-pillar-icon">🔄</div>
+            <h4>Sinkronisasi Cloud &amp; PWA Mobile</h4>
+            <p>
+              Login untuk menyinkronkan data tugas dan riwayat ke semua perangkatmu. Bisa diinstal langsung di HP (iOS &amp; Android).
+            </p>
+          </div>
+        </div>
+
+        {/* Feature Comparison Matrix */}
+        <div className="landing-compare-section">
+          <div className="landing-compare-header">
+            <h3>Kenapa Pengguna Memilih BiarFokus?</h3>
+            <p>
+              Bandingkan fitur BiarFokus dengan aplikasi stopwatch sederhana atau web timer konvensional.
+            </p>
+          </div>
+
+          <div className="landing-compare-table-wrapper">
+            <table className="landing-compare-table">
+              <thead>
+                <tr>
+                  <th>Fitur Produktivitas</th>
+                  <th className="highlight">BiarFokus</th>
+                  <th>Stopwatch Biasa</th>
+                  <th>Web Pomodoro Iklanan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Timer Pomodoro Saintifik</strong></td>
+                  <td className="highlight">✓ Siklus Otomatis</td>
+                  <td>— Manual</td>
+                  <td>✓ Ada</td>
+                </tr>
+                <tr>
+                  <td><strong>100% Bebas Iklan Banner</strong></td>
+                  <td className="highlight">✓ Bersih &amp; Tenang</td>
+                  <td>✓ Bersih</td>
+                  <td>✗ Penuh Iklan Mengganggu</td>
+                </tr>
+                <tr>
+                  <td><strong>Time-Blocking Kalender</strong></td>
+                  <td className="highlight">✓ Terintegrasi</td>
+                  <td>— Tidak Ada</td>
+                  <td>— Tidak Ada</td>
+                </tr>
+                <tr>
+                  <td><strong>Project Kanban &amp; Tim Kolaboratif</strong></td>
+                  <td className="highlight">✓ Ada (Invite Code)</td>
+                  <td>— Tidak Ada</td>
+                  <td>— Tidak Ada</td>
+                </tr>
+                <tr>
+                  <td><strong>Catatan Model Google Keep</strong></td>
+                  <td className="highlight">✓ Warna &amp; Checklist</td>
+                  <td>— Tidak Ada</td>
+                  <td>— Tidak Ada</td>
+                </tr>
+                <tr>
+                  <td><strong>Audio Alam Binaural Ambient</strong></td>
+                  <td className="highlight">✓ Gratis Langsung Pakai</td>
+                  <td>— Tidak Ada</td>
+                  <td>🔒 Wajib Bayar Mahal</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Final Call To Action Card */}
+        <div className="landing-cta-banner">
+          <span className="landing-eyebrow-badge">🚀 Mulai Hari Ini</span>
+          <h2>Tingkatkan Produktivitasmu Tanpa Rasa Jenuh</h2>
+          <p>
+            Mulai sesi fokus pertamamu sekarang juga. Bebas iklan, cepat, dan siap membantumu menuntaskan setiap pekerjaan.
+          </p>
+          <div className="landing-hero-actions">
+            <button
+              type="button"
+              className="landing-cta-primary"
+              onClick={scrollToTop}
+            >
+              ⏱️ Ke Timer Sekarang (Gratis)
+            </button>
+            <Link href="/upgrade" className="landing-cta-secondary">
+              👑 Lihat Paket Pro →
+            </Link>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
