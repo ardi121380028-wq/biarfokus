@@ -7883,10 +7883,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
   .keep-notes-modal-dialog {
     width: 100vw !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
-    border-radius: 0 !important;
-    padding: 16px 14px calc(env(safe-area-inset-bottom, 16px) + 16px) !important;
+    height: 92dvh !important;
+    max-height: 92dvh !important;
+    border-radius: 22px 22px 0 0 !important;
+    padding: 16px 14px calc(env(safe-area-inset-bottom, 12px) + 8px) !important;
+    box-sizing: border-box !important;
   }
   .keep-header-title small {
     display: none !important;

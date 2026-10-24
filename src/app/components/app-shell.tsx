@@ -338,13 +338,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                   type="button"
                   className="profile-button-wrap guest-profile-btn"
                   onClick={() => setLoginOpen(true)}
-                  aria-label="Masuk ke Akun BiarFokus"
-                  title="Masuk / Daftar Akun"
+                  aria-label="Sign In ke Akun BiarFokus"
+                  title="Sign In / Masuk Akun"
                 >
                   <div className="profile-button guest-avatar">
                     <svg
-                      width="18"
-                      height="18"
+                      width="16"
+                      height="16"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -358,8 +358,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </svg>
                   </div>
                   <div className="profile-user-col">
-                    <span className="profile-user-name">Masuk</span>
-                    <span className="profile-free-pill guest-pill">Akun</span>
+                    <span className="profile-user-name">Sign In</span>
                   </div>
                 </button>
               </div>

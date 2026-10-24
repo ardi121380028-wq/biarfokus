@@ -240,19 +240,6 @@ export function NotesView({ userId, onClose }: NotesViewProps) {
             </div>
           </>
         )}
-
-        {/* Mobile-only bottom completion button */}
-        {onClose && (
-          <div className="keep-modal-bottom-bar mobile-only">
-            <button
-              type="button"
-              className="keep-modal-done-btn"
-              onClick={onClose}
-            >
-              ✓ Selesai &amp; Tutup Catatan
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Edit Dialog Modal */}
