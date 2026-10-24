@@ -1,12 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 type HubTab = "pomodoro" | "calendar" | "kanban" | "notes";
 
+type CyclingFeature = {
+  id: string;
+  icon: string;
+  label: string;
+  tab: HubTab;
+};
+
+const CYCLING_FEATURES: CyclingFeature[] = [
+  { id: "pomodoro", icon: "⏱️", label: "Focus Timer 25 Menit", tab: "pomodoro" },
+  { id: "calendar", icon: "📅", label: "Time-Blocking Kalender", tab: "calendar" },
+  { id: "kanban", icon: "📋", label: "Project Kanban & Frog", tab: "kanban" },
+  { id: "notes", icon: "📝", label: "Catatan Cepat Keep", tab: "notes" },
+  { id: "ambient", icon: "🎧", label: "Zen Audio Suara Alam", tab: "pomodoro" },
+  { id: "frog", icon: "🐸", label: "Eat That Frog Priority", tab: "kanban" },
+];
+
 export function LandingSection() {
   const [activeTab, setActiveTab] = useState<HubTab>("pomodoro");
+  const [cyclerIdx, setCyclerIdx] = useState(0);
+  const [isHeadingHovered, setIsHeadingHovered] = useState(false);
+
+  // Live Timer Simulation
+  const [previewSeconds, setPreviewSeconds] = useState(1488); // 24:48
+  const [previewRunning, setPreviewRunning] = useState(true);
+  const [previewSound, setPreviewSound] = useState<"hujan" | "hutan" | "ombak" | "kafe">("hujan");
+
+  // Keep Notes Checklist Item Toggle Simulation
+  const [notesItemChecked, setNotesItemChecked] = useState(false);
+
+  // Dynamic Feature Icon Cycler
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCyclerIdx((prev) => (prev + 1) % CYCLING_FEATURES.length);
+    }, 2200);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Live countdown timer ticker
+  useEffect(() => {
+    if (!previewRunning) return;
+    const timer = setInterval(() => {
+      setPreviewSeconds((prev) => (prev > 0 ? prev - 1 : 1500));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [previewRunning]);
+
+  // Simulated auto-toggle of notes checklist item
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNotesItemChecked((prev) => !prev);
+    }, 4200);
+    return () => clearInterval(timer);
+  }, []);
+
+  function formatPreviewTime(totalSec: number) {
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
 
   function scrollToShowcase() {
     if (typeof window !== "undefined") {
@@ -25,6 +82,8 @@ export function LandingSection() {
     setActiveTab(tab);
     scrollToShowcase();
   }
+
+  const currentFeature = CYCLING_FEATURES[cyclerIdx];
 
   return (
     <>
@@ -110,17 +169,63 @@ export function LandingSection() {
         </div>
 
         <div className="landing-section-inner">
-          {/* Hero Header */}
+          {/* Hero Header with Interactive Hover Icon Cycler & Glossy AI Gradient */}
           <div className="landing-hero">
             <span className="landing-eyebrow-badge">
               ✨ Ekosistem Produktivitas All-in-One
             </span>
-            <h2>
-              Bukan Sekadar Timer Biasa.
-              <span className="landing-hero-highlight">
-                Satu Ruang Kerja untuk Seluruh Harimu.
-              </span>
-            </h2>
+
+            {/* Interactive Heading Wrapper with Glossy AI Gradient & Hover Micro-Icons */}
+            <div
+              className="landing-hero-heading-wrap"
+              onMouseEnter={() => setIsHeadingHovered(true)}
+              onMouseLeave={() => setIsHeadingHovered(false)}
+              onClick={() => {
+                setActiveTab(currentFeature.tab);
+                scrollToShowcase();
+              }}
+              role="button"
+              tabIndex={0}
+              title="Arahkan kursor atau klik untuk melihat fitur ekosistem"
+            >
+              {/* Cycling Pill Badge */}
+              <div className="landing-heading-interactive-bar">
+                <div className={`landing-heading-cycler-pill ${isHeadingHovered ? "is-hovered" : ""}`}>
+                  <span className="cycler-ai-sparkle">✦</span>
+                  <span className="cycler-icon" key={currentFeature.id}>{currentFeature.icon}</span>
+                  <span className="cycler-label">{currentFeature.label}</span>
+                  <span className="cycler-badge-ai">AI Focus</span>
+                </div>
+              </div>
+
+              <h2>
+                Bukan Sekadar Timer Biasa.
+                <span className="landing-hero-ai-gradient">
+                  Satu Ruang Kerja untuk Seluruh Harimu.
+                  <span className="landing-hero-sparkle" aria-hidden="true">✦</span>
+                </span>
+              </h2>
+
+              {/* Floating Orbiting Micro-Icons that pop up when hovering the heading */}
+              <div className={`landing-hero-floating-icons ${isHeadingHovered ? "is-visible" : ""}`} aria-hidden="true">
+                {CYCLING_FEATURES.map((feat, idx) => (
+                  <button
+                    key={feat.id}
+                    type="button"
+                    className={`hero-orb-icon hero-orb-${feat.id} ${idx === cyclerIdx ? "is-active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveTab(feat.tab);
+                      scrollToShowcase();
+                    }}
+                    title={`Buka ${feat.label}`}
+                  >
+                    <span>{feat.icon}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <p>
               BiarFokus menggabungkan <strong>Timer Pomodoro Saintifik</strong>,{" "}
               <strong>Time-Blocking Kalender</strong>, <strong>Kanban Kolaboratif</strong>, dan{" "}
@@ -189,7 +294,9 @@ export function LandingSection() {
               </div>
 
               <div className="landing-mockup-body">
-                {/* TAB 1: POMODORO */}
+                {/* ======================================================== */}
+                {/* TAB 1: POMODORO & ZEN AUDIO (LIVE REALISTIC PREVIEW)     */}
+                {/* ======================================================== */}
                 {activeTab === "pomodoro" && (
                   <>
                     <div className="landing-mockup-content">
@@ -212,42 +319,139 @@ export function LandingSection() {
                         </li>
                       </ul>
                     </div>
+
                     <div className="landing-mockup-visual">
-                      <div style={{ textAlign: "center", padding: "12px 0" }}>
-                        <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
-                          Pratinjau Mode Fokus
-                        </span>
-                        <div style={{ font: "bold 56px Georgia, serif", color: "var(--ink)", margin: "4px 0 10px" }}>
-                          25:00
+                      <div className="preview-timer-card">
+                        {/* Mode Tabs */}
+                        <div className="preview-mode-tabs">
+                          <button type="button" className="preview-mode-tab active">🍅 Pomodoro</button>
+                          <button type="button" className="preview-mode-tab">☕ Istirahat Pendek</button>
+                          <button type="button" className="preview-mode-tab">🌴 Istirahat Panjang</button>
                         </div>
-                        <button
-                          type="button"
-                          className="start-button"
-                          style={{ width: "auto", padding: "8px 24px", fontSize: "13px", margin: "0 auto", display: "inline-block" }}
-                          onClick={scrollToTop}
-                        >
-                          START FOCUS
-                        </button>
-                      </div>
-                      <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap", marginTop: "6px" }}>
-                        <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "999px", background: "var(--paper)", border: "1px solid color-mix(in srgb, var(--ink) 12%, transparent)", color: "var(--ink)" }}>
-                          🌧️ Hujan
-                        </span>
-                        <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "999px", background: "var(--paper)", border: "1px solid color-mix(in srgb, var(--ink) 12%, transparent)", color: "var(--ink)" }}>
-                          🌲 Hutan
-                        </span>
-                        <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "999px", background: "var(--paper)", border: "1px solid color-mix(in srgb, var(--ink) 12%, transparent)", color: "var(--ink)" }}>
-                          🌊 Ombak
-                        </span>
-                        <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "999px", background: "var(--paper)", border: "1px solid color-mix(in srgb, var(--ink) 12%, transparent)", color: "var(--ink)" }}>
-                          ☕ Kafe
-                        </span>
+
+                        {/* Daily Goal Bar */}
+                        <div className="preview-daily-goal">
+                          <div className="preview-goal-header">
+                            <span className="preview-goal-title">🎯 Target Hari Ini</span>
+                            <span className="preview-goal-count"><strong>3</strong> / 4 sesi (75%)</span>
+                          </div>
+                          <div className="preview-goal-track">
+                            <div className="preview-goal-fill" />
+                          </div>
+                        </div>
+
+                        {/* Focused Task Pill */}
+                        <div className="preview-focused-task">
+                          <span className="preview-task-badge">🎯 Fokus Aktif</span>
+                          <span className="preview-task-text">Siapkan Peluncuran BiarFokus SaaS</span>
+                          <span className="preview-task-pomo">🍅 3</span>
+                        </div>
+
+                        {/* Live Timer Display */}
+                        <div className="preview-timer-main">
+                          <div className="preview-timer-digits">
+                            {formatPreviewTime(previewSeconds)}
+                          </div>
+                          <div className="preview-live-indicator">
+                            <span className="preview-live-dot" />
+                            <span>{previewRunning ? "Sesi Berjalan" : "Timer Dijeda"}</span>
+                          </div>
+                        </div>
+
+                        {/* Control Buttons */}
+                        <div className="preview-timer-controls">
+                          <button
+                            type="button"
+                            className="preview-ctrl-btn"
+                            onClick={() => setPreviewSeconds(1500)}
+                            title="Reset Timer"
+                          >
+                            ↺
+                          </button>
+                          <button
+                            type="button"
+                            className="preview-start-btn"
+                            onClick={() => setPreviewRunning(!previewRunning)}
+                          >
+                            {previewRunning ? "PAUSE ❚❚" : "START FOCUS ▶"}
+                          </button>
+                          <button
+                            type="button"
+                            className="preview-ctrl-btn"
+                            onClick={() => setPreviewSeconds(300)}
+                            title="Lewati Sesi"
+                          >
+                            ⏭
+                          </button>
+                          <button
+                            type="button"
+                            className="preview-ctrl-btn"
+                            onClick={scrollToTop}
+                            title="Mode Zen Layar Penuh"
+                          >
+                            ⛶
+                          </button>
+                        </div>
+
+                        {/* Zen Audio Equalizer & Switcher */}
+                        <div className="preview-ambient-bar">
+                          <div className="preview-ambient-header">
+                            <div className="preview-ambient-label">
+                              <span>🎧 Suara Latar:</span>
+                              <strong>
+                                {previewSound === "hujan" && "🌧️ Hujan Deras"}
+                                {previewSound === "hutan" && "🌲 Hutan Tropis"}
+                                {previewSound === "ombak" && "🌊 Ombak Laut"}
+                                {previewSound === "kafe" && "☕ Kafe Ramai"}
+                              </strong>
+                            </div>
+                            <div className="preview-sound-wave" title="Audio Wave Equalizer">
+                              <span className="wave-bar" />
+                              <span className="wave-bar" />
+                              <span className="wave-bar" />
+                              <span className="wave-bar" />
+                              <span className="wave-bar" />
+                            </div>
+                          </div>
+                          <div className="preview-sound-chips">
+                            <button
+                              type="button"
+                              className={`preview-sound-chip ${previewSound === "hujan" ? "active" : ""}`}
+                              onClick={() => setPreviewSound("hujan")}
+                            >
+                              🌧️ Hujan
+                            </button>
+                            <button
+                              type="button"
+                              className={`preview-sound-chip ${previewSound === "hutan" ? "active" : ""}`}
+                              onClick={() => setPreviewSound("hutan")}
+                            >
+                              🌲 Hutan
+                            </button>
+                            <button
+                              type="button"
+                              className={`preview-sound-chip ${previewSound === "ombak" ? "active" : ""}`}
+                              onClick={() => setPreviewSound("ombak")}
+                            >
+                              🌊 Ombak
+                            </button>
+                            <button
+                              type="button"
+                              className={`preview-sound-chip ${previewSound === "kafe" ? "active" : ""}`}
+                              onClick={() => setPreviewSound("kafe")}
+                            >
+                              ☕ Kafe
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </>
                 )}
 
-                {/* TAB 2: CALENDAR */}
+                {/* ======================================================== */}
+                {/* TAB 2: TIME-BLOCKING KALENDER (LIVE REALISTIC PREVIEW)   */}
+                {/* ======================================================== */}
                 {activeTab === "calendar" && (
                   <>
                     <div className="landing-mockup-content">
@@ -270,24 +474,78 @@ export function LandingSection() {
                         </li>
                       </ul>
                     </div>
+
                     <div className="landing-mockup-visual">
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                        <div style={{ background: "color-mix(in srgb, var(--blue) 12%, var(--paper))", borderLeft: "4px solid var(--blue)", borderRadius: "8px", padding: "10px 12px" }}>
-                          <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--blue)" }}>08:30 - 10:30 · DEEP WORK</div>
-                          <strong style={{ fontSize: "13px", color: "var(--ink)", display: "block" }}>Selesaikan Fitur SaaS &amp; Refactor</strong>
-                          <small style={{ color: "var(--muted)", fontSize: "11px" }}>4 Sesi Pomodoro terjadwal</small>
+                      <div className="preview-calendar-card">
+                        <div className="preview-cal-header">
+                          <div className="preview-cal-date-title">
+                            <span>📅</span>
+                            <span>Jumat, 24 Oktober 2026</span>
+                          </div>
+                          <button type="button" className="preview-cal-pill-btn" onClick={scrollToTop}>
+                            + Blok Waktu
+                          </button>
                         </div>
-                        <div style={{ background: "color-mix(in srgb, var(--yellow) 16%, var(--paper))", borderLeft: "4px solid #ca8a04", borderRadius: "8px", padding: "10px 12px" }}>
-                          <div style={{ fontSize: "11px", fontWeight: "700", color: "#854d0e" }}>11:00 - 12:00 · REVIEW</div>
-                          <strong style={{ fontSize: "13px", color: "var(--ink)", display: "block" }}>Evaluasi Metrik &amp; Kanban Tim</strong>
-                          <small style={{ color: "var(--muted)", fontSize: "11px" }}>2 Sesi Pomodoro</small>
+
+                        <div className="preview-cal-grid">
+                          {/* Time Labels Axis */}
+                          <div className="preview-cal-time-axis">
+                            <span>08:30</span>
+                            <span>10:00</span>
+                            <span>11:30</span>
+                            <span>13:00</span>
+                          </div>
+
+                          {/* Column 1: Kamis 23 */}
+                          <div className="preview-cal-col">
+                            <div className="preview-cal-col-header">Kamis 23</div>
+                            <div className="preview-cal-col-body">
+                              <div className="preview-event-box preview-event-blue">
+                                <span className="preview-event-time">08:30 - 10:00 · 🍅 3</span>
+                                <strong className="preview-event-title">Deep Work: Engine</strong>
+                              </div>
+                              <div className="preview-event-box preview-event-green">
+                                <span className="preview-event-time">10:30 - 11:30 · 👥 Tim</span>
+                                <strong className="preview-event-title">Sync Sprint 14</strong>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Column 2: Jumat 24 (Today) */}
+                          <div className="preview-cal-col">
+                            <div className="preview-cal-col-header is-today">Jumat 24 (Hari Ini)</div>
+                            <div className="preview-cal-col-body">
+                              {/* Live Red Time Indicator */}
+                              <div className="preview-cal-now-line">
+                                <span className="preview-cal-now-dot" />
+                              </div>
+
+                              <div className="preview-event-box preview-event-purple">
+                                <span className="preview-event-time">08:30 - 09:30 · 🍅 2</span>
+                                <strong className="preview-event-title">Review Code PR</strong>
+                              </div>
+
+                              {/* Animated Dropping Block Demonstration */}
+                              <div className="preview-event-box preview-event-anim-drop">
+                                <span className="preview-event-time">✨ 10:30 - 12:00 · 🍅 3</span>
+                                <strong className="preview-event-title">+ Sesi Fokus: SaaS UI</strong>
+                              </div>
+
+                              <div className="preview-event-box preview-event-blue" style={{ opacity: 0.85 }}>
+                                <span className="preview-event-time">12:30 - 13:30 · ☕ Jeda</span>
+                                <strong className="preview-event-title">Makan &amp; Recharge</strong>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </>
                 )}
 
-                {/* TAB 3: KANBAN */}
+                {/* ======================================================== */}
+                {/* TAB 3: PROJECT KANBAN & FROG (LIVE REALISTIC PREVIEW)    */}
+                {/* ======================================================== */}
                 {activeTab === "kanban" && (
                   <>
                     <div className="landing-mockup-content">
@@ -310,18 +568,88 @@ export function LandingSection() {
                         </li>
                       </ul>
                     </div>
+
                     <div className="landing-mockup-visual">
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                        <div style={{ background: "var(--paper)", borderRadius: "10px", padding: "10px", border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)" }}>
-                          <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--muted)", marginBottom: "6px" }}>TO-DO</div>
-                          <div style={{ padding: "8px", background: "color-mix(in srgb, #22c55e 12%, var(--paper))", borderLeft: "3px solid #22c55e", borderRadius: "6px", fontSize: "12px", fontWeight: "600", color: "var(--ink)" }}>
-                            🐸 Audit Skema DB
+                      <div className="preview-kanban-card">
+                        <div className="preview-kanban-header">
+                          <div className="preview-kanban-title">
+                            <span>🚀</span>
+                            <span>BiarFokus Launch Board</span>
                           </div>
+                          <span style={{ fontSize: "10px", color: "var(--muted)", fontWeight: "600" }}>
+                            👥 3 Anggota Tim
+                          </span>
                         </div>
-                        <div style={{ background: "var(--paper)", borderRadius: "10px", padding: "10px", border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)" }}>
-                          <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--muted)", marginBottom: "6px" }}>IN PROGRESS</div>
-                          <div style={{ padding: "8px", background: "color-mix(in srgb, var(--blue) 10%, var(--paper))", borderLeft: "3px solid var(--blue)", borderRadius: "6px", fontSize: "12px", fontWeight: "600", color: "var(--ink)" }}>
-                            ⚡ Polish Landing Page
+
+                        <div className="preview-kanban-cols">
+                          {/* Column 1: TO-DO */}
+                          <div className="preview-kanban-col">
+                            <div className="preview-col-head">
+                              <span>To-Do</span>
+                              <span className="preview-col-badge">2</span>
+                            </div>
+                            <div className="preview-task-item">
+                              <span className="preview-task-item-title">🔒 Pasang Security Headers</span>
+                              <div className="preview-task-item-footer">
+                                <span>Backend</span>
+                                <span>🍅 2</span>
+                              </div>
+                            </div>
+                            <div className="preview-task-item">
+                              <span className="preview-task-item-title">📱 Responsive Mobile Nav</span>
+                              <div className="preview-task-item-footer">
+                                <span>UI/UX</span>
+                                <span>🍅 1</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Column 2: IN PROGRESS (With Eat That Frog card) */}
+                          <div className="preview-kanban-col">
+                            <div className="preview-col-head">
+                              <span>In Progress</span>
+                              <span className="preview-col-badge">1</span>
+                            </div>
+
+                            {/* The Eat That Frog Card */}
+                            <div className="preview-task-item preview-frog-item">
+                              <span className="preview-frog-tag">🐸 EAT THAT FROG #1</span>
+                              <span className="preview-task-item-title">⚡ Database Query Optimasi</span>
+                              <div className="preview-task-item-footer">
+                                <span style={{ color: "#16a34a", fontWeight: "750" }}>Critical</span>
+                                <span>✓ 2/3</span>
+                              </div>
+                            </div>
+
+                            {/* Simulated Card Gliding to DONE */}
+                            <div className="preview-gliding-card">
+                              <span style={{ fontSize: "10px", fontWeight: "750", color: "#16a34a" }}>
+                                🚀 One-Tap Google Auth
+                              </span>
+                              <span style={{ fontSize: "9px", color: "var(--muted)" }}>Gliding ke Selesai →</span>
+                            </div>
+                          </div>
+
+                          {/* Column 3: DONE */}
+                          <div className="preview-kanban-col">
+                            <div className="preview-col-head">
+                              <span>Selesai</span>
+                              <span className="preview-col-badge">3</span>
+                            </div>
+                            <div className="preview-task-item" style={{ borderLeft: "3px solid #22c55e" }}>
+                              <span className="preview-task-item-title">🎨 Living Design System</span>
+                              <div className="preview-task-item-footer">
+                                <span style={{ color: "#16a34a", fontWeight: "700" }}>✓ Selesai</span>
+                                <span>🍅 4</span>
+                              </div>
+                            </div>
+                            <div className="preview-task-item" style={{ borderLeft: "3px solid #22c55e" }}>
+                              <span className="preview-task-item-title">💳 Webhook Billing Mayar</span>
+                              <div className="preview-task-item-footer">
+                                <span style={{ color: "#16a34a", fontWeight: "700" }}>✓ Selesai</span>
+                                <span>🍅 3</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -329,7 +657,9 @@ export function LandingSection() {
                   </>
                 )}
 
-                {/* TAB 4: NOTES */}
+                {/* ======================================================== */}
+                {/* TAB 4: CATATAN MODEL KEEP (LIVE REALISTIC PREVIEW)       */}
+                {/* ======================================================== */}
                 {activeTab === "notes" && (
                   <>
                     <div className="landing-mockup-content">
@@ -352,13 +682,75 @@ export function LandingSection() {
                         </li>
                       </ul>
                     </div>
+
                     <div className="landing-mockup-visual">
-                      <div style={{ background: "#fef08a", border: "1px solid #fde047", borderRadius: "12px", padding: "14px", color: "#111" }}>
-                        <strong style={{ fontSize: "13px", display: "block", marginBottom: "6px" }}>📌 Catatan Cepat Rapat</strong>
-                        <div style={{ fontSize: "12px", lineHeight: "1.5" }}>
-                          <div>☑️ Pasang HTTP security headers</div>
-                          <div>☑️ Living design system hub</div>
-                          <div>⬜ Siapkan launch ke 100k pengguna</div>
+                      <div className="preview-notes-card">
+                        {/* Search Bar */}
+                        <div className="preview-notes-search">
+                          <span>🔍</span>
+                          <span>Telusuri catatan cepat &amp; ide fokus...</span>
+                        </div>
+
+                        {/* Sticky Notes Grid */}
+                        <div className="preview-notes-grid">
+                          {/* Sticky Note 1: Pastel Yellow Checklist */}
+                          <div className="preview-sticky-note sticky-yellow">
+                            <div className="preview-sticky-header">
+                              <span className="preview-sticky-title">📌 Checklist Sprint Launch</span>
+                              <span className="preview-sticky-pin">📌</span>
+                            </div>
+
+                            <div className="preview-checklist-items">
+                              <div className="preview-checklist-row">
+                                <span className="preview-checklist-checkbox checked">✓</span>
+                                <span className="preview-checklist-text striked">Pasang HTTP security headers</span>
+                              </div>
+                              <div className="preview-checklist-row">
+                                <span className="preview-checklist-checkbox checked">✓</span>
+                                <span className="preview-checklist-text striked">Living design system hub</span>
+                              </div>
+                              <div
+                                className="preview-checklist-row"
+                                onClick={() => setNotesItemChecked(!notesItemChecked)}
+                                title="Klik untuk coba checklist"
+                              >
+                                <span className={`preview-checklist-checkbox ${notesItemChecked ? "checked" : ""}`}>
+                                  {notesItemChecked ? "✓" : ""}
+                                </span>
+                                <span className={`preview-checklist-text ${notesItemChecked ? "striked" : ""}`}>
+                                  Siapkan launch 100k pengguna
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="preview-sticky-footer">
+                              <span>Diedit barusan</span>
+                              <div className="preview-color-dots">
+                                <span className="color-dot" style={{ background: "#fef08a" }} />
+                                <span className="color-dot" style={{ background: "#bae6fd" }} />
+                                <span className="color-dot" style={{ background: "#e9d5ff" }} />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Sticky Note 2: Pastel Blue Quick Idea */}
+                          <div className="preview-sticky-note sticky-blue">
+                            <div className="preview-sticky-header">
+                              <span className="preview-sticky-title">💡 Ide Fitur v2.0</span>
+                              <span>🏷️</span>
+                            </div>
+
+                            <p style={{ fontSize: "10.5px", margin: "0", lineHeight: "1.45", color: "#334155" }}>
+                              Mode suara binaural 40Hz untuk boost fokus kognitif &amp; auto-sync Google Calendar.
+                            </p>
+
+                            <div className="preview-sticky-footer">
+                              <span style={{ fontSize: "8.5px", background: "rgba(37, 99, 235, 0.12)", color: "#1d4ed8", padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}>
+                                #zen-audio
+                              </span>
+                              <span style={{ fontSize: "8.5px" }}>2 mnt lalu</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
