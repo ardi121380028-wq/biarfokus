@@ -1,5 +1,5 @@
 /* ========================================================================== */
-/* Tier 4: Modern SaaS Landing Page (Pristine White Section & Floating Chips) */
+/* Tier 4: Modern SaaS Landing Page (Seamless Aurora Glass & Liquid Blend)    */
 /* ========================================================================== */
 
 /* Bridge Trigger centered below Timer & To-Do Cards */
@@ -214,7 +214,7 @@
 }
 
 /* ========================================================================== */
-/* Dedicated Full-Width Pristine White Section (Modern SaaS Look)             */
+/* Dedicated Full-Width Section with Seamless Liquid Gradient & Aurora Glass  */
 /* ========================================================================== */
 
 .landing-white-section {
@@ -222,20 +222,98 @@
   max-width: 100vw;
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
-  background: #ffffff;
-  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
-  box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.03);
-  padding: 90px 0 110px;
+  /* Seamless liquid gradient blend from gray to pristine white without harsh cuts */
+  background: linear-gradient(
+    to bottom,
+    var(--page) 0%,
+    color-mix(in srgb, #ffffff 18%, var(--page)) 70px,
+    color-mix(in srgb, #ffffff 50%, var(--page)) 150px,
+    color-mix(in srgb, #ffffff 82%, var(--page)) 240px,
+    #ffffff 330px,
+    #ffffff 100%
+  );
+  border-top: none; /* No harsh cut line */
+  box-shadow: none;
+  padding: 80px 0 120px;
   position: relative;
-  /* Keeps the heading completely off the initial screen */
-  margin-top: clamp(200px, 30vh, 380px);
+  /* Comfortably keeps the heading off the initial screen */
+  margin-top: clamp(140px, 20vh, 260px);
   scroll-margin-top: 20px;
+  overflow: hidden;
 }
 
 .app.dark .landing-white-section {
-  background: #141414;
-  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-  box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(
+    to bottom,
+    var(--page) 0%,
+    color-mix(in srgb, #141414 18%, var(--page)) 70px,
+    color-mix(in srgb, #141414 50%, var(--page)) 150px,
+    color-mix(in srgb, #141414 82%, var(--page)) 240px,
+    #141414 330px,
+    #141414 100%
+  );
+}
+
+/* Ambient Aurora Glass Lighting Orbs */
+.landing-aurora-glow-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100vw, 1300px);
+  height: 420px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.landing-aurora-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(85px);
+  opacity: 0.38;
+  animation: auroraPulse 7s ease-in-out infinite alternate;
+}
+
+.landing-aurora-orb.pink {
+  width: 520px;
+  height: 240px;
+  top: 10px;
+  left: 10%;
+  background: radial-gradient(circle, var(--pink) 0%, rgba(247, 127, 165, 0) 70%);
+}
+
+.landing-aurora-orb.blue {
+  width: 580px;
+  height: 260px;
+  top: 25px;
+  right: 10%;
+  background: radial-gradient(circle, var(--blue) 0%, rgba(24, 117, 209, 0) 70%);
+  animation-delay: -3.5s;
+}
+
+.landing-aurora-glass-bar {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92%, 960px);
+  height: 140px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 40px;
+  pointer-events: none;
+}
+
+.app.dark .landing-aurora-glass-bar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+@keyframes auroraPulse {
+  0% { transform: scale(1) translate(0, 0); opacity: 0.32; }
+  50% { transform: scale(1.08) translate(15px, -8px); opacity: 0.48; }
+  100% { transform: scale(0.96) translate(-10px, 8px); opacity: 0.32; }
 }
 
 .landing-section-inner {
@@ -245,6 +323,8 @@
   display: flex;
   flex-direction: column;
   gap: 84px;
+  position: relative;
+  z-index: 2; /* Sits above ambient aurora glow */
 }
 
 /* Header & Value Proposition */

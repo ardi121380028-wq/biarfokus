@@ -102,6 +102,13 @@ export function LandingSection() {
         className="landing-white-section"
         aria-label="Eksplorasi Ekosistem BiarFokus"
       >
+        {/* Ambient Aurora Glass Lighting Orbs for Seamless Modern Blend */}
+        <div className="landing-aurora-glow-container" aria-hidden="true">
+          <div className="landing-aurora-orb pink" />
+          <div className="landing-aurora-orb blue" />
+          <div className="landing-aurora-glass-bar" />
+        </div>
+
         <div className="landing-section-inner">
           {/* Hero Header */}
           <div className="landing-hero">
