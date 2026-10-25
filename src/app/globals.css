@@ -7121,20 +7121,53 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   max-width: min(260px, 90vw);
 }
 
-/* 5. Mobile Overrides for Notes Modal & Kanban Card */
+/* 5. Mobile Overrides for Notes Modal & Kanban Card (100% Fullscreen, no borders or gaps) */
 @media (max-width: 768px) {
   .keep-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    width: 100vw !important;
+    height: calc(100dvh - 60px - env(safe-area-inset-bottom, 0px)) !important;
     padding: 0 !important;
-    align-items: flex-end !important;
-    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--paper) !important;
+    display: block !important;
+    overflow: hidden !important;
+    z-index: 10000 !important;
   }
   .keep-notes-modal-dialog {
+    position: relative !important;
     width: 100vw !important;
-    height: auto !important;
-    max-height: calc(88dvh - 60px) !important;
-    border-radius: 22px 22px 0 0 !important;
-    padding: 16px 14px 14px !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: max(14px, env(safe-area-inset-top, 14px)) 16px 10px !important;
     box-sizing: border-box !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: var(--paper) !important;
+    overflow: hidden !important;
+  }
+  .keep-container {
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  .keep-scroll-body {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 24px !important;
+    overscroll-behavior: contain;
   }
   .keep-header-title small {
     display: none !important;
@@ -7143,11 +7176,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     padding-bottom: 8px !important;
     gap: 8px !important;
   }
-  .keep-edit-modal-card {
-    width: 100% !important;
-    min-height: 85vh !important;
-    max-height: 94vh !important;
-    border-radius: 22px 22px 0 0 !important;
+  .keep-toolbar-label {
+    display: none !important;
+  }
+  .keep-labels-toolbar {
+    padding: 4px 0 8px !important;
+    gap: 6px !important;
+  }
+  .keep-chip {
+    padding: 5px 12px !important;
+    font-size: 12px !important;
+    border-radius: 999px !important;
   }
   .keep-checklist-items {
     max-height: 50vh !important;
@@ -7819,10 +7858,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* Inherit Note Background in Note Detail & Composer (No Jarring Opaque White Box) */
-.keep-edit-modal-card .rich-note-editor-container,
 .keep-create-box .rich-note-editor-container {
   background: transparent !important;
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent) !important;
+}
+
+.keep-edit-modal-card .rich-note-editor-container {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 .keep-edit-modal-card .rich-note-editor-content,
@@ -8541,6 +8586,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 0 !important;
     background: var(--paper) !important;
     align-items: stretch !important;
+    z-index: 100020 !important;
+    position: fixed !important;
+    inset: 0 !important;
   }
 
   .keep-edit-modal-card {
@@ -8552,12 +8600,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     min-height: 100dvh !important;
     border-radius: 0 !important;
     border: none !important;
-    padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: max(12px, env(safe-area-inset-top, 12px)) 16px max(44px, calc(30px + env(safe-area-inset-bottom, 20px))) !important;
     margin: 0 !important;
     box-shadow: none !important;
     display: flex !important;
     flex-direction: column !important;
-    z-index: 10001 !important;
+    z-index: 100020 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
   }
 
   .keep-edit-mobile-header {
@@ -8568,6 +8619,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 4px 0 10px !important;
     margin-bottom: 8px !important;
     border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+    flex-shrink: 0 !important;
   }
 
   .keep-edit-back-btn {
@@ -8614,6 +8666,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: flex !important;
     flex-direction: column !important;
     min-height: 0 !important;
+    border: none !important;
   }
 
   .rich-note-editor-container {
@@ -8621,13 +8674,70 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: flex !important;
     flex-direction: column !important;
     min-height: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .note-toolbar-container {
+    border: none !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
+    background: color-mix(in srgb, var(--ink) 4%, transparent) !important;
+    border-radius: 12px !important;
+    padding: 4px 6px !important;
+    margin-bottom: 8px !important;
   }
 
   .rich-note-editor-content {
     flex: 1 1 auto !important;
-    min-height: 250px !important;
+    min-height: 180px !important;
     font-size: 16px !important;
     padding: 8px 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  /* Note Edit Mobile Footer Bar - Full view with comfortable buttons */
+  .keep-edit-modal-card .keep-create-footer-bar {
+    margin-top: 16px !important;
+    padding-top: 14px !important;
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 16px)) !important;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .keep-edit-modal-card .keep-color-picker-row {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .keep-edit-modal-card .keep-color-swatch {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .keep-edit-modal-card .keep-footer-btns {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .keep-edit-modal-card .keep-save-btn {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    padding: 12px 18px !important;
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    border-radius: 999px !important;
   }
 
   .keep-item-edit-input,
@@ -11422,13 +11532,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .modal-backdrop,
 .cal-modal-backdrop,
 .kanban-modal-backdrop,
-.keep-edit-modal-backdrop,
 .settings-modal-backdrop,
 .pomodoro-modal-backdrop,
 .note-delete-modal-backdrop,
 .auth-modal-backdrop,
 .account-modal-card {
   z-index: 99999 !important;
+}
+
+.keep-edit-modal-backdrop,
+.keep-edit-modal-card {
+  z-index: 100020 !important;
 }
 
 /* Redundant elements cleanup */

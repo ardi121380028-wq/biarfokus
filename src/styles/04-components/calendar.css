@@ -1,4 +1,4 @@
-﻿/* Google Calendar-Style Time-Blocking Calendar View */
+/* Google Calendar-Style Time-Blocking Calendar View */
 .calendar-page-view { min-height:720px; padding:28px 32px; border-radius:26px; display:flex; flex-direction:column; gap:16px; min-width:0; }
 .cal-header { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding-bottom:16px; border-bottom:1px solid color-mix(in srgb,var(--ink) 12%,transparent); }
 .cal-title-group { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
@@ -326,8 +326,7 @@
   .cal-actions-right { justify-content: space-between; width: 100%; gap: 6px; }
   .cal-create-event-btn { padding: 6px 14px; font-size: 12px; }
 
-  .keep-notes-modal-dialog { width: 100vw; height: auto; max-height: 88dvh; padding: 16px 14px 14px; border-radius: 22px 22px 0 0; }
-  .keep-page-view { padding: 20px 14px; border-radius: 20px; }
+  .keep-page-view { padding: 14px 10px 80px; border-radius: 0; }
   .keep-header-bar { gap: 10px; }
   .keep-search-box { flex: 1; min-width: 120px; }
   .keep-search-input { width: 100%; }

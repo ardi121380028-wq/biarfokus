@@ -387,33 +387,65 @@
   color: #cbd5e1 !important;
 }
 
-/* Mobile Notes Sheet & Ergonomics (Preserves bottom sticky dock & eliminates awkward gap) */
+/* Mobile Notes Sheet & Ergonomics (100% Fullscreen, no borders or wasted gaps) */
 @media (max-width: 768px) {
   .keep-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    width: 100vw !important;
+    height: calc(100dvh - 60px - env(safe-area-inset-bottom, 0px)) !important;
     padding: 0 !important;
-    align-items: flex-end !important;
-    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--paper) !important;
+    display: block !important;
+    overflow: hidden !important;
+    z-index: 10000 !important;
   }
   .keep-notes-modal-dialog {
+    position: relative !important;
     width: 100vw !important;
-    height: auto !important;
-    max-height: calc(88dvh - 60px) !important;
-    border-radius: 22px 22px 0 0 !important;
-    padding: 16px 14px 14px !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: max(14px, env(safe-area-inset-top, 14px)) 16px 10px !important;
     box-sizing: border-box !important;
     margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: var(--paper) !important;
+    overflow: hidden !important;
   }
   .keep-container {
-    height: auto !important;
-    max-height: calc(88dvh - 88px) !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
   }
   .keep-scroll-body {
     flex: 1 1 auto !important;
-    max-height: calc(88dvh - 185px) !important;
-    overflow-y: auto !important;
-    padding-bottom: 6px !important;
+    height: auto !important;
+    max-height: none !important;
     min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 24px !important;
     overscroll-behavior: contain;
+  }
+  .keep-toolbar-label {
+    display: none !important;
+  }
+  .keep-labels-toolbar {
+    padding: 4px 0 8px !important;
+    gap: 6px !important;
+  }
+  .keep-chip {
+    padding: 5px 12px !important;
+    font-size: 12px !important;
+    border-radius: 999px !important;
   }
   .keep-notes-section {
     margin-bottom: 8px !important;
