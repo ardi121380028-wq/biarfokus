@@ -7173,16 +7173,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
   }
   .keep-header-bar {
-    padding-bottom: 8px !important;
+    padding-bottom: 16px !important;
+    margin-bottom: 6px !important;
     gap: 8px !important;
   }
   .keep-toolbar-label {
     display: none !important;
   }
   .keep-labels-toolbar {
-    margin: 12px 0 16px !important;
-    padding: 6px 0 !important;
-    gap: 8px !important;
+    margin: 18px 0 22px !important;
+    padding: 8px 0 !important;
+    gap: 10px !important;
   }
   .keep-chip {
     padding: 6px 14px !important;
@@ -8604,7 +8605,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     min-height: 100dvh !important;
     border-radius: 0 !important;
     border: none !important;
-    padding: max(12px, env(safe-area-inset-top, 12px)) 16px max(44px, calc(30px + env(safe-area-inset-bottom, 20px))) !important;
+    padding: max(12px, env(safe-area-inset-top, 12px)) 16px max(64px, calc(40px + env(safe-area-inset-bottom, 24px))) !important;
     margin: 0 !important;
     box-shadow: none !important;
     display: flex !important;
@@ -8668,22 +8669,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   .keep-text-editor-wrap {
-    flex: 1 1 auto !important;
+    flex: none !important;
     display: flex !important;
     flex-direction: column !important;
-    min-height: 0 !important;
+    min-height: 280px !important;
     border: none !important;
+    width: 100% !important;
   }
 
   .rich-note-editor-container {
-    flex: 1 1 auto !important;
+    flex: none !important;
     display: flex !important;
     flex-direction: column !important;
-    min-height: 0 !important;
+    min-height: 280px !important;
     border: none !important;
     background: transparent !important;
     border-radius: 0 !important;
     box-shadow: none !important;
+    overflow: visible !important;
+    width: 100% !important;
   }
 
   .note-toolbar-container {
@@ -8693,16 +8697,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-radius: 12px !important;
     padding: 4px 6px !important;
     margin-bottom: 8px !important;
+    flex-shrink: 0 !important;
   }
 
   .rich-note-editor-content {
-    flex: 1 1 auto !important;
-    min-height: 320px !important;
+    flex: none !important;
+    min-height: 280px !important;
+    height: auto !important;
+    overflow: visible !important;
     font-size: 16px !important;
     padding: 8px 0 !important;
     border: none !important;
     background: transparent !important;
     touch-action: pan-y !important;
+    width: 100% !important;
   }
 
   /* Note Edit Mobile Footer Bar - Full view with comfortable buttons */
@@ -10280,9 +10288,55 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
   }
 
+  .profile-button-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 2px 7px 2px 2px !important;
+    border-radius: 9999px !important;
+    max-width: 125px !important;
+  }
+
+  .profile-button {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+  }
+
+  .profile-user-col {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+    line-height: 1 !important;
+    max-width: 75px !important;
+    min-width: 0 !important;
+  }
+
   .profile-user-name {
-    max-width: 70px;
-    font-size: 10.5px;
+    max-width: 70px !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .profile-button-wrap .pro-vip-badge.badge-sm {
+    height: 14px !important;
+    padding: 0 4.5px !important;
+    font-size: 8px !important;
+    gap: 2px !important;
+    border-radius: 999px !important;
+  }
+
+  .profile-button-wrap .pro-vip-badge.badge-sm .pro-vip-star {
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  .profile-button-wrap .profile-free-pill {
+    font-size: 7.5px !important;
+    padding: 0.5px 4px !important;
   }
 }
 
@@ -10601,7 +10655,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     gap: 2px !important;
   }
 
-  /* Profile Avatar in Mobile Topbar: Hide text name & badge pill, keep sleek 30px avatar */
+  /* Profile Avatar in Mobile Topbar: Match frontpage compact pill with PRO badge & name */
   .cal-topbar-profile-wrap {
     flex-shrink: 0 !important;
     position: relative !important;
@@ -10609,22 +10663,31 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   .cal-topbar-profile-wrap .profile-button-wrap {
-    padding: 0 !important;
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 2px 7px 2px 2px !important;
+    border-radius: 9999px !important;
+    max-width: 125px !important;
+    background: color-mix(in srgb, var(--ink) 4%, var(--paper)) !important;
+    border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent) !important;
   }
 
   .cal-topbar-profile-wrap .profile-user-col {
-    display: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+    line-height: 1 !important;
+    max-width: 75px !important;
+    min-width: 0 !important;
   }
 
   .cal-topbar-avatar-btn,
   .cal-topbar-avatar-img {
-    width: 30px !important;
-    height: 30px !important;
-    min-width: 30px !important;
-    font-size: 12px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 11px !important;
     flex-shrink: 0 !important;
     border-radius: 50% !important;
   }
@@ -11639,24 +11702,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* ========================================================================== */
 
 @media (max-width: 768px) {
-  /* Account Modal Mobile: No 'mentok atas', proper top safe-area, comfortable scroll */
+  /* Account Modal Mobile: No 'mentok atas', proper z-index, comfortable scroll and complete visibility */
   .account-modal-backdrop {
+    z-index: 100020 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    padding: max(24px, env(safe-area-inset-top, 24px)) 12px calc(80px + env(safe-area-inset-bottom, 20px)) !important;
+    padding: max(16px, env(safe-area-inset-top, 16px)) 12px max(32px, calc(16px + env(safe-area-inset-bottom, 16px))) !important;
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
   }
 
   .account-modal,
   .account-modal-card {
     width: 100% !important;
     max-width: 100% !important;
-    margin: 12px 0 28px !important;
+    margin: 0 0 24px !important;
     border-radius: 20px !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45) !important;
+    overflow-y: auto !important;
+    max-height: calc(100dvh - 36px) !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
   }
 
   .account-card-header {
@@ -11675,7 +11744,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   .account-card-footer {
-    padding: 14px 16px !important;
+    padding: 14px 16px max(24px, env(safe-area-inset-bottom, 20px)) !important;
     flex-direction: column !important;
     gap: 12px !important;
   }

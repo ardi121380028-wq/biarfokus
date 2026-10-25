@@ -212,9 +212,17 @@ export function KanbanCardItem({
       tabIndex={0}
       aria-label={`Kartu: ${card.title}`}
     >
-      {/* Cover Color or Emoji */}
-      {card.coverColor && (
-        <div className="kanban-card-cover-bar" style={{ background: card.coverColor, height: "10px" }} />
+      {/* Cover Color or Emoji: Vibrant solid cover when color is selected */}
+      {card.coverColor && !card.coverEmoji && (
+        <div
+          className="kanban-card-cover-bar"
+          style={{
+            background: card.coverColor,
+            height: "28px",
+            borderRadius: "16px 16px 0 0",
+            margin: "-12px -14px 10px",
+          }}
+        />
       )}
       {card.coverEmoji && (
         <div
@@ -222,8 +230,8 @@ export function KanbanCardItem({
           style={
             card.coverColor
               ? {
-                  background: `color-mix(in srgb, ${card.coverColor} 30%, transparent)`,
-                  borderBottomColor: `color-mix(in srgb, ${card.coverColor} 40%, transparent)`,
+                  background: card.coverColor,
+                  borderBottomColor: `color-mix(in srgb, ${card.coverColor} 60%, transparent)`,
                 }
               : undefined
           }

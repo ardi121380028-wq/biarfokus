@@ -440,9 +440,9 @@
     display: none !important;
   }
   .keep-labels-toolbar {
-    margin: 12px 0 16px !important;
-    padding: 6px 0 !important;
-    gap: 8px !important;
+    margin: 18px 0 22px !important;
+    padding: 8px 0 !important;
+    gap: 10px !important;
   }
   .keep-chip {
     padding: 6px 14px !important;
