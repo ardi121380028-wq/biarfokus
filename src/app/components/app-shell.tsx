@@ -581,36 +581,52 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav className="mobile-bottom-nav" aria-label="Navigasi Bawah Mobile">
         <Link
           href="/"
-          className={`mobile-bottom-nav-item ${pathname === "/" ? "active" : ""}`}
+          className={`mobile-bottom-nav-item ${pathname === "/" && !showSettings ? "active" : ""}`}
+          onClick={() => {
+            setShowSettings(false);
+            setNotesOpen(false);
+          }}
         >
           <span className="nav-icon">⏱️</span>
           <span>Timer</span>
         </Link>
         <Link
           href="/catatan"
-          className={`mobile-bottom-nav-item ${pathname.startsWith("/catatan") ? "active" : ""}`}
+          className={`mobile-bottom-nav-item ${pathname.startsWith("/catatan") && !showSettings ? "active" : ""}`}
+          onClick={() => {
+            setShowSettings(false);
+            setNotesOpen(false);
+          }}
         >
           <span className="nav-icon">📝</span>
           <span>Catatan</span>
         </Link>
         <Link
           href="/kalender"
-          className={`mobile-bottom-nav-item ${pathname.startsWith("/kalender") ? "active" : ""}`}
+          className={`mobile-bottom-nav-item ${pathname.startsWith("/kalender") && !showSettings ? "active" : ""}`}
+          onClick={() => {
+            setShowSettings(false);
+            setNotesOpen(false);
+          }}
         >
           <span className="nav-icon">📅</span>
           <span>Kalender</span>
         </Link>
         <Link
           href="/kanban"
-          className={`mobile-bottom-nav-item ${pathname.startsWith("/kanban") ? "active" : ""}`}
+          className={`mobile-bottom-nav-item ${pathname.startsWith("/kanban") && !showSettings ? "active" : ""}`}
+          onClick={() => {
+            setShowSettings(false);
+            setNotesOpen(false);
+          }}
         >
           <span className="nav-icon">📊</span>
           <span>Kanban</span>
         </Link>
         <button
           type="button"
-          className="mobile-bottom-nav-item"
-          onClick={() => setShowSettings(true)}
+          className={`mobile-bottom-nav-item ${showSettings ? "active" : ""}`}
+          onClick={() => setShowSettings(!showSettings)}
           aria-label="Pengaturan"
         >
           <span className="nav-icon">⚙️</span>

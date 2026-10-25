@@ -489,3 +489,117 @@
   flex-wrap: wrap;
   gap: 12px;
 }
+
+/* ========================================================================== */
+/* Mobile Responsive Overrides for /tentang and /ketentuan                    */
+/* ========================================================================== */
+@media (max-width: 768px) {
+  .about-page-container,
+  .legal-page-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 8px auto 40px !important;
+    padding: 16px 12px 48px !important;
+    box-sizing: border-box !important;
+  }
+
+  .about-hero,
+  .legal-hero {
+    margin-bottom: 32px !important;
+    gap: 12px !important;
+  }
+
+  .about-hero h1,
+  .legal-hero h1 {
+    font-size: clamp(24px, 6vw, 32px) !important;
+  }
+
+  .about-hero p,
+  .legal-hero p {
+    font-size: 14px !important;
+  }
+
+  .about-story-card,
+  .legal-card {
+    padding: 20px 16px !important;
+    border-radius: 20px !important;
+    margin-bottom: 36px !important;
+  }
+
+  .about-quote-box {
+    padding: 14px 16px !important;
+    border-radius: 0 12px 12px 0 !important;
+  }
+
+  .about-quote-box p {
+    font-size: 15px !important;
+  }
+
+  .about-paragraphs {
+    font-size: 14px !important;
+    line-height: 1.65 !important;
+    gap: 12px !important;
+  }
+
+  .about-pillars-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    margin-bottom: 40px !important;
+  }
+
+  .about-pillar-box {
+    padding: 18px 16px !important;
+    border-radius: 16px !important;
+  }
+
+  .about-remote-section {
+    padding: 22px 16px !important;
+    border-radius: 20px !important;
+    margin-bottom: 40px !important;
+  }
+
+  .about-remote-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .about-remote-box {
+    padding: 16px 14px !important;
+  }
+
+  .about-roles-list {
+    gap: 12px !important;
+  }
+
+  .about-role-item {
+    padding: 14px 16px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .about-role-item .sub-action-btn,
+  .about-role-item button {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  .legal-tabs-row {
+    gap: 6px !important;
+    margin-bottom: 24px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .legal-tab-btn {
+    padding: 7px 14px !important;
+    font-size: 12.5px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-page-container,
+  .legal-page-container {
+    padding: 12px 8px 36px !important;
+  }
+}
+

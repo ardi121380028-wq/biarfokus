@@ -7126,11 +7126,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .keep-backdrop {
     padding: 0 !important;
     align-items: flex-end !important;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .keep-notes-modal-dialog {
     width: 100vw !important;
     height: auto !important;
-    max-height: 88dvh !important;
+    max-height: calc(88dvh - 60px) !important;
     border-radius: 22px 22px 0 0 !important;
     padding: 16px 14px 14px !important;
     box-sizing: border-box !important;
@@ -8278,7 +8279,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-    z-index: 990;
+    z-index: 100005 !important;
     align-items: center;
     justify-content: space-around;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
@@ -10170,12 +10171,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     z-index: 9999 !important;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .settings-modal {
     width: 100% !important;
     height: 100% !important;
-    max-height: 100vh !important;
+    max-height: calc(100vh - 60px - env(safe-area-inset-bottom, 0px)) !important;
     border-radius: 0 !important;
     border: none !important;
     box-shadow: none !important;
@@ -11498,6 +11500,212 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin: 4px 0 0;
   line-height: 1.4;
 }
+
+/* ========================================================================== */
+/* Mobile UX Refinements: Account Modal, Subscription & Fitur Pages           */
+/* ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Account Modal Mobile: No 'mentok atas', proper top safe-area, comfortable scroll */
+  .account-modal-backdrop {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding: max(24px, env(safe-area-inset-top, 24px)) 12px calc(80px + env(safe-area-inset-bottom, 20px)) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .account-modal,
+  .account-modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 12px 0 28px !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  .account-card-header {
+    padding: 18px 16px 14px !important;
+  }
+
+  .account-identity-banner {
+    padding: 16px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .account-form-body {
+    padding: 16px !important;
+  }
+
+  .account-card-footer {
+    padding: 14px 16px !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .account-footer-left,
+  .account-footer-right {
+    width: 100% !important;
+    justify-content: stretch !important;
+  }
+
+  .account-footer-right button,
+  .account-footer-left button {
+    flex: 1 !important;
+  }
+
+  /* Subscription (/subscription) & Upgrade (/upgrade) Mobile Spacing & Full Width */
+  .subscription-page-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 8px auto 40px !important;
+    padding: 16px 12px 48px !important;
+    box-sizing: border-box !important;
+  }
+
+  .sub-current-card,
+  .sub-history-section {
+    padding: 18px 14px !important;
+    border-radius: 18px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .sub-current-head {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    padding-bottom: 18px !important;
+  }
+
+  .sub-current-info {
+    width: 100% !important;
+  }
+
+  .sub-plan-row {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .sub-plan-name {
+    font-size: 20px !important;
+  }
+
+  .sub-current-actions {
+    width: 100% !important;
+    flex-direction: column !important;
+  }
+
+  .sub-action-btn {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 13px 18px !important;
+    font-size: 13.5px !important;
+    justify-content: center !important;
+    display: flex !important;
+  }
+
+  .sub-details-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    padding-top: 16px !important;
+  }
+
+  .sub-guarantee-note {
+    flex-direction: column !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+  }
+
+  .pricing-inner-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 8px auto 40px !important;
+    padding: 16px 12px 48px !important;
+    box-sizing: border-box !important;
+  }
+
+  .pricing-header-center {
+    margin-bottom: 24px !important;
+  }
+
+  .pricing-headline {
+    font-size: 24px !important;
+  }
+
+  .pricing-cards-container {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+    margin-bottom: 28px !important;
+  }
+
+  .pricing-plan-card {
+    padding: 24px 18px !important;
+    border-radius: 20px !important;
+  }
+
+  .pricing-comparison-section {
+    margin-top: 32px !important;
+    padding-top: 24px !important;
+  }
+
+  .pricing-trust-bar {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    padding: 16px !important;
+  }
+
+  /* Fitur Page (/fitur) Mobile Spacing */
+  .fitur-page-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 8px auto 40px !important;
+    padding: 16px 12px 48px !important;
+    box-sizing: border-box !important;
+  }
+
+  .fitur-category-card {
+    padding: 18px 14px !important;
+    border-radius: 18px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .fitur-category-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .fitur-filter-nav {
+    gap: 6px !important;
+  }
+
+  .fitur-filter-btn {
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .subscription-page-container,
+  .pricing-inner-page,
+  .fitur-page-container {
+    padding: 12px 8px 36px !important;
+  }
+
+  .sub-details-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .sub-title {
+    font-size: 22px !important;
+  }
+}
+
 
 
 

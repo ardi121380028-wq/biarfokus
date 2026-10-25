@@ -80,7 +80,7 @@ export function AccountModal({
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop account-modal-backdrop" role="presentation" onClick={onClose}>
       <section
         className="account-modal-card"
         role="dialog"
@@ -88,7 +88,7 @@ export function AccountModal({
         aria-labelledby="account-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <button className="modal-close" onClick={onClose} aria-label="Tutup akun">
+        <button className="modal-close account-modal-close" onClick={onClose} aria-label="Tutup akun">
           ×
         </button>
 

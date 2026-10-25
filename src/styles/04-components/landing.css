@@ -524,8 +524,9 @@
 .hero-orb-frog { top: 38%; right: -56px; animation-delay: -3s; }
 
 @media (max-width: 768px) {
-  .hero-orb-ambient { left: -14px; top: -14px; }
-  .hero-orb-frog { right: -14px; top: -14px; }
+  .landing-hero-floating-icons {
+    display: none !important;
+  }
 }
 
 @keyframes orbHoverFloat {
@@ -1840,5 +1841,198 @@
 
   .landing-white-section {
     padding: 60px 0 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-white-section {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-top: 36px !important;
+    padding: 40px 0 60px !important;
+    border-radius: 24px !important;
+  }
+
+  .landing-section-inner {
+    padding: 0 14px !important;
+    gap: 48px !important;
+  }
+
+  .landing-hero {
+    gap: 12px !important;
+  }
+
+  .landing-hero h2 {
+    font-size: clamp(23px, 6.2vw, 32px) !important;
+    line-height: 1.25 !important;
+  }
+
+  .landing-hero p {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+
+  .landing-hero-floating-icons {
+    display: none !important;
+  }
+
+  .landing-hero-heading-wrap {
+    padding: 2px 4px !important;
+  }
+
+  .landing-floating-chips-row {
+    gap: 7px !important;
+    margin-top: 14px !important;
+  }
+
+  .landing-floating-chip {
+    padding: 5px 11px !important;
+    font-size: 11px !important;
+  }
+
+  .landing-hub-nav {
+    gap: 6px !important;
+  }
+
+  .landing-hub-tab-btn {
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .landing-mockup-frame {
+    border-radius: 20px !important;
+  }
+
+  .landing-mockup-header {
+    padding: 10px 14px !important;
+  }
+
+  .landing-mockup-body {
+    padding: 16px 12px !important;
+    gap: 20px !important;
+  }
+
+  .landing-mockup-content h3 {
+    font-size: 20px !important;
+  }
+
+  .landing-mockup-content p {
+    font-size: 13.5px !important;
+  }
+
+  .landing-mockup-visual {
+    padding: 12px 8px !important;
+    border-radius: 16px !important;
+  }
+
+  .preview-timer-card,
+  .preview-calendar-card,
+  .preview-kanban-card,
+  .preview-notes-card {
+    padding: 14px 10px !important;
+    border-radius: 16px !important;
+  }
+
+  .preview-timer-digits {
+    font-size: clamp(42px, 11vw, 56px) !important;
+  }
+
+  .preview-mode-tabs {
+    gap: 14px !important;
+  }
+
+  .preview-mode-tab {
+    font-size: 11.5px !important;
+  }
+
+  .preview-ambient-pills {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .preview-cal-spacer,
+  .preview-cal-time-axis {
+    width: 36px !important;
+    font-size: 9px !important;
+  }
+
+  .preview-cal-header-text h4 {
+    font-size: 13px !important;
+  }
+
+  .preview-cal-nav-buttons {
+    flex-wrap: wrap !important;
+  }
+
+  /* Kanban Preview: Smooth horizontal swiping of columns on mobile */
+  .preview-kanban-columns-row {
+    display: flex !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .preview-kanban-columns-row::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .preview-kanban-column-container {
+    min-width: 140px !important;
+    flex: 1 0 140px !important;
+  }
+
+  .preview-kanban-glider {
+    display: none !important;
+  }
+
+  .landing-compare-section {
+    padding: 20px 12px !important;
+    border-radius: 20px !important;
+  }
+
+  .landing-compare-header h3 {
+    font-size: 20px !important;
+  }
+
+  .landing-compare-table {
+    font-size: 12px !important;
+  }
+
+  .landing-compare-table th,
+  .landing-compare-table td {
+    padding: 8px 10px !important;
+  }
+
+  .landing-cta-banner {
+    padding: 26px 16px !important;
+    border-radius: 20px !important;
+  }
+
+  .landing-cta-banner h2 {
+    font-size: 22px !important;
+  }
+
+  .landing-cta-banner p {
+    font-size: 13.5px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-white-section {
+    padding: 30px 0 50px !important;
+  }
+
+  .landing-section-inner {
+    padding: 0 10px !important;
+    gap: 36px !important;
+  }
+
+  .landing-cta-primary,
+  .landing-cta-secondary {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }

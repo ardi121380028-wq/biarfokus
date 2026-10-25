@@ -149,16 +149,17 @@
   }
 }
 
-/* Quick Notes Modal Dialog Mobile Layout (Eliminates awkward white space at bottom) */
+/* Quick Notes Modal Dialog Mobile Layout (Eliminates awkward white space at bottom & docks above bottom bar) */
 @media (max-width: 768px) {
   .keep-backdrop {
     padding: 0 !important;
     align-items: flex-end !important;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .keep-notes-modal-dialog {
     width: 100vw !important;
     height: auto !important;
-    max-height: 88dvh !important;
+    max-height: calc(88dvh - 60px) !important;
     border-radius: 22px 22px 0 0 !important;
     padding: 16px 14px 14px !important;
     box-sizing: border-box !important;
@@ -166,7 +167,7 @@
   }
   .keep-container {
     height: auto !important;
-    max-height: calc(88dvh - 28px) !important;
+    max-height: calc(88dvh - 88px) !important;
   }
   .keep-scroll-body {
     flex: 1 1 auto !important;
