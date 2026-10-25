@@ -210,30 +210,30 @@ export function HabitsSidebar({
         <div className="habits-sidebar-view-list">
           <button
             type="button"
-            className={`notes-filter-btn ${activeView === "checklist" ? "active" : ""}`}
+            className={`notes-sidebar-filter-item ${activeView === "checklist" ? "active" : ""}`}
             onClick={() => onSelectView("checklist")}
             title="Ceklis Harian (Checklist cepat per rutinitas)"
           >
-            <span className="notes-filter-icon">✅</span>
-            {!isCollapsed && <span className="notes-filter-name">Ceklis Harian</span>}
+            <span className="filter-icon">✅</span>
+            {!isCollapsed && <span className="filter-title">Ceklis Harian</span>}
           </button>
           <button
             type="button"
-            className={`notes-filter-btn ${activeView === "matrix" ? "active" : ""}`}
+            className={`notes-sidebar-filter-item ${activeView === "matrix" ? "active" : ""}`}
             onClick={() => onSelectView("matrix")}
             title="Matriks Mingguan (Tabel ceklis 7 hari)"
           >
-            <span className="notes-filter-icon">📅</span>
-            {!isCollapsed && <span className="notes-filter-name">Matriks Mingguan</span>}
+            <span className="filter-icon">📅</span>
+            {!isCollapsed && <span className="filter-title">Matriks Mingguan</span>}
           </button>
           <button
             type="button"
-            className={`notes-filter-btn ${activeView === "heatmap" ? "active" : ""}`}
+            className={`notes-sidebar-filter-item ${activeView === "heatmap" ? "active" : ""}`}
             onClick={() => onSelectView("heatmap")}
             title="Peta Konsistensi (Heatmap 90 hari & statistik)"
           >
-            <span className="notes-filter-icon">📊</span>
-            {!isCollapsed && <span className="notes-filter-name">Peta Konsistensi</span>}
+            <span className="filter-icon">📊</span>
+            {!isCollapsed && <span className="filter-title">Peta Konsistensi</span>}
           </button>
         </div>
       </div>
@@ -246,71 +246,71 @@ export function HabitsSidebar({
         <div className="habits-sidebar-routine-list">
           <button
             type="button"
-            className={`notes-filter-btn ${activeFilter === "all" ? "active" : ""}`}
+            className={`notes-sidebar-filter-item ${activeFilter === "all" ? "active" : ""}`}
             onClick={() => onSelectFilter("all")}
             title="Semua Rutinitas"
           >
-            <span className="notes-filter-icon">⚡</span>
+            <span className="filter-icon">⚡</span>
             {!isCollapsed && (
               <>
-                <span className="notes-filter-name">Semua Rutinitas</span>
-                <span className="notes-filter-count">{counts.total}</span>
+                <span className="filter-title">Semua Rutinitas</span>
+                <span className="filter-count">{counts.total}</span>
               </>
             )}
           </button>
           <button
             type="button"
-            className={`notes-filter-btn ${activeFilter === "morning" ? "active" : ""}`}
+            className={`notes-sidebar-filter-item ${activeFilter === "morning" ? "active" : ""}`}
             onClick={() => onSelectFilter("morning")}
             title="Rutinitas Pagi"
           >
-            <span className="notes-filter-icon">🌅</span>
+            <span className="filter-icon">🌅</span>
             {!isCollapsed && (
               <>
-                <span className="notes-filter-name">Pagi</span>
-                <span className="notes-filter-count">{counts.morning}</span>
+                <span className="filter-title">Pagi</span>
+                <span className="filter-count">{counts.morning}</span>
               </>
             )}
           </button>
           <button
             type="button"
-            className={`notes-filter-btn ${activeFilter === "afternoon" ? "active" : ""}`}
+            className={`notes-sidebar-filter-item ${activeFilter === "afternoon" ? "active" : ""}`}
             onClick={() => onSelectFilter("afternoon")}
             title="Rutinitas Siang"
           >
-            <span className="notes-filter-icon">☀️</span>
+            <span className="filter-icon">☀️</span>
             {!isCollapsed && (
               <>
-                <span className="notes-filter-name">Siang</span>
-                <span className="notes-filter-count">{counts.afternoon}</span>
+                <span className="filter-title">Siang</span>
+                <span className="filter-count">{counts.afternoon}</span>
               </>
             )}
           </button>
           <button
             type="button"
-            className={`notes-filter-btn ${activeFilter === "evening" ? "active" : ""}`}
+            className={`notes-sidebar-filter-item ${activeFilter === "evening" ? "active" : ""}`}
             onClick={() => onSelectFilter("evening")}
             title="Rutinitas Malam"
           >
-            <span className="notes-filter-icon">🌙</span>
+            <span className="filter-icon">🌙</span>
             {!isCollapsed && (
               <>
-                <span className="notes-filter-name">Malam</span>
-                <span className="notes-filter-count">{counts.evening}</span>
+                <span className="filter-title">Malam</span>
+                <span className="filter-count">{counts.evening}</span>
               </>
             )}
           </button>
           <button
             type="button"
-            className={`notes-filter-btn ${activeFilter === "anytime" ? "active" : ""}`}
+            className={`notes-sidebar-filter-item ${activeFilter === "anytime" ? "active" : ""}`}
             onClick={() => onSelectFilter("anytime")}
             title="Kapan Saja"
           >
-            <span className="notes-filter-icon">🎯</span>
+            <span className="filter-icon">🎯</span>
             {!isCollapsed && (
               <>
-                <span className="notes-filter-name">Kapan Saja</span>
-                <span className="notes-filter-count">{counts.anytime}</span>
+                <span className="filter-title">Kapan Saja</span>
+                <span className="filter-count">{counts.anytime}</span>
               </>
             )}
           </button>

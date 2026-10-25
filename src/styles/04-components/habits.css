@@ -956,6 +956,271 @@
   width: 100%;
 }
 
+/* Stats Cards Grid */
+.habits-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.habit-stat-card {
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.habit-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.stat-card-icon {
+  font-size: 24px;
+}
+
+.stat-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stat-card-value {
+  font-size: 24px;
+  font-weight: 850;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.stat-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.stat-card-progress-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  overflow: hidden;
+}
+
+.stat-card-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #10b981);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* James Clear 'Never Miss Twice' Danger Alert */
+.habits-danger-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: color-mix(in srgb, #f59e0b 12%, var(--paper));
+  border: 1.5px solid color-mix(in srgb, #f59e0b 35%, transparent);
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.5;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.08);
+}
+
+.banner-alert-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.banner-alert-content strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #b45309;
+}
+
+.app.dark .banner-alert-content strong {
+  color: #fbbf24;
+}
+
+/* 90-Day Heatmap Card */
+.habit-heatmap-card {
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 20px;
+  padding: 22px 24px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.habit-heatmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.heatmap-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.heatmap-icon {
+  font-size: 22px;
+}
+
+.heatmap-heading {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0 0 3px;
+}
+
+.heatmap-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.heatmap-stats-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.dot-divider {
+  color: var(--muted);
+}
+
+.habit-heatmap-scroll-wrap {
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.habit-heatmap-grid {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  min-width: 600px;
+}
+
+.heatmap-week-column {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.heatmap-day-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3.5px;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  cursor: pointer;
+}
+
+.heatmap-day-cell:hover {
+  transform: scale(1.3);
+  z-index: 2;
+}
+
+.heatmap-day-cell.level-0 {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.heatmap-day-cell.level-1 {
+  background: #a7f3d0;
+}
+
+.heatmap-day-cell.level-2 {
+  background: #34d399;
+}
+
+.heatmap-day-cell.level-3 {
+  background: #10b981;
+}
+
+.heatmap-day-cell.level-4 {
+  background: #047857;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+
+.app.dark .heatmap-day-cell.level-0 {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app.dark .heatmap-day-cell.level-1 {
+  background: #064e3b;
+}
+
+.app.dark .heatmap-day-cell.level-2 {
+  background: #059669;
+}
+
+.app.dark .heatmap-day-cell.level-3 {
+  background: #10b981;
+}
+
+.app.dark .heatmap-day-cell.level-4 {
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+}
+
+.heatmap-day-cell.today-cell {
+  outline: 2px solid #6366f1;
+  outline-offset: 1px;
+}
+
+.habit-heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.legend-cells {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-label {
+  font-size: 11px;
+}
+
+/* Sidebar active filter accent for habits */
+.habits-sidebar-view-list .notes-sidebar-filter-item.active,
+.habits-sidebar-routine-list .notes-sidebar-filter-item.active {
+  background: color-mix(in srgb, #6366f1 14%, var(--paper));
+  color: #6366f1;
+  font-weight: 750;
+}
+
+.habits-sidebar-view-list .notes-sidebar-filter-item.active .filter-count,
+.habits-sidebar-routine-list .notes-sidebar-filter-item.active .filter-count {
+  background: color-mix(in srgb, #6366f1 22%, transparent);
+  color: #6366f1;
+  font-weight: 800;
+}
+
 .habits-philosophy-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
