@@ -22,7 +22,7 @@ type NotesWorkspaceViewProps = {
   onOpenSettings?: () => void;
   onOpenProfile?: () => void;
   onOpenStats?: () => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => void;
   onRequireLogin?: () => void;
 };
 

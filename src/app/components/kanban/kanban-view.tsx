@@ -29,7 +29,7 @@ type KanbanViewProps = {
   onToggleDark?: () => void;
   onOpenSettings?: () => void;
   onOpenProfile?: () => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => void;
   onSendToFrog?: (cardTitle: string, boardTitle: string) => void;
   onRequireLogin?: () => void;
 };

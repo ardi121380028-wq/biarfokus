@@ -18,7 +18,7 @@ const COLOR_OPTIONS = [
   { hex: "#ec4899", label: "Pink" },
 ];
 
-const ICON_PRESETS = ["🍅", "📚", "📅", "🐸", "✍️", "💧", "🧘", "🏃", "🥗", "💡", "🎯", "⚡"];
+const ICON_PRESETS = ["🍅", "📚", "📅", "🐸", "✍️", "💧", "🧘", "🏃", "🥗", "💡", "🎯", "⚡", "🏋️", "🧘‍♂️", "🛌", "🚶"];
 
 const TEMPLATES = [
   {
@@ -32,10 +32,10 @@ const TEMPLATES = [
     linkedPomodoroMinutes: 25,
   },
   {
-    title: "Time-Blocking Rencana Kalender",
+    title: "Time-Blocking Kalender Hari Ini",
     cue: "Setelah bangun tidur & sarapan pagi",
     identity: "Saya adalah pemilik waktu saya, bukan budak distraksi.",
-    twoMinuteRule: "Buka kalender dan tandai 2 blok waktu fokus utama.",
+    twoMinuteRule: "Buka Kalender dan tandai 2 blok waktu fokus utama.",
     routineTime: "morning" as RoutineTime,
     color: "#3b82f6",
     icon: "📅",
@@ -57,6 +57,15 @@ const TEMPLATES = [
     routineTime: "morning" as RoutineTime,
     color: "#10b981",
     icon: "📚",
+  },
+  {
+    title: "Minum Segelas Air Putih",
+    cue: "Seketika setelah bangun tidur",
+    identity: "Saya adalah pribadi yang menjaga kesehatan dan hidrasi tubuh.",
+    twoMinuteRule: "Tuang air ke gelas dan minum sampai habis.",
+    routineTime: "morning" as RoutineTime,
+    color: "#3b82f6",
+    icon: "💧",
   },
   {
     title: "Refleksi & Catat Hal Positif",
@@ -113,193 +122,242 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
   };
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
-      <div className="modal habit-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{initialHabit ? "Edit Kebiasaan" : "Bangun Kebiasaan Baru (Atomic Habits)"}</h2>
-          <button type="button" className="modal-close" onClick={onClose} aria-label="Tutup modal">
+    <div className="modal-backdrop habit-modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="habit-modal-dialog"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <header className="habit-modal-header">
+          <div className="habit-modal-title-col">
+            <h2>{initialHabit ? "Edit Kebiasaan" : "Bangun Kebiasaan Baru"}</h2>
+            <p className="habit-modal-subtitle">
+              Format berbasis sains <em>Atomic Habits</em> James Clear untuk kemajuan 1% setiap hari.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="habit-modal-close-btn"
+            onClick={onClose}
+            aria-label="Tutup modal"
+          >
             ✕
           </button>
-        </div>
+        </header>
 
-        {/* Template Quick Selection */}
-        {!initialHabit && (
-          <div className="habit-template-presets">
-            <span className="template-label">💡 Template Cepat Berdasarkan Sains James Clear:</span>
-            <div className="template-chips">
-              {TEMPLATES.map((tpl) => (
-                <button
-                  key={tpl.title}
-                  type="button"
-                  className="template-chip"
-                  onClick={() => applyTemplate(tpl)}
-                >
-                  <span>{tpl.icon}</span> {tpl.title}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="habit-form">
-          {/* Title & Icon */}
-          <div className="form-group">
-            <label htmlFor="habit-title">Nama Kebiasaan *</label>
-            <div className="habit-title-input-row">
-              <div className="habit-icon-picker">
-                <select
-                  value={icon}
-                  onChange={(e) => setIcon(e.target.value)}
-                  className="habit-icon-select"
-                  aria-label="Pilih Ikon"
-                >
-                  {ICON_PRESETS.map((ic) => (
-                    <option key={ic} value={ic}>
-                      {ic}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <input
-                id="habit-title"
-                type="text"
-                className="text-input"
-                placeholder="Contoh: Baca Buku 5 Halaman..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
-          </div>
-
-          {/* Routine Time Segment */}
-          <div className="form-group">
-            <label>Waktu Rutinitas</label>
-            <div className="routine-time-pills">
-              <button
-                type="button"
-                className={`routine-pill ${routineTime === "morning" ? "active" : ""}`}
-                onClick={() => setRoutineTime("morning")}
-              >
-                🌅 Pagi
-              </button>
-              <button
-                type="button"
-                className={`routine-pill ${routineTime === "afternoon" ? "active" : ""}`}
-                onClick={() => setRoutineTime("afternoon")}
-              >
-                ☀️ Siang
-              </button>
-              <button
-                type="button"
-                className={`routine-pill ${routineTime === "evening" ? "active" : ""}`}
-                onClick={() => setRoutineTime("evening")}
-              >
-                🌙 Malam
-              </button>
-              <button
-                type="button"
-                className={`routine-pill ${routineTime === "anytime" ? "active" : ""}`}
-                onClick={() => setRoutineTime("anytime")}
-              >
-                ⚡ Kapan Saja
-              </button>
-            </div>
-          </div>
-
-          {/* James Clear: Habit Stacking */}
-          <div className="form-group">
-            <label htmlFor="habit-cue">
-              🔗 Habit Stacking (Pemicu Kebiasaan)
-              <small className="help-text">Formula: &ldquo;Setelah [kebiasaan lama], saya akan...&rdquo;</small>
-            </label>
-            <input
-              id="habit-cue"
-              type="text"
-              className="text-input"
-              placeholder="Contoh: Setelah menyeduh kopi pagi..."
-              value={cue}
-              onChange={(e) => setCue(e.target.value)}
-            />
-          </div>
-
-          {/* James Clear: Identity-Based Habit */}
-          <div className="form-group">
-            <label htmlFor="habit-identity">
-              🎯 Pembentukan Identitas
-              <small className="help-text">Formula: &ldquo;Saya adalah orang yang...&rdquo;</small>
-            </label>
-            <input
-              id="habit-identity"
-              type="text"
-              className="text-input"
-              placeholder="Contoh: Saya adalah pembelajar seumur hidup yang konsisten."
-              value={identity}
-              onChange={(e) => setIdentity(e.target.value)}
-            />
-          </div>
-
-          {/* James Clear: The 2-Minute Rule */}
-          <div className="form-group">
-            <label htmlFor="habit-twomin">
-              ⚡ Aturan 2 Menit (Starter Tanpa Beban)
-              <small className="help-text">Versi kecil yang sangat mudah agar otak tidak menolak untuk mulai.</small>
-            </label>
-            <input
-              id="habit-twomin"
-              type="text"
-              className="text-input"
-              placeholder="Contoh: Buka buku dan baca 1 paragraf saja."
-              value={twoMinuteRule}
-              onChange={(e) => setTwoMinuteRule(e.target.value)}
-            />
-          </div>
-
-          {/* Pomodoro Integration & Color Selection */}
-          <div className="form-row-two-col">
-            <div className="form-group">
-              <label htmlFor="habit-pomo">Integrasi Pomodoro</label>
-              <select
-                id="habit-pomo"
-                className="select-input"
-                value={linkedPomodoroMinutes || ""}
-                onChange={(e) => setLinkedPomodoroMinutes(e.target.value ? Number(e.target.value) : undefined)}
-              >
-                <option value="">Tanpa Timer</option>
-                <option value="15">Timer Fokus 15 Menit</option>
-                <option value="25">Timer Fokus 25 Menit (Standar)</option>
-                <option value="50">Timer Fokus 50 Menit</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Warna Aksen</label>
-              <div className="color-swatches">
-                {COLOR_OPTIONS.map((c) => (
-                  <button
-                    key={c.hex}
-                    type="button"
-                    className={`color-swatch-circle ${color === c.hex ? "selected" : ""}`}
-                    style={{ background: c.hex }}
-                    onClick={() => setColor(c.hex)}
-                    title={c.label}
-                    aria-label={c.label}
+        {/* Modal Form */}
+        <form onSubmit={handleSubmit} className="habit-modal-form-wrap">
+          <div className="habit-modal-grid-body">
+            {/* Left Column: Form Fields */}
+            <div className="habit-modal-left-col">
+              {/* Title & Icon */}
+              <div className="form-group">
+                <label htmlFor="habit-title" className="form-label">
+                  Nama Kebiasaan <span className="required-star">*</span>
+                </label>
+                <div className="habit-title-input-row">
+                  <div className="habit-icon-picker">
+                    <select
+                      value={icon}
+                      onChange={(e) => setIcon(e.target.value)}
+                      className="habit-icon-select"
+                      aria-label="Pilih Ikon"
+                    >
+                      {ICON_PRESETS.map((ic) => (
+                        <option key={ic} value={ic}>
+                          {ic}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <input
+                    id="habit-title"
+                    type="text"
+                    className="text-input habit-text-input"
+                    placeholder="Contoh: Baca Buku 5 Halaman..."
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                    autoFocus
                   />
+                </div>
+              </div>
+
+              {/* Routine Time Segment */}
+              <div className="form-group">
+                <label className="form-label">Waktu Rutinitas</label>
+                <div className="routine-time-pills">
+                  <button
+                    type="button"
+                    className={`routine-pill ${routineTime === "morning" ? "active" : ""}`}
+                    onClick={() => setRoutineTime("morning")}
+                  >
+                    🌅 Pagi
+                  </button>
+                  <button
+                    type="button"
+                    className={`routine-pill ${routineTime === "afternoon" ? "active" : ""}`}
+                    onClick={() => setRoutineTime("afternoon")}
+                  >
+                    ☀️ Siang
+                  </button>
+                  <button
+                    type="button"
+                    className={`routine-pill ${routineTime === "evening" ? "active" : ""}`}
+                    onClick={() => setRoutineTime("evening")}
+                  >
+                    🌙 Malam
+                  </button>
+                  <button
+                    type="button"
+                    className={`routine-pill ${routineTime === "anytime" ? "active" : ""}`}
+                    onClick={() => setRoutineTime("anytime")}
+                  >
+                    ⚡ Kapan Saja
+                  </button>
+                </div>
+              </div>
+
+              {/* James Clear: Habit Stacking */}
+              <div className="form-group">
+                <label htmlFor="habit-cue" className="form-label">
+                  🔗 Habit Stacking (Pemicu Kebiasaan)
+                </label>
+                <span className="form-sub-hint">Formula: &ldquo;Setelah [kebiasaan lama], saya akan...&rdquo;</span>
+                <input
+                  id="habit-cue"
+                  type="text"
+                  className="text-input habit-text-input"
+                  placeholder="Contoh: Setelah menyeduh kopi pagi..."
+                  value={cue}
+                  onChange={(e) => setCue(e.target.value)}
+                />
+              </div>
+
+              {/* James Clear: Identity-Based Habit */}
+              <div className="form-group">
+                <label htmlFor="habit-identity" className="form-label">
+                  🎯 Pembentukan Identitas
+                </label>
+                <span className="form-sub-hint">Formula: &ldquo;Saya adalah orang yang...&rdquo;</span>
+                <input
+                  id="habit-identity"
+                  type="text"
+                  className="text-input habit-text-input"
+                  placeholder="Contoh: Saya adalah pembelajar konsisten seumur hidup."
+                  value={identity}
+                  onChange={(e) => setIdentity(e.target.value)}
+                />
+              </div>
+
+              {/* James Clear: The 2-Minute Rule */}
+              <div className="form-group">
+                <label htmlFor="habit-twomin" className="form-label">
+                  ⚡ Aturan 2 Menit (Starter Tanpa Beban)
+                </label>
+                <span className="form-sub-hint">Versi super kecil agar otak tidak menolak untuk mulai</span>
+                <input
+                  id="habit-twomin"
+                  type="text"
+                  className="text-input habit-text-input"
+                  placeholder="Contoh: Buka buku dan baca 1 halaman saja."
+                  value={twoMinuteRule}
+                  onChange={(e) => setTwoMinuteRule(e.target.value)}
+                />
+              </div>
+
+              {/* Pomodoro & Accent Color Row */}
+              <div className="form-row-two-col">
+                <div className="form-group">
+                  <label htmlFor="habit-pomo" className="form-label">Integrasi Pomodoro</label>
+                  <select
+                    id="habit-pomo"
+                    className="select-input"
+                    value={linkedPomodoroMinutes || ""}
+                    onChange={(e) => setLinkedPomodoroMinutes(e.target.value ? Number(e.target.value) : undefined)}
+                  >
+                    <option value="">Tanpa Timer</option>
+                    <option value="15">Timer Fokus 15 Menit</option>
+                    <option value="25">Timer Fokus 25 Menit (Standar)</option>
+                    <option value="50">Timer Fokus 50 Menit</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Warna Aksen</label>
+                  <div className="color-swatches">
+                    {COLOR_OPTIONS.map((c) => (
+                      <button
+                        key={c.hex}
+                        type="button"
+                        className={`color-swatch-circle ${color === c.hex ? "selected" : ""}`}
+                        style={{ background: c.hex }}
+                        onClick={() => setColor(c.hex)}
+                        title={c.label}
+                        aria-label={c.label}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Templates & Science Guide */}
+            <div className="habit-modal-right-col">
+              <div className="templates-section-header">
+                <span className="templates-section-title">💡 Template Siap Pakai</span>
+                <span className="templates-section-hint">Klik untuk mengisi form secara otomatis:</span>
+              </div>
+
+              <div className="habit-templates-scroll-list">
+                {TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.title}
+                    type="button"
+                    className="habit-template-card-btn"
+                    onClick={() => applyTemplate(tpl)}
+                  >
+                    <span
+                      className="tpl-card-icon"
+                      style={{ background: `color-mix(in srgb, ${tpl.color} 15%, var(--paper))` }}
+                    >
+                      {tpl.icon}
+                    </span>
+                    <div className="tpl-card-info">
+                      <strong className="tpl-card-title">{tpl.title}</strong>
+                      <span className="tpl-card-meta">
+                        {tpl.routineTime === "morning" && "🌅 Pagi"}
+                        {tpl.routineTime === "afternoon" && "☀️ Siang"}
+                        {tpl.routineTime === "evening" && "🌙 Malam"}
+                        {tpl.routineTime === "anytime" && "⚡ Fleksibel"}
+                        {tpl.linkedPomodoroMinutes ? ` • 🍅 ${tpl.linkedPomodoroMinutes}m` : ""}
+                      </span>
+                    </div>
+                  </button>
                 ))}
               </div>
+
+              {/* Atomic Habits Tip Box */}
+              <div className="habit-modal-wisdom-box">
+                <span className="wisdom-badge">✨ Prinsip James Clear</span>
+                <p>
+                  &ldquo;Setiap tindakan yang kamu lakukan adalah suara untuk tipe orang yang ingin kamu bentuk.&rdquo;
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Modal Actions */}
-          <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onClose}>
+          {/* Sticky Modal Footer Actions (Always visible, never cut off) */}
+          <footer className="habit-modal-footer">
+            <button type="button" className="secondary-button habit-modal-cancel-btn" onClick={onClose}>
               Batal
             </button>
-            <button type="submit" className="primary-button">
+            <button type="submit" className="primary-button habit-modal-save-btn">
               {initialHabit ? "Simpan Perubahan" : "Buat Kebiasaan"}
             </button>
-          </div>
+          </footer>
         </form>
       </div>
     </div>

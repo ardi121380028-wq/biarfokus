@@ -28,7 +28,7 @@ function KalenderContent() {
   }, [authLoading, user, setLoginOpen]);
 
   const handleNavigate = useCallback(
-    (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => {
+    (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => {
       switch (view) {
         case "timer":
           router.push("/");
@@ -45,6 +45,13 @@ function KalenderContent() {
           break;
         case "kanban":
           router.push("/kanban");
+          break;
+        case "habits":
+          if (!user) {
+            setLoginOpen(true);
+            return;
+          }
+          router.push("/kebiasaan");
           break;
         case "stats":
           if (!user) {

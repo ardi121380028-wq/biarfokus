@@ -1,29 +1,40 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAppContext } from "@/app/providers/app-provider";
 import { HabitsWorkspaceView } from "@/app/components/habits/habits-workspace-view";
 
 function KebiasaanContent() {
+  const router = useRouter();
   const { user, authLoading, setLoginOpen } = useAppContext();
 
-  // Prompt login immediately if unauthenticated
+  // Guard: prompt login if guest attempts to access habit tracker
   useEffect(() => {
     if (!authLoading && !user) {
       setLoginOpen(true);
+      router.replace("/");
     }
-  }, [authLoading, user, setLoginOpen]);
+  }, [authLoading, user, router, setLoginOpen]);
 
-  return (
-    <main className="inner-page habits-page-page">
-      <HabitsWorkspaceView userId={user?.id ?? null} />
-    </main>
-  );
+  if (!user) {
+    return (
+      <div className="kanban-workspace-frame" style={{ minHeight: "80vh", display: "grid", placeItems: "center" }}>
+        <div style={{ textAlign: "center", padding: "24px" }}>
+          <p style={{ color: "var(--muted)", fontSize: "14px", marginBottom: "12px" }}>
+            Silakan masuk untuk mengakses Pelacak Kebiasaan kamu...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return <HabitsWorkspaceView userId={user.id} />;
 }
 
 export default function KebiasaanPage() {
   return (
-    <Suspense fallback={<div className="inner-page" style={{ minHeight: "80vh" }} />}>
+    <Suspense fallback={<div className="kanban-workspace-frame" style={{ minHeight: "80vh" }} />}>
       <KebiasaanContent />
     </Suspense>
   );

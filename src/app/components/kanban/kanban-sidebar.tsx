@@ -14,7 +14,7 @@ type KanbanSidebarProps = {
   onSelectBoard: (boardId: string) => void;
   onCreateBoardModalOpen: () => void;
   onDeleteBoard: (boardId: string) => void;
-  onNavigate: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onNavigate: (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   onOpenShare?: () => void;
   dark?: boolean;
@@ -42,11 +42,11 @@ export function KanbanSidebar({
     b.title.toLowerCase().includes(searchBoard.trim().toLowerCase()),
   );
 
-  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") {
+  function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       if (!isCollapsed) onToggleCollapse();
     }
-    if ((view === "notes" || view === "calendar") && !user) {
+    if ((view === "notes" || view === "calendar" || view === "habits") && !user) {
       setLoginOpen(true);
       return;
     }
@@ -154,22 +154,29 @@ export function KanbanSidebar({
           </button>
           <button
             type="button"
-            className={`kanban-sidebar-nav-item ${isPro ? "sidebar-pro-active-btn" : "sidebar-upgrade-pro-btn"}`}
-            onClick={() => handleNavigate("pricing")}
-            title={isPro ? "Akun BiarFokus Pro Aktif (Akses Tanpa Batas)" : "Upgrade Pro (Akses Penuh)"}
+            className="kanban-sidebar-nav-item"
+            onClick={() => handleNavigate("habits")}
+            title="Pelacak Kebiasaan"
           >
-            <span className="nav-icon">{isPro ? "👑" : "💎"}</span>
-            {!isCollapsed && (
-              <>
-                <span className="nav-label">{isPro ? "BiarFokus Pro" : "Upgrade Pro"}</span>
-                {isPro ? (
-                  <ProBadge size="sm" />
-                ) : (
-                  <span className="pro-sparkle-pill">PRO ✨</span>
-                )}
-              </>
-            )}
+            <span className="nav-icon">⚡</span>
+            {!isCollapsed && <span className="nav-label">Kebiasaan</span>}
           </button>
+          {!user && (
+            <button
+              type="button"
+              className="kanban-sidebar-nav-item sidebar-upgrade-pro-btn"
+              onClick={() => handleNavigate("pricing")}
+              title="Upgrade Pro (Akses Penuh)"
+            >
+              <span className="nav-icon">💎</span>
+              {!isCollapsed && (
+                <>
+                  <span className="nav-label">Upgrade Pro</span>
+                  <span className="pro-sparkle-pill">PRO ✨</span>
+                </>
+              )}
+            </button>
+          )}
         </nav>
       </div>
 

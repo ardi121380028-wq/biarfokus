@@ -163,11 +163,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     void trackSiteVisit(pathname || "/");
   }, [pathname]);
 
-  // Check if current view is a full workspace mode (Kanban, Kalender, Catatan)
+  // Check if current view is a full workspace mode (Kanban, Kalender, Catatan, Kebiasaan)
   const isWorkspaceView =
     pathname.startsWith("/kanban") ||
     pathname.startsWith("/kalender") ||
-    pathname.startsWith("/catatan");
+    pathname.startsWith("/catatan") ||
+    pathname.startsWith("/kebiasaan") ||
+    pathname.startsWith("/habits");
 
   function isNavActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -247,7 +249,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             />
           </Link>
           <nav className="desktop-nav" aria-label="Navigasi utama">
-            {NAV_LINKS.map(({ href, label }) => (
+            {NAV_LINKS.filter(({ href }) => !(href === "/upgrade" && user)).map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}

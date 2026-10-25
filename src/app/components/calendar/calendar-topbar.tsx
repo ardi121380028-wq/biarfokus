@@ -28,7 +28,7 @@ type CalendarTopbarProps = {
   userName?: string;
   userAvatar?: string | null;
   onRequireLogin?: () => void;
-  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => void;
+  onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => void;
   syncStatus?: "synced" | "saving" | "offline" | "error";
   onForceSync?: () => void;
   onLogout?: () => void;
