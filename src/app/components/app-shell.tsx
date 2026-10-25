@@ -217,7 +217,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         dark ? "dark" : "",
         isWorkspaceView ? "kanban-workspace-mode" : "",
         isDarkBg ? "has-dark-page-bg" : "",
-        pathname === "/" ? "is-landing-page" : "",
+        pathname === "/" && !user ? "is-landing-page" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -410,7 +410,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Footer for standard views */}
       {!isWorkspaceView && (
-        <footer className={`footer ${isDarkBg ? "footer-contrast-light" : ""} ${pathname === "/" ? "landing-footer-white" : ""}`}>
+        <footer className={`footer ${isDarkBg ? "footer-contrast-light" : ""} ${pathname === "/" && !user ? "landing-footer-white" : ""}`}>
           <div className="footer-main-columns">
             <div className="footer-left">
               <div className="footer-brand">
@@ -479,7 +479,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           </div>
-          {pathname === "/" && <FooterInteractiveEye />}
+          {pathname === "/" && !user && <FooterInteractiveEye />}
         </footer>
       )}
 

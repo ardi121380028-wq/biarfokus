@@ -3,69 +3,6 @@
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 
-const FEATURE_ORBITS = [
-  {
-    id: "pomodoro",
-    label: "Pomodoro Timer",
-    color: "#ef4444",
-    bg: "rgba(239, 68, 68, 0.12)",
-    delay: "0s",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <circle cx="12" cy="13" r="8" />
-        <path d="M12 9v4l2.5 2.5" />
-        <path d="M10 2h4" />
-        <path d="M18.5 5.5l1.5-1.5" />
-      </svg>
-    ),
-  },
-  {
-    id: "calendar",
-    label: "Time-Blocking",
-    color: "#3b82f6",
-    bg: "rgba(59, 130, 246, 0.12)",
-    delay: "1.1s",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="18" rx="3" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-      </svg>
-    ),
-  },
-  {
-    id: "kanban",
-    label: "Project Kanban",
-    color: "#10b981",
-    bg: "rgba(16, 185, 129, 0.12)",
-    delay: "2.2s",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="3" y="3" width="5" height="18" rx="1.5" />
-        <rect x="10" y="3" width="5" height="12" rx="1.5" />
-        <rect x="17" y="3" width="5" height="15" rx="1.5" />
-      </svg>
-    ),
-  },
-  {
-    id: "notes",
-    label: "Catatan Cepat",
-    color: "#f59e0b",
-    bg: "rgba(245, 158, 11, 0.12)",
-    delay: "3.3s",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-        <line x1="10" y1="9" x2="8" y2="9" />
-      </svg>
-    ),
-  },
-];
-
 export function FooterInteractiveEye() {
   const [tilt, setTilt] = useState({ x: 0, y: 0, active: false });
   const [clicked, setClicked] = useState(false);
@@ -82,8 +19,8 @@ export function FooterInteractiveEye() {
     const deltaY = (e.clientY - centerY) / (rect.height / 2);
 
     setTilt({
-      x: -deltaY * 14,
-      y: deltaX * 14,
+      x: -deltaY * 12,
+      y: deltaX * 12,
       active: true,
     });
   }, []);
@@ -120,41 +57,20 @@ export function FooterInteractiveEye() {
         onClick={handleClick}
         role="button"
         tabIndex={0}
-        aria-label="Interaksi Zen Fokus BiarFokus"
-        title="Ketuk atau gerakkan mouse untuk fokus interaktif"
+        aria-label="Denyut Fokus Tenang BiarFokus"
+        title="Ketuk untuk rasakan ketenangan fokus"
       >
-        {/* Hypnotic Looping Concentric Zen Ripples */}
+        {/* Hypnotic Slow Gentle Ambient Ripples */}
         <div className="footer-zen-ripple ripple-1" aria-hidden="true" />
         <div className="footer-zen-ripple ripple-2" aria-hidden="true" />
-        <div className="footer-zen-ripple ripple-3" aria-hidden="true" />
 
-        {/* Orbiting Balanced Zen Feature Pills with Rich Crisp SVG Icons */}
-        <div className="footer-zen-orbit" aria-hidden="true">
-          {FEATURE_ORBITS.map((pill, idx) => (
-            <span
-              key={pill.id}
-              className={`footer-zen-orbit-pill pill-pos-${idx + 1}`}
-              style={{
-                animationDelay: pill.delay,
-                color: pill.color,
-                borderColor: `color-mix(in srgb, ${pill.color} 30%, transparent)`,
-              }}
-            >
-              <span className="zen-orbit-icon-wrap" style={{ background: pill.bg }}>
-                {pill.icon}
-              </span>
-              <span className="zen-orbit-label">{pill.label}</span>
-            </span>
-          ))}
-        </div>
-
-        {/* 3D Interactive Center Focus Eye Sphere - 100% Perfectly Rounded Circle */}
+        {/* 100% Perfectly Rounded Circle with Slow Breathing Pulse (Denyut Pelan) */}
         <div
           className="footer-zen-eye-core"
           style={{
             transform: tilt.active
               ? `perspective(600px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.08, 1.08, 1.08)`
-              : "perspective(600px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)",
+              : undefined,
           }}
         >
           {/* Specular Light Reflection Ring */}
@@ -165,8 +81,8 @@ export function FooterInteractiveEye() {
             <Image
               src="/biarfokus-icon.png"
               alt="BiarFokus Logo"
-              width={68}
-              height={68}
+              width={62}
+              height={62}
               className="zen-eye-icon-img"
               priority={false}
             />
