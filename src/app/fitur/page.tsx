@@ -9,6 +9,7 @@ type FeatureCategory =
   | "kalender"
   | "kanban"
   | "catatan"
+  | "kebiasaan"
   | "statistik"
   | "pro"
   | "guide";
@@ -66,6 +67,13 @@ export default function FiturPage() {
             onClick={() => setActiveTab("catatan")}
           >
             📝 Catatan Keep
+          </button>
+          <button
+            type="button"
+            className={`fitur-filter-btn ${activeTab === "kebiasaan" ? "active" : ""}`}
+            onClick={() => setActiveTab("kebiasaan")}
+          >
+            ⚡ Pelacak Kebiasaan
           </button>
           <button
             type="button"
@@ -312,6 +320,46 @@ export default function FiturPage() {
               <h3>Simpan Otomatis (Auto-Save)</h3>
               <p>Setiap ketikan tersimpan otomatis ke cloud Supabase dan cache lokal browser tanpa perlu tombol simpan.</p>
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* CATEGORY: PELACAK KEBIASAAN (ATOMIC HABITS) */}
+      {(activeTab === "all" || activeTab === "kebiasaan") && (
+        <section className="fitur-category-card" id="kebiasaan">
+          <div className="fitur-category-head">
+            <div className="fitur-category-icon-box" style={{ background: "color-mix(in srgb, #6366f1 14%, var(--paper))", color: "#6366f1" }}>
+              <span>⚡</span>
+            </div>
+            <div>
+              <span className="fitur-category-kicker">ATOMIC HABITS SYSTEM</span>
+              <h2>Pelacak Kebiasaan Saintifik</h2>
+              <p>Raih kemajuan 1% setiap hari dengan pembentukan identitas, habit stacking, dan aturan pantang bolong dua kali dari James Clear.</p>
+            </div>
+          </div>
+
+          <div className="fitur-grid-3">
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🎯</span>
+              <h3>Identity-Based Habits</h3>
+              <p>Fokus pada siapa yang kamu bangun (&ldquo;Saya adalah seorang...&rdquo;) daripada sekadar target hasil sesaat.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🔗</span>
+              <h3>Habit Stacking &amp; 2-Minute Rule</h3>
+              <p>Tautkan kebiasaan baru ke rutinitas lama (&ldquo;Setelah X, saya akan Y&rdquo;) dan mulai dengan versi mini tanpa rasa malas.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🔥</span>
+              <h3>Pantang Bolong Dua Kali &amp; Heatmap</h3>
+              <p>Peringatan aktif saat streak terancam patah dan visualisasi konsistensi 90 hari ala GitHub Contribution Graph.</p>
+            </div>
+          </div>
+
+          <div className="fitur-category-cta" style={{ marginTop: "16px" }}>
+            <Link href="/kebiasaan" className="primary-button" style={{ display: "inline-flex", textDecoration: "none" }}>
+              ⚡ Buka Pelacak Kebiasaan Sekarang →
+            </Link>
           </div>
         </section>
       )}

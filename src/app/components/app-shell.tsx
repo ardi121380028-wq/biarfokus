@@ -27,6 +27,7 @@ const NAV_LINKS = [
   { href: "/catatan", label: "Catatan" },
   { href: "/kalender", label: "Kalender" },
   { href: "/kanban", label: "Project Kanban" },
+  { href: "/kebiasaan", label: "Kebiasaan" },
   { href: "/upgrade", label: "Price" },
 ] as const;
 
@@ -185,9 +186,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Guest user clicked Catatan, Kalender, or Kanban
+    // Guest user clicked Catatan, Kalender, Kanban, or Kebiasaan
     e.preventDefault();
-    if (href === "/kanban") {
+    if (href === "/kanban" || href === "/kebiasaan") {
       setLoginOpen(true);
       return;
     }
@@ -643,6 +644,21 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <span className="nav-icon">📊</span>
           <span>Kanban</span>
+        </Link>
+        <Link
+          href="/kebiasaan"
+          className={`mobile-bottom-nav-item ${pathname.startsWith("/kebiasaan") && !showSettings ? "active" : ""}`}
+          onClick={(e) => {
+            setShowSettings(false);
+            setNotesOpen(false);
+            if (!user) {
+              e.preventDefault();
+              setLoginOpen(true);
+            }
+          }}
+        >
+          <span className="nav-icon">⚡</span>
+          <span>Kebiasaan</span>
         </Link>
         <button
           type="button"

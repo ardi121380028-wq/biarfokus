@@ -9,6 +9,7 @@
 @import "../styles/04-components/admin-docs.css";
 @import "../styles/04-components/landing.css";
 @import "../styles/04-components/about.css";
+@import "../styles/04-components/habits.css";
 
 :root { --ink:#111; --muted:#777; --paper:#fff; --page:#e8e8e8; --pink:#f77fa5; --accent:#f77fa5; --yellow:#f6c832; --blue:#1875d1; }
 * {
