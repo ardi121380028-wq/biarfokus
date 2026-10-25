@@ -7180,13 +7180,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
   }
   .keep-labels-toolbar {
-    padding: 4px 0 8px !important;
-    gap: 6px !important;
+    margin: 12px 0 16px !important;
+    padding: 6px 0 !important;
+    gap: 8px !important;
   }
   .keep-chip {
-    padding: 5px 12px !important;
+    padding: 6px 14px !important;
     font-size: 12px !important;
     border-radius: 999px !important;
+  }
+  .keep-desktop-title-actions {
+    display: none !important;
   }
   .keep-checklist-items {
     max-height: 50vh !important;
@@ -8608,6 +8612,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     z-index: 100020 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
     box-sizing: border-box !important;
   }
 
@@ -8691,11 +8697,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
   .rich-note-editor-content {
     flex: 1 1 auto !important;
-    min-height: 180px !important;
+    min-height: 320px !important;
     font-size: 16px !important;
     padding: 8px 0 !important;
     border: none !important;
     background: transparent !important;
+    touch-action: pan-y !important;
   }
 
   /* Note Edit Mobile Footer Bar - Full view with comfortable buttons */
@@ -8714,13 +8721,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .keep-edit-modal-card .keep-color-picker-row {
     display: flex !important;
     justify-content: center !important;
-    gap: 10px !important;
-    flex-wrap: wrap !important;
+    gap: 7px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    padding: 4px 2px !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .keep-edit-modal-card .keep-color-picker-row::-webkit-scrollbar {
+    display: none !important;
   }
 
   .keep-edit-modal-card .keep-color-swatch {
-    width: 28px !important;
-    height: 28px !important;
+    width: 24px !important;
+    height: 24px !important;
+    flex-shrink: 0 !important;
   }
 
   .keep-edit-modal-card .keep-footer-btns {
@@ -9316,8 +9332,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .notes-workspace-content {
     padding-bottom: 74px !important;
   }
-  .keep-container {
+  .keep-page-view .keep-container {
     padding-bottom: 74px !important;
+  }
+  .keep-notes-modal-dialog .keep-container {
+    padding-bottom: 0 !important;
   }
 }
 

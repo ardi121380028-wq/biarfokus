@@ -427,9 +427,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link href="/ketentuan" className="footer-link-btn">
                 Ketentuan Layanan
               </Link>
-              <button type="button" onClick={() => setFaqModalOpen(true)}>
+              <Link href="/faq" className="footer-link-btn">
                 FAQ
-              </button>
+              </Link>
             </div>
             <div className="footer-social-icons" aria-label="Media Sosial BiarFokus">
               <a

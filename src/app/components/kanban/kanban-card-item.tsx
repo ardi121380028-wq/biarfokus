@@ -187,15 +187,21 @@ export function KanbanCardItem({
   return (
     <div
       className={`kanban-card-item ${readOnly ? "is-readonly" : ""} ${touchDragging ? "is-touch-dragging" : ""}`}
-      style={
-        touchDragging
+      style={{
+        ...(touchDragging
           ? {
               transform: `translate3d(${touchOffset.x}px, ${touchOffset.y}px, 0)`,
               zIndex: 99999,
               pointerEvents: "none",
             }
-          : undefined
-      }
+          : {}),
+        ...(card.coverColor
+          ? {
+              backgroundColor: `color-mix(in srgb, ${card.coverColor} 15%, var(--paper, #ffffff))`,
+              borderColor: `color-mix(in srgb, ${card.coverColor} 45%, transparent)`,
+            }
+          : {}),
+      }}
       draggable={!readOnly && !isTouchDevice}
       onDragStart={(e) => {
         if (!readOnly) onDragStart(e, card.id, listId, index);
@@ -208,10 +214,20 @@ export function KanbanCardItem({
     >
       {/* Cover Color or Emoji */}
       {card.coverColor && (
-        <div className="kanban-card-cover-bar" style={{ background: card.coverColor }} />
+        <div className="kanban-card-cover-bar" style={{ background: card.coverColor, height: "10px" }} />
       )}
       {card.coverEmoji && (
-        <div className="kanban-card-cover-emoji">
+        <div
+          className="kanban-card-cover-emoji"
+          style={
+            card.coverColor
+              ? {
+                  background: `color-mix(in srgb, ${card.coverColor} 30%, transparent)`,
+                  borderBottomColor: `color-mix(in srgb, ${card.coverColor} 40%, transparent)`,
+                }
+              : undefined
+          }
+        >
           <span className="cover-emoji-icon">{card.coverEmoji}</span>
         </div>
       )}

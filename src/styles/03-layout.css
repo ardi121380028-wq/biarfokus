@@ -193,8 +193,7 @@
     min-height: 0 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    padding-bottom: 24px !important;
-    padding-bottom: 6px !important;
+    padding-bottom: 14px !important;
     min-height: 0 !important;
     overscroll-behavior: contain;
   }

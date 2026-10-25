@@ -222,17 +222,9 @@
   max-width: 100vw;
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
-  /* Seamless liquid gradient blend from gray to pristine white without harsh cuts */
-  background: linear-gradient(
-    to bottom,
-    var(--page) 0%,
-    color-mix(in srgb, #ffffff 18%, var(--page)) 70px,
-    color-mix(in srgb, #ffffff 50%, var(--page)) 150px,
-    color-mix(in srgb, #ffffff 82%, var(--page)) 240px,
-    #ffffff 330px,
-    #ffffff 100%
-  );
-  border-top: none; /* No harsh cut line */
+  /* Crisp bright white background without shadow or gray cast */
+  background: #ffffff;
+  border-top: none;
   box-shadow: none;
   padding: 80px 0 120px;
   position: relative;
@@ -243,15 +235,7 @@
 }
 
 .app.dark .landing-white-section {
-  background: linear-gradient(
-    to bottom,
-    var(--page) 0%,
-    color-mix(in srgb, #141414 18%, var(--page)) 70px,
-    color-mix(in srgb, #141414 50%, var(--page)) 150px,
-    color-mix(in srgb, #141414 82%, var(--page)) 240px,
-    #141414 330px,
-    #141414 100%
-  );
+  background: #121212;
 }
 
 /* Ambient Aurora Glass Lighting Orbs */
@@ -1853,6 +1837,12 @@
     margin-top: 36px !important;
     padding: 40px 0 60px !important;
     border-radius: 24px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .app.dark .landing-white-section {
+    background: #121212 !important;
   }
 
   .landing-section-inner {
@@ -1893,12 +1883,33 @@
   }
 
   .landing-hub-nav {
-    gap: 6px !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 4px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .landing-hub-nav::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
 
   .landing-hub-tab-btn {
-    padding: 7px 12px !important;
-    font-size: 12px !important;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    padding: 8px 14px !important;
+    font-size: 12.5px !important;
+    border-radius: 9999px !important;
   }
 
   .landing-mockup-frame {

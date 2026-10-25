@@ -22,7 +22,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 0;
+  margin: 10px 0 14px;
+  padding: 6px 0;
   overflow-x: auto;
   user-select: none;
   scrollbar-width: none;
@@ -439,13 +440,17 @@
     display: none !important;
   }
   .keep-labels-toolbar {
-    padding: 4px 0 8px !important;
-    gap: 6px !important;
+    margin: 12px 0 16px !important;
+    padding: 6px 0 !important;
+    gap: 8px !important;
   }
   .keep-chip {
-    padding: 5px 12px !important;
+    padding: 6px 14px !important;
     font-size: 12px !important;
     border-radius: 999px !important;
+  }
+  .keep-desktop-title-actions {
+    display: none !important;
   }
   .keep-notes-section {
     margin-bottom: 8px !important;
