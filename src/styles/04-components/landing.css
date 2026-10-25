@@ -1992,43 +1992,53 @@
 /* Landing Page Pristine White Footer & Interactive Looping Zen Focus Eye     */
 /* ========================================================================== */
 
+.app.is-landing-page {
+  padding-bottom: 0 !important;
+}
+
+.app.is-landing-page .footer.landing-footer-white,
 .footer.landing-footer-white {
   width: 100vw !important;
   max-width: 100vw !important;
   margin-left: calc(-50vw + 50%) !important;
   margin-right: calc(-50vw + 50%) !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
   background: #ffffff !important;
-  padding: 56px max(24px, calc((100vw - 1160px) / 2)) 44px !important;
-  border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
+  padding: 68px max(24px, calc((100vw - 1160px) / 2)) 88px !important;
+  border-top: none !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 36px !important;
+  gap: 58px !important;
   align-items: stretch !important;
 }
 
+.app.dark.is-landing-page .footer.landing-footer-white,
 .app.dark .footer.landing-footer-white {
   background: #121212 !important;
-  border-top-color: rgba(255, 255, 255, 0.08) !important;
+  border-top: none !important;
 }
 
 .footer-main-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 24px;
+  gap: 32px;
   width: min(100%, 1160px);
   margin: 0 auto;
   align-items: start;
 }
 
 @media (max-width: 768px) {
+  .app.is-landing-page .footer.landing-footer-white,
   .footer.landing-footer-white {
-    padding: 38px 16px 88px !important;
-    gap: 28px !important;
+    padding: 44px 18px 110px !important;
+    gap: 40px !important;
+    margin-bottom: 0 !important;
   }
   .footer-main-columns {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 24px;
   }
 }
 
@@ -2038,21 +2048,28 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
+  margin: 16px auto 0;
   width: 100%;
-  max-width: 600px;
+  max-width: 720px;
   text-align: center;
   user-select: none;
 }
 
 .footer-zen-stage {
   position: relative;
-  width: 220px;
-  height: 170px;
+  width: 340px;
+  height: 240px;
   display: grid;
   place-items: center;
   cursor: pointer;
   touch-action: manipulation;
+}
+
+@media (max-width: 480px) {
+  .footer-zen-stage {
+    width: 300px;
+    height: 210px;
+  }
 }
 
 /* Concentric Hypnotic Looping Waves */
@@ -2061,47 +2078,47 @@
   top: 50%;
   left: 50%;
   border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent, #6366f1) 28%, transparent);
   pointer-events: none;
   transform: translate(-50%, -50%);
   animation: zenRippleLoop 4.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 
 .footer-zen-ripple.ripple-1 {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   animation-delay: 0s;
 }
 
 .footer-zen-ripple.ripple-2 {
-  width: 140px;
-  height: 140px;
+  width: 175px;
+  height: 175px;
   animation-delay: 1.4s;
-  border-color: color-mix(in srgb, var(--accent, #6366f1) 22%, transparent);
+  border-color: color-mix(in srgb, var(--accent, #6366f1) 25%, transparent);
 }
 
 .footer-zen-ripple.ripple-3 {
-  width: 180px;
-  height: 180px;
+  width: 235px;
+  height: 235px;
   animation-delay: 2.8s;
-  border-color: color-mix(in srgb, #ec4899 18%, transparent);
+  border-color: color-mix(in srgb, #ec4899 22%, transparent);
 }
 
 @keyframes zenRippleLoop {
   0% {
-    transform: translate(-50%, -50%) scale(0.72);
-    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(0.75);
+    opacity: 0.85;
   }
   50% {
     opacity: 0.45;
   }
   100% {
-    transform: translate(-50%, -50%) scale(1.28);
+    transform: translate(-50%, -50%) scale(1.35);
     opacity: 0;
   }
 }
 
-/* Floating Orbiting Balanced Feature Pills */
+/* Floating Orbiting Balanced Feature Badges */
 .footer-zen-orbit {
   position: absolute;
   inset: 0;
@@ -2112,44 +2129,62 @@
   position: absolute;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 9px;
+  gap: 8px;
+  padding: 6px 14px 6px 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
-  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-  font-size: 10.5px;
-  font-weight: 600;
+  background: var(--paper);
+  border: 1.5px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  font-size: 12.5px;
+  font-weight: 700;
   color: var(--ink);
   white-space: nowrap;
-  animation: zenPillFloat 3.6s ease-in-out infinite alternate;
+  animation: zenPillFloat 3.8s ease-in-out infinite alternate;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.zen-orbit-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
 .footer-zen-stage:hover .footer-zen-orbit-pill {
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
   transform: scale(1.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .footer-zen-orbit-pill.pill-pos-1 {
-  top: 2px;
+  top: 4px;
   left: 50%;
   transform: translateX(-50%);
 }
 .footer-zen-orbit-pill.pill-pos-2 {
-  right: -8px;
+  right: -16px;
   top: 50%;
   transform: translateY(-50%);
 }
 .footer-zen-orbit-pill.pill-pos-3 {
-  bottom: 2px;
+  bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
 }
 .footer-zen-orbit-pill.pill-pos-4 {
-  left: -8px;
+  left: -16px;
   top: 50%;
   transform: translateY(-50%);
+}
+
+@media (max-width: 480px) {
+  .footer-zen-orbit-pill.pill-pos-2 {
+    right: -8px;
+  }
+  .footer-zen-orbit-pill.pill-pos-4 {
+    left: -8px;
+  }
 }
 
 @keyframes zenPillFloat {
@@ -2157,89 +2192,97 @@
     transform: translateY(0);
   }
   100% {
-    transform: translateY(-5px);
+    transform: translateY(-6px);
   }
 }
 
-/* Center Core Sphere / Eye */
+/* Center Core Sphere / Eye - 100% Perfectly Rounded Circle */
 .footer-zen-eye-core {
   position: relative;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
+  width: 92px;
+  height: 92px;
+  border-radius: 50% !important;
   background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%);
-  border: 1.5px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border: 2px solid color-mix(in srgb, var(--ink) 14%, transparent);
   box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.09),
-    0 0 0 4px color-mix(in srgb, var(--paper) 80%, transparent),
-    inset 0 2px 4px rgba(255, 255, 255, 0.9);
+    0 14px 36px rgba(0, 0, 0, 0.12),
+    0 0 0 5px color-mix(in srgb, var(--paper) 80%, transparent),
+    inset 0 2px 5px rgba(255, 255, 255, 0.95);
   display: grid;
   place-items: center;
   transition: transform 0.15s ease-out, box-shadow 0.25s ease;
   z-index: 2;
+  overflow: hidden !important;
 }
 
 .app.dark .footer-zen-eye-core {
   background: radial-gradient(circle at 35% 35%, #2a2a2a 0%, #1e1e1e 60%, #141414 100%);
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.18);
   box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.45),
-    0 0 0 4px rgba(255, 255, 255, 0.04),
-    inset 0 2px 4px rgba(255, 255, 255, 0.12);
+    0 14px 36px rgba(0, 0, 0, 0.5),
+    0 0 0 5px rgba(255, 255, 255, 0.05),
+    inset 0 2px 5px rgba(255, 255, 255, 0.12);
 }
 
 .footer-zen-stage.is-hovered .footer-zen-eye-core {
   box-shadow:
-    0 16px 38px rgba(99, 102, 241, 0.25),
-    0 0 0 6px color-mix(in srgb, var(--accent) 18%, transparent),
-    inset 0 2px 6px rgba(255, 255, 255, 0.9);
+    0 20px 48px rgba(99, 102, 241, 0.32),
+    0 0 0 7px color-mix(in srgb, var(--accent) 22%, transparent),
+    inset 0 2px 6px rgba(255, 255, 255, 0.95);
 }
 
-.zen-eye-iris {
+.zen-eye-iris-circle {
   position: relative;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
+  width: 78px;
+  height: 78px;
+  border-radius: 50% !important;
   display: grid;
   place-items: center;
+  overflow: hidden !important;
+  background: #ffffff;
+}
+
+.app.dark .zen-eye-iris-circle {
+  background: #1c1c1c;
 }
 
 .zen-eye-icon-img {
-  width: 44px;
-  height: 44px;
+  width: 66px;
+  height: 66px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+  border-radius: 50% !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.18));
   transition: transform 0.2s ease;
 }
 
 .footer-zen-stage.is-hovered .zen-eye-icon-img {
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
 .zen-eye-pupil {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: radial-gradient(circle, #ffffff 30%, rgba(255, 255, 255, 0) 80%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 25%, rgba(255, 255, 255, 0) 80%);
   pointer-events: none;
   transition: transform 0.12s ease-out;
 }
 
 /* Motivational Caption below the eye */
 .footer-zen-caption {
-  margin-top: 10px;
+  margin-top: 14px;
   min-height: 24px;
 }
 
 .footer-zen-subtle-hint {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--muted);
   letter-spacing: 0.01em;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   transition: color 0.2s ease;
 }
 
@@ -2249,12 +2292,12 @@
 
 .zen-sparkle-icon {
   color: #ec4899;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .footer-zen-sparkle-text {
   display: inline-block;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #6366f1;
   background: linear-gradient(135deg, #ec4899 0%, #6366f1 100%);
