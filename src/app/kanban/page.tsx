@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAppContext } from "@/app/providers/app-provider";
 import { KanbanView } from "@/app/components/kanban/kanban-view";
 
 function KanbanContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     user,
     userName,
@@ -20,6 +21,19 @@ function KanbanContent() {
     addTask,
     setInfoOpen,
   } = useAppContext();
+
+  const hasInvite = Boolean(
+    searchParams?.get("invite") ||
+    searchParams?.get("kanbanInvite")
+  );
+
+  // Guard: unauthenticated guest accessing via menu/direct URL must log in
+  useEffect(() => {
+    if (!user && !hasInvite) {
+      setLoginOpen(true);
+      router.replace("/");
+    }
+  }, [user, hasInvite, router, setLoginOpen]);
 
   const handleNavigate = useCallback(
     (view: "timer" | "notes" | "calendar" | "kanban" | "stats" | "pricing" | "admin") => {
@@ -63,6 +77,18 @@ function KanbanContent() {
     },
     [router, user, setLoginOpen],
   );
+
+  if (!user && !hasInvite) {
+    return (
+      <div className="kanban-workspace-frame" style={{ minHeight: "80vh", display: "grid", placeItems: "center" }}>
+        <div style={{ textAlign: "center", padding: "24px" }}>
+          <p style={{ color: "var(--muted)", fontSize: "14px", marginBottom: "12px" }}>
+            Silakan masuk untuk mengakses Papan Kanban kamu...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <KanbanView

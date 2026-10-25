@@ -20,6 +20,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { trackSiteVisit } from "@/features/analytics/visitor-tracker";
 import { ProBadge } from "@/app/components/ui/pro-badge";
 import { loadLocalSettings } from "@/features/settings/settings-service";
+import { FooterInteractiveEye } from "@/app/components/footer-interactive-eye";
 
 const NAV_LINKS = [
   { href: "/", label: "Timer" },
@@ -186,9 +187,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     // Guest user clicked Catatan, Kalender, or Kanban
     e.preventDefault();
+    if (href === "/kanban") {
+      setLoginOpen(true);
+      return;
+    }
+
     let targetTab: "notes" | "calendar" | "kanban" = "notes";
     if (href === "/kalender") targetTab = "calendar";
-    else if (href === "/kanban") targetTab = "kanban";
     else if (href === "/catatan") targetTab = "notes";
 
     if (pathname === "/") {
@@ -403,17 +408,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Footer for standard views */}
       {!isWorkspaceView && (
-        <footer className={`footer ${isDarkBg ? "footer-contrast-light" : ""}`}>
-          <div className="footer-left">
-            <div className="footer-brand">
-              <strong>BiarFokus</strong>
-              <span>Bantu kamu fokus selesain setiap pekerjaan.</span>
+        <footer className={`footer ${isDarkBg ? "footer-contrast-light" : ""} ${pathname === "/" ? "landing-footer-white" : ""}`}>
+          {pathname === "/" && <FooterInteractiveEye />}
+          <div className="footer-main-columns">
+            <div className="footer-left">
+              <div className="footer-brand">
+                <strong>BiarFokus</strong>
+                <span>Bantu kamu fokus selesain setiap pekerjaan.</span>
+              </div>
+              <small className="footer-copyright">
+                &copy; 2026 BiarFokus &bull; All rights reserved.
+              </small>
             </div>
-            <small className="footer-copyright">
-              &copy; 2026 BiarFokus &bull; All rights reserved.
-            </small>
-          </div>
-          <div className="footer-right">
+            <div className="footer-right">
             <div className="footer-links">
               <Link href="/fitur" className="footer-link-btn">
                 Fitur &amp; Panduan
@@ -469,6 +476,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </svg>
               </a>
             </div>
+          </div>
           </div>
         </footer>
       )}
@@ -593,9 +601,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link
           href="/catatan"
           className={`mobile-bottom-nav-item ${pathname.startsWith("/catatan") && !showSettings ? "active" : ""}`}
-          onClick={() => {
+          onClick={(e) => {
             setShowSettings(false);
             setNotesOpen(false);
+            if (!user) {
+              e.preventDefault();
+              setLoginOpen(true);
+            }
           }}
         >
           <span className="nav-icon">📝</span>
@@ -604,9 +616,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link
           href="/kalender"
           className={`mobile-bottom-nav-item ${pathname.startsWith("/kalender") && !showSettings ? "active" : ""}`}
-          onClick={() => {
+          onClick={(e) => {
             setShowSettings(false);
             setNotesOpen(false);
+            if (!user) {
+              e.preventDefault();
+              setLoginOpen(true);
+            }
           }}
         >
           <span className="nav-icon">📅</span>
@@ -615,9 +631,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link
           href="/kanban"
           className={`mobile-bottom-nav-item ${pathname.startsWith("/kanban") && !showSettings ? "active" : ""}`}
-          onClick={() => {
+          onClick={(e) => {
             setShowSettings(false);
             setNotesOpen(false);
+            if (!user) {
+              e.preventDefault();
+              setLoginOpen(true);
+            }
           }}
         >
           <span className="nav-icon">📊</span>

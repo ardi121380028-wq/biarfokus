@@ -187,21 +187,15 @@ export function KanbanCardItem({
   return (
     <div
       className={`kanban-card-item ${readOnly ? "is-readonly" : ""} ${touchDragging ? "is-touch-dragging" : ""}`}
-      style={{
-        ...(touchDragging
+      style={
+        touchDragging
           ? {
               transform: `translate3d(${touchOffset.x}px, ${touchOffset.y}px, 0)`,
               zIndex: 99999,
               pointerEvents: "none",
             }
-          : {}),
-        ...(card.coverColor
-          ? {
-              backgroundColor: `color-mix(in srgb, ${card.coverColor} 15%, var(--paper, #ffffff))`,
-              borderColor: `color-mix(in srgb, ${card.coverColor} 45%, transparent)`,
-            }
-          : {}),
-      }}
+          : undefined
+      }
       draggable={!readOnly && !isTouchDevice}
       onDragStart={(e) => {
         if (!readOnly) onDragStart(e, card.id, listId, index);

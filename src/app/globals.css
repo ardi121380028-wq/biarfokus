@@ -7181,14 +7181,29 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
   }
   .keep-labels-toolbar {
-    margin: 18px 0 22px !important;
-    padding: 8px 0 !important;
-    gap: 10px !important;
+    margin: 8px 0 12px !important;
+    padding: 2px 0 !important;
+    gap: 8px !important;
+  }
+  .keep-label-chips {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 2px !important;
+    min-height: 44px !important;
+    box-sizing: border-box !important;
   }
   .keep-chip {
-    padding: 6px 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 32px !important;
+    padding: 0 13px !important;
     font-size: 12px !important;
+    line-height: 1 !important;
     border-radius: 999px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
   }
   .keep-desktop-title-actions {
     display: none !important;
