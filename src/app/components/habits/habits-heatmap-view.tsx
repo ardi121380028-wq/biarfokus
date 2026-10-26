@@ -171,7 +171,7 @@ export function HabitsHeatmapView({
           <div className="reminders-list">
             {pendingHabits.map((h) => (
               <div key={h.id} className="reminder-item-card">
-                <div className="reminder-item-left">
+                <div className="reminder-item-top">
                   <span
                     className="reminder-icon-box"
                     style={{
@@ -181,31 +181,33 @@ export function HabitsHeatmapView({
                     {h.icon || "✨"}
                   </span>
 
-                  <div className="reminder-info">
-                    <div className="reminder-title-row">
-                      <strong className="reminder-title">{h.title}</strong>
-                      <span className="reminder-time-tag">
-                        {h.routineTime === "morning" && "🌅 Pagi"}
-                        {h.routineTime === "afternoon" && "☀️ Siang"}
-                        {h.routineTime === "evening" && "🌙 Malam"}
-                        {h.routineTime === "anytime" && "⚡ Fleksibel"}
-                      </span>
-                    </div>
-
-                    <div className="reminder-cues">
-                      {h.cue && (
-                        <span>
-                          🔗 <span className="reminder-cue-text">{h.cue}</span>
-                        </span>
-                      )}
-                      {h.twoMinuteRule && (
-                        <span>
-                          ⚡ <span className="reminder-cue-text">2 Menit: {h.twoMinuteRule}</span>
-                        </span>
-                      )}
-                    </div>
+                  <div className="reminder-title-wrap">
+                    <strong className="reminder-title">{h.title}</strong>
+                    <span className="reminder-time-tag">
+                      {h.routineTime === "morning" && "🌅 Pagi"}
+                      {h.routineTime === "afternoon" && "☀️ Siang"}
+                      {h.routineTime === "evening" && "🌙 Malam"}
+                      {h.routineTime === "anytime" && "⚡ Fleksibel"}
+                    </span>
                   </div>
                 </div>
+
+                {(h.cue || h.twoMinuteRule) && (
+                  <div className="reminder-cues">
+                    {h.cue && (
+                      <div className="reminder-cue-item" title="Habit Stacking (Pemicu)">
+                        <span className="reminder-cue-icon">🔗</span>
+                        <span className="reminder-cue-text">{h.cue}</span>
+                      </div>
+                    )}
+                    {h.twoMinuteRule && (
+                      <div className="reminder-cue-item" title="Aturan 2 Menit Starter">
+                        <span className="reminder-cue-icon">⚡</span>
+                        <span className="reminder-cue-text">2 Menit: {h.twoMinuteRule}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {onToggleCheckin && (
                   <button

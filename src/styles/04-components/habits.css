@@ -1451,14 +1451,15 @@
   margin-top: 6px;
 }
 
-/* ========================================================================== */
-/* Wide 2-Column Habit Creation Modal                                         */
-/* ========================================================================== */
+/* When habit modal is open, completely hide the mobile bottom dock */
+body:has(.habit-modal-backdrop) .mobile-bottom-nav {
+  display: none !important;
+}
 
 .habit-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 100000;
+  z-index: 200000 !important;
   display: grid;
   place-items: center;
   padding: 24px 16px;
@@ -1973,27 +1974,27 @@
 
 .reminder-item-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 12px 16px;
-  border-radius: 14px;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
   background: color-mix(in srgb, var(--ink) 2%, var(--paper));
   border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
   transition: all 0.16s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 .reminder-item-card:hover {
-  background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
   border-color: color-mix(in srgb, var(--ink) 14%, transparent);
+  transform: translateY(-1px);
 }
 
-.reminder-item-left {
+.reminder-item-top {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0;
-  flex: 1;
+  width: 100%;
 }
 
 .reminder-icon-box {
@@ -2004,68 +2005,93 @@
   place-items: center;
   font-size: 18px;
   flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
-.reminder-info {
+.reminder-title-wrap {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex: 1;
   min-width: 0;
 }
 
-.reminder-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .reminder-title {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 750;
   color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  word-break: break-word;
 }
 
 .reminder-time-tag {
-  font-size: 10.5px;
-  font-weight: 650;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--muted);
   background: color-mix(in srgb, var(--ink) 6%, transparent);
-  padding: 2px 6px;
-  border-radius: 5px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .reminder-cues {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 11.5px;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 50px;
+}
+
+.reminder-cue-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
   color: var(--muted);
-  flex-wrap: wrap;
+  line-height: 1.4;
+}
+
+.reminder-cue-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+  line-height: 1.2;
 }
 
 .reminder-cue-text {
   color: var(--ink);
-  opacity: 0.85;
+  opacity: 0.88;
+  word-break: break-word;
 }
 
 .reminder-quick-check-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  border: 1px solid #10b981;
+  padding: 10px 16px;
+  border-radius: 11px;
+  border: none;
   background: #10b981;
   color: #ffffff;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 750;
   cursor: pointer;
   transition: all 0.16s ease;
   white-space: nowrap;
-  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.28);
+  width: 100%;
+}
+
+.reminder-quick-check-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+.reminder-quick-check-btn:active {
+  transform: translateY(0);
 }
 
 .reminder-quick-check-btn:hover {
@@ -2307,7 +2333,9 @@
     display: none !important;
   }
 
-  .habits-workspace-topbar .profile-user-col {
+  .habits-workspace-topbar .profile-user-col,
+  .habits-topbar-profile-btn-row .profile-user-col,
+  .habits-hide-on-mobile {
     display: none !important;
   }
 
@@ -2367,33 +2395,6 @@
   .matrix-week-switcher {
     width: 100%;
     justify-content: space-between;
-  }
-
-  /* Mobile Floating Action Button (FAB) */
-  .habits-mobile-fab {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    bottom: calc(76px + env(safe-area-inset-bottom, 16px));
-    right: 18px;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: #ffffff;
-    border: none;
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.45), 0 2px 6px rgba(0, 0, 0, 0.1);
-    font-size: 28px;
-    font-weight: 300;
-    line-height: 1;
-    cursor: pointer;
-    z-index: 920;
-    transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.18s ease;
-  }
-
-  .habits-mobile-fab:active {
-    transform: scale(0.92);
   }
 
   /* Matrix table sticky column on mobile */
@@ -2515,15 +2516,146 @@
     height: 16px;
   }
 
+  /* Peta Konsistensi & Pengingat Mobile Responsiveness */
+  .habits-heatmap-view-container {
+    gap: 20px !important;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 20px)) !important;
+  }
+
+  .habits-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .habit-stat-card {
+    padding: 12px 14px !important;
+    border-radius: 14px !important;
+    gap: 8px !important;
+  }
+
+  .stat-card-value {
+    font-size: 20px !important;
+  }
+
+  .stat-card-label {
+    font-size: 11px !important;
+  }
+
+  .habits-danger-banner {
+    padding: 12px 14px !important;
+    font-size: 12.5px !important;
+    gap: 10px !important;
+  }
+
+  .habit-heatmap-card {
+    padding: 16px 14px !important;
+    border-radius: 16px !important;
+    gap: 14px !important;
+  }
+
+  .habit-heatmap-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .heatmap-stats-pill {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .habit-heatmap-legend {
+    width: 100% !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .reminders-card-top {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .reminders-card-heading {
+    font-size: 15px !important;
+  }
+
+  .reminders-pending-badge {
+    align-self: flex-start !important;
+  }
+
   .reminder-item-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    padding: 14px !important;
+    gap: 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .reminder-item-top {
+    gap: 10px !important;
+  }
+
+  .reminder-icon-box {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 17px !important;
+  }
+
+  .reminder-title-wrap {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+
+  .reminder-title {
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+  }
+
+  .reminder-time-tag {
+    font-size: 10.5px !important;
+    padding: 2px 7px !important;
+  }
+
+  .reminder-cues {
+    padding-left: 0 !important;
+    gap: 5px !important;
+  }
+
+  .reminder-cue-item {
+    font-size: 11.5px !important;
   }
 
   .reminder-quick-check-btn {
-    width: 100%;
-    justify-content: center;
+    width: 100% !important;
+    padding: 10px !important;
+    font-size: 13px !important;
+    justify-content: center !important;
+  }
+
+  .habits-automaticity-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 16px 14px !important;
+    gap: 14px !important;
+  }
+
+  .auto-card-left {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .auto-progress-col {
+    width: 100% !important;
+  }
+
+  .habits-philosophy-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .habits-law-card {
+    padding: 16px 14px !important;
   }
 
   .routine-time-pills {
@@ -2534,11 +2666,16 @@
     grid-template-columns: 1fr;
   }
 
-  /* Habit Modal on Mobile */
+  /* Habit Modal on Mobile (Fullscreen, z-index 200000 above mobile bottom dock) */
   .habit-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
     padding: 0 !important;
     align-items: stretch !important;
-    z-index: 100000 !important;
+    z-index: 200000 !important;
+    background: var(--paper) !important;
   }
 
   .habit-modal-dialog {
@@ -2549,6 +2686,8 @@
     display: flex !important;
     flex-direction: column !important;
     box-shadow: none !important;
+    border: none !important;
+    z-index: 200001 !important;
   }
 
   .habit-modal-header {
@@ -2609,11 +2748,13 @@
   .habit-modal-footer {
     position: sticky !important;
     bottom: 0 !important;
-    padding: 12px 18px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 12px)) !important;
     background: var(--paper) !important;
-    border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
-    z-index: 20 !important;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06) !important;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 9%, transparent) !important;
+    z-index: 200002 !important;
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.08) !important;
     flex-shrink: 0 !important;
+    display: flex !important;
+    gap: 10px !important;
   }
 }
