@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import type { Habit, HabitStats, HeatmapDay } from "@/features/habits/habit-types";
-import { getTodayKey, calculateStreak } from "@/features/habits/habit-service";
+import { getTodayKey, calculateStreak, shiftDateKey } from "@/features/habits/habit-service";
 import { HabitHeatmap } from "./habit-heatmap";
 
 interface HabitsHeatmapViewProps {
@@ -10,58 +10,292 @@ interface HabitsHeatmapViewProps {
   heatmap: HeatmapDay[];
   habits?: Habit[];
   onToggleCheckin?: (habitId: string, dateKey?: string) => void;
+  onEdit?: (habit: Habit) => void;
+  onDelete?: (habitId: string) => void;
   onOpenCreateModal: () => void;
+}
+
+interface AchievementBadge {
+  id: string;
+  icon: string;
+  title: string;
+  desc: string;
+  progressText: string;
+  progressPercent: number;
+  isUnlocked: boolean;
 }
 
 export function HabitsHeatmapView({
   stats,
   heatmap,
   habits = [],
-  onToggleCheckin,
+  onEdit,
   onOpenCreateModal,
 }: HabitsHeatmapViewProps) {
   const todayKey = getTodayKey();
 
-  // Pending habits for today (needs reminder)
-  const pendingHabits = useMemo(() => {
-    return habits.filter((h) => !h.completedDates.includes(todayKey));
-  }, [habits, todayKey]);
+  // 30-day cutoff for calculating 30-day consistency rate
+  const thirtyDaysAgoKey = useMemo(() => shiftDateKey(todayKey, -30), [todayKey]);
 
-  // Habits at critical risk of missing twice (missed yesterday & not yet done today)
-  const atRiskHabits = useMemo(() => {
-    return habits.filter((h) => {
-      const streakInfo = calculateStreak(h.completedDates);
-      return streakInfo.isAtRiskOfMissingTwice;
-    });
-  }, [habits]);
+  // Overall average 30-day consistency percentage across all active habits
+  const average30DayRate = useMemo(() => {
+    if (habits.length === 0) return 0;
+    const totalRates = habits.reduce((acc, h) => {
+      const past30Count = h.completedDates.filter((d) => d >= thirtyDaysAgoKey && d <= todayKey).length;
+      return acc + Math.min(100, Math.round((past30Count / 30) * 100));
+    }, 0);
+    return Math.round(totalRates / habits.length);
+  }, [habits, thirtyDaysAgoKey, todayKey]);
 
-  // Longest streak habit for automaticity milestone (Dr. Phillippa Lally 66-day rule)
+  // Dr. Phillippa Lally 66-day automaticity milestone
   const bestStreak = stats.bestCurrentStreak;
   const automaticityPercent = Math.min(100, Math.round((bestStreak / 66) * 100));
 
+  // Gamified achievements calculation
+  const achievements = useMemo<AchievementBadge[]>(() => {
+    const morningHabitStreak = habits
+      .filter((h) => h.routineTime === "morning")
+      .map((h) => calculateStreak(h.completedDates).current);
+    const maxMorningStreak = morningHabitStreak.length > 0 ? Math.max(...morningHabitStreak) : 0;
+
+    const list: AchievementBadge[] = [
+      {
+        id: "first_step",
+        icon: "🚀",
+        title: "Langkah Pertama",
+        desc: "Selesaikan check-in kebiasaan pertamamu.",
+        progressText: `${Math.min(1, stats.allTimeCheckins)}/1 Selesai`,
+        progressPercent: stats.allTimeCheckins >= 1 ? 100 : 0,
+        isUnlocked: stats.allTimeCheckins >= 1,
+      },
+      {
+        id: "streak_7",
+        icon: "⚡",
+        title: "Momentum 7 Hari",
+        desc: "Capai streak 7 hari berturut-turut pada kebiasaan apa pun.",
+        progressText: `${Math.min(7, stats.bestCurrentStreak)}/7 Hari`,
+        progressPercent: Math.min(100, Math.round((stats.bestCurrentStreak / 7) * 100)),
+        isUnlocked: stats.bestCurrentStreak >= 7,
+      },
+      {
+        id: "habit_21",
+        icon: "🧠",
+        title: "Neuroplastisitas 21 Hari",
+        desc: "Membentuk jalur saraf kebiasaan baru di otak.",
+        progressText: `${Math.min(21, stats.bestCurrentStreak)}/21 Hari`,
+        progressPercent: Math.min(100, Math.round((stats.bestCurrentStreak / 21) * 100)),
+        isUnlocked: stats.bestCurrentStreak >= 21,
+      },
+      {
+        id: "automaticity_66",
+        icon: "👑",
+        title: "Threshold Otomatisasi (66 Hari)",
+        desc: "Kebiasaan menjadi refleks bawah sadar (Riset UCL Dr. Lally).",
+        progressText: `${Math.min(66, stats.bestCurrentStreak)}/66 Hari`,
+        progressPercent: automaticityPercent,
+        isUnlocked: stats.bestCurrentStreak >= 66,
+      },
+      {
+        id: "century_100",
+        icon: "💯",
+        title: "Klub Seabad (100 Check-In)",
+        desc: "Akumulasi 100 total check-in seumur hidup.",
+        progressText: `${Math.min(100, stats.allTimeCheckins)}/100 Check-in`,
+        progressPercent: Math.min(100, Math.round((stats.allTimeCheckins / 100) * 100)),
+        isUnlocked: stats.allTimeCheckins >= 100,
+      },
+      {
+        id: "perfect_day",
+        icon: "🎯",
+        title: "Hari Sempurna (100% Disiplin)",
+        desc: "Selesaikan seluruh daftar kebiasaan aktif hari ini.",
+        progressText: `${stats.todayRatePercent}% Selesai`,
+        progressPercent: stats.todayRatePercent,
+        isUnlocked: stats.todayRatePercent === 100 && stats.totalHabits > 0,
+      },
+      {
+        id: "morning_master",
+        icon: "🌅",
+        title: "Master Rutinitas Pagi",
+        desc: "Pertahankan streak minimal 3 hari pada kebiasaan pagi.",
+        progressText: `${Math.min(3, maxMorningStreak)}/3 Hari`,
+        progressPercent: Math.min(100, Math.round((maxMorningStreak / 3) * 100)),
+        isUnlocked: maxMorningStreak >= 3,
+      },
+      {
+        id: "legend_250",
+        icon: "💎",
+        title: "Konsistensi Tingkat Elit",
+        desc: "Tembus 250 check-in total komitmen kebiasaan.",
+        progressText: `${Math.min(250, stats.allTimeCheckins)}/250 Check-in`,
+        progressPercent: Math.min(100, Math.round((stats.allTimeCheckins / 250) * 100)),
+        isUnlocked: stats.allTimeCheckins >= 250,
+      },
+    ];
+
+    return list;
+  }, [stats, habits, automaticityPercent]);
+
+  const unlockedCount = achievements.filter((a) => a.isUnlocked).length;
+
+  // Export CSV Handler
+  const handleExportCsv = () => {
+    if (habits.length === 0) {
+      alert("Belum ada data kebiasaan untuk diekspor.");
+      return;
+    }
+
+    const headers = [
+      "Nama Kebiasaan",
+      "Rutinitas",
+      "Frekuensi",
+      "Target",
+      "Total Check-in",
+      "Streak Saat Ini",
+      "Rekor Terbaik",
+      "Konsistensi 30 Hari (%)",
+      "Status Otomatisasi",
+      "Pemicu (Cue)",
+      "Aturan 2 Menit",
+      "Tanggal Dibuat",
+      "Daftar Tanggal Check-in",
+    ];
+
+    const rows = habits.map((h) => {
+      const streak = calculateStreak(h.completedDates);
+      const past30 = h.completedDates.filter((d) => d >= thirtyDaysAgoKey && d <= todayKey).length;
+      const rate30 = Math.round((past30 / 30) * 100);
+
+      let status = "Langkah Awal (< 7 hari)";
+      if (streak.current >= 66) status = "Otomatis Refleks (>= 66 hari)";
+      else if (streak.current >= 21) status = "Membangun Pola (21-65 hari)";
+      else if (streak.current >= 7) status = "Fase Pembiasaan (7-20 hari)";
+
+      return [
+        `"${h.title.replace(/"/g, '""')}"`,
+        `"${h.routineTime}"`,
+        `"${h.frequency}"`,
+        `"${h.targetCount} ${h.unit || "kali"}"`,
+        h.completedDates.length,
+        streak.current,
+        Math.max(h.streakBest, streak.best),
+        `"${rate30}%"`,
+        `"${status}"`,
+        `"${(h.cue || "").replace(/"/g, '""')}"`,
+        `"${(h.twoMinuteRule || "").replace(/"/g, '""')}"`,
+        `"${h.createdAt}"`,
+        `"${h.completedDates.join("; ")}"`,
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `laporan-konsistensi-biarfokus-${todayKey}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Export JSON Backup Handler
+  const handleExportJson = () => {
+    if (habits.length === 0) {
+      alert("Belum ada data kebiasaan untuk diekspor.");
+      return;
+    }
+
+    const payload = {
+      app: "BiarFokus Habit Tracker",
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      stats: {
+        totalHabits: stats.totalHabits,
+        allTimeCheckins: stats.allTimeCheckins,
+        bestCurrentStreak: stats.bestCurrentStreak,
+        todayRatePercent: stats.todayRatePercent,
+        average30DayRate,
+      },
+      habits,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `backup-kebiasaan-biarfokus-${todayKey}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Print Report Handler
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="habits-heatmap-view-container">
-      {/* View Header Bar */}
+      {/* View Header Bar with Macro Title & Export Group */}
       <div className="habits-view-header-bar">
         <div className="view-header-title-col">
-          <h2 className="view-header-heading">Peta Konsistensi & Pengingat</h2>
+          <h2 className="view-header-heading">Peta Konsistensi & Analisis Makro</h2>
           <span className="view-header-sub">
-            Evaluasi frekuensi 90 hari, selamatkan streak aktif, dan bentuk kebiasaan otomatis 1%.
+            Gambaran besar statistik pembentukan kebiasaan, milestone pencapaian, visualisasi 90 hari, dan ekspor data komitmen.
           </span>
         </div>
-        <button
-          type="button"
-          className="primary-button habits-add-new-btn"
-          onClick={onOpenCreateModal}
-          title="Tambah Kebiasaan Baru"
-        >
-          <span className="btn-plus-icon">+</span>
-          <span>Kebiasaan Baru</span>
-        </button>
+
+        <div className="habits-macro-header-actions">
+          {/* Export & Print Button Group */}
+          <div className="habits-export-group">
+            <button
+              type="button"
+              className="habits-export-btn"
+              onClick={handleExportCsv}
+              title="Ekspor Laporan Rinci ke Spreadsheet (CSV)"
+            >
+              <span className="export-btn-icon">📊</span>
+              <span>Ekspor CSV</span>
+            </button>
+            <button
+              type="button"
+              className="habits-export-btn"
+              onClick={handleExportJson}
+              title="Cadangkan Data Lengkap (JSON Backup)"
+            >
+              <span className="export-btn-icon">💾</span>
+              <span>Backup JSON</span>
+            </button>
+            <button
+              type="button"
+              className="habits-export-btn print-btn"
+              onClick={handlePrint}
+              title="Cetak atau Simpan Dokumen Laporan (PDF)"
+            >
+              <span className="export-btn-icon">🖨️</span>
+              <span>Cetak Laporan</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="primary-button habits-add-new-btn"
+            onClick={onOpenCreateModal}
+            title="Tambah Kebiasaan Baru"
+          >
+            <span className="btn-plus-icon">+</span>
+            <span>Kebiasaan Baru</span>
+          </button>
+        </div>
       </div>
 
-      {/* 4 Top KPI Stats Cards */}
-      <section className="habits-stats-grid" aria-label="Ringkasan Statistik Kebiasaan">
+      {/* 4 Macro KPI Cards */}
+      <section className="habits-stats-grid" aria-label="Gambaran Besar Statistik Kebiasaan">
         <div className="habit-stat-card">
           <span className="stat-card-icon">🎯</span>
           <div className="stat-card-info">
@@ -69,6 +303,9 @@ export function HabitsHeatmapView({
               {stats.completedTodayCount}/{stats.totalHabits}
             </span>
             <span className="stat-card-label">Selesai Hari Ini</span>
+            <span className="stat-card-sub">
+              {stats.todayRatePercent}% komitmen harian tuntas
+            </span>
           </div>
           <div className="stat-card-progress-bar">
             <div
@@ -82,15 +319,23 @@ export function HabitsHeatmapView({
           <span className="stat-card-icon">🔥</span>
           <div className="stat-card-info">
             <span className="stat-card-value">{stats.bestCurrentStreak} Hari</span>
-            <span className="stat-card-label">Streak Beruntun Aktif</span>
+            <span className="stat-card-label">Streak Beruntun Tertinggi</span>
+            <span className="stat-card-sub">Rekor tanpa bolong terpanjang</span>
           </div>
         </div>
 
         <div className="habit-stat-card">
           <span className="stat-card-icon">📈</span>
           <div className="stat-card-info">
-            <span className="stat-card-value">{stats.todayRatePercent}%</span>
-            <span className="stat-card-label">Tingkat Disiplin Hari Ini</span>
+            <span className="stat-card-value">{average30DayRate}%</span>
+            <span className="stat-card-label">Konsistensi 30 Hari</span>
+            <span className="stat-card-sub">Rata-rata disiplin seluruh kebiasaan</span>
+          </div>
+          <div className="stat-card-progress-bar">
+            <div
+              className="stat-card-progress-fill"
+              style={{ width: `${average30DayRate}%` }}
+            />
           </div>
         </div>
 
@@ -99,149 +344,32 @@ export function HabitsHeatmapView({
           <div className="stat-card-info">
             <span className="stat-card-value">{stats.allTimeCheckins}</span>
             <span className="stat-card-label">Total Check-In Berhasil</span>
+            <span className="stat-card-sub">Akumulasi komitmen seumur hidup</span>
           </div>
         </div>
       </section>
 
-      {/* Emergency Rescue: Never Miss Twice Danger Card */}
-      {atRiskHabits.length > 0 && (
-        <aside className="habits-urgent-rescue-card" role="alert">
-          <div className="rescue-card-top">
-            <span className="rescue-icon">⚠️</span>
-            <div className="rescue-header-text">
-              <h4>Peringatan Darurat James Clear: Pantang Bolong Dua Kali</h4>
-              <p>
-                Bolong sekali adalah ketidaksengajaan, tapi bolong dua kali adalah awal dari kebiasaan buruk yang baru. Selesaikan kebiasaan di bawah ini sekarang untuk menyelamatkan streak!
-              </p>
-            </div>
-          </div>
-          <div className="rescue-habits-row">
-            {atRiskHabits.map((habit) => (
-              <div key={habit.id} className="rescue-habit-pill">
-                <span>{habit.icon || "✨"}</span>
-                <span>{habit.title}</span>
-                {onToggleCheckin && (
-                  <button
-                    type="button"
-                    className="rescue-btn"
-                    onClick={() => onToggleCheckin(habit.id, todayKey)}
-                  >
-                    Selamatkan Streak ✓
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </aside>
-      )}
-
-      {/* Interactive Reminder Hub: Today's Pending Habits Checklist */}
-      <section className="habits-reminders-card" aria-label="Pengingat Kebiasaan Hari Ini">
-        <div className="reminders-card-top">
-          <div className="reminders-card-title-group">
-            <h3 className="reminders-card-heading">
-              <span>🔔</span>
-              <span>Pusat Pengingat & Akuntabilitas Hari Ini</span>
-            </h3>
-            <span className="reminders-card-sub">
-              Daftar kebiasaan yang membutuhkan perhatianmu hari ini agar konsistensi 1% tetap terjaga.
-            </span>
-          </div>
-
-          <span
-            className={`reminders-pending-badge ${pendingHabits.length === 0 ? "all-done" : ""}`}
-          >
-            {pendingHabits.length === 0
-              ? "Semua Tuntas! 🎉"
-              : `${pendingHabits.length} Belum Selesai`}
-          </span>
-        </div>
-
-        {pendingHabits.length === 0 ? (
-          <div className="reminders-all-done-box">
-            <span className="all-done-icon">🎉</span>
-            <div className="all-done-content">
-              <h4>Luar Biasa! Semua Kebiasaan Hari Ini Tuntas</h4>
-              <p>
-                Kamu sudah menyelesaikan seluruh komitmenmu hari ini. Nikmati istirahatmu dan pertahankan momentum 1% lebih baik besok!
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="reminders-list">
-            {pendingHabits.map((h) => (
-              <div key={h.id} className="reminder-item-card">
-                <div className="reminder-item-top">
-                  <span
-                    className="reminder-icon-box"
-                    style={{
-                      background: `color-mix(in srgb, ${h.color} 15%, var(--paper))`,
-                    }}
-                  >
-                    {h.icon || "✨"}
-                  </span>
-
-                  <div className="reminder-title-wrap">
-                    <strong className="reminder-title">{h.title}</strong>
-                    <span className="reminder-time-tag">
-                      {h.routineTime === "morning" && "🌅 Pagi"}
-                      {h.routineTime === "afternoon" && "☀️ Siang"}
-                      {h.routineTime === "evening" && "🌙 Malam"}
-                      {h.routineTime === "anytime" && "⚡ Fleksibel"}
-                    </span>
-                  </div>
-                </div>
-
-                {(h.cue || h.twoMinuteRule) && (
-                  <div className="reminder-cues">
-                    {h.cue && (
-                      <div className="reminder-cue-item" title="Habit Stacking (Pemicu)">
-                        <span className="reminder-cue-icon">🔗</span>
-                        <span className="reminder-cue-text">{h.cue}</span>
-                      </div>
-                    )}
-                    {h.twoMinuteRule && (
-                      <div className="reminder-cue-item" title="Aturan 2 Menit Starter">
-                        <span className="reminder-cue-icon">⚡</span>
-                        <span className="reminder-cue-text">2 Menit: {h.twoMinuteRule}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {onToggleCheckin && (
-                  <button
-                    type="button"
-                    className="reminder-quick-check-btn"
-                    onClick={() => onToggleCheckin(h.id, todayKey)}
-                    title={`Tandai selesai untuk ${h.title}`}
-                  >
-                    <span>✓</span>
-                    <span>Ceklis Sekarang</span>
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Hero Visual Heatmap: 90-Day GitHub-style Consistency Map */}
+      <section className="habits-heatmap-section">
+        <HabitHeatmap heatmap={heatmap} allTimeCheckins={stats.allTimeCheckins} />
       </section>
 
-      {/* 66-Day Habit Automaticity Milestone Card */}
+      {/* 66-Day Habit Automaticity Milestone Card (Dr. Phillippa Lally rule) */}
       <section className="habits-automaticity-card" aria-label="Milestone Otomatisasi 66 Hari">
         <div className="auto-card-left">
           <div className="auto-badge-icon">🧠</div>
           <div className="auto-card-text">
-            <h4>Milestone Menuju Kebiasaan Otomatis (Threshold 66 Hari)</h4>
+            <h4>Threshold Otomatisasi Otak (Riset 66 Hari)</h4>
             <p>
-              Riset ilmiah Dr. Phillippa Lally (University College London) membuktikan bahwa otak butuh rata-rata 66 hari pengulangan agar suatu kebiasaan menjadi refleks bawah sadar tanpa beban willpower.
+              Riset ilmiah Dr. Phillippa Lally (University College London) membuktikan bahwa rata-rata dibutuhkan 66 hari pengulangan agar suatu kebiasaan mencapai titik otomatisasi saraf tanpa membutuhkan willpower ekstra.
             </p>
           </div>
         </div>
 
         <div className="auto-progress-col">
           <div className="auto-progress-header">
-            <span>Progress: {bestStreak}/66 Hari</span>
-            <span>{automaticityPercent}%</span>
+            <span>Progress Menuju Otomatis: {bestStreak}/66 Hari</span>
+            <span className="auto-percent-val">{automaticityPercent}%</span>
           </div>
           <div className="auto-progress-track">
             <div
@@ -252,13 +380,216 @@ export function HabitsHeatmapView({
         </div>
       </section>
 
-      {/* 90-Day Visual Heatmap */}
-      <section className="habits-heatmap-section">
-        <HabitHeatmap heatmap={heatmap} allTimeCheckins={stats.allTimeCheckins} />
+      {/* Gamified Achievements & Milestone Badges */}
+      <section className="habits-achievements-card" aria-label="Pencapaian & Lencana Konsistensi">
+        <div className="achievements-card-top">
+          <div className="achievements-title-group">
+            <h3 className="achievements-heading">
+              <span>🏆</span>
+              <span>Pencapaian & Lencana Konsistensi</span>
+            </h3>
+            <span className="achievements-sub">
+              Buka lencana kehormatan seiring dengan bertambahnya konsistensi dan streak harianmu.
+            </span>
+          </div>
+
+          <div className="achievements-badge-counter">
+            <span className="counter-icon">🎖️</span>
+            <strong>{unlockedCount} dari {achievements.length}</strong>
+            <span>Lencana Terbuka</span>
+          </div>
+        </div>
+
+        <div className="habits-achievements-grid">
+          {achievements.map((ach) => (
+            <div
+              key={ach.id}
+              className={`habit-badge-card ${ach.isUnlocked ? "is-unlocked" : "is-locked"}`}
+            >
+              <div className="badge-card-header">
+                <span className="badge-card-icon">{ach.icon}</span>
+                <span className={`badge-status-pill ${ach.isUnlocked ? "unlocked" : "locked"}`}>
+                  {ach.isUnlocked ? "🏆 Terbuka" : "🔒 Terkunci"}
+                </span>
+              </div>
+
+              <div className="badge-card-content">
+                <h4 className="badge-card-title">{ach.title}</h4>
+                <p className="badge-card-desc">{ach.desc}</p>
+              </div>
+
+              <div className="badge-progress-wrap">
+                <div className="badge-progress-info">
+                  <span className="badge-progress-label">Progress</span>
+                  <span className="badge-progress-text">{ach.progressText}</span>
+                </div>
+                <div className="badge-progress-track">
+                  <div
+                    className="badge-progress-fill"
+                    style={{ width: `${ach.progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Macro Habit Performance Breakdown Table with Edit Action */}
+      <section className="habits-macro-table-card" aria-label="Rincian Performa Tiap Kebiasaan">
+        <div className="macro-table-header">
+          <div className="macro-table-title-group">
+            <h3 className="macro-table-heading">
+              <span>📋</span>
+              <span>Rincian & Evaluasi Tiap Kebiasaan</span>
+            </h3>
+            <span className="macro-table-sub">
+              Daftar statistik komprehensif, performa streak, tingkat disiplin 30 hari, dan fase otomatisasi.
+            </span>
+          </div>
+
+          <span className="macro-table-count-pill">
+            Total {habits.length} Kebiasaan Aktif
+          </span>
+        </div>
+
+        {habits.length === 0 ? (
+          <div className="macro-table-empty">
+            <p>Belum ada kebiasaan yang dibuat.</p>
+          </div>
+        ) : (
+          <div className="habits-macro-table-wrap">
+            <table className="habits-macro-table" aria-label="Tabel Evaluasi Kebiasaan">
+              <thead>
+                <tr>
+                  <th className="macro-th-habit">Kebiasaan</th>
+                  <th className="macro-th-routine">Rutinitas</th>
+                  <th className="macro-th-total">Total Check-In</th>
+                  <th className="macro-th-streak">Streak Aktif</th>
+                  <th className="macro-th-best">Rekor Terbaik</th>
+                  <th className="macro-th-rate">Disiplin 30 Hari</th>
+                  <th className="macro-th-status">Fase Otomatisasi</th>
+                  {onEdit && <th className="macro-th-action">Aksi</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {habits.map((habit) => {
+                  const streak = calculateStreak(habit.completedDates);
+                  const past30Count = habit.completedDates.filter(
+                    (d) => d >= thirtyDaysAgoKey && d <= todayKey
+                  ).length;
+                  const rate30 = Math.round((past30Count / 30) * 100);
+
+                  // Automaticity phase
+                  let phaseLabel = "Langkah Awal";
+                  let phaseClass = "phase-initial";
+                  if (streak.current >= 66) {
+                    phaseLabel = "🧠 Refleks Otomatis";
+                    phaseClass = "phase-automatic";
+                  } else if (streak.current >= 21) {
+                    phaseLabel = "⚡ Membangun Pola";
+                    phaseClass = "phase-building";
+                  } else if (streak.current >= 7) {
+                    phaseLabel = "🌱 Fase Pembiasaan";
+                    phaseClass = "phase-forming";
+                  }
+
+                  return (
+                    <tr key={habit.id} className="macro-table-row">
+                      <td className="macro-td-habit">
+                        <div
+                          className={`macro-habit-cell ${onEdit ? "is-clickable" : ""}`}
+                          onClick={() => onEdit?.(habit)}
+                          title={onEdit ? `Klik untuk edit ${habit.title}` : habit.title}
+                          role={onEdit ? "button" : undefined}
+                          tabIndex={onEdit ? 0 : undefined}
+                        >
+                          <span
+                            className="macro-habit-icon"
+                            style={{
+                              background: `color-mix(in srgb, ${habit.color} 15%, var(--paper))`,
+                            }}
+                          >
+                            {habit.icon || "✨"}
+                          </span>
+                          <span className="macro-habit-title" title={habit.title}>
+                            {habit.title}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="macro-td-routine">
+                        <span className="macro-routine-badge">
+                          {habit.routineTime === "morning" && "🌅 Pagi"}
+                          {habit.routineTime === "afternoon" && "☀️ Siang"}
+                          {habit.routineTime === "evening" && "🌙 Malam"}
+                          {habit.routineTime === "anytime" && "⚡ Fleksibel"}
+                        </span>
+                      </td>
+
+                      <td className="macro-td-total">
+                        <span className="macro-total-pill">
+                          {habit.completedDates.length} kali
+                        </span>
+                      </td>
+
+                      <td className="macro-td-streak">
+                        <span
+                          className={`macro-streak-pill ${streak.current > 0 ? "has-streak" : ""}`}
+                        >
+                          🔥 {streak.current} Hari
+                        </span>
+                      </td>
+
+                      <td className="macro-td-best">
+                        <span className="macro-best-pill">
+                          ⭐ {Math.max(habit.streakBest, streak.best)} Hari
+                        </span>
+                      </td>
+
+                      <td className="macro-td-rate">
+                        <div className="macro-rate-cell">
+                          <span className="macro-rate-text">{rate30}%</span>
+                          <div className="macro-rate-bar">
+                            <div
+                              className="macro-rate-fill"
+                              style={{ width: `${rate30}%`, background: habit.color }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="macro-td-status">
+                        <span className={`macro-phase-badge ${phaseClass}`}>
+                          {phaseLabel}
+                        </span>
+                      </td>
+
+                      {onEdit && (
+                        <td className="macro-td-action">
+                          <button
+                            type="button"
+                            className="macro-edit-btn"
+                            onClick={() => onEdit(habit)}
+                            title={`Edit ${habit.title}`}
+                            aria-label={`Edit ${habit.title}`}
+                          >
+                            <span>✏️</span>
+                            <span>Edit</span>
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* Atomic Habits 4 Laws Philosophy Cards */}
-      <section className="habits-philosophy-grid">
+      <section className="habits-philosophy-grid" aria-label="4 Kaidah Pembentukan Kebiasaan">
         <div className="habits-law-card">
           <div className="law-badge">Hukum 1</div>
           <h4>Jadikan Jelas (Make it Obvious)</h4>

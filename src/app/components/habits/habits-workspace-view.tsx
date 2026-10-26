@@ -213,6 +213,8 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
                 heatmap={heatmap}
                 habits={habits}
                 onToggleCheckin={toggleCheckin}
+                onEdit={handleOpenEdit}
+                onDelete={deleteHabit}
                 onOpenCreateModal={handleOpenAdd}
               />
             )}

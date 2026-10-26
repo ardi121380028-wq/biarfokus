@@ -147,6 +147,7 @@ export function HabitsMatrixView({
               ))}
               <th className="matrix-th-stat">Minggu Ini</th>
               <th className="matrix-th-streak">Streak</th>
+              <th className="matrix-th-action">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -160,7 +161,13 @@ export function HabitsMatrixView({
                 <tr key={habit.id} className="matrix-row">
                   {/* Sticky Habit Info Column */}
                   <td className="matrix-td-habit">
-                    <div className="matrix-habit-cell">
+                    <div
+                      className="matrix-habit-cell is-clickable"
+                      onClick={() => onEdit(habit)}
+                      title={`Klik untuk edit ${habit.title}`}
+                      role="button"
+                      tabIndex={0}
+                    >
                       <span
                         className="matrix-habit-icon"
                         style={{
@@ -238,6 +245,34 @@ export function HabitsMatrixView({
                     >
                       🔥 {streakInfo.current}
                     </span>
+                  </td>
+
+                  {/* Action Column: Edit & Delete buttons */}
+                  <td className="matrix-td-action">
+                    <div className="matrix-actions-group">
+                      <button
+                        type="button"
+                        className="matrix-action-btn edit"
+                        onClick={() => onEdit(habit)}
+                        title={`Edit kebiasaan "${habit.title}"`}
+                        aria-label={`Edit ${habit.title}`}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        type="button"
+                        className="matrix-action-btn delete"
+                        onClick={() => {
+                          if (confirm(`Hapus kebiasaan "${habit.title}"?`)) {
+                            onDelete(habit.id);
+                          }
+                        }}
+                        title={`Hapus kebiasaan "${habit.title}"`}
+                        aria-label={`Hapus ${habit.title}`}
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
