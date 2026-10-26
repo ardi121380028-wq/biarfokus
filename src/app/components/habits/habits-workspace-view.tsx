@@ -44,8 +44,8 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
     deleteHabit,
   } = useHabits(userId);
 
-  // View Mode: checklist (default), matrix, heatmap
-  const [activeView, setActiveView] = useState<HabitViewMode>("checklist");
+  // View Mode: matrix (default weekly view), checklist, heatmap
+  const [activeView, setActiveView] = useState<HabitViewMode>("matrix");
 
   // Sidebar collapsed state (persisted)
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
@@ -185,34 +185,38 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
 
         {/* Content View Switcher */}
         <main className="habits-workspace-content-scroll" aria-label="Konten Pelacak Kebiasaan">
-          {activeView === "checklist" && (
-            <HabitsChecklistView
-              habits={filteredHabits}
-              onToggleCheckin={toggleCheckin}
-              onEdit={handleOpenEdit}
-              onDelete={deleteHabit}
-              onOpenCreateModal={handleOpenAdd}
-              activeFilter={filter}
-            />
-          )}
+          <div className="habits-workspace-content-inner">
+            {activeView === "checklist" && (
+              <HabitsChecklistView
+                habits={filteredHabits}
+                onToggleCheckin={toggleCheckin}
+                onEdit={handleOpenEdit}
+                onDelete={deleteHabit}
+                onOpenCreateModal={handleOpenAdd}
+                activeFilter={filter}
+              />
+            )}
 
-          {activeView === "matrix" && (
-            <HabitsMatrixView
-              habits={filteredHabits}
-              onToggleCheckin={toggleCheckin}
-              onEdit={handleOpenEdit}
-              onDelete={deleteHabit}
-              onOpenCreateModal={handleOpenAdd}
-            />
-          )}
+            {activeView === "matrix" && (
+              <HabitsMatrixView
+                habits={filteredHabits}
+                onToggleCheckin={toggleCheckin}
+                onEdit={handleOpenEdit}
+                onDelete={deleteHabit}
+                onOpenCreateModal={handleOpenAdd}
+              />
+            )}
 
-          {activeView === "heatmap" && (
-            <HabitsHeatmapView
-              stats={stats}
-              heatmap={heatmap}
-              onOpenCreateModal={handleOpenAdd}
-            />
-          )}
+            {activeView === "heatmap" && (
+              <HabitsHeatmapView
+                stats={stats}
+                heatmap={heatmap}
+                habits={habits}
+                onToggleCheckin={toggleCheckin}
+                onOpenCreateModal={handleOpenAdd}
+              />
+            )}
+          </div>
         </main>
       </div>
 

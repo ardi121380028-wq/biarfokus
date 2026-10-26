@@ -1,22 +1,47 @@
 "use client";
 
-import type { HabitStats, HeatmapDay } from "@/features/habits/habit-types";
+import { useMemo } from "react";
+import type { Habit, HabitStats, HeatmapDay } from "@/features/habits/habit-types";
+import { getTodayKey, calculateStreak } from "@/features/habits/habit-service";
 import { HabitHeatmap } from "./habit-heatmap";
 
 interface HabitsHeatmapViewProps {
   stats: HabitStats;
   heatmap: HeatmapDay[];
+  habits?: Habit[];
+  onToggleCheckin?: (habitId: string, dateKey?: string) => void;
   onOpenCreateModal: () => void;
 }
 
 export function HabitsHeatmapView({
   stats,
   heatmap,
+  habits = [],
+  onToggleCheckin,
   onOpenCreateModal,
 }: HabitsHeatmapViewProps) {
+  const todayKey = getTodayKey();
+
+  // Pending habits for today (needs reminder)
+  const pendingHabits = useMemo(() => {
+    return habits.filter((h) => !h.completedDates.includes(todayKey));
+  }, [habits, todayKey]);
+
+  // Habits at critical risk of missing twice (missed yesterday & not yet done today)
+  const atRiskHabits = useMemo(() => {
+    return habits.filter((h) => {
+      const streakInfo = calculateStreak(h.completedDates);
+      return streakInfo.isAtRiskOfMissingTwice;
+    });
+  }, [habits]);
+
+  // Longest streak habit for automaticity milestone (Dr. Phillippa Lally 66-day rule)
+  const bestStreak = stats.bestCurrentStreak;
+  const automaticityPercent = Math.min(100, Math.round((bestStreak / 66) * 100));
+
   return (
     <div className="habits-heatmap-view-container">
-      {/* 4 Summary Stats Cards */}
+      {/* 4 Top KPI Stats Cards */}
       <section className="habits-stats-grid" aria-label="Ringkasan Statistik Kebiasaan">
         <div className="habit-stat-card">
           <span className="stat-card-icon">🎯</span>
@@ -59,25 +84,159 @@ export function HabitsHeatmapView({
         </div>
       </section>
 
-      {/* James Clear Danger Alert: Never Miss Twice */}
-      {stats.neverMissTwiceAlerts > 0 && (
-        <aside className="habits-danger-banner" role="alert">
-          <span className="banner-alert-icon">⚠️</span>
-          <div className="banner-alert-content">
-            <strong>Peringatan James Clear (Aturan Pantang Bolong Dua Kali):</strong>
-            <span>
-              Ada <strong>{stats.neverMissTwiceAlerts} kebiasaan</strong> yang terlewat kemarin dan belum selesai hari ini. Selesaikan sekarang agar tidak membentuk kebiasaan buruk baru!
-            </span>
+      {/* Emergency Rescue: Never Miss Twice Danger Card */}
+      {atRiskHabits.length > 0 && (
+        <aside className="habits-urgent-rescue-card" role="alert">
+          <div className="rescue-card-top">
+            <span className="rescue-icon">⚠️</span>
+            <div className="rescue-header-text">
+              <h4>Peringatan Darurat James Clear: Pantang Bolong Dua Kali</h4>
+              <p>
+                Bolong sekali adalah ketidaksengajaan, tapi bolong dua kali adalah awal dari kebiasaan buruk yang baru. Selesaikan kebiasaan di bawah ini sekarang untuk menyelamatkan streak!
+              </p>
+            </div>
+          </div>
+          <div className="rescue-habits-row">
+            {atRiskHabits.map((habit) => (
+              <div key={habit.id} className="rescue-habit-pill">
+                <span>{habit.icon || "✨"}</span>
+                <span>{habit.title}</span>
+                {onToggleCheckin && (
+                  <button
+                    type="button"
+                    className="rescue-btn"
+                    onClick={() => onToggleCheckin(habit.id, todayKey)}
+                  >
+                    Selamatkan Streak ✓
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         </aside>
       )}
+
+      {/* Interactive Reminder Hub: Today's Pending Habits Checklist */}
+      <section className="habits-reminders-card" aria-label="Pengingat Kebiasaan Hari Ini">
+        <div className="reminders-card-top">
+          <div className="reminders-card-title-group">
+            <h3 className="reminders-card-heading">
+              <span>🔔</span>
+              <span>Pusat Pengingat & Akuntabilitas Hari Ini</span>
+            </h3>
+            <span className="reminders-card-sub">
+              Daftar kebiasaan yang membutuhkan perhatianmu hari ini agar konsistensi 1% tetap terjaga.
+            </span>
+          </div>
+
+          <span
+            className={`reminders-pending-badge ${pendingHabits.length === 0 ? "all-done" : ""}`}
+          >
+            {pendingHabits.length === 0
+              ? "Semua Tuntas! 🎉"
+              : `${pendingHabits.length} Belum Selesai`}
+          </span>
+        </div>
+
+        {pendingHabits.length === 0 ? (
+          <div className="reminders-all-done-box">
+            <span className="all-done-icon">🎉</span>
+            <div className="all-done-content">
+              <h4>Luar Biasa! Semua Kebiasaan Hari Ini Tuntas</h4>
+              <p>
+                Kamu sudah menyelesaikan seluruh komitmenmu hari ini. Nikmati istirahatmu dan pertahankan momentum 1% lebih baik besok!
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="reminders-list">
+            {pendingHabits.map((h) => (
+              <div key={h.id} className="reminder-item-card">
+                <div className="reminder-item-left">
+                  <span
+                    className="reminder-icon-box"
+                    style={{
+                      background: `color-mix(in srgb, ${h.color} 15%, var(--paper))`,
+                    }}
+                  >
+                    {h.icon || "✨"}
+                  </span>
+
+                  <div className="reminder-info">
+                    <div className="reminder-title-row">
+                      <strong className="reminder-title">{h.title}</strong>
+                      <span className="reminder-time-tag">
+                        {h.routineTime === "morning" && "🌅 Pagi"}
+                        {h.routineTime === "afternoon" && "☀️ Siang"}
+                        {h.routineTime === "evening" && "🌙 Malam"}
+                        {h.routineTime === "anytime" && "⚡ Fleksibel"}
+                      </span>
+                    </div>
+
+                    <div className="reminder-cues">
+                      {h.cue && (
+                        <span>
+                          🔗 <span className="reminder-cue-text">{h.cue}</span>
+                        </span>
+                      )}
+                      {h.twoMinuteRule && (
+                        <span>
+                          ⚡ <span className="reminder-cue-text">2 Menit: {h.twoMinuteRule}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {onToggleCheckin && (
+                  <button
+                    type="button"
+                    className="reminder-quick-check-btn"
+                    onClick={() => onToggleCheckin(h.id, todayKey)}
+                    title={`Tandai selesai untuk ${h.title}`}
+                  >
+                    <span>✓</span>
+                    <span>Ceklis Sekarang</span>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 66-Day Habit Automaticity Milestone Card */}
+      <section className="habits-automaticity-card" aria-label="Milestone Otomatisasi 66 Hari">
+        <div className="auto-card-left">
+          <div className="auto-badge-icon">🧠</div>
+          <div className="auto-card-text">
+            <h4>Milestone Menuju Kebiasaan Otomatis (Threshold 66 Hari)</h4>
+            <p>
+              Riset ilmiah Dr. Phillippa Lally (University College London) membuktikan bahwa otak butuh rata-rata 66 hari pengulangan agar suatu kebiasaan menjadi refleks bawah sadar tanpa beban willpower.
+            </p>
+          </div>
+        </div>
+
+        <div className="auto-progress-col">
+          <div className="auto-progress-header">
+            <span>Progress: {bestStreak}/66 Hari</span>
+            <span>{automaticityPercent}%</span>
+          </div>
+          <div className="auto-progress-track">
+            <div
+              className="auto-progress-fill"
+              style={{ width: `${automaticityPercent}%` }}
+            />
+          </div>
+        </div>
+      </section>
 
       {/* 90-Day Visual Heatmap */}
       <section className="habits-heatmap-section">
         <HabitHeatmap heatmap={heatmap} allTimeCheckins={stats.allTimeCheckins} />
       </section>
 
-      {/* Atomic Habits 4 Laws Philosophy Card */}
+      {/* Atomic Habits 4 Laws Philosophy Cards */}
       <section className="habits-philosophy-grid">
         <div className="habits-law-card">
           <div className="law-badge">Hukum 1</div>

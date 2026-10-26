@@ -64,7 +64,7 @@ export function HabitsTopbar({
   }[activeFilter];
 
   return (
-    <header className="notes-workspace-topbar habits-workspace-topbar">
+    <header className="cal-workspace-topbar habits-workspace-topbar">
       {/* Left controls: Toggle button & Module Title */}
       <div className="cal-topbar-left">
         <button
@@ -87,21 +87,21 @@ export function HabitsTopbar({
       <div className="habits-topbar-view-switcher" role="tablist" aria-label="Tampilan Kebiasaan">
         <button
           type="button"
-          className={`habits-view-pill ${activeView === "checklist" ? "active" : ""}`}
-          onClick={() => onSelectView("checklist")}
-          title="Tampilan Ceklis Harian"
-        >
-          <span>✅</span>
-          <span className="view-pill-text">Ceklis Hari Ini</span>
-        </button>
-        <button
-          type="button"
           className={`habits-view-pill ${activeView === "matrix" ? "active" : ""}`}
           onClick={() => onSelectView("matrix")}
           title="Tampilan Matriks Mingguan (Tabel 7 Hari)"
         >
           <span>📅</span>
           <span className="view-pill-text">Matriks Mingguan</span>
+        </button>
+        <button
+          type="button"
+          className={`habits-view-pill ${activeView === "checklist" ? "active" : ""}`}
+          onClick={() => onSelectView("checklist")}
+          title="Tampilan Ceklis Harian"
+        >
+          <span>✅</span>
+          <span className="view-pill-text">Ceklis Hari Ini</span>
         </button>
         <button
           type="button"
@@ -114,7 +114,7 @@ export function HabitsTopbar({
         </button>
       </div>
 
-      {/* Right controls: Search, New Habit Button, Theme, Settings, Profile */}
+      {/* Right controls: Search, Theme, Settings, Profile */}
       <div className="cal-topbar-right">
         {/* Search input / toggle */}
         <div className={`cal-topbar-search-box ${searchOpen || searchQuery ? "is-open" : ""}`}>
@@ -159,109 +159,138 @@ export function HabitsTopbar({
           )}
         </div>
 
-        {/* Primary Action Button: + Baru */}
-        <button
-          type="button"
-          className="habits-topbar-add-btn"
-          onClick={onOpenCreateModal}
-          title="Tambah Kebiasaan Baru"
-        >
-          <span className="add-btn-plus">+</span>
-          <span className="add-btn-label">Baru</span>
-        </button>
-
-        {/* Dark/Light mode toggle */}
+        {/* Dark/Light mode toggle (Desktop Only) */}
         {onToggleDark && (
           <button
             type="button"
-            className="cal-topbar-icon-btn topbar-desktop-only"
+            className="cal-topbar-icon-btn modern-theme-btn topbar-desktop-only"
             onClick={onToggleDark}
             aria-label={dark ? "Beralih ke mode terang" : "Beralih ke mode gelap"}
             title={dark ? "Mode Terang" : "Mode Gelap"}
           >
-            {dark ? "☀️" : "🌙"}
+            {dark ? (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            ) : (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
           </button>
         )}
 
-        {/* Settings button */}
+        {/* Settings button (Desktop Only) */}
         {onOpenSettings && (
           <button
             type="button"
-            className="cal-topbar-icon-btn topbar-desktop-only"
+            className="cal-topbar-icon-btn modern-shortcut-btn topbar-desktop-only"
             onClick={onOpenSettings}
             aria-label="Buka pengaturan"
             title="Pengaturan"
           >
-            ⚙️
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
           </button>
         )}
 
         {/* User profile dropdown */}
-        {user ? (
-          <div className="cal-topbar-profile-wrap" ref={profileMenuRef}>
+        <div className="cal-topbar-profile-wrap" ref={profileMenuRef}>
+          {user ? (
+            <div className="cal-topbar-profile-btn-row">
+              <button
+                type="button"
+                className="profile-button-wrap"
+                onClick={() => setProfileMenuOpen((prev) => !prev)}
+                aria-label="Menu akun"
+                title={userName}
+              >
+                <div className="cal-topbar-avatar-btn">
+                  {userAvatar ? (
+                    <Image
+                      src={userAvatar}
+                      alt={userName}
+                      width={30}
+                      height={30}
+                      className="cal-topbar-avatar-img"
+                      unoptimized
+                    />
+                  ) : (
+                    <span className="cal-topbar-avatar-initial">
+                      {userName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="profile-user-col">
+                  <span className="profile-user-name" title={userName}>
+                    {userName}
+                  </span>
+                  {isPro ? (
+                    <ProBadge size="sm" />
+                  ) : (
+                    <span className="profile-free-pill">Free</span>
+                  )}
+                </div>
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
-              className="cal-topbar-profile-btn"
-              onClick={() => setProfileMenuOpen((prev) => !prev)}
-              aria-label="Menu akun"
-              aria-expanded={profileMenuOpen}
+              className="cal-topbar-signin-btn"
+              onClick={onRequireLogin}
+              title="Masuk ke Akun BiarFokus"
             >
-              <div className="profile-button">
-                {userAvatar ? (
-                  <Image src={userAvatar} alt="" width={32} height={32} unoptimized />
-                ) : (
-                  <span>{userName.charAt(0).toUpperCase()}</span>
-                )}
-              </div>
+              Masuk
             </button>
+          )}
 
-            {profileMenuOpen && (
-              <ProfileMenu
-                userName={userName}
-                isPro={isPro}
-                isAdmin={isAdminRole(userRole)}
-                onClose={() => setProfileMenuOpen(false)}
-                onAccount={() => {
-                  setProfileMenuOpen(false);
-                  onOpenProfile?.();
-                }}
-                onStats={() => {
-                  setProfileMenuOpen(false);
-                  onOpenStats?.();
-                }}
-                onSettings={() => {
-                  setProfileMenuOpen(false);
-                  onOpenSettings?.();
-                }}
-                onPremium={() => {
-                  setProfileMenuOpen(false);
-                  onNavigate?.("pricing");
-                }}
-                onAdmin={() => {
-                  setProfileMenuOpen(false);
-                  onNavigate?.("admin");
-                }}
-                onSignOut={() => {
-                  setProfileMenuOpen(false);
-                  void getSupabaseBrowserClient()
-                    .auth.signOut()
-                    .then((result: { error: { message: string } | null }) => {
-                      if (result.error) setAppError(result.error.message);
-                    });
-                }}
-              />
-            )}
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="cal-topbar-signin-btn"
-            onClick={onRequireLogin}
-            title="Masuk ke Akun BiarFokus"
-          >
-            Masuk
-          </button>
-        )}
+          {profileMenuOpen && (
+            <ProfileMenu
+              userName={userName}
+              isPro={isPro}
+              isAdmin={isAdminRole(userRole)}
+              onClose={() => setProfileMenuOpen(false)}
+              onAccount={() => {
+                setProfileMenuOpen(false);
+                onOpenProfile?.();
+              }}
+              onStats={() => {
+                setProfileMenuOpen(false);
+                onOpenStats?.();
+              }}
+              onSettings={() => {
+                setProfileMenuOpen(false);
+                onOpenSettings?.();
+              }}
+              onPremium={() => {
+                setProfileMenuOpen(false);
+                onNavigate?.("pricing");
+              }}
+              onAdmin={() => {
+                setProfileMenuOpen(false);
+                onNavigate?.("admin");
+              }}
+              onSignOut={() => {
+                setProfileMenuOpen(false);
+                void getSupabaseBrowserClient()
+                  .auth.signOut()
+                  .then((result: { error: { message: string } | null }) => {
+                    if (result.error) setAppError(result.error.message);
+                  });
+              }}
+            />
+          )}
+        </div>
       </div>
     </header>
   );
