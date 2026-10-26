@@ -9,6 +9,11 @@ import {
   type EventDraft,
 } from "@/features/calendar/calendar-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
+import {
+  CustomSelect,
+  CustomDatePicker,
+  CustomTimePicker,
+} from "./custom-calendar-pickers";
 
 const DAYS_OF_WEEK = [
   { day: 1, label: "Senin", shortName: "Sen" },
@@ -194,31 +199,25 @@ export function CalendarEventModal({
           <span className="cal-field-icon">🕒</span>
           <div className="cal-field-content">
             <span className="cal-field-label">Waktu:</span>
-            <input
-              type="date"
+            <CustomDatePicker
               value={draft.date}
-              onChange={(e) => setDraft({ ...draft, date: e.target.value })}
-              className="cal-date-picker"
+              onChange={(date) => setDraft({ ...draft, date })}
             />
             <div className="cal-range-times">
-              <input
-                type="time"
+              <CustomTimePicker
                 value={draft.startTime}
-                onChange={(e) => {
-                  setDraft({ ...draft, startTime: e.target.value });
+                onChange={(startTime) => {
+                  setDraft({ ...draft, startTime });
                   if (error) setError(null);
                 }}
-                className="cal-time-picker"
               />
               <span>—</span>
-              <input
-                type="time"
+              <CustomTimePicker
                 value={draft.endTime}
-                onChange={(e) => {
-                  setDraft({ ...draft, endTime: e.target.value });
+                onChange={(endTime) => {
+                  setDraft({ ...draft, endTime });
                   if (error) setError(null);
                 }}
-                className="cal-time-picker"
               />
               {durationText && (
                 <span className="cal-duration-badge">({durationText})</span>
@@ -233,10 +232,10 @@ export function CalendarEventModal({
           <div className="cal-field-content">
             <span className="cal-field-label">Pengulangan Jadwal:</span>
             <div className="cal-recurrence-controls">
-              <select
+              <CustomSelect
                 value={draft.recurrence?.frequency || "none"}
-                onChange={(e) => {
-                  const freq = e.target.value as RecurrenceFrequency;
+                onChange={(val) => {
+                  const freq = val as RecurrenceFrequency;
                   if (freq === "none") {
                     setDraft({ ...draft, recurrence: undefined });
                   } else if (freq === "daily") {
@@ -269,13 +268,13 @@ export function CalendarEventModal({
                   }
                   if (error) setError(null);
                 }}
-                className="cal-select-recurrence"
-              >
-                <option value="none">Tidak berulang</option>
-                <option value="daily">Setiap hari</option>
-                <option value="weekdays">Setiap hari kerja (Senin – Jumat)</option>
-                <option value="custom">Kustom (Pilih hari sendiri)...</option>
-              </select>
+                options={[
+                  { value: "none", label: "Tidak berulang" },
+                  { value: "daily", label: "Setiap hari" },
+                  { value: "weekdays", label: "Setiap hari kerja (Senin – Jumat)" },
+                  { value: "custom", label: "Kustom (Pilih hari sendiri)..." },
+                ]}
+              />
 
               {/* Custom 7-day checkboxes / pills */}
               {draft.recurrence?.frequency === "custom" && (
@@ -380,21 +379,19 @@ export function CalendarEventModal({
               {draft.recurrence && draft.recurrence.frequency !== "none" && (
                 <div className="cal-until-date-row">
                   <span className="cal-subfield-label">Berulang sampai:</span>
-                  <input
-                    type="date"
-                    min={draft.date}
+                  <CustomDatePicker
+                    minDate={draft.date}
                     value={draft.recurrence.untilDate || ""}
-                    onChange={(e) => {
+                    onChange={(untilDate) => {
                       setDraft({
                         ...draft,
                         recurrence: {
                           ...draft.recurrence!,
-                          untilDate: e.target.value || undefined,
+                          untilDate: untilDate || undefined,
                         },
                       });
                       if (error) setError(null);
                     }}
-                    className="cal-date-picker small"
                   />
                   {draft.recurrence.untilDate ? (
                     <button
@@ -494,10 +491,11 @@ export function CalendarEventModal({
             {/* Note Linking UI */}
             {linkType === "note" && (
               <div className="cal-note-link-wrap">
-                <select
+                <CustomSelect
                   value={draft.linkedNoteId || ""}
-                  onChange={(e) => {
-                    const noteId = e.target.value || undefined;
+                  placeholder="-- Pilih Catatan / Todo --"
+                  onChange={(val) => {
+                    const noteId = val || undefined;
                     setDraft({
                       ...draft,
                       linkedNoteId: noteId,
@@ -505,16 +503,16 @@ export function CalendarEventModal({
                       linkedItemText: undefined,
                     });
                   }}
-                  className="cal-select-note"
-                >
-                  <option value="">-- Pilih Catatan / Todo --</option>
-                  {notes.map((n) => (
-                    <option key={n.id} value={n.id}>
-                      {n.type === "checklist" ? "☑️ " : "📝 "}
-                      {n.title || "(Tanpa judul)"} {n.labels.length ? `[${n.labels.join(", ")}]` : ""}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: "", label: "-- Tanpa Catatan Terhubung --" },
+                    ...notes.map((n) => ({
+                      value: n.id,
+                      icon: n.type === "checklist" ? "☑️" : "📝",
+                      label: n.title || "(Tanpa judul)",
+                      sublabel: n.labels.length ? n.labels.join(", ") : undefined,
+                    })),
+                  ]}
+                />
 
                 {/* If checklist note is chosen, show specific sub-task selector (excluding completed) */}
                 {selectedNote && selectedNote.type === "checklist" && selectedNote.items && (
@@ -531,10 +529,11 @@ export function CalendarEventModal({
                     return (
                       <div className="cal-subtask-picker-row">
                         <span className="cal-field-label">🎯 Pilih Sub-task Spesifik (Belum Selesai):</span>
-                        <select
+                        <CustomSelect
                           value={draft.linkedItemId || ""}
-                          onChange={(e) => {
-                            const itemId = e.target.value || undefined;
+                          placeholder={`-- Semua Sub-task Aktif (${activeSubtasks.length}) --`}
+                          onChange={(val) => {
+                            const itemId = val || undefined;
                             const item = activeSubtasks.find((it) => it.id === itemId);
                             setDraft({
                               ...draft,
@@ -543,15 +542,15 @@ export function CalendarEventModal({
                               title: !draft.title.trim() && item?.text ? item.text : draft.title,
                             });
                           }}
-                          className="cal-select-note cal-select-subtask"
-                        >
-                          <option value="">-- Semua Sub-task Aktif ({activeSubtasks.length}) --</option>
-                          {activeSubtasks.map((it) => (
-                            <option key={it.id} value={it.id}>
-                              ○ {it.text || "(Item tanpa teks)"}
-                            </option>
-                          ))}
-                        </select>
+                          options={[
+                            { value: "", label: `-- Semua Sub-task Aktif (${activeSubtasks.length}) --` },
+                            ...activeSubtasks.map((it) => ({
+                              value: it.id,
+                              icon: "○",
+                              label: it.text || "(Item tanpa teks)",
+                            })),
+                          ]}
+                        />
                       </div>
                     );
                   })()
@@ -635,19 +634,15 @@ export function CalendarEventModal({
                 <div className="cal-kanban-selectors-row">
                   <div className="cal-subfield-col">
                     <span className="cal-subfield-label">Papan Proyek:</span>
-                    <select
+                    <CustomSelect
                       value={selectedBoardId}
-                      onChange={(e) => {
-                        setSelectedBoardId(e.target.value);
-                      }}
-                      className="cal-select-note"
-                    >
-                      {boards.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.title}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedBoardId(val)}
+                      options={boards.map((b) => ({
+                        value: b.id,
+                        icon: "📌",
+                        label: b.title,
+                      }))}
+                    />
                   </div>
 
                   <div className="cal-subfield-col">
@@ -664,10 +659,11 @@ export function CalendarEventModal({
                             .filter((c) => !c.dueCompleted)
                         : [];
                       return (
-                        <select
+                        <CustomSelect
                           value={draft.linkedKanbanCardId || ""}
-                          onChange={(e) => {
-                            const cardId = e.target.value || undefined;
+                          placeholder={`-- Pilih Kartu Kanban (${activeCards.length} aktif) --`}
+                          onChange={(val) => {
+                            const cardId = val || undefined;
                             const card = activeCards.find((c) => c.id === cardId);
                             setDraft({
                               ...draft,
@@ -678,17 +674,16 @@ export function CalendarEventModal({
                               date: card?.dueDate ? card.dueDate : draft.date,
                             });
                           }}
-                          className="cal-select-note"
-                        >
-                          <option value="">-- Pilih Kartu Kanban ({activeCards.length} aktif) --</option>
-                          {activeCards.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.coverEmoji ? `${c.coverEmoji} ` : ""}
-                              {c.title}
-                              {c.dueDate ? ` (Tenggat: ${c.dueDate})` : ""}
-                            </option>
-                          ))}
-                        </select>
+                          options={[
+                            { value: "", label: `-- Pilih Kartu Kanban (${activeCards.length} aktif) --` },
+                            ...activeCards.map((c) => ({
+                              value: c.id,
+                              icon: c.coverEmoji || "📋",
+                              label: c.title,
+                              sublabel: c.dueDate ? `Tenggat: ${c.dueDate}` : undefined,
+                            })),
+                          ]}
+                        />
                       );
                     })()}
                   </div>

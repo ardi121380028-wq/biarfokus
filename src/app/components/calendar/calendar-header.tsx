@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { CalendarViewMode } from "@/features/calendar/calendar-service";
 import { getWeekNumber } from "@/features/calendar/calendar-service";
+import { CustomSelect } from "./custom-calendar-pickers";
 
 type CalendarHeaderProps = {
   anchorDate: Date;
@@ -132,17 +133,16 @@ export function CalendarHeader({
 
         {/* View Mode Dropdown (Day, Week, Month, Year) */}
         <div className="cal-view-selector-wrapper">
-          <select
+          <CustomSelect
             value={viewMode}
-            onChange={(e) => onViewModeChange(e.target.value as CalendarViewMode)}
-            className="cal-view-select"
-            aria-label="Pilih tampilan kalender"
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-            <option value="year">Year</option>
-          </select>
+            onChange={(val) => onViewModeChange(val as CalendarViewMode)}
+            options={[
+              { value: "day", label: "Hari" },
+              { value: "week", label: "Minggu" },
+              { value: "month", label: "Bulan" },
+              { value: "year", label: "Tahun" },
+            ]}
+          />
         </div>
 
         {/* Quick Tab to Notes / Checklist */}
