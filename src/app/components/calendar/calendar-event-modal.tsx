@@ -445,7 +445,8 @@ export function CalendarEventModal({
                   });
                 }}
               >
-                Mandiri
+                <span className="link-tab-icon">🎯</span>
+                <span>Mandiri</span>
               </button>
               <button
                 type="button"
@@ -460,7 +461,8 @@ export function CalendarEventModal({
                   });
                 }}
               >
-                📝 Catatan &amp; Todo
+                <span className="link-tab-icon">📝</span>
+                <span>Catatan &amp; Todo</span>
               </button>
               {boards && boards.length > 0 && (
                 <button
@@ -477,10 +479,17 @@ export function CalendarEventModal({
                     });
                   }}
                 >
-                  📋 Kartu Kanban
+                  <span className="link-tab-icon">📋</span>
+                  <span>Kartu Kanban</span>
                 </button>
               )}
             </div>
+
+            {linkType === "none" && (
+              <span className="cal-link-none-hint">
+                ✨ Acara mandiri (tanpa integrasi tautan Catatan atau Kanban)
+              </span>
+            )}
 
             {/* Note Linking UI */}
             {linkType === "note" && (

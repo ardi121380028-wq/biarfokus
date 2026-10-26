@@ -179,25 +179,277 @@
 .cal-select-note { width:100%; }
 .cal-desc-input { width:100%; resize:vertical; font-family:inherit; }
 
+/* Hubungkan Sumber Tugas / Agenda Segmented Controls */
+.cal-link-type-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cal-link-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.cal-link-tab:hover:not(.active) {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+.cal-link-tab.active {
+  background: var(--paper);
+  color: #1a73e8;
+  font-weight: 750;
+  border-color: color-mix(in srgb, #1a73e8 25%, transparent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dark .cal-link-tab.active {
+  background: color-mix(in srgb, var(--paper) 92%, #ffffff);
+  color: #60a5fa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  border-color: color-mix(in srgb, #60a5fa 30%, transparent);
+}
+
+.link-tab-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.cal-link-none-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 2px;
+  display: block;
+}
+
+/* Link Note & Kanban Card Containers */
+.cal-note-link-wrap,
+.cal-kanban-link-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+.cal-kanban-selectors-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .cal-kanban-selectors-row {
+    grid-template-columns: 1fr;
+  }
+  .cal-link-type-tabs {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cal-link-tab {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 8px 12px;
+  }
+}
+
+.cal-subfield-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.cal-subfield-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cal-select-note {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 550;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.cal-select-note:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #1a73e8 20%, transparent);
+}
+
+.cal-subtask-picker-row {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cal-select-subtask {
+  border-color: color-mix(in srgb, #1a73e8 45%, transparent);
+  background: color-mix(in srgb, #1a73e8 4%, var(--paper));
+  font-weight: 600;
+}
+
 /* Linked Note Preview in Event Modal */
-.cal-linked-preview-box { background:color-mix(in srgb,var(--ink) 4%,transparent); border:1px solid color-mix(in srgb,var(--ink) 12%,transparent); border-radius:10px; padding:10px 12px; font-size:12px; }
-.preview-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:6px; }
-.preview-header strong { font-size:12px; color:var(--ink); }
+.cal-linked-preview-box {
+  background: color-mix(in srgb, #1a73e8 6%, var(--paper));
+  border: 1px solid color-mix(in srgb, #1a73e8 22%, transparent);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  padding-bottom: 6px;
+}
+
+.preview-header strong {
+  font-size: 12.5px;
+  font-weight: 750;
+  color: var(--ink);
+}
+
+.preview-header span {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.preview-help-text {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.preview-items-list.interactive {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.preview-item-interactive {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  transition: all 0.15s ease;
+}
+
+.preview-item-interactive:hover {
+  background: color-mix(in srgb, #1a73e8 9%, var(--paper));
+  border-color: color-mix(in srgb, #1a73e8 30%, transparent);
+}
+
+.preview-item-interactive.is-selected-subtask {
+  background: color-mix(in srgb, #1a73e8 14%, var(--paper));
+  border-color: #1a73e8;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(26, 115, 232, 0.15);
+}
+
+.preview-item-check {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a73e8;
+  display: grid;
+  place-items: center;
+  width: 16px;
+}
+
+.preview-item-title {
+  flex: 1;
+  font-size: 12px;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-selected-tag {
+  font-size: 10px;
+  background: #1a73e8;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 750;
+  flex-shrink: 0;
+}
+
+.preview-kanban-card-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.kanban-summary-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .preview-link-btn { border:none; background:transparent; color:var(--blue); font-size:11px; cursor:pointer; text-decoration:underline; padding:0; }
 .preview-items-list { display:flex; flex-direction:column; gap:3px; }
 .preview-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink); }
 .preview-done { text-decoration:line-through; opacity:0.6; }
 .preview-more { color:var(--muted); font-size:10px; margin-top:2px; display:block; }
 .preview-text-snippet { margin:0; font-size:11px; color:var(--muted); line-height:1.4; }
-.cal-subtask-picker-row { margin-top:8px; display:flex; flex-direction:column; gap:4px; }
-.cal-select-subtask { border-color:color-mix(in srgb,var(--blue) 50%,transparent); background:color-mix(in srgb,var(--blue) 5%,transparent); font-weight:500; }
-.preview-help-text { font-size:11px; color:var(--muted); margin-bottom:4px; display:block; }
-.preview-item-interactive { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; cursor:pointer; transition:background-color .15s, border-color .15s; border:1px solid transparent; }
-.preview-item-interactive:hover { background:color-mix(in srgb,var(--blue) 10%,transparent); }
-.preview-item-interactive.is-selected-subtask { background:color-mix(in srgb,var(--blue) 16%,transparent); border-color:var(--blue); font-weight:600; }
-.preview-item-check { font-size:12px; font-weight:bold; color:var(--blue); }
-.preview-item-title { flex:1; font-size:12px; color:var(--ink); }
-.preview-selected-tag { font-size:10px; background:var(--blue); color:#fff; padding:2px 7px; border-radius:10px; font-weight:bold; }
 .cal-event-subtask-badge { background:rgba(0,0,0,0.42); font-weight:600; border-left:2px solid #00e5ff; }
 
 /* Color Swatches in Event Modal */
