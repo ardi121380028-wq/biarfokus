@@ -1888,10 +1888,14 @@ body:has(.habit-modal-backdrop) .mobile-bottom-nav {
 }
 
 .habit-modal-cancel-btn {
+  width: auto;
+  margin-top: 0;
   padding: 10px 18px;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 650;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .habit-modal-save-btn {
@@ -1900,6 +1904,7 @@ body:has(.habit-modal-backdrop) .mobile-bottom-nav {
   font-size: 13px;
   font-weight: 750;
   box-shadow: 0 4px 14px color-mix(in srgb, var(--accent, #6366f1) 30%, transparent);
+  white-space: nowrap;
 }
 
 /* ========================================================================== */
@@ -2748,13 +2753,40 @@ body:has(.habit-modal-backdrop) .mobile-bottom-nav {
   .habit-modal-footer {
     position: sticky !important;
     bottom: 0 !important;
-    padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 12px)) !important;
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 12px)) !important;
     background: var(--paper) !important;
     border-top: 1px solid color-mix(in srgb, var(--ink) 9%, transparent) !important;
     z-index: 200002 !important;
     box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.08) !important;
     flex-shrink: 0 !important;
     display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
     gap: 10px !important;
+  }
+
+  .habit-modal-footer .habit-modal-cancel-btn {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    min-width: 80px !important;
+    padding: 12px 18px !important;
+    margin-top: 0 !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+  }
+
+  .habit-modal-footer .habit-modal-save-btn {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 12px 18px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    font-size: 13px !important;
+    letter-spacing: -0.01em !important;
   }
 }

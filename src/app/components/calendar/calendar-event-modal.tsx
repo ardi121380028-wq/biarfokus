@@ -516,33 +516,45 @@ export function CalendarEventModal({
                   ))}
                 </select>
 
-                {/* If checklist note is chosen, show specific sub-task selector */}
-                {selectedNote && selectedNote.type === "checklist" && selectedNote.items && selectedNote.items.length > 0 && (
-                  <div className="cal-subtask-picker-row">
-                    <span className="cal-field-label">🎯 Pilih Sub-task Spesifik:</span>
-                    <select
-                      value={draft.linkedItemId || ""}
-                      onChange={(e) => {
-                        const itemId = e.target.value || undefined;
-                        const item = selectedNote.items?.find((it) => it.id === itemId);
-                        setDraft({
-                          ...draft,
-                          linkedItemId: itemId,
-                          linkedItemText: item?.text,
-                          title: !draft.title.trim() && item?.text ? item.text : draft.title,
-                        });
-                      }}
-                      className="cal-select-note cal-select-subtask"
-                    >
-                      <option value="">-- Semua Sub-task (Seluruh Catatan) --</option>
-                      {selectedNote.items.map((it) => (
-                        <option key={it.id} value={it.id}>
-                          {it.done ? "✓ " : "○ "}
-                          {it.text || "(Item tanpa teks)"}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                {/* If checklist note is chosen, show specific sub-task selector (excluding completed) */}
+                {selectedNote && selectedNote.type === "checklist" && selectedNote.items && (
+                  (() => {
+                    const activeSubtasks = selectedNote.items.filter((it) => !it.done);
+                    if (activeSubtasks.length === 0 && selectedNote.items.length > 0) {
+                      return (
+                        <div className="cal-all-tasks-completed-hint">
+                          🎉 Semua sub-task pada catatan ini sudah selesai dikerjakan!
+                        </div>
+                      );
+                    }
+                    if (activeSubtasks.length === 0) return null;
+                    return (
+                      <div className="cal-subtask-picker-row">
+                        <span className="cal-field-label">🎯 Pilih Sub-task Spesifik (Belum Selesai):</span>
+                        <select
+                          value={draft.linkedItemId || ""}
+                          onChange={(e) => {
+                            const itemId = e.target.value || undefined;
+                            const item = activeSubtasks.find((it) => it.id === itemId);
+                            setDraft({
+                              ...draft,
+                              linkedItemId: itemId,
+                              linkedItemText: item?.text,
+                              title: !draft.title.trim() && item?.text ? item.text : draft.title,
+                            });
+                          }}
+                          className="cal-select-note cal-select-subtask"
+                        >
+                          <option value="">-- Semua Sub-task Aktif ({activeSubtasks.length}) --</option>
+                          {activeSubtasks.map((it) => (
+                            <option key={it.id} value={it.id}>
+                              ○ {it.text || "(Item tanpa teks)"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })()
                 )}
 
                 {/* Preview of Connected Note */}
@@ -553,49 +565,63 @@ export function CalendarEventModal({
                       <span>{selectedNote.type === "checklist" ? "Checklist / Todo" : "Teks"}</span>
                     </div>
 
-                    {selectedNote.type === "checklist" && selectedNote.items && selectedNote.items.length > 0 ? (
-                      <div className="preview-items-list interactive">
-                        <span className="preview-help-text">
-                          💡 Klik item di bawah untuk langsung menargetkannya ke time-blocking:
-                        </span>
-                        {selectedNote.items.map((it) => {
-                          const isSelected = draft.linkedItemId === it.id;
+                    {selectedNote.type === "checklist" && selectedNote.items && (
+                      (() => {
+                        const activeSubtasks = selectedNote.items.filter((it) => !it.done);
+                        if (activeSubtasks.length === 0) {
                           return (
-                            <div
-                              key={it.id}
-                              className={`preview-item-interactive ${isSelected ? "is-selected-subtask" : ""}`}
-                              onClick={() => {
-                                if (isSelected) {
-                                  setDraft({
-                                    ...draft,
-                                    linkedItemId: undefined,
-                                    linkedItemText: undefined,
-                                  });
-                                } else {
-                                  setDraft({
-                                    ...draft,
-                                    linkedItemId: it.id,
-                                    linkedItemText: it.text,
-                                    title: !draft.title.trim() ? it.text : draft.title,
-                                  });
-                                }
-                              }}
-                              role="button"
-                              tabIndex={0}
-                              title={isSelected ? "Klik untuk batalkan target spesifik" : "Klik untuk jadikan target jadwal"}
-                            >
-                              <span className="preview-item-check">{it.done ? "✓" : "○"}</span>
-                              <span className={`preview-item-title ${it.done ? "preview-done" : ""}`}>
-                                {it.text || "(Item tanpa teks)"}
-                              </span>
-                              {isSelected && (
-                                <span className="preview-selected-tag">🎯 Terpilih</span>
-                              )}
+                            <div className="preview-all-done-note">
+                              ✨ Seluruh {selectedNote.items.length} butir checklist sudah rampung.
                             </div>
                           );
-                        })}
-                      </div>
-                    ) : selectedNote.content ? (
+                        }
+                        return (
+                          <div className="preview-items-list interactive">
+                            <span className="preview-help-text">
+                              💡 Klik item aktif di bawah untuk langsung menargetkannya ke time-blocking:
+                            </span>
+                            {activeSubtasks.map((it) => {
+                              const isSelected = draft.linkedItemId === it.id;
+                              return (
+                                <div
+                                  key={it.id}
+                                  className={`preview-item-interactive ${isSelected ? "is-selected-subtask" : ""}`}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setDraft({
+                                        ...draft,
+                                        linkedItemId: undefined,
+                                        linkedItemText: undefined,
+                                      });
+                                    } else {
+                                      setDraft({
+                                        ...draft,
+                                        linkedItemId: it.id,
+                                        linkedItemText: it.text,
+                                        title: !draft.title.trim() ? it.text : draft.title,
+                                      });
+                                    }
+                                  }}
+                                  role="button"
+                                  tabIndex={0}
+                                  title={isSelected ? "Klik untuk batalkan target spesifik" : "Klik untuk jadikan target jadwal"}
+                                >
+                                  <span className="preview-item-check">○</span>
+                                  <span className="preview-item-title">
+                                    {it.text || "(Item tanpa teks)"}
+                                  </span>
+                                  {isSelected && (
+                                    <span className="preview-selected-tag">🎯 Terpilih</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()
+                    )}
+
+                    {selectedNote.type !== "checklist" && selectedNote.content ? (
                       <p className="preview-content-text">{selectedNote.content.slice(0, 160)}</p>
                     ) : null}
                   </div>
@@ -628,13 +654,21 @@ export function CalendarEventModal({
                     <span className="cal-subfield-label">Kartu Task Kanban:</span>
                     {(() => {
                       const currentBoard = boards.find((b) => b.id === selectedBoardId) || boards[0];
-                      const allCards = currentBoard ? currentBoard.lists.flatMap((l) => l.cards) : [];
+                      const activeCards = currentBoard
+                        ? currentBoard.lists
+                            .filter((l) => {
+                              const lower = l.title.toLowerCase();
+                              return !lower.includes("done") && !lower.includes("selesai");
+                            })
+                            .flatMap((l) => l.cards)
+                            .filter((c) => !c.dueCompleted)
+                        : [];
                       return (
                         <select
                           value={draft.linkedKanbanCardId || ""}
                           onChange={(e) => {
                             const cardId = e.target.value || undefined;
-                            const card = allCards.find((c) => c.id === cardId);
+                            const card = activeCards.find((c) => c.id === cardId);
                             setDraft({
                               ...draft,
                               linkedKanbanCardId: cardId,
@@ -646,8 +680,8 @@ export function CalendarEventModal({
                           }}
                           className="cal-select-note"
                         >
-                          <option value="">-- Pilih Kartu Kanban --</option>
-                          {allCards.map((c) => (
+                          <option value="">-- Pilih Kartu Kanban ({activeCards.length} aktif) --</option>
+                          {activeCards.map((c) => (
                             <option key={c.id} value={c.id}>
                               {c.coverEmoji ? `${c.coverEmoji} ` : ""}
                               {c.title}

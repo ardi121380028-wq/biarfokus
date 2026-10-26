@@ -71,113 +71,12 @@ export function CalendarGrid({
     return () => clearInterval(timer);
   }, []);
 
-  // Dynamic pointermove and pointerup listeners only while actively dragging
-  useEffect(() => {
-    if (!dragState) return;
-
-    let rafId: number | null = null;
-    function onPointerMove(e: PointerEvent) {
-      if (!dragSessionRef.current) return;
-      const session = dragSessionRef.current;
-      const deltaY = e.clientY - session.startY;
-      const deltaX = e.clientX - session.startX;
-
-      if (!session.hasMoved && (Math.abs(deltaY) > 3 || Math.abs(deltaX) > 3)) {
-        session.hasMoved = true;
-      }
-      if (!session.hasMoved) return;
-
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        const deltaMins = Math.round((deltaY / HOUR_HEIGHT_PX) * 60);
-
-        // Detect target day column in Week view
-        let targetDate = session.initialDateISO;
-        if (days.length > 1) {
-          for (const d of days) {
-            const iso = toISODate(d);
-            const colEl = columnRefs.current[iso];
-            if (colEl) {
-              const rect = colEl.getBoundingClientRect();
-              if (e.clientX >= rect.left && e.clientX <= rect.right) {
-                targetDate = iso;
-                break;
-              }
-            }
-          }
-        }
-        session.currentDateISO = targetDate;
-
-        if (session.mode === "move") {
-          const { startTime, endTime } = moveEventTimeRange(
-            session.initialStartMins + deltaMins,
-            session.durationMins,
-            15,
-          );
-          session.currentStartTime = startTime;
-          session.currentEndTime = endTime;
-        } else if (session.mode === "resize-bottom") {
-          const { startTime, endTime } = resizeEventTimeRange(
-            "bottom",
-            session.initialEndMins + deltaMins,
-            session.initialStartMins,
-            15,
-            15,
-          );
-          session.currentStartTime = startTime;
-          session.currentEndTime = endTime;
-        } else if (session.mode === "resize-top") {
-          const { startTime, endTime } = resizeEventTimeRange(
-            "top",
-            session.initialStartMins + deltaMins,
-            session.initialEndMins,
-            15,
-            15,
-          );
-          session.currentStartTime = startTime;
-          session.currentEndTime = endTime;
-        }
-
-        setDragState({ ...session });
-      });
-    }
-
-    function onPointerUp() {
-      if (rafId) cancelAnimationFrame(rafId);
-      if (!dragSessionRef.current) return;
-      const session = dragSessionRef.current;
-      dragSessionRef.current = null;
-      setDragState(null);
-
-      if (session.hasMoved) {
-        onUpdateEvent({
-          ...session.event,
-          date: session.currentDateISO,
-          startTime: session.currentStartTime,
-          endTime: session.currentEndTime,
-        });
-      } else {
-        onEventClick(session.event);
-      }
-    }
-
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-    };
-  }, [dragState !== null, days, onEventClick, onUpdateEvent]);
-
   function handleStartDrag(
     e: ReactPointerEvent,
     event: CalendarEvent,
     mode: DragMode,
   ) {
-    // Only primary mouse button (left-click) or touch
     if (e.button !== 0) return;
-    e.preventDefault();
     e.stopPropagation();
 
     const startMins = timeToMinutes(event.startTime);
@@ -200,6 +99,101 @@ export function CalendarGrid({
     };
 
     dragSessionRef.current = session;
+
+    let rafId: number | null = null;
+
+    function onPointerMove(moveEvt: PointerEvent) {
+      if (!dragSessionRef.current) return;
+      const s = dragSessionRef.current;
+      const deltaY = moveEvt.clientY - s.startY;
+      const deltaX = moveEvt.clientX - s.startX;
+
+      if (!s.hasMoved && (Math.abs(deltaY) > 4 || Math.abs(deltaX) > 4)) {
+        s.hasMoved = true;
+      }
+      if (!s.hasMoved) return;
+
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const deltaMins = Math.round((deltaY / HOUR_HEIGHT_PX) * 60);
+
+        let targetDate = s.initialDateISO;
+        if (days.length > 1) {
+          for (const d of days) {
+            const iso = toISODate(d);
+            const colEl = columnRefs.current[iso];
+            if (colEl) {
+              const rect = colEl.getBoundingClientRect();
+              if (moveEvt.clientX >= rect.left && moveEvt.clientX <= rect.right) {
+                targetDate = iso;
+                break;
+              }
+            }
+          }
+        }
+        s.currentDateISO = targetDate;
+
+        if (s.mode === "move") {
+          const { startTime, endTime } = moveEventTimeRange(
+            s.initialStartMins + deltaMins,
+            s.durationMins,
+            15,
+          );
+          s.currentStartTime = startTime;
+          s.currentEndTime = endTime;
+        } else if (s.mode === "resize-bottom") {
+          const { startTime, endTime } = resizeEventTimeRange(
+            "bottom",
+            s.initialEndMins + deltaMins,
+            s.initialStartMins,
+            15,
+            15,
+          );
+          s.currentStartTime = startTime;
+          s.currentEndTime = endTime;
+        } else if (s.mode === "resize-top") {
+          const { startTime, endTime } = resizeEventTimeRange(
+            "top",
+            s.initialStartMins + deltaMins,
+            s.initialEndMins,
+            15,
+            15,
+          );
+          s.currentStartTime = startTime;
+          s.currentEndTime = endTime;
+        }
+
+        setDragState({ ...s });
+      });
+    }
+
+    function onPointerUp() {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+
+      const s = dragSessionRef.current;
+      dragSessionRef.current = null;
+      setDragState(null);
+
+      if (!s) return;
+
+      if (s.hasMoved) {
+        onUpdateEvent({
+          ...s.event,
+          date: s.currentDateISO,
+          startTime: s.currentStartTime,
+          endTime: s.currentEndTime,
+        });
+      } else {
+        if (mode === "move") {
+          onEventClick(s.event);
+        }
+      }
+    }
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
   }
 
   const totalHeight = 24 * HOUR_HEIGHT_PX;
@@ -360,13 +354,19 @@ export function CalendarGrid({
                           backgroundColor: event.color || DEFAULT_EVENT_COLOR,
                         }}
                         onPointerDown={(e) => handleStartDrag(e, event, "move")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEventClick(event);
+                        }}
                       >
                         {/* Top Resize Handle */}
                         <div
                           className="cal-resize-handle top"
                           onPointerDown={(e) => handleStartDrag(e, event, "resize-top")}
                           title="Tarik untuk ubah jam mulai"
-                        />
+                        >
+                          <div className="cal-resize-grip-line" />
+                        </div>
 
                         {/* Cyan Accent Left Stripe */}
                         <div className="cal-event-accent-strip" />
