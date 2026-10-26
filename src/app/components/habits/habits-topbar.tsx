@@ -114,8 +114,19 @@ export function HabitsTopbar({
         </button>
       </div>
 
-      {/* Right controls: Search, Theme, Settings, Profile */}
+      {/* Right controls: Create, Search, Theme, Settings, Profile */}
       <div className="cal-topbar-right">
+        {/* Primary Create Action on Desktop */}
+        <button
+          type="button"
+          className="habits-topbar-create-btn topbar-desktop-only"
+          onClick={onOpenCreateModal}
+          title="Bangun Kebiasaan Baru"
+        >
+          <span className="btn-plus-icon">+</span>
+          <span>Baru</span>
+        </button>
+
         {/* Search input / toggle */}
         <div className={`cal-topbar-search-box ${searchOpen || searchQuery ? "is-open" : ""}`}>
           <button

@@ -84,37 +84,49 @@ export function HabitsMatrixView({
           <span className="matrix-sub">Tandai dan evaluasi komitmen 7 hari secara visual.</span>
         </div>
 
-        <div className="matrix-week-switcher">
-          <button
-            type="button"
-            className="matrix-nav-btn"
-            onClick={() => setWeekOffset((prev) => prev - 1)}
-            title="Minggu Sebelumnya"
-          >
-            ‹ Minggu Lalu
-          </button>
-          <span className="matrix-current-week-label">
-            {weekOffset === 0 ? `Minggu Ini (${weekRangeLabel})` : weekRangeLabel}
-          </span>
-          <button
-            type="button"
-            className="matrix-nav-btn"
-            onClick={() => setWeekOffset((prev) => Math.min(0, prev + 1))}
-            disabled={weekOffset === 0}
-            title={weekOffset === 0 ? "Sudah di minggu ini" : "Minggu Berikutnya"}
-          >
-            Minggu Depan ›
-          </button>
-          {weekOffset !== 0 && (
+        <div className="matrix-nav-right-group">
+          <div className="matrix-week-switcher">
             <button
               type="button"
-              className="matrix-today-btn"
-              onClick={() => setWeekOffset(0)}
-              title="Kembali ke minggu ini"
+              className="matrix-nav-btn"
+              onClick={() => setWeekOffset((prev) => prev - 1)}
+              title="Minggu Sebelumnya"
             >
-              Hari Ini
+              ‹ Minggu Lalu
             </button>
-          )}
+            <span className="matrix-current-week-label">
+              {weekOffset === 0 ? `Minggu Ini (${weekRangeLabel})` : weekRangeLabel}
+            </span>
+            <button
+              type="button"
+              className="matrix-nav-btn"
+              onClick={() => setWeekOffset((prev) => Math.min(0, prev + 1))}
+              disabled={weekOffset === 0}
+              title={weekOffset === 0 ? "Sudah di minggu ini" : "Minggu Berikutnya"}
+            >
+              Minggu Depan ›
+            </button>
+            {weekOffset !== 0 && (
+              <button
+                type="button"
+                className="matrix-today-btn"
+                onClick={() => setWeekOffset(0)}
+                title="Kembali ke minggu ini"
+              >
+                Hari Ini
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="primary-button matrix-add-habit-btn"
+            onClick={onOpenCreateModal}
+            title="Tambah Kebiasaan Baru"
+          >
+            <span className="btn-plus-icon">+</span>
+            <span>Kebiasaan Baru</span>
+          </button>
         </div>
       </div>
 

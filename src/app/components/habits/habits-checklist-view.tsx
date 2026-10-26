@@ -37,6 +37,16 @@ const ROUTINE_CONFIG: Record<RoutineTime, { title: string; icon: string; subtitl
   },
 };
 
+const SHORT_DAY_NAMES: Record<string, string> = {
+  Sen: "Sn",
+  Sel: "Sl",
+  Rab: "Rb",
+  Kam: "Km",
+  Jum: "Jm",
+  Sab: "Sb",
+  Min: "Mg",
+};
+
 export function HabitsChecklistView({
   habits,
   onToggleCheckin,
@@ -85,6 +95,23 @@ export function HabitsChecklistView({
 
   return (
     <div className="habits-checklist-container">
+      {/* Top Header Bar with prominent + Kebiasaan Baru button */}
+      <div className="habits-view-header-bar">
+        <div className="view-header-title-col">
+          <h2 className="view-header-heading">Ceklis Kebiasaan Hari Ini</h2>
+          <span className="view-header-sub">Fokus selesaikan komitmen harian satu per satu dan bangun momentum 1%.</span>
+        </div>
+        <button
+          type="button"
+          className="primary-button habits-add-new-btn"
+          onClick={onOpenCreateModal}
+          title="Tambah Kebiasaan Baru"
+        >
+          <span className="btn-plus-icon">+</span>
+          <span>Kebiasaan Baru</span>
+        </button>
+      </div>
+
       {grouped.map(({ routine, items }) => {
         const config = ROUTINE_CONFIG[routine];
         const completedCount = items.filter((h) => h.completedDates.includes(todayKey)).length;
@@ -99,7 +126,7 @@ export function HabitsChecklistView({
               <div className="habits-routine-title-wrap">
                 <span className="habits-routine-icon">{config.icon}</span>
                 <div className="habits-routine-text">
-                  <h2 className="habits-routine-heading">{config.title}</h2>
+                  <h3 className="habits-routine-heading">{config.title}</h3>
                   <span className="habits-routine-sub">{config.subtitle}</span>
                 </div>
               </div>
@@ -172,58 +199,120 @@ function HabitChecklistRow({
     return calculateStreak(habit.completedDates);
   }, [habit.completedDates]);
 
+  const hasCues = Boolean(
+    habit.cue ||
+    habit.identity ||
+    habit.twoMinuteRule ||
+    habit.linkedPomodoroMinutes ||
+    (streakInfo.isAtRiskOfMissingTwice && !isDoneToday)
+  );
+
   return (
     <div
       className={`habit-check-row ${isDoneToday ? "is-done" : ""}`}
       style={{ "--habit-accent": habit.color } as React.CSSProperties}
     >
-      {/* 1-Click Interactive Big Satisfying Round Checkbox */}
-      <button
-        type="button"
-        className={`habit-round-checkbox ${isDoneToday ? "checked" : ""}`}
-        onClick={() => onToggleCheckin(habit.id, todayKey)}
-        aria-label={isDoneToday ? `Batalkan ceklis ${habit.title}` : `Ceklis ${habit.title} selesai hari ini`}
-        title={isDoneToday ? "Selesai! Klik untuk membatalkan" : "Klik untuk menandai selesai hari ini"}
-      >
-        {isDoneToday ? (
-          <svg
-            className="checkmark-svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ) : (
-          <span className="uncheck-dot" />
-        )}
-      </button>
+      {/* Top Line: Checkbox, Icon, Title, Streak, Actions */}
+      <div className="habit-row-top-line">
+        {/* 1-Click Interactive Round Checkbox */}
+        <button
+          type="button"
+          className={`habit-round-checkbox ${isDoneToday ? "checked" : ""}`}
+          onClick={() => onToggleCheckin(habit.id, todayKey)}
+          aria-label={isDoneToday ? `Batalkan ceklis ${habit.title}` : `Ceklis ${habit.title} selesai hari ini`}
+          title={isDoneToday ? "Selesai! Klik untuk membatalkan" : "Klik untuk menandai selesai hari ini"}
+        >
+          {isDoneToday ? (
+            <svg
+              className="checkmark-svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <span className="uncheck-dot" />
+          )}
+        </button>
 
-      {/* Habit Icon Pill */}
-      <div
-        className="habit-row-icon"
-        style={{
-          background: `color-mix(in srgb, ${habit.color} 14%, var(--paper))`,
-          borderColor: `color-mix(in srgb, ${habit.color} 28%, transparent)`,
-        }}
-      >
-        <span>{habit.icon || "✨"}</span>
-      </div>
+        {/* Habit Icon Pill */}
+        <div
+          className="habit-row-icon"
+          style={{
+            background: `color-mix(in srgb, ${habit.color} 14%, var(--paper))`,
+            borderColor: `color-mix(in srgb, ${habit.color} 28%, transparent)`,
+          }}
+        >
+          <span>{habit.icon || "✨"}</span>
+        </div>
 
-      {/* Habit Core Content & Atomic Habits Cues */}
-      <div className="habit-row-main">
-        <div className="habit-row-title-row">
+        {/* Title and Done Badge */}
+        <div className="habit-row-title-wrap">
           <span className={`habit-row-title ${isDoneToday ? "completed-title" : ""}`}>
             {habit.title}
           </span>
           {isDoneToday && <span className="habit-done-badge">✓ Selesai</span>}
         </div>
 
-        {/* Compact James Clear Cues (Wrapping nicely) */}
+        {/* Top Right: Streak flame & actions */}
+        <div className="habit-row-top-actions">
+          <div className="habit-row-streak-col">
+            <span
+              className={`habit-streak-pill ${streakInfo.current > 0 ? "active-streak" : ""}`}
+              title={`Streak saat ini: ${streakInfo.current} hari • Rekor terbaik: ${streakInfo.best} hari`}
+            >
+              <span className="streak-flame">🔥</span>
+              <span className="streak-count">{streakInfo.current}</span>
+              <span className="streak-unit">hr</span>
+            </span>
+          </div>
+
+          <div className="habit-row-actions">
+            <button
+              type="button"
+              className="habit-action-btn"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Menu tindakan"
+              title="Tindakan kebiasaan"
+            >
+              •••
+            </button>
+
+            {menuOpen && (
+              <div className="habit-action-dropdown">
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onEdit(habit);
+                  }}
+                >
+                  ✏️ Edit Kebiasaan
+                </button>
+                <button
+                  type="button"
+                  className="dropdown-item danger"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onDelete(habit.id);
+                  }}
+                >
+                  🗑️ Hapus
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Cues Chips Row */}
+      {hasCues && (
         <div className="habit-row-cues">
           {habit.cue && (
             <span className="habit-cue-chip" title="Habit Stacking (Pemicu)">
@@ -257,14 +346,13 @@ function HabitChecklistRow({
             </Link>
           )}
 
-          {/* Warning if missed yesterday */}
           {streakInfo.isAtRiskOfMissingTwice && !isDoneToday && (
             <span className="habit-danger-chip" title="Aturan Pantang Bolong Dua Kali James Clear!">
               ⚠️ Jangan bolong 2x berturut-turut!
             </span>
           )}
         </div>
-      </div>
+      )}
 
       {/* 7-Day Mini Dots Strip */}
       <div className="habit-row-strip-col" aria-label="7 Hari Terakhir">
@@ -278,61 +366,11 @@ function HabitChecklistRow({
               title={`${day.dayName} (${day.date}): ${day.completed ? "Selesai" : "Belum selesai"}`}
               aria-label={`${day.dayName} ${day.completed ? "selesai" : "belum"}`}
             >
-              <span className="dot-label">{day.dayName.slice(0, 1)}</span>
+              <span className="dot-label">{SHORT_DAY_NAMES[day.dayName] || day.dayName.slice(0, 2)}</span>
               <span className="dot-circle" />
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Streak Badge */}
-      <div className="habit-row-streak-col">
-        <span
-          className={`habit-streak-pill ${streakInfo.current > 0 ? "active-streak" : ""}`}
-          title={`Streak saat ini: ${streakInfo.current} hari • Rekor terbaik: ${streakInfo.best} hari`}
-        >
-          <span className="streak-flame">🔥</span>
-          <span className="streak-count">{streakInfo.current}</span>
-          <span className="streak-unit">hr</span>
-        </span>
-      </div>
-
-      {/* More Actions Dropdown Menu */}
-      <div className="habit-row-actions">
-        <button
-          type="button"
-          className="habit-action-btn"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Menu tindakan"
-          title="Tindakan kebiasaan"
-        >
-          •••
-        </button>
-
-        {menuOpen && (
-          <div className="habit-action-dropdown">
-            <button
-              type="button"
-              className="dropdown-item"
-              onClick={() => {
-                setMenuOpen(false);
-                onEdit(habit);
-              }}
-            >
-              ✏️ Edit Kebiasaan
-            </button>
-            <button
-              type="button"
-              className="dropdown-item danger"
-              onClick={() => {
-                setMenuOpen(false);
-                onDelete(habit.id);
-              }}
-            >
-              🗑️ Hapus
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

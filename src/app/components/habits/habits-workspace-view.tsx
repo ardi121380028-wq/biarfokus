@@ -220,6 +220,17 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
         </main>
       </div>
 
+      {/* Mobile Floating Action Button (FAB) for 1-Tap Creation Anywhere */}
+      <button
+        type="button"
+        className="habits-mobile-fab"
+        onClick={handleOpenAdd}
+        aria-label="Tambah Kebiasaan Baru"
+        title="Tambah Kebiasaan Baru"
+      >
+        <span className="fab-icon">+</span>
+      </button>
+
       {/* Wide 2-Column Habit Creation / Edit Modal */}
       {modalOpen && (
         <HabitModal

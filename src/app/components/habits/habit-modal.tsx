@@ -11,10 +11,12 @@ interface HabitModalProps {
 
 const COLOR_OPTIONS = [
   { hex: "#6366f1", label: "Indigo" },
+  { hex: "#8b5cf6", label: "Ungu" },
+  { hex: "#06b6d4", label: "Cyan" },
   { hex: "#10b981", label: "Emerald" },
-  { hex: "#ef4444", label: "Coral" },
   { hex: "#f59e0b", label: "Amber" },
-  { hex: "#3b82f6", label: "Sky" },
+  { hex: "#f97316", label: "Oranye" },
+  { hex: "#ef4444", label: "Merah" },
   { hex: "#ec4899", label: "Pink" },
 ];
 
@@ -64,7 +66,7 @@ const TEMPLATES = [
     identity: "Saya adalah pribadi yang menjaga kesehatan dan hidrasi tubuh.",
     twoMinuteRule: "Tuang air ke gelas dan minum sampai habis.",
     routineTime: "morning" as RoutineTime,
-    color: "#3b82f6",
+    color: "#06b6d4",
     icon: "💧",
   },
   {
@@ -73,7 +75,7 @@ const TEMPLATES = [
     identity: "Saya adalah pribadi yang selalu bersyukur dan bertumbuh.",
     twoMinuteRule: "Buka Catatan Cepat Keep dan tulis 1 kalimat sederhana.",
     routineTime: "evening" as RoutineTime,
-    color: "#6366f1",
+    color: "#8b5cf6",
     icon: "✍️",
   },
 ];
@@ -89,6 +91,8 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
   const [linkedPomodoroMinutes, setLinkedPomodoroMinutes] = useState<number | undefined>(
     initialHabit?.linkedPomodoroMinutes
   );
+  // Mobile tab state to toggle between form inputs and ready-made templates
+  const [mobileTab, setMobileTab] = useState<"form" | "templates">("form");
 
   const applyTemplate = (tpl: typeof TEMPLATES[0]) => {
     setTitle(tpl.title);
@@ -99,6 +103,8 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
     setColor(tpl.color);
     setIcon(tpl.icon);
     setLinkedPomodoroMinutes(tpl.linkedPomodoroMinutes);
+    // On mobile, automatically navigate back to form so user can review/save
+    setMobileTab("form");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -147,11 +153,29 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
           </button>
         </header>
 
+        {/* Mobile-Only Segmented Navigation Tabs */}
+        <div className="habit-modal-mobile-tabs" role="tablist">
+          <button
+            type="button"
+            className={`habit-modal-tab-btn ${mobileTab === "form" ? "active" : ""}`}
+            onClick={() => setMobileTab("form")}
+          >
+            ✏️ Formulir
+          </button>
+          <button
+            type="button"
+            className={`habit-modal-tab-btn ${mobileTab === "templates" ? "active" : ""}`}
+            onClick={() => setMobileTab("templates")}
+          >
+            💡 Template Siap Pakai ({TEMPLATES.length})
+          </button>
+        </div>
+
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="habit-modal-form-wrap">
           <div className="habit-modal-grid-body">
             {/* Left Column: Form Fields */}
-            <div className="habit-modal-left-col">
+            <div className={`habit-modal-left-col ${mobileTab === "templates" ? "mobile-hidden" : ""}`}>
               {/* Title & Icon */}
               <div className="form-group">
                 <label htmlFor="habit-title" className="form-label">
@@ -271,22 +295,32 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
               {/* Pomodoro & Accent Color Row */}
               <div className="form-row-two-col">
                 <div className="form-group">
-                  <label htmlFor="habit-pomo" className="form-label">Integrasi Pomodoro</label>
-                  <select
-                    id="habit-pomo"
-                    className="select-input"
-                    value={linkedPomodoroMinutes || ""}
-                    onChange={(e) => setLinkedPomodoroMinutes(e.target.value ? Number(e.target.value) : undefined)}
-                  >
-                    <option value="">Tanpa Timer</option>
-                    <option value="15">Timer Fokus 15 Menit</option>
-                    <option value="25">Timer Fokus 25 Menit (Standar)</option>
-                    <option value="50">Timer Fokus 50 Menit</option>
-                  </select>
+                  <label className="form-label">Integrasi Pomodoro</label>
+                  <div className="pomodoro-selector-group" role="group" aria-label="Integrasi Pomodoro">
+                    {[
+                      { value: undefined, label: "Tanpa Timer", icon: "✕" },
+                      { value: 15, label: "15 Menit", icon: "🍅" },
+                      { value: 25, label: "25 Menit", icon: "🍅" },
+                      { value: 50, label: "50 Menit", icon: "🍅" },
+                    ].map((opt) => {
+                      const isSelected = linkedPomodoroMinutes === opt.value;
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          className={`pomodoro-opt-pill ${isSelected ? "selected" : ""}`}
+                          onClick={() => setLinkedPomodoroMinutes(opt.value)}
+                        >
+                          <span className="pomo-opt-icon">{opt.icon}</span>
+                          <span className="pomo-opt-label">{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Warna Aksen</label>
+                  <label className="form-label">Warna Aksen (8 Pilihan)</label>
                   <div className="color-swatches">
                     {COLOR_OPTIONS.map((c) => (
                       <button
@@ -304,8 +338,8 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
               </div>
             </div>
 
-            {/* Right Column: Templates & Science Guide */}
-            <div className="habit-modal-right-col">
+            {/* Right Column: Templates & Science Guide (Wide & No Scroll on Desktop) */}
+            <div className={`habit-modal-right-col ${mobileTab === "form" ? "mobile-hidden" : ""}`}>
               <div className="templates-section-header">
                 <span className="templates-section-title">💡 Template Siap Pakai</span>
                 <span className="templates-section-hint">Klik untuk mengisi form secara otomatis:</span>
@@ -349,7 +383,7 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
             </div>
           </div>
 
-          {/* Sticky Modal Footer Actions (Always visible, never cut off) */}
+          {/* Sticky Modal Footer Actions (Always visible above any mobile dock) */}
           <footer className="habit-modal-footer">
             <button type="button" className="secondary-button habit-modal-cancel-btn" onClick={onClose}>
               Batal

@@ -124,30 +124,113 @@
   font-weight: 750;
 }
 
-/* Topbar Add Button */
-.habits-topbar-add-btn {
+/* Topbar Primary Create Button */
+.habits-topbar-create-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 10px;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 9px;
   border: none;
-  background: var(--ink);
-  color: var(--paper);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.habits-topbar-create-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.42);
+}
+
+.habits-topbar-create-btn:active {
+  transform: translateY(0);
+}
+
+/* Universal Page View Header Bars */
+.habits-view-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.view-header-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.view-header-heading {
+  font-size: 21px;
+  font-weight: 850;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.view-header-sub {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Universal Add Habit Buttons across views */
+.habits-add-new-btn,
+.matrix-add-habit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
   font-size: 13px;
   font-weight: 750;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  box-shadow: 0 3px 12px rgba(99, 102, 241, 0.32);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+  white-space: nowrap;
 }
 
-.habits-topbar-add-btn:hover {
+.habits-add-new-btn:hover,
+.matrix-add-habit-btn:hover {
   transform: translateY(-1px);
-  opacity: 0.94;
+  box-shadow: 0 5px 18px rgba(99, 102, 241, 0.45);
+  filter: brightness(1.05);
 }
 
-.add-btn-plus {
+.habits-add-new-btn:active,
+.matrix-add-habit-btn:active {
+  transform: translateY(0);
+}
+
+.habits-add-new-btn .btn-plus-icon,
+.matrix-add-habit-btn .btn-plus-icon,
+.habits-topbar-create-btn .btn-plus-icon {
   font-size: 15px;
   line-height: 1;
+  font-weight: 700;
+}
+
+.matrix-nav-right-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Mobile Floating Action Button (FAB) */
+.habits-mobile-fab {
+  display: none;
 }
 
 /* ========================================================================== */
@@ -323,17 +406,11 @@
   color: #047857;
 }
 
-.habits-checklist-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 /* Habit Check Row */
 .habit-check-row {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
   padding: 14px 18px;
   background: var(--paper);
   border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
@@ -354,10 +431,59 @@
   border-color: color-mix(in srgb, var(--habit-accent, #10b981) 22%, transparent);
 }
 
+/* Habit Row Top Line */
+.habit-row-top-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.habit-row-title-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.habit-row-title {
+  font-size: 15px;
+  font-weight: 750;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.habit-row-title.completed-title {
+  color: var(--muted);
+}
+
+.habit-done-badge {
+  font-size: 11px;
+  font-weight: 750;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, #10b981 16%, transparent);
+  color: #059669;
+  flex-shrink: 0;
+}
+
+.habit-row-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 /* Big Round Checkbox */
 .habit-round-checkbox {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: 2.5px solid var(--habit-accent, #6366f1);
   background: transparent;
@@ -396,8 +522,8 @@
 }
 
 .checkmark-svg {
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
   stroke: #ffffff;
   animation: popCheckmark 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -415,50 +541,14 @@
 
 /* Habit Icon Badge */
 .habit-row-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: grid;
   place-items: center;
-  font-size: 20px;
+  font-size: 18px;
   border: 1px solid transparent;
   flex-shrink: 0;
-}
-
-/* Habit Main Info */
-.habit-row-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.habit-row-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.habit-row-title {
-  font-size: 15.5px;
-  font-weight: 750;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-  transition: color 0.15s ease;
-}
-
-.habit-row-title.completed-title {
-  color: var(--muted);
-}
-
-.habit-done-badge {
-  font-size: 11px;
-  font-weight: 750;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: color-mix(in srgb, #10b981 16%, transparent);
-  color: #059669;
 }
 
 /* Compact Cues */
@@ -467,6 +557,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
+  padding-left: 50px;
 }
 
 .habit-cue-chip,
@@ -1367,7 +1458,7 @@
 .habit-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 100000;
   display: grid;
   place-items: center;
   padding: 24px 16px;
@@ -1379,7 +1470,7 @@
 
 .habit-modal-dialog {
   position: relative;
-  width: min(800px, 95vw);
+  width: min(960px, 96vw);
   max-height: 90vh;
   border-radius: 24px;
   background: var(--paper);
@@ -1447,6 +1538,18 @@
   color: var(--ink);
 }
 
+/* Mobile Navigation Tabs for Habit Modal */
+.habit-modal-mobile-tabs {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .habit-modal-left-col.mobile-hidden,
+  .habit-modal-right-col.mobile-hidden {
+    display: flex !important;
+  }
+}
+
 .habit-modal-form-wrap {
   display: flex;
   flex-direction: column;
@@ -1458,8 +1561,8 @@
 .habit-modal-grid-body {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
-  gap: 28px;
-  padding: 24px 28px;
+  gap: 32px;
+  padding: 24px 32px;
   overflow-y: auto;
   max-height: calc(90vh - 140px);
 }
@@ -1591,39 +1694,58 @@
   align-items: start;
 }
 
-.select-input {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
-  background: color-mix(in srgb, var(--ink) 2%, var(--paper));
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 550;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+/* Pomodoro Option Pills */
+.pomodoro-selector-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 4px;
 }
 
-.select-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #6366f1 20%, transparent);
-}
-
-/* Color Swatches Selection */
-.color-swatches {
+.pomodoro-opt-pill {
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  background: color-mix(in srgb, var(--ink) 2%, var(--paper));
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.pomodoro-opt-pill:hover {
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+  border-color: color-mix(in srgb, var(--ink) 24%, transparent);
+  transform: translateY(-1px);
+}
+
+.pomodoro-opt-pill.selected {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.35);
+}
+
+/* Color Swatches Selection (8 Curated Colors) */
+.color-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  flex-wrap: wrap;
   padding-top: 6px;
+  justify-items: center;
 }
 
 .color-swatch-circle {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
@@ -1642,7 +1764,7 @@
   transform: scale(1.1);
 }
 
-/* Right Column: Templates */
+/* Right Column: Templates (Wide & Clean) */
 .habit-modal-right-col {
   display: flex;
   flex-direction: column;
@@ -1658,7 +1780,7 @@
 }
 
 .templates-section-title {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 800;
   color: var(--ink);
 }
@@ -1672,17 +1794,17 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 380px;
-  overflow-y: auto;
-  padding-right: 4px;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
 }
 
 .habit-template-card-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 13px;
   background: color-mix(in srgb, var(--ink) 3%, var(--paper));
   border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
   text-align: left;
@@ -1692,34 +1814,34 @@
 
 .habit-template-card-btn:hover {
   background: color-mix(in srgb, var(--ink) 7%, var(--paper));
-  border-color: color-mix(in srgb, var(--ink) 16%, transparent);
-  transform: translateX(2px);
+  border-color: color-mix(in srgb, var(--ink) 18%, transparent);
+  transform: translateX(3px);
 }
 
 .tpl-card-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: grid;
   place-items: center;
-  font-size: 17px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
 .tpl-card-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
+  flex: 1;
 }
 
 .tpl-card-title {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 750;
   color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.35;
 }
 
 .tpl-card-meta {
@@ -2176,9 +2298,34 @@
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 768px) {
+  .habits-workspace-content-inner {
+    padding: 16px 14px calc(115px + env(safe-area-inset-bottom, 20px)) !important;
+  }
+
+  .topbar-desktop-only {
+    display: none !important;
+  }
+
+  .habits-workspace-topbar .profile-user-col {
+    display: none !important;
+  }
+
   .habits-workspace-topbar {
-    padding: 10px 12px;
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .habits-topbar-breadcrumb {
+    font-size: 13.5px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .habits-topbar-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .habits-breadcrumb-sep,
@@ -2194,6 +2341,59 @@
   .habits-view-pill {
     padding: 5px 8px;
     font-size: 12px;
+  }
+
+  /* View Header Bars */
+  .habits-view-header-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .habits-add-new-btn,
+  .matrix-add-habit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .matrix-nav-right-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .matrix-week-switcher {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Mobile Floating Action Button (FAB) */
+  .habits-mobile-fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: calc(76px + env(safe-area-inset-bottom, 16px));
+    right: 18px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.45), 0 2px 6px rgba(0, 0, 0, 0.1);
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 920;
+    transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.18s ease;
+  }
+
+  .habits-mobile-fab:active {
+    transform: scale(0.92);
   }
 
   /* Matrix table sticky column on mobile */
@@ -2263,35 +2463,56 @@
     width: 100%;
   }
 
+  /* Habit Checklist Row on Mobile */
   .habit-check-row {
-    flex-wrap: wrap;
     padding: 12px 14px;
-    gap: 12px;
+    gap: 10px;
+  }
+
+  .habit-row-top-line {
+    gap: 10px;
   }
 
   .habit-round-checkbox {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .habit-row-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 17px;
+  }
+
+  .habit-row-title {
+    font-size: 14px;
+  }
+
+  .habit-row-cues {
+    padding-left: 0;
+    gap: 5px;
   }
 
   .habit-row-strip-col {
-    order: 4;
     width: 100%;
-    margin-top: 4px;
+    padding-left: 0;
+    margin-top: 2px;
   }
 
   .habit-row-strip {
-    justify-content: space-between;
     width: 100%;
+    justify-content: space-between;
+    padding: 6px 8px;
   }
 
-  .habit-row-streak-col {
-    order: 3;
-    margin-left: auto;
+  .habit-mini-dot {
+    min-width: 32px;
+    padding: 2px;
   }
 
-  .habit-row-actions {
-    order: 3;
+  .habit-mini-dot .dot-circle {
+    width: 16px;
+    height: 16px;
   }
 
   .reminder-item-card {
@@ -2313,23 +2534,86 @@
     grid-template-columns: 1fr;
   }
 
+  /* Habit Modal on Mobile */
+  .habit-modal-backdrop {
+    padding: 0 !important;
+    align-items: stretch !important;
+    z-index: 100000 !important;
+  }
+
   .habit-modal-dialog {
-    width: 100vw;
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: none !important;
   }
 
   .habit-modal-header {
-    padding: 16px 20px;
+    padding: 14px 18px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .habit-modal-mobile-tabs {
+    display: flex !important;
+    padding: 8px 16px !important;
+    gap: 8px !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+    background: var(--paper);
+    flex-shrink: 0;
+  }
+
+  .habit-modal-tab-btn {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 11px;
+    border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+    background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    text-align: center;
+  }
+
+  .habit-modal-tab-btn.active {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.35);
+  }
+
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  .habit-modal-form-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
   .habit-modal-grid-body {
-    padding: 16px 20px;
-    max-height: calc(100vh - 130px);
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 18px 24px !important;
+    grid-template-columns: 1fr !important;
+    max-height: none !important;
+    gap: 20px !important;
   }
 
   .habit-modal-footer {
-    padding: 12px 20px;
+    position: sticky !important;
+    bottom: 0 !important;
+    padding: 12px 18px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--paper) !important;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
+    z-index: 20 !important;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06) !important;
+    flex-shrink: 0 !important;
   }
 }

@@ -41,6 +41,25 @@ export function HabitsHeatmapView({
 
   return (
     <div className="habits-heatmap-view-container">
+      {/* View Header Bar */}
+      <div className="habits-view-header-bar">
+        <div className="view-header-title-col">
+          <h2 className="view-header-heading">Peta Konsistensi & Pengingat</h2>
+          <span className="view-header-sub">
+            Evaluasi frekuensi 90 hari, selamatkan streak aktif, dan bentuk kebiasaan otomatis 1%.
+          </span>
+        </div>
+        <button
+          type="button"
+          className="primary-button habits-add-new-btn"
+          onClick={onOpenCreateModal}
+          title="Tambah Kebiasaan Baru"
+        >
+          <span className="btn-plus-icon">+</span>
+          <span>Kebiasaan Baru</span>
+        </button>
+      </div>
+
       {/* 4 Top KPI Stats Cards */}
       <section className="habits-stats-grid" aria-label="Ringkasan Statistik Kebiasaan">
         <div className="habit-stat-card">
