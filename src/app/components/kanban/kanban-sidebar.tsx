@@ -18,8 +18,6 @@ type KanbanSidebarProps = {
   onNavigate: (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   onOpenShare?: () => void;
-  archivedCount?: number;
-  onOpenArchivedModal?: () => void;
   dark?: boolean;
   onToggleDark?: () => void;
 };
@@ -35,8 +33,6 @@ export function KanbanSidebar({
   onNavigate,
   onOpenSettings,
   onOpenShare,
-  archivedCount,
-  onOpenArchivedModal,
   dark,
   onToggleDark,
 }: KanbanSidebarProps) {
@@ -158,24 +154,6 @@ export function KanbanSidebar({
             <span className="nav-icon">📋</span>
             {!isCollapsed && <span className="nav-label">Project Kanban</span>}
           </button>
-          {onOpenArchivedModal && (
-            <button
-              type="button"
-              className="kanban-sidebar-nav-item"
-              onClick={onOpenArchivedModal}
-              title="Lihat Item Terarsip"
-            >
-              <span className="nav-icon">🗃️</span>
-              {!isCollapsed && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                  <span className="nav-label">Item Terarsip</span>
-                  {typeof archivedCount === "number" && archivedCount > 0 && (
-                    <span className="kanban-sidebar-count-badge">{archivedCount}</span>
-                  )}
-                </div>
-              )}
-            </button>
-          )}
           <button
             type="button"
             className="kanban-sidebar-nav-item"

@@ -574,8 +574,6 @@ export function KanbanView({
         }}
         onOpenSettings={onOpenSettings}
         onOpenShare={handleOpenShareModal}
-        archivedCount={archivedCards.length}
-        onOpenArchivedModal={() => setArchivedModalOpen(true)}
         dark={dark}
         onToggleDark={onToggleDark}
       />
