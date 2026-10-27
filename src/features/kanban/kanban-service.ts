@@ -1,10 +1,12 @@
 import type {
   KanbanBoard,
   KanbanCard,
+  KanbanLabel,
   KanbanList,
 } from "@/types/domain";
 
 export const KANBAN_STORAGE_PREFIX = "biarfokus.kanban";
+export const KANBAN_LABELS_STORAGE_PREFIX = "biarfokus.kanban_labels.";
 
 export function getStorageKey(userId?: string | null): string {
   return userId ? `${KANBAN_STORAGE_PREFIX}.${userId}.boards` : `${KANBAN_STORAGE_PREFIX}.guest.boards`;
@@ -12,6 +14,35 @@ export function getStorageKey(userId?: string | null): string {
 
 export function getActiveBoardStorageKey(userId?: string | null): string {
   return userId ? `${KANBAN_STORAGE_PREFIX}.${userId}.active` : `${KANBAN_STORAGE_PREFIX}.guest.active`;
+}
+
+export function getCustomBoardLabelsStorageKey(boardId: string): string {
+  return `${KANBAN_LABELS_STORAGE_PREFIX}${boardId || "default"}`;
+}
+
+export function loadCustomBoardLabels(boardId?: string | null): KanbanLabel[] {
+  if (typeof window === "undefined" || !boardId) return [];
+  try {
+    const raw = window.localStorage.getItem(getCustomBoardLabelsStorageKey(boardId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is KanbanLabel =>
+        Boolean(item && typeof item === "object" && typeof item.name === "string" && item.name.trim()),
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomBoardLabels(boardId: string | undefined | null, labels: KanbanLabel[]): void {
+  if (typeof window === "undefined" || !boardId) return;
+  try {
+    window.localStorage.setItem(getCustomBoardLabelsStorageKey(boardId), JSON.stringify(labels));
+  } catch {
+    // quota exceeded or private mode
+  }
 }
 
 export function createId(prefix: string): string {
@@ -37,6 +68,123 @@ export const LABEL_PALETTE: { color: string; defaultName: string }[] = [
   { color: "#00c2e0", defaultName: "Trello Tip" },
   { color: "#ff78cb", defaultName: "Marketing / Growth" },
 ];
+
+/**
+ * Resolves the complete unified pool of labels for a board and its cards.
+ * Combines:
+ * 1. Default system palette labels (Done / Low Risk, Medium Priority, etc.)
+ * 2. Board-level custom labels (board.labels)
+ * 3. Persistently saved board custom labels (from localStorage)
+ * 4. ANY label currently assigned to any card across all lists on the board
+ * 5. Optional extra labels passed in (e.g. current card labels or draft labels)
+ *
+ * Guaranteed deduplicated by label name (case-insensitive).
+ */
+export function resolveBoardAvailableLabels(
+  board?: KanbanBoard | null,
+  extraLabels?: KanbanLabel[] | null,
+): KanbanLabel[] {
+  const result: KanbanLabel[] = [];
+  const seenNames = new Set<string>();
+
+  function addLabel(lbl: KanbanLabel) {
+    if (!lbl || typeof lbl.name !== "string") return;
+    const trimmed = lbl.name.trim();
+    if (!trimmed) return;
+    const lower = trimmed.toLowerCase();
+    if (seenNames.has(lower)) return;
+    seenNames.add(lower);
+    result.push({
+      id: lbl.id || createId("lbl"),
+      name: trimmed,
+      color: lbl.color || "#0079bf",
+    });
+  }
+
+  // 1. Base default palette
+  for (let idx = 0; idx < LABEL_PALETTE.length; idx++) {
+    const p = LABEL_PALETTE[idx];
+    addLabel({
+      id: `lbl-default-${idx}`,
+      name: p.defaultName,
+      color: p.color,
+    });
+  }
+
+  // 2. Board-level custom labels
+  if (board && Array.isArray(board.labels)) {
+    for (const l of board.labels) {
+      addLabel(l);
+    }
+  }
+
+  // 3. Persistently saved custom labels from localStorage for this board and global pool
+  if (board?.id) {
+    const boardStored = loadCustomBoardLabels(board.id);
+    for (const l of boardStored) {
+      addLabel(l);
+    }
+  }
+  const globalStored = loadCustomBoardLabels("global");
+  for (const l of globalStored) {
+    addLabel(l);
+  }
+
+  // 4. Labels extracted from ANY card across all lists on this board
+  if (board && Array.isArray(board.lists)) {
+    for (const list of board.lists) {
+      if (!Array.isArray(list?.cards)) continue;
+      for (const card of list.cards) {
+        if (!Array.isArray(card?.labels)) continue;
+        for (const l of card.labels) {
+          addLabel(l);
+        }
+      }
+    }
+  }
+
+  // 5. Extra labels provided (e.g. from current card dialog or draft)
+  if (Array.isArray(extraLabels)) {
+    for (const l of extraLabels) {
+      addLabel(l);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Removes a label board-wide from board definitions and from all cards in all lists.
+ */
+export function deleteBoardLabel(board: KanbanBoard, labelIdOrName: string): KanbanBoard {
+  const lowerTarget = labelIdOrName.toLowerCase();
+  const nextLabels = (board.labels || []).filter(
+    (l) => l.id !== labelIdOrName && l.name.toLowerCase() !== lowerTarget,
+  );
+  if (typeof window !== "undefined" && board.id) {
+    saveCustomBoardLabels(board.id, nextLabels);
+    const globalPool = loadCustomBoardLabels("global").filter(
+      (l) => l.id !== labelIdOrName && l.name.toLowerCase() !== lowerTarget,
+    );
+    saveCustomBoardLabels("global", globalPool);
+  }
+  const now = formatUpdatedAt(new Date());
+  return {
+    ...board,
+    labels: nextLabels,
+    updatedAt: now,
+    lists: board.lists.map((list) => ({
+      ...list,
+      cards: list.cards.map((card) => ({
+        ...card,
+        updatedAt: now,
+        labels: card.labels.filter(
+          (l) => l.id !== labelIdOrName && l.name.toLowerCase() !== lowerTarget,
+        ),
+      })),
+    })),
+  };
+}
 
 export const BOARD_BACKGROUNDS: {
   id: string;

@@ -174,21 +174,23 @@ export function useKanban(userId?: string | null) {
         const lastLocalEdit = recentLocalEditsRef.current.get(cb.id) || 0;
         const isRecentlyEditedLocally = Date.now() - lastLocalEdit < 10000;
 
+        const effectiveLabels = local?.labels && local.labels.length > 0 ? local.labels : cb.labels;
+
         if (local && local.lists && local.lists.length > 0) {
           if (isRecentlyEditedLocally) {
             // Local user just modified or deleted cards/lists on this board within 10s.
             // Do NOT overwrite with older/in-flight cloud data!
-            boardMap.set(cb.id, { ...cb, role, lists: local.lists });
+            boardMap.set(cb.id, { ...cb, role, lists: local.lists, labels: effectiveLabels });
             continue;
           }
           const localCardCount = local.lists.reduce((sum, l) => sum + (l.cards?.length || 0), 0);
           const cloudCardCount = cb.lists?.reduce((sum, l) => sum + (l.cards?.length || 0), 0) || 0;
           if (localCardCount > cloudCardCount) {
-            boardMap.set(cb.id, { ...cb, role, lists: local.lists });
+            boardMap.set(cb.id, { ...cb, role, lists: local.lists, labels: effectiveLabels });
             continue;
           }
         }
-        boardMap.set(cb.id, { ...cb, role });
+        boardMap.set(cb.id, { ...cb, role, labels: effectiveLabels });
       }
 
       // 2. Add genuine local drafts (ensuring only unsynced new drafts are uploaded)

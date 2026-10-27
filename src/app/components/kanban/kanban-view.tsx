@@ -3,8 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
-import type { KanbanBoard, KanbanBoardMember, KanbanCard, KanbanList, UserRole } from "@/types/domain";
-import { BOARD_BACKGROUNDS } from "@/features/kanban/kanban-service";
+import type { KanbanBoard, KanbanBoardMember, KanbanCard, KanbanLabel, KanbanList, UserRole } from "@/types/domain";
+import {
+  BOARD_BACKGROUNDS,
+  deleteBoardLabel,
+  resolveBoardAvailableLabels,
+  saveCustomBoardLabels,
+} from "@/features/kanban/kanban-service";
 import { joinBoardViaInviteApi, loadBoardMembersApi } from "@/features/kanban/kanban-cloud";
 import { useKanban } from "@/features/kanban/use-kanban";
 import { useCalendarEvents } from "@/features/calendar/use-calendar-events";
@@ -557,6 +562,11 @@ export function KanbanView({
     }
     return null;
   })();
+
+  // Comprehensive available labels for the active board (default palette + custom labels + all card labels)
+  const effectiveBoardLabels = useMemo(() => {
+    return resolveBoardAvailableLabels(activeBoard);
+  }, [activeBoard]);
 
   return (
     <div className={`kanban-app-workspace ${isLightBg ? "kanban-light-theme" : "kanban-dark-theme"} ${isFullscreen ? "is-fullscreen" : ""}`}>
@@ -1274,8 +1284,18 @@ export function KanbanView({
           }}
           boardMembers={boardMembers}
           currentUserId={userId}
-          boardLabels={activeBoard.labels}
-          onUpdateBoardLabels={(newLabels) => updateBoard(activeBoard.id, { labels: newLabels })}
+          boardId={activeBoard.id}
+          boardLabels={effectiveBoardLabels}
+          onUpdateBoardLabels={(newLabels) => {
+            updateBoard(activeBoard.id, { labels: newLabels });
+            saveCustomBoardLabels(activeBoard.id, newLabels);
+            saveCustomBoardLabels("global", newLabels);
+          }}
+          onDeleteBoardLabel={(labelId) => {
+            const updatedBoard = deleteBoardLabel(activeBoard, labelId);
+            updateBoard(activeBoard.id, { labels: updatedBoard.labels, lists: updatedBoard.lists });
+            saveCustomBoardLabels(activeBoard.id, updatedBoard.labels || []);
+          }}
           readOnly={!canEdit}
           isLight={isLightBg}
           onUpdate={(updates) =>

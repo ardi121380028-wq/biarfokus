@@ -6,13 +6,16 @@ import {
   archiveCard,
   createDefaultGrowthBoard,
   createNewBoard,
+  deleteBoardLabel,
   deleteCard,
   deleteList,
+  LABEL_PALETTE,
   moveCard,
   moveList,
   normalizeBoard,
   parseStoredBoardId,
   parseStoredBoards,
+  resolveBoardAvailableLabels,
   restoreCard,
   TEMPLATES,
   updateCard,
@@ -293,6 +296,59 @@ describe("kanban-service", () => {
     } finally {
       globalThis.fetch = originalFetch;
     }
+  });
+
+  it("resolves available labels across all cards on the board and prevents duplicate names", () => {
+    const rawBoard = createNewBoard("Startup Board", "biarfokus-white");
+    const board = addCardToList(rawBoard, rawBoard.lists[0].id, "First Card");
+    const cardId = board.lists[0].cards[0]?.id;
+    assert.ok(cardId);
+
+    const updated = updateCard(board, board.lists[0].id, cardId, {
+      labels: [{ id: "lbl-custom-1", name: "meeting", color: "#eb5a46" }],
+    });
+
+    const labels = resolveBoardAvailableLabels(updated);
+    // Base palette (8) + 1 custom ("meeting")
+    assert.ok(labels.length >= LABEL_PALETTE.length + 1);
+    const meetingLabel = labels.find((l) => l.name.toLowerCase() === "meeting");
+    assert.ok(meetingLabel);
+    assert.equal(meetingLabel.color, "#eb5a46");
+
+    // Case-insensitive deduplication when resolving with extra labels
+    const deduplicated = resolveBoardAvailableLabels(updated, [
+      { id: "lbl-custom-2", name: "MEETING", color: "#123456" },
+      { id: "lbl-custom-3", name: "Design Sprint", color: "#a855f7" },
+    ]);
+    const meetingMatches = deduplicated.filter((l) => l.name.toLowerCase() === "meeting");
+    assert.equal(meetingMatches.length, 1);
+    assert.ok(deduplicated.some((l) => l.name === "Design Sprint"));
+  });
+
+  it("deletes a label board-wide and removes it from all cards", () => {
+    const rawBoard = createNewBoard("Operations Board", "biarfokus-white");
+    const board = addCardToList(rawBoard, rawBoard.lists[0].id, "Card with Labels");
+    const card1Id = board.lists[0].cards[0]?.id;
+    assert.ok(card1Id);
+
+    const withLabels = updateCard(board, board.lists[0].id, card1Id, {
+      labels: [
+        { id: "lbl-meeting", name: "meeting", color: "#eb5a46" },
+        { id: "lbl-urgent", name: "Urgent", color: "#ef4444" },
+      ],
+    });
+
+    const boardWithDef = {
+      ...withLabels,
+      labels: [{ id: "lbl-meeting", name: "meeting", color: "#eb5a46" }],
+    };
+
+    const cleaned = deleteBoardLabel(boardWithDef, "lbl-meeting");
+    assert.equal(cleaned.labels?.some((l) => l.name.toLowerCase() === "meeting"), false);
+    const targetCard = cleaned.lists[0].cards.find((c) => c.id === card1Id);
+    assert.ok(targetCard);
+    assert.equal(targetCard.labels.some((l) => l.name.toLowerCase() === "meeting"), false);
+    assert.equal(targetCard.labels.some((l) => l.name === "Urgent"), true);
   });
 });
 

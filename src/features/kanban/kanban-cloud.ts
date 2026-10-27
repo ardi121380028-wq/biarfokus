@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DbKanbanBoard, KanbanBoard, KanbanBoardMember, KanbanList, KanbanMemberRole } from "@/types/domain";
+import type { DbKanbanBoard, KanbanBoard, KanbanBoardMember, KanbanLabel, KanbanList, KanbanMemberRole } from "@/types/domain";
 
 export function mapDbKanbanBoard(
   row: DbKanbanBoard,
@@ -19,6 +19,9 @@ export function mapDbKanbanBoard(
     background: row.background || "wave-blue",
     lists: Array.isArray(row.lists) ? (row.lists as KanbanList[]) : [],
     starred: Boolean(row.starred),
+    labels: Array.isArray((row as unknown as { labels?: unknown }).labels)
+      ? ((row as unknown as { labels: KanbanLabel[] }).labels)
+      : undefined,
     role,
     isShared: !isOwner,
     createdAt: row.created_at,

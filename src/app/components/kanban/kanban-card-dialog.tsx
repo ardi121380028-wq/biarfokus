@@ -10,7 +10,13 @@ import type {
   KanbanComment,
   KanbanLabel,
 } from "@/types/domain";
-import { createId, formatUpdatedAt, LABEL_PALETTE } from "@/features/kanban/kanban-service";
+import {
+  createId,
+  formatUpdatedAt,
+  LABEL_PALETTE,
+  resolveBoardAvailableLabels,
+  saveCustomBoardLabels,
+} from "@/features/kanban/kanban-service";
 import { buildGoogleCalendarUrl, toISODate } from "@/features/calendar/calendar-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { KanbanConfirmModal } from "./kanban-confirm-modal";
@@ -23,8 +29,10 @@ type KanbanCardDialogProps = {
   onMoveToList?: (destListId: string) => void;
   boardMembers?: KanbanBoardMember[];
   currentUserId?: string | null;
+  boardId?: string;
   boardLabels?: KanbanLabel[];
   onUpdateBoardLabels?: (labels: KanbanLabel[]) => void;
+  onDeleteBoardLabel?: (labelId: string) => void;
   readOnly?: boolean;
   onUpdate: (updates: Partial<KanbanCard>) => void;
   onArchive?: () => void;
@@ -57,8 +65,10 @@ export function KanbanCardDialog({
   onMoveToList,
   boardMembers = [],
   currentUserId,
+  boardId,
   boardLabels,
   onUpdateBoardLabels,
+  onDeleteBoardLabel,
   readOnly = false,
   isLight = false,
   onUpdate,
@@ -113,17 +123,27 @@ export function KanbanCardDialog({
   // Quick cover emojis
   const COVER_EMOJIS = ["🐱", "⭐", "🚀", "💡", "🎯", "🔥", "📌", "🏆", "⚠️", "☕"];
 
-  // Combined pool of available labels
+  // Combined pool of available labels (board labels + card's own labels, deduplicated)
   const availableLabels: KanbanLabel[] = useMemo(() => {
-    if (boardLabels && boardLabels.length > 0) {
-      return boardLabels;
-    }
-    return LABEL_PALETTE.map((p, idx) => ({
-      id: `lbl-default-${idx}`,
-      name: p.defaultName,
-      color: p.color,
-    }));
-  }, [boardLabels]);
+    return resolveBoardAvailableLabels(
+      {
+        id: boardId || "default",
+        title: "Current Board",
+        background: "default",
+        createdAt: "",
+        updatedAt: "",
+        lists: [
+          {
+            id: currentListId || "list",
+            title: listTitle,
+            order: 0,
+            cards: [card],
+          },
+        ],
+      },
+      boardLabels,
+    );
+  }, [boardLabels, card, boardId, currentListId, listTitle]);
 
   // List of candidates for @mention in comments
   const mentionCandidates = useMemo(() => {
@@ -254,12 +274,21 @@ export function KanbanCardDialog({
       name: trimmed,
       color: selectedLabelColor,
     };
-    const updatedPool = [...availableLabels, newLbl];
+    const updatedPool = [
+      ...availableLabels.filter((l) => l.name.toLowerCase() !== trimmed.toLowerCase()),
+      newLbl,
+    ];
     if (onUpdateBoardLabels) {
       onUpdateBoardLabels(updatedPool);
     }
+    saveCustomBoardLabels(boardId || "default", updatedPool);
+    saveCustomBoardLabels("global", updatedPool);
     // Also attach to card immediately
-    onUpdate({ labels: [...card.labels, newLbl] });
+    const nextCardLabels = [
+      ...card.labels.filter((l) => l.name.toLowerCase() !== trimmed.toLowerCase()),
+      newLbl,
+    ];
+    onUpdate({ labels: nextCardLabels });
     setNewLabelName("");
     setIsCreatingLabel(false);
   }
@@ -268,11 +297,20 @@ export function KanbanCardDialog({
   function handleDeleteLabel(labelId: string, e?: React.MouseEvent) {
     if (readOnly) return;
     if (e) e.stopPropagation();
+    const targetLabel = availableLabels.find((l) => l.id === labelId);
     const updatedPool = availableLabels.filter((l) => l.id !== labelId);
-    if (onUpdateBoardLabels) {
+    if (onDeleteBoardLabel) {
+      onDeleteBoardLabel(labelId);
+    } else if (onUpdateBoardLabels) {
       onUpdateBoardLabels(updatedPool);
     }
-    onUpdate({ labels: card.labels.filter((l) => l.id !== labelId) });
+    saveCustomBoardLabels(boardId || "default", updatedPool);
+    saveCustomBoardLabels("global", updatedPool);
+    onUpdate({
+      labels: card.labels.filter(
+        (l) => l.id !== labelId && (!targetLabel || l.name.toLowerCase() !== targetLabel.name.toLowerCase()),
+      ),
+    });
   }
 
   function handleAddChecklist() {
