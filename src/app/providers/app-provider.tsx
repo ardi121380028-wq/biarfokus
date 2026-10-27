@@ -334,6 +334,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         setUser(result.data.user);
         setProfileDisplayName(result.data.user?.user_metadata.display_name ?? null);
+        if (result.data.user) {
+          setLoginOpen(false);
+        }
       } catch (error) {
         console.error("Gagal memuat sesi akun; melanjutkan sebagai guest.", error);
       } finally {
@@ -346,10 +349,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setProfileDisplayName(session?.user?.user_metadata.display_name ?? null);
         setAuthLoading(false);
+        if (session?.user) {
+          setLoginOpen(false);
+        }
       },
     );
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  // Ensure login modal is closed if user is already authenticated
+  useEffect(() => {
+    if (user && loginOpen) {
+      setLoginOpen(false);
+    }
+  }, [user, loginOpen]);
 
   // Load User Role and Subscription
   useEffect(() => {

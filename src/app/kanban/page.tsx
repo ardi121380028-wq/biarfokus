@@ -10,6 +10,7 @@ function KanbanContent() {
   const searchParams = useSearchParams();
   const {
     user,
+    authLoading,
     userName,
     userAvatar,
     userRole,
@@ -29,11 +30,11 @@ function KanbanContent() {
 
   // Guard: unauthenticated guest accessing via menu/direct URL must log in
   useEffect(() => {
-    if (!user && !hasInvite) {
+    if (!authLoading && !user && !hasInvite) {
       setLoginOpen(true);
       router.replace("/");
     }
-  }, [user, hasInvite, router, setLoginOpen]);
+  }, [authLoading, user, hasInvite, router, setLoginOpen]);
 
   const handleNavigate = useCallback(
     (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => {

@@ -743,8 +743,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Auth Modal */}
-      {loginOpen && (
+      {/* Auth Modal (Only for unauthenticated users) */}
+      {loginOpen && !user && (
         <AuthModalComponent
           mode={authMode}
           setMode={setAuthMode}
