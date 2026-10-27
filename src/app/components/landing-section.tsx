@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-type HubTab = "pomodoro" | "calendar" | "kanban" | "notes";
+type HubTab = "pomodoro" | "calendar" | "kanban" | "notes" | "habits";
 
 type CyclingFeature = {
   id: string;
@@ -17,6 +17,7 @@ const CYCLING_FEATURES: CyclingFeature[] = [
   { id: "calendar", icon: "📅", label: "Time-Blocking Kalender", tab: "calendar" },
   { id: "kanban", icon: "📋", label: "Project Kanban & Frog", tab: "kanban" },
   { id: "notes", icon: "📝", label: "Catatan Cepat Keep", tab: "notes" },
+  { id: "habits", icon: "🌱", label: "Pelacak Kebiasaan & Streak", tab: "habits" },
   { id: "ambient", icon: "🎧", label: "Zen Audio Suara Alam", tab: "pomodoro" },
   { id: "frog", icon: "🐸", label: "Eat That Frog Priority", tab: "kanban" },
 ];
@@ -32,6 +33,15 @@ export function LandingSection() {
 
   // Keep Notes Checklist Item Toggle Simulation
   const [notesItemChecked, setNotesItemChecked] = useState(false);
+
+  // Habits Simulation State
+  const [habitRoutineFilter, setHabitRoutineFilter] = useState<"all" | "morning" | "afternoon" | "evening">("all");
+  const [habitCheckedMap, setHabitCheckedMap] = useState<Record<string, boolean>>({
+    h1: true,
+    h2: true,
+    h3: false,
+    h4: true,
+  });
 
   // Dynamic Feature Icon Cycler
   useEffect(() => {
@@ -77,7 +87,7 @@ export function LandingSection() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab") as HubTab | null;
-      if (tabParam && ["pomodoro", "calendar", "kanban", "notes"].includes(tabParam)) {
+      if (tabParam && ["pomodoro", "calendar", "kanban", "notes", "habits"].includes(tabParam)) {
         setActiveTab(tabParam);
         setTimeout(() => {
           scrollToShowcase();
@@ -172,6 +182,15 @@ export function LandingSection() {
           </button>
           <button
             type="button"
+            className="landing-floating-chip chip-habits"
+            onClick={() => handleFeatureChipClick("habits")}
+            title="Pelacak Kebiasaan & Peta Konsistensi"
+          >
+            <span className="chip-icon">🌱</span>
+            <span>Kebiasaan</span>
+          </button>
+          <button
+            type="button"
             className="landing-floating-chip chip-ambient"
             onClick={() => handleFeatureChipClick("pomodoro")}
             title="Suara Alam Ambient"
@@ -244,8 +263,8 @@ export function LandingSection() {
 
             <p>
               BiarFokus menggabungkan <strong>Timer Pomodoro Saintifik</strong>,{" "}
-              <strong>Time-Blocking Kalender</strong>, <strong>Kanban Kolaboratif</strong>, dan{" "}
-              <strong>Catatan Cepat Keep</strong> ke dalam satu aplikasi yang tenang dan 100% bebas gangguan iklan.
+              <strong>Time-Blocking Kalender</strong>, <strong>Kanban Kolaboratif</strong>,{" "}
+              <strong>Catatan Cepat Keep</strong>, serta <strong>Pelacak Kebiasaan &amp; Peta Konsistensi</strong> ke dalam satu aplikasi yang tenang dan 100% bebas gangguan iklan.
             </p>
             <div className="landing-hero-actions">
               <button
@@ -292,6 +311,13 @@ export function LandingSection() {
                 onClick={() => setActiveTab("notes")}
               >
                 <span>📝</span> Catatan Model Keep
+              </button>
+              <button
+                type="button"
+                className={`landing-hub-tab-btn ${activeTab === "habits" ? "active" : ""}`}
+                onClick={() => setActiveTab("habits")}
+              >
+                <span>🌱</span> Kebiasaan &amp; Streak
               </button>
             </div>
 
@@ -856,6 +882,240 @@ export function LandingSection() {
                     </div>
                   </>
                 )}
+
+                {/* ======================================================== */}
+                {/* TAB 5: PELACAK KEBIASAAN & PETA KONSISTENSI             */}
+                {/* ======================================================== */}
+                {activeTab === "habits" && (
+                  <>
+                    <div className="landing-mockup-content">
+                      <h3>Pelacak Kebiasaan, Rutinitas &amp; Peta Konsistensi</h3>
+                      <p>
+                        Bangun disiplin harian tanpa beban mental. Kelola rutinitas pagi, siang, dan malam, pantau streak konsistensi ala heatmap GitHub, serta cetak laporan kemajuan berkala.
+                      </p>
+                      <ul className="landing-mockup-bullets">
+                        <li>
+                          <span className="landing-mockup-check">✓</span>
+                          <span>Pengelompokan rutinitas: Pagi 🌅, Siang ☀️, Malam 🌙, dan Fleksibel ⚡.</span>
+                        </li>
+                        <li>
+                          <span className="landing-mockup-check">✓</span>
+                          <span>Peta Konsistensi &amp; Heatmap 52 Minggu: Pantau komitmen disiplin harianmu.</span>
+                        </li>
+                        <li>
+                          <span className="landing-mockup-check">✓</span>
+                          <span>Format siap cetak PDF / A4 untuk evaluasi dan refleksi produktivitas pribadi.</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div className="landing-mockup-visual">
+                      <div className="preview-habits-card">
+                        {/* Topbar: Routine Filters & Cetak Laporan Tag */}
+                        <div className="preview-habits-topbar">
+                          <div className="preview-habits-routine-pills">
+                            <button
+                              type="button"
+                              className={`preview-habits-pill ${habitRoutineFilter === "all" ? "active" : ""}`}
+                              onClick={() => setHabitRoutineFilter("all")}
+                            >
+                              Semua · 4
+                            </button>
+                            <button
+                              type="button"
+                              className={`preview-habits-pill ${habitRoutineFilter === "morning" ? "active" : ""}`}
+                              onClick={() => setHabitRoutineFilter("morning")}
+                            >
+                              🌅 Pagi
+                            </button>
+                            <button
+                              type="button"
+                              className={`preview-habits-pill ${habitRoutineFilter === "afternoon" ? "active" : ""}`}
+                              onClick={() => setHabitRoutineFilter("afternoon")}
+                            >
+                              ☀️ Siang
+                            </button>
+                            <button
+                              type="button"
+                              className={`preview-habits-pill ${habitRoutineFilter === "evening" ? "active" : ""}`}
+                              onClick={() => setHabitRoutineFilter("evening")}
+                            >
+                              🌙 Malam
+                            </button>
+                          </div>
+
+                          <Link href="/kebiasaan" className="preview-habits-print-tag" title="Buka Cetak Laporan di Kebiasaan">
+                            <span>📄 Cetak Laporan</span>
+                            <span style={{ fontSize: "9px" }}>↗</span>
+                          </Link>
+                        </div>
+
+                        {/* Interactive Habit Checklist Items */}
+                        <div className="preview-habits-list">
+                          {(habitRoutineFilter === "all" || habitRoutineFilter === "morning") && (
+                            <div className="preview-habit-item">
+                              <div className="preview-habit-left">
+                                <button
+                                  type="button"
+                                  className={`preview-habit-check-btn ${habitCheckedMap.h1 ? "checked" : ""}`}
+                                  onClick={() =>
+                                    setHabitCheckedMap((prev) => ({ ...prev, h1: !prev.h1 }))
+                                  }
+                                  title="Check-in kebiasaan"
+                                >
+                                  {habitCheckedMap.h1 ? "✓" : ""}
+                                </button>
+                                <div className="preview-habit-info">
+                                  <span className="preview-habit-name">💧 Minum 500ml Air &amp; Stretching</span>
+                                  <div className="preview-habit-meta">
+                                    <span className="preview-habit-routine">🌅 Rutinitas Pagi</span>
+                                    <span>· Setiap Hari</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="preview-habit-streak" title="18 Hari Berturut-turut">
+                                🔥 18 hari
+                              </span>
+                            </div>
+                          )}
+
+                          {(habitRoutineFilter === "all" || habitRoutineFilter === "morning") && (
+                            <div className="preview-habit-item">
+                              <div className="preview-habit-left">
+                                <button
+                                  type="button"
+                                  className={`preview-habit-check-btn ${habitCheckedMap.h2 ? "checked" : ""}`}
+                                  onClick={() =>
+                                    setHabitCheckedMap((prev) => ({ ...prev, h2: !prev.h2 }))
+                                  }
+                                  title="Check-in kebiasaan"
+                                >
+                                  {habitCheckedMap.h2 ? "✓" : ""}
+                                </button>
+                                <div className="preview-habit-info">
+                                  <span className="preview-habit-name">📖 Membaca Buku Non-Fiksi 15 Menit</span>
+                                  <div className="preview-habit-meta">
+                                    <span className="preview-habit-routine">🌅 Rutinitas Pagi</span>
+                                    <span>· Belajar</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="preview-habit-streak" title="14 Hari Berturut-turut">
+                                🔥 14 hari
+                              </span>
+                            </div>
+                          )}
+
+                          {(habitRoutineFilter === "all" || habitRoutineFilter === "afternoon") && (
+                            <div className="preview-habit-item">
+                              <div className="preview-habit-left">
+                                <button
+                                  type="button"
+                                  className={`preview-habit-check-btn ${habitCheckedMap.h3 ? "checked" : ""}`}
+                                  onClick={() =>
+                                    setHabitCheckedMap((prev) => ({ ...prev, h3: !prev.h3 }))
+                                  }
+                                  title="Check-in kebiasaan"
+                                >
+                                  {habitCheckedMap.h3 ? "✓" : ""}
+                                </button>
+                                <div className="preview-habit-info">
+                                  <span className="preview-habit-name">🍅 Fokus 2 Sesi Pomodoro Deep Work</span>
+                                  <div className="preview-habit-meta">
+                                    <span className="preview-habit-routine" style={{ color: "#d97706" }}>☀️ Rutinitas Siang</span>
+                                    <span>· 1 dari 2 target</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="preview-habit-streak" title="9 Hari Berturut-turut">
+                                🔥 9 hari
+                              </span>
+                            </div>
+                          )}
+
+                          {(habitRoutineFilter === "all" || habitRoutineFilter === "evening") && (
+                            <div className="preview-habit-item">
+                              <div className="preview-habit-left">
+                                <button
+                                  type="button"
+                                  className={`preview-habit-check-btn ${habitCheckedMap.h4 ? "checked" : ""}`}
+                                  onClick={() =>
+                                    setHabitCheckedMap((prev) => ({ ...prev, h4: !prev.h4 }))
+                                  }
+                                  title="Check-in kebiasaan"
+                                >
+                                  {habitCheckedMap.h4 ? "✓" : ""}
+                                </button>
+                                <div className="preview-habit-info">
+                                  <span className="preview-habit-name">🌙 Refleksi Harian &amp; Rencana Esok</span>
+                                  <div className="preview-habit-meta">
+                                    <span className="preview-habit-routine" style={{ color: "#7c3aed" }}>🌙 Rutinitas Malam</span>
+                                    <span>· Mindset</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="preview-habit-streak" title="21 Hari Berturut-turut">
+                                🔥 21 hari
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* GitHub-style Consistency Map Mini Heatmap */}
+                        <div className="preview-habits-heatmap-section">
+                          <div className="preview-heatmap-header">
+                            <span className="preview-heatmap-title">
+                              <span>🗺️</span> Peta Konsistensi (GitHub Heatmap)
+                            </span>
+                            <span className="preview-heatmap-stat">
+                              94% Konsisten Bulan Ini
+                            </span>
+                          </div>
+
+                          <div className="preview-heatmap-grid-wrap" aria-label="Visual Heatmap Konsistensi">
+                            {[
+                              [1, 2, 2, 3, 4, 3, 2],
+                              [2, 3, 4, 4, 3, 2, 1],
+                              [3, 4, 4, 4, 4, 3, 2],
+                              [1, 2, 3, 4, 3, 2, 3],
+                              [2, 3, 3, 4, 4, 4, 3],
+                              [4, 4, 3, 4, 4, 3, 2],
+                              [3, 2, 4, 4, 4, 4, 3],
+                              [2, 3, 4, 3, 4, 4, 4],
+                              [4, 4, 4, 4, 3, 4, 3],
+                              [3, 3, 4, 4, 4, 4, 4],
+                              [4, 4, 4, 4, 4, 3, 4],
+                              [4, 4, 4, 4, 3, 4, 4],
+                            ].map((week, wIdx) => (
+                              <div key={wIdx} className="preview-heatmap-col">
+                                {week.map((level, dIdx) => (
+                                  <span
+                                    key={dIdx}
+                                    className={`preview-heatmap-cell lvl-${level}`}
+                                    title={`Minggu ${wIdx + 1}, Hari ${dIdx + 1}: ${level * 2} Check-in`}
+                                  />
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="preview-heatmap-footer">
+                            <span>🔥 Rekor: 21 Hari Disiplin Tanpa Putus</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                              <span>Sedikit</span>
+                              <span className="preview-heatmap-cell lvl-0" />
+                              <span className="preview-heatmap-cell lvl-1" />
+                              <span className="preview-heatmap-cell lvl-2" />
+                              <span className="preview-heatmap-cell lvl-3" />
+                              <span className="preview-heatmap-cell lvl-4" />
+                              <span>Banyak</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -932,6 +1192,12 @@ export function LandingSection() {
                   <tr>
                     <td><strong>Catatan Model Google Keep</strong></td>
                     <td className="highlight">✓ Warna &amp; Checklist</td>
+                    <td>— Tidak Ada</td>
+                    <td>— Tidak Ada</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pelacak Kebiasaan &amp; Peta Konsistensi</strong></td>
+                    <td className="highlight">✓ Heatmap, Streak &amp; Laporan</td>
                     <td>— Tidak Ada</td>
                     <td>— Tidak Ada</td>
                   </tr>

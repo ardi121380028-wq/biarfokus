@@ -1642,10 +1642,15 @@ export function KanbanCardDialog({
                 <span className="kanban-sidebar-heading">Aksi</span>
                 <button
                   type="button"
-                  className="kanban-sidebar-btn danger"
+                  className="kanban-sidebar-btn"
                   onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.1)",
+                    color: isLight ? "#333333" : "#e2e8f0",
+                  }}
+                  title="Arsipkan kartu ini dari papan proyek"
                 >
-                  🗑️ Hapus Kartu
+                  📦 Arsipkan Kartu
                 </button>
               </div>
             </div>
@@ -1653,15 +1658,16 @@ export function KanbanCardDialog({
         </div>
       </div>
 
-      {/* Confirmation Modal Pop-up (Replaces native browser alert/confirm) */}
+      {/* Confirmation Modal Pop-up (Trello-style Arsipkan Kartu) */}
       <KanbanConfirmModal
         isOpen={showDeleteConfirm}
-        title="Hapus Kartu?"
-        message="Apakah kamu yakin ingin menghapus kartu ini secara permanen dari papan proyek?"
+        title="Arsipkan Kartu?"
+        message="Apakah kamu yakin ingin mengarsipkan kartu ini dari papan proyek? Kartu akan dipindahkan dari daftar kolom aktif."
         itemName={card.title}
         itemSubtext={`Kolom: ${listTitle}`}
-        confirmLabel="Ya, Hapus Kartu"
+        confirmLabel="Ya, Arsipkan Kartu"
         cancelLabel="Batal"
+        variant="warning"
         onConfirm={() => {
           setShowDeleteConfirm(false);
           onDelete();
