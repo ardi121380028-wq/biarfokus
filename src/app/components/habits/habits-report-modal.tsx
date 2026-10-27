@@ -72,7 +72,14 @@ export function HabitsReportModal({
   }, [habits]);
 
   const handlePrint = () => {
+    const sheet = document.getElementById("habits-printable-document");
+    if (sheet) sheet.scrollTop = 0;
+    const originalTitle = document.title;
+    document.title = `Laporan-Konsistensi-BiarFokus-${todayKey}`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   if (!isOpen) return null;

@@ -187,7 +187,7 @@ export function HabitsChecklistView({
             ? "Rutinitas: 🌙 Malam"
             : "Rutinitas: ⚡ Fleksibel"
         }
-        confirmLabel="Ya, Hapus Kebiasaan"
+        confirmLabel="Hapus Kebiasaan"
         cancelLabel="Batal"
         onConfirm={() => {
           if (deletingHabit) {

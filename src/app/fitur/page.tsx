@@ -155,6 +155,12 @@ export default function FiturPage() {
               <li>Saat istirahat tiba, renggangkan badan, minum air, dan hindari membuka media sosial.</li>
             </ol>
           </div>
+
+          <div className="fitur-category-cta">
+            <Link href="/" className="fitur-action-btn pomo">
+              ⏱️ Buka Timer Pomodoro Sekarang →
+            </Link>
+          </div>
         </section>
       )}
 
@@ -213,6 +219,12 @@ export default function FiturPage() {
               <li>Tandai jadwal istirahat dan makan siang agar tidak terjadi burnout.</li>
             </ol>
           </div>
+
+          <div className="fitur-category-cta">
+            <Link href="/kalender" className="fitur-action-btn cal">
+              📅 Buka Kalender Time-Blocking →
+            </Link>
+          </div>
         </section>
       )}
 
@@ -224,9 +236,9 @@ export default function FiturPage() {
               <span>📋</span>
             </div>
             <div>
-              <span className="fitur-category-kicker">PROJECT MANAGEMENT</span>
-              <h2>Project Kanban &amp; Eat Your Frog</h2>
-              <p>Kelola alur kerja dari ide hingga tuntas dengan papan visual interaktif dan metode Eat Your Frog.</p>
+              <span className="fitur-category-kicker">PROJECT &amp; TEAM TRACKING</span>
+              <h2>Project Kanban &amp; Kolaborasi Tim</h2>
+              <p>Khusus untuk mengelola proyek besar bertahap, roadmap multi-fase, dan pelacakan alur kerja bersama tim atau klien.</p>
             </div>
           </div>
 
@@ -234,12 +246,12 @@ export default function FiturPage() {
             <div className="fitur-item-box">
               <span className="fitur-item-icon">🗂️</span>
               <h3>Multi Papan Proyek</h3>
-              <p>Kelola berbagai proyek secara terpisah (misal: Kantor, Pribadi, Freelance) dengan tombol ganti papan instan.</p>
+              <p>Kelola berbagai proyek secara terpisah (misal: Kantor, Proyek Klien, Roadmap Produk) dengan tombol ganti papan instan.</p>
             </div>
             <div className="fitur-item-box">
               <span className="fitur-item-icon">🐸</span>
-              <h3>Metode Eat Your Frog</h3>
-              <p>Tandai satu tugas terberat dan terpenting hari ini dengan ikon katak emas agar kamu menyelesaikannya terlebih dahulu.</p>
+              <h3>Integrasi Eat Your Frog</h3>
+              <p>Tandai kartu tugas utama yang menjadi fokus hari ini agar langsung terhubung ke dashboard fokus harian.</p>
             </div>
             <div className="fitur-item-box">
               <span className="fitur-item-icon">☑️</span>
@@ -266,11 +278,17 @@ export default function FiturPage() {
           <div className="fitur-guide-box">
             <h4>💡 Cara Menggunakan Kanban:</h4>
             <ol>
-              <li>Buat kartu untuk setiap tugas baru di kolom <strong>To Do</strong>.</li>
-              <li>Pilih kartu yang paling berdampak dan klik tombol <strong>🐸 Jadikan Eat Your Frog</strong>.</li>
-              <li>Saat mulai bekerja, pindahkan kartu ke <strong>In Progress</strong>.</li>
-              <li>Setelah semua checklist tercentang, seret ke <strong>Done</strong> dan rasakan kepuasannya!</li>
+              <li>Buat papan khusus untuk proyek besar atau kolaborasi tim kamu.</li>
+              <li>Tambahkan kartu di kolom <strong>To Do</strong> untuk butir-butir milestone proyek.</li>
+              <li>Pindahkan kartu ke <strong>In Progress</strong> saat sedang dikerjakan.</li>
+              <li>Setelah semua checklist tuntas, seret ke <strong>Done</strong> untuk merekam pencapaian.</li>
             </ol>
+          </div>
+
+          <div className="fitur-category-cta">
+            <Link href="/kanban" className="fitur-action-btn kanban">
+              📋 Buka Papan Kanban Proyek →
+            </Link>
           </div>
         </section>
       )}
@@ -285,7 +303,7 @@ export default function FiturPage() {
             <div>
               <span className="fitur-category-kicker">KNOWLEDGE &amp; IDEAS</span>
               <h2>Catatan Fokus &amp; Quick Notes (Keep)</h2>
-              <p>Tangkap ide, ringkasan rapat, dan coretan penting tanpa kehilangan momentum fokus kamu.</p>
+              <p>Tangkap ide pertama kali, butir tugas harian, dan coretan penting tanpa kehilangan momentum fokus kamu.</p>
             </div>
           </div>
 
@@ -321,6 +339,12 @@ export default function FiturPage() {
               <p>Setiap ketikan tersimpan otomatis ke cloud Supabase dan cache lokal browser tanpa perlu tombol simpan.</p>
             </div>
           </div>
+
+          <div className="fitur-category-cta">
+            <Link href="/catatan" className="fitur-action-btn notes">
+              📝 Buka Catatan Quick Keep →
+            </Link>
+          </div>
         </section>
       )}
 
@@ -333,8 +357,8 @@ export default function FiturPage() {
             </div>
             <div>
               <span className="fitur-category-kicker">ATOMIC HABITS SYSTEM</span>
-              <h2>Pelacak Kebiasaan Saintifik</h2>
-              <p>Raih kemajuan 1% setiap hari dengan pembentukan identitas, habit stacking, dan aturan pantang bolong dua kali dari James Clear.</p>
+              <h2>Pelacak Kebiasaan Pribadi</h2>
+              <p>Bangun rutinitas pribadi (morning routine, membaca buku, olahraga, journaling) dengan prinsip identitas dan pantang bolong dua kali dari James Clear.</p>
             </div>
           </div>
 
@@ -356,8 +380,8 @@ export default function FiturPage() {
             </div>
           </div>
 
-          <div className="fitur-category-cta" style={{ marginTop: "16px" }}>
-            <Link href="/kebiasaan" className="primary-button" style={{ display: "inline-flex", textDecoration: "none" }}>
+          <div className="fitur-category-cta">
+            <Link href="/kebiasaan" className="fitur-action-btn habits">
               ⚡ Buka Pelacak Kebiasaan Sekarang →
             </Link>
           </div>
@@ -394,6 +418,12 @@ export default function FiturPage() {
               <h3>Tingkat Keberhasilan Sesi</h3>
               <p>Evaluasi rasio sesi fokus yang berhasil dituntaskan tanpa dihentikan di tengah jalan.</p>
             </div>
+          </div>
+
+          <div className="fitur-category-cta">
+            <Link href="/statistik" className="fitur-action-btn stats">
+              📊 Buka Statistik &amp; Evaluasi →
+            </Link>
           </div>
         </section>
       )}
@@ -453,7 +483,7 @@ export default function FiturPage() {
         </section>
       )}
 
-      {/* CATEGORY 7: PANDUAN WORKFLOW */}
+      {/* CATEGORY 7: PANDUAN WORKFLOW ALUR KERJA REAL */}
       {(activeTab === "all" || activeTab === "guide") && (
         <section className="fitur-category-card" id="guide">
           <div className="fitur-category-head">
@@ -461,9 +491,9 @@ export default function FiturPage() {
               <span>📖</span>
             </div>
             <div>
-              <span className="fitur-category-kicker">WORKFLOW HARIAN</span>
-              <h2>Panduan Alur Kerja 4 Langkah &ldquo;Flow State&rdquo;</h2>
-              <p>Rekomendasi rutinitas kerja harian terbaik untuk memaksimalkan hasil dengan BiarFokus.</p>
+              <span className="fitur-category-kicker">PANDUAN ALUR KERJA REKOMENDASI</span>
+              <h2>Alur Kerja Harian Produktif BiarFokus</h2>
+              <p>Bagaimana menyatukan Catatan, Eat That Frog, Kalender, Pomodoro, Kebiasaan Pribadi, dan Kanban dalam satu ritme yang harmonis.</p>
             </div>
           </div>
 
@@ -471,32 +501,48 @@ export default function FiturPage() {
             <div className="fitur-step-item">
               <div className="fitur-step-badge">1</div>
               <div className="fitur-step-text">
-                <h3>Pagi: Time-Blocking di Kalender</h3>
-                <p>Buka <strong>Kalender</strong> (Tampilan Hari). Alokasikan blok waktu khusus untuk sesi kerja mendalam, rapat, dan waktu istirahat agar harimu memiliki struktur yang kokoh.</p>
+                <h3>Tulis Note atau Task Pertama Kali di Catatan (Quick Keep)</h3>
+                <p>Mulai hari dengan mencatat ide, butir tugas cepat, atau ringkasan pekerjaan di <strong>Catatan (Keep)</strong>. Tangkap semua pemikiran spontan dengan bebas distraksi tanpa harus memikirkan struktur kompleks.</p>
               </div>
             </div>
 
             <div className="fitur-step-item">
               <div className="fitur-step-badge">2</div>
               <div className="fitur-step-text">
-                <h3>Tentukan Tugas Katak (Eat Your Frog) di Kanban</h3>
-                <p>Buka <strong>Kanban</strong>. Identifikasi 1 tugas yang paling sulit namun paling berdampak, lalu klik <strong>🐸 Jadikan Eat Your Frog</strong>. Selesaikan tugas ini sebelum tugas-tugas kecil lainnya.</p>
+                <h3>Pilih &amp; Tetapkan Tugas Terberat Sebagai &ldquo;Eat That Frog&rdquo;</h3>
+                <p>Tinjau catatan dan tugas harianmu, lalu pilih 1 tugas yang paling menantang namun paling berdampak. Tandai sebagai <strong>🐸 Eat That Frog</strong> agar kamu mengeksekusinya lebih awal saat energi mental masih optimal.</p>
               </div>
             </div>
 
             <div className="fitur-step-item">
               <div className="fitur-step-badge">3</div>
               <div className="fitur-step-text">
-                <h3>Masuk ke Sesi Pomodoro &amp; Tangkap Ide di Catatan</h3>
-                <p>Nyalakan <strong>Timer Fokus</strong> (25 atau 50 menit). Kerjakan tugas tanpa distraksi tab lain. Jika ide atau pesan mendadak muncul, tuliskan di <strong>Catatan Cepat (Keep)</strong> lalu segera kembali fokus.</p>
+                <h3>Time-Blocking di Kalender</h3>
+                <p>Jadwalkan blok waktu khusus (misal 09:00 - 10:30) di <strong>Kalender</strong> khusus untuk tugas katak tersebut. Time-blocking membatasi distraksi dan memastikan ada waktu nyata yang dialokasikan di jadwal kerjamu.</p>
               </div>
             </div>
 
             <div className="fitur-step-item">
               <div className="fitur-step-badge">4</div>
               <div className="fitur-step-text">
-                <h3>Sore: Evaluasi Statistik &amp; Pertahankan Streak</h3>
-                <p>Cek halaman <strong>Statistik</strong>. Lihat berapa jam waktu fokus yang telah kamu capai hari ini dan rayakan konsistensi <strong>Streak</strong> kamu untuk menyambut esok hari dengan semangat baru!</p>
+                <h3>Eksekusi dengan Pomodoro Focus Timer &amp; Audio Zen</h3>
+                <p>Nyalakan <strong>Timer Pomodoro</strong> (25 atau 50 menit) diiringi audio zen. Masuk ke mode Deep Work dan tuntaskan blok waktu tersebut tanpa membuka tab atau pesan lain.</p>
+              </div>
+            </div>
+
+            <div className="fitur-step-item">
+              <div className="fitur-step-badge">5</div>
+              <div className="fitur-step-text">
+                <h3>Pelacak Kebiasaan: Khusus Rutinitas Pribadi</h3>
+                <p>Gunakan <strong>Pelacak Kebiasaan</strong> untuk komitmen pribadi harian (morning routine, membaca 10 halaman, olahraga, atau journaling) berbasis metodologi <em>Atomic Habits</em> dan visualisasi 90 hari.</p>
+              </div>
+            </div>
+
+            <div className="fitur-step-item">
+              <div className="fitur-step-badge">6</div>
+              <div className="fitur-step-text">
+                <h3>Kanban: Khusus Proyek Besar &amp; Kolaborasi Satu Tim</h3>
+                <p>Gunakan papan <strong>Kanban Proyek</strong> ketika menangani proyek besar bertahap, roadmap multi-fase, atau pekerjaan yang membutuhkan tracking progres bersama rekan tim dan klien.</p>
               </div>
             </div>
           </div>

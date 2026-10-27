@@ -3215,27 +3215,30 @@ body:has(.habit-modal-backdrop) .mobile-bottom-nav {
 .universal-confirm-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   margin-top: 8px;
 }
 
 .universal-confirm-btn {
-  flex: 1;
-  padding: 11px 18px;
+  padding: 12px 20px;
   border-radius: 14px;
   font-size: 13.5px;
   font-weight: 750;
+  letter-spacing: -0.01em;
+  white-space: nowrap !important;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 7px;
   transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
   border: none;
 }
 
 .universal-confirm-btn.cancel {
+  flex: 0 0 auto;
+  min-width: 95px;
   background: color-mix(in srgb, var(--ink, #111) 6%, transparent);
   color: var(--ink, #111111);
   border: 1px solid color-mix(in srgb, var(--ink, #111) 12%, transparent);
@@ -3244,6 +3247,11 @@ body:has(.habit-modal-backdrop) .mobile-bottom-nav {
 .universal-confirm-btn.cancel:hover {
   background: color-mix(in srgb, var(--ink, #111) 12%, transparent);
   transform: translateY(-1px);
+}
+
+.universal-confirm-btn.confirm {
+  flex: 1 1 auto;
+  white-space: nowrap !important;
 }
 
 .universal-confirm-btn.confirm.danger {
@@ -3641,49 +3649,173 @@ body:has(.habit-modal-backdrop) .mobile-bottom-nav {
 
 /* Dedicated CSS Print Media Query for Clean Printing */
 @media print {
-  body * {
-    visibility: hidden;
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 12mm 10mm;
   }
-  .habits-report-modal-backdrop,
-  .habits-report-modal-container,
-  .habits-printable-sheet,
-  .habits-printable-sheet * {
-    visibility: visible !important;
-  }
-  .habits-report-modal-backdrop {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    padding: 0 !important;
+
+  /* Reset body and html completely */
+  html, body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    font-size: 11pt !important;
     margin: 0 !important;
-    background: transparent !important;
+    padding: 0 !important;
   }
-  .habits-report-modal-container {
-    width: 100% !important;
-    max-height: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-  }
-  .habits-report-topbar.no-print,
-  .habits-matrix-nav-bar,
-  .habits-macro-header-actions,
-  .habits-add-new-btn,
-  .macro-td-action,
-  .macro-th-action,
-  .matrix-td-action,
-  .matrix-th-action,
+
+  /* Remove all web application layout, sidebars, headers, floating widgets, and background pages */
+  header:not(.print-doc-header),
+  nav,
+  aside,
+  footer:not(.print-doc-footer),
+  .app-shell,
   .app-sidebar,
+  .app-topbar,
+  .mobile-bottom-nav,
   .notes-sidebar-container,
   .habits-sidebar-container,
-  .mobile-bottom-nav,
-  .app-topbar {
+  .habits-topbar-container,
+  .habits-workspace-sidebar,
+  .habits-view-header-bar,
+  .habits-stats-grid,
+  .habits-heatmap-section,
+  .habits-automaticity-card,
+  .habits-achievements-card,
+  .habits-macro-table-card,
+  .habits-smart-insights-section,
+  .habits-philosophy-grid,
+  .habits-matrix-view-container,
+  .habits-checklist-view-container,
+  .habits-macro-table-wrap,
+  .habits-matrix-nav-bar,
+  .habits-report-topbar,
+  .no-print,
+  .notes-action-orb,
+  .floating-action-orb {
     display: none !important;
   }
-  .habits-printable-sheet {
+
+  /* Make report modal container static so it flows naturally onto paper */
+  .habits-report-modal-backdrop {
+    position: static !important;
+    display: block !important;
+    inset: auto !important;
+    background: transparent !important;
     padding: 0 !important;
+    margin: 0 !important;
     width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .habits-report-modal-container {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    animation: none !important;
+  }
+
+  .habits-printable-sheet {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    gap: 20px !important;
+  }
+
+  .print-doc-header {
+    display: flex !important;
+    width: 100% !important;
+    page-break-after: avoid;
+    break-after: avoid;
+    border-bottom: 2px solid #e5e7eb !important;
+    padding-bottom: 16px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .print-section {
+    display: flex !important;
+    width: 100% !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 16px !important;
+  }
+
+  .print-kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .print-kpi-card {
+    background: #f9fafb !important;
+    border: 1px solid #e5e7eb !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    padding: 10px 12px !important;
+  }
+
+  .print-insights-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .print-insight-box {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    padding: 10px 14px !important;
+  }
+
+  .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .print-table th,
+  .print-table td {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    padding: 7px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .print-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-doc-footer {
+    display: flex !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-top: 14px !important;
+    padding-top: 12px !important;
+    border-top: 2px solid #e5e7eb !important;
   }
 }
 
