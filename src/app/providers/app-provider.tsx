@@ -59,6 +59,7 @@ import {
   updateTaskPomodoros,
 } from "@/features/tasks/task-service";
 import { useKeepNotes } from "@/features/notes/use-keep-notes";
+import { QuickTimeblockModal } from "@/app/components/calendar/quick-timeblock-modal";
 import {
   formatTime,
   getNextTimerMode,
@@ -827,6 +828,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("biarfokus:add-task-from-note", handleAddFromNote);
   }, [addTask]);
 
+  const [globalTimeblockData, setGlobalTimeblockData] = useState<{
+    title: string;
+    sourceNoteId?: string;
+    sourceNoteTitle?: string;
+    sourceItemId?: string;
+    sourceItemText?: string;
+    isFrog?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    function handleOpenTimeblock(event: Event) {
+      const customEvent = event as CustomEvent<{
+        title: string;
+        sourceNoteId?: string;
+        sourceNoteTitle?: string;
+        sourceItemId?: string;
+        sourceItemText?: string;
+        isFrog?: boolean;
+      }>;
+      if (customEvent.detail) {
+        setGlobalTimeblockData(customEvent.detail);
+      }
+    }
+    window.addEventListener("biarfokus:open-timeblock", handleOpenTimeblock);
+    return () => window.removeEventListener("biarfokus:open-timeblock", handleOpenTimeblock);
+  }, []);
+
   const toggleTask = useCallback(
     async (task: Task) => {
       const completed = !task.done;
@@ -1164,7 +1192,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+      {globalTimeblockData && (
+        <QuickTimeblockModal
+          isOpen={true}
+          onClose={() => setGlobalTimeblockData(null)}
+          initialTitle={globalTimeblockData.title}
+          sourceNoteId={globalTimeblockData.sourceNoteId}
+          sourceNoteTitle={globalTimeblockData.sourceNoteTitle}
+          sourceItemId={globalTimeblockData.sourceItemId}
+          sourceItemText={globalTimeblockData.sourceItemText}
+          isFrog={globalTimeblockData.isFrog}
+          userId={user?.id}
+          onSuccess={(ev, openedInGCal) => {
+            const msg = openedInGCal
+              ? `Tugas "${ev.title}" dijadwalkan & dibuka di Google Calendar!`
+              : `Tugas "${ev.title}" berhasil dijadwalkan di Kalender!`;
+            setInfoOpen(msg);
+          }}
+        />
+      )}
+    </AppContext.Provider>
+  );
 }
 
 export function useAppContext(): AppContextType {

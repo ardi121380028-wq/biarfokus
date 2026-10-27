@@ -11,6 +11,7 @@ import type {
   KanbanLabel,
 } from "@/types/domain";
 import { createId, formatUpdatedAt, LABEL_PALETTE } from "@/features/kanban/kanban-service";
+import { buildGoogleCalendarUrl, toISODate } from "@/features/calendar/calendar-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { KanbanConfirmModal } from "./kanban-confirm-modal";
 
@@ -1197,16 +1198,38 @@ export function KanbanCardDialog({
               <div className="kanban-dialog-section">
                 <div className="kanban-section-head-row">
                   <span className="kanban-section-title">🕒 Rentang Tenggat Waktu</span>
-                  {onScheduleToCalendar && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    {onScheduleToCalendar && (
+                      <button
+                        type="button"
+                        className="kanban-text-btn kanban-schedule-cal-btn"
+                        onClick={handleScheduleToCalendar}
+                        title="Sinkronkan kartu tugas ini ke time-blocking Kalender"
+                      >
+                        📅 Kalender
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="kanban-text-btn kanban-schedule-cal-btn"
-                      onClick={handleScheduleToCalendar}
-                      title="Sinkronkan kartu tugas ini ke time-blocking Kalender"
+                      onClick={() => {
+                        const targetDate = card.dueDate || card.startDate || toISODate(new Date());
+                        const gcalUrl = buildGoogleCalendarUrl({
+                          title: card.title,
+                          description: card.description || `Kartu Kanban: ${card.title}`,
+                          date: targetDate,
+                          startTime: "09:00",
+                          endTime: "10:00",
+                        });
+                        window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                        setCalendarFeedback("🌐 Jadwal dibuka di Google Calendar!");
+                        setTimeout(() => setCalendarFeedback(null), 3500);
+                      }}
+                      title="Buka & Tambahkan ke Google Calendar"
                     >
-                      📅 Jadwalkan ke Kalender
+                      🌐 Google Calendar
                     </button>
-                  )}
+                  </div>
                 </div>
                 <div className="kanban-due-date-row">
                   <input

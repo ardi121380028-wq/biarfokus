@@ -8,6 +8,7 @@ import {
   addMonths,
   addYears,
   DEFAULT_EVENT_COLOR,
+  downloadIcsFile,
   getVisibleDays,
   minutesToTime,
   snapMinutes,
@@ -227,6 +228,14 @@ export function CalendarView({
     setModalOpen(false);
   }
 
+  const handleExportIcs = () => {
+    if (events.length === 0) {
+      alert("Belum ada jadwal kalender yang dapat diekspor.");
+      return;
+    }
+    downloadIcsFile(`biarfokus-jadwal-${toISODate(anchorDate)}`, events);
+  };
+
   return (
     <div className="cal-app-workspace">
       {/* Collapsible Left Sidebar */}
@@ -269,6 +278,7 @@ export function CalendarView({
           onNavigate={onNavigate}
           syncStatus={syncStatus}
           onForceSync={forceSync}
+          onExportIcs={handleExportIcs}
         />
 
         {/* Content Canvas */}

@@ -540,3 +540,111 @@ export function createEventId(): string {
   }
   return `event_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
+
+/* ------------------------------------------------------------------ */
+/* Google Calendar & iCalendar (.ics) Integrations                    */
+/* ------------------------------------------------------------------ */
+
+export function buildGoogleCalendarUrl(event: {
+  title: string;
+  description?: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  location?: string;
+}): string {
+  const cleanDate = event.date.replace(/-/g, "");
+  const cleanStart = event.startTime.replace(":", "") + "00";
+  const cleanEnd = event.endTime.replace(":", "") + "00";
+  const dates = `${cleanDate}T${cleanStart}/${cleanDate}T${cleanEnd}`;
+
+  const details = event.description
+    ? `${event.description}\n\n— Dibuat dengan BiarFokus (https://biarfokus.site)`
+    : "Sesi fokus produktif dijadwalkan dengan BiarFokus (https://biarfokus.site)";
+
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: event.title.trim() || "Sesi Fokus",
+    dates,
+    details,
+  });
+  if (event.location) {
+    params.set("location", event.location);
+  }
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+export function generateIcsContent(events: CalendarEvent[]): string {
+  const lines: string[] = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//BiarFokus//Kalender Produktivitas//ID",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+  ];
+
+  const nowStamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+  for (const ev of events) {
+    const cleanDate = ev.date.replace(/-/g, "");
+    const cleanStart = ev.startTime.replace(":", "") + "00";
+    const cleanEnd = ev.endTime.replace(":", "") + "00";
+    const dtStart = `${cleanDate}T${cleanStart}`;
+    const dtEnd = `${cleanDate}T${cleanEnd}`;
+    const uid = `${ev.id}@biarfokus.site`;
+    const summary = (ev.title || "Sesi Fokus").replace(/[\\,;]/g, " ").trim();
+    const descParts = [
+      ev.description || "",
+      ev.linkedNoteTitle ? `Catatan: ${ev.linkedNoteTitle}` : "",
+      ev.linkedItemText ? `Sub-task: ${ev.linkedItemText}` : "",
+      ev.linkedKanbanBoardTitle ? `Kanban: ${ev.linkedKanbanBoardTitle}` : "",
+      "Dibuat via BiarFokus (https://biarfokus.site)",
+    ].filter(Boolean);
+    const desc = descParts.join("\\n").replace(/\r?\n/g, "\\n");
+
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${uid}`,
+      `DTSTAMP:${nowStamp}`,
+      `DTSTART:${dtStart}`,
+      `DTEND:${dtEnd}`,
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${desc}`,
+      "STATUS:CONFIRMED",
+      "END:VEVENT"
+    );
+  }
+
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+
+export function downloadIcsFile(filename: string, events: CalendarEvent[]): void {
+  if (typeof window === "undefined" || events.length === 0) return;
+  const content = generateIcsContent(events);
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename.endsWith(".ics") ? filename : `${filename}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function getSmartTimeblockSlot(durationMinutes = 50): { startTime: string; endTime: string; date: string } {
+  const now = new Date();
+  const date = toISODate(now);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const nextHalfHour = Math.ceil((currentMinutes + 5) / 30) * 30;
+  const clampedStart = Math.min(nextHalfHour, 23 * 60);
+  const clampedEnd = Math.min(clampedStart + durationMinutes, 23 * 60 + 59);
+
+  return {
+    date,
+    startTime: minutesToTime(clampedStart),
+    endTime: minutesToTime(clampedEnd),
+  };
+}
+

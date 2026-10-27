@@ -6,6 +6,8 @@ import type { KeepNote, Task } from "@/types/domain";
 import type { LinkedNoteMeta } from "@/features/tasks/task-service";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { NoteTaskPickerModal } from "./notes/note-task-picker-modal";
+import { QuickTimeblockModal } from "./calendar/quick-timeblock-modal";
+import { useAppContext } from "@/app/providers/app-provider";
 
 type TaskManagementProps = {
   tasks: Task[];
@@ -43,7 +45,10 @@ export function TaskManagement({
   const [menuOpen, setMenuOpen] = useState(false);
   const taskMenuRef = useRef<HTMLDivElement>(null);
   useOutsideClick(taskMenuRef, () => setMenuOpen(false), menuOpen);
+  const { user } = useAppContext();
   const [notePickerOpen, setNotePickerOpen] = useState(false);
+  const [timeblockTarget, setTimeblockTarget] = useState<{ task: Task; isFrog: boolean } | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<"task" | "completed" | "all" | null>(null);
   const [mounted, setMounted] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -274,6 +279,28 @@ export function TaskManagement({
         </button>
       </form>
       {error && <p className="task-error" role="alert">{error}</p>}
+      {feedbackMessage && (
+        <div
+          className="task-success-toast"
+          role="status"
+          style={{
+            padding: "8px 14px",
+            background: "color-mix(in srgb, #10b981 12%, var(--paper))",
+            border: "1px solid color-mix(in srgb, #10b981 30%, transparent)",
+            color: "#059669",
+            borderRadius: "10px",
+            fontSize: "12px",
+            fontWeight: 700,
+            marginBottom: "10px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span>✓</span>
+          <span>{feedbackMessage}</span>
+        </div>
+      )}
       <div className="task-list">
         {activeTasks.length === 0 && !archivedTasks.length && <p className="task-empty">Belum ada task. Tambahkan fokus pertamamu.</p>}
         {activeTasks.map((task, index) => {
@@ -335,6 +362,19 @@ export function TaskManagement({
                 title={isFocused ? "Klik untuk membatalkan fokus aktif" : "Jadikan fokus aktif"}
               >
                 {isFocused ? "🎯 Fokus" : "Pilih"}
+              </button>
+              <button
+                type="button"
+                className="task-timeblock-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTimeblockTarget({ task, isFrog: index === 0 });
+                }}
+                title={index === 0 ? "Timeblock target Eat Your Frog di Kalender / Google Calendar" : "Timeblock tugas ini di Kalender / Google Calendar"}
+                aria-label={`Timeblock ${task.title} di Kalender`}
+              >
+                <span>📅</span>
+                <span>Timeblock</span>
               </button>
               <span className="task-pomos">🍅 {task.pomodoros}</span>
               <button
@@ -409,6 +449,27 @@ export function TaskManagement({
           }}
           onClose={() => setNotePickerOpen(false)}
           onOpenNotes={onOpenNotes}
+        />,
+        document.body
+      )}
+      {timeblockTarget && mounted && createPortal(
+        <QuickTimeblockModal
+          isOpen={true}
+          onClose={() => setTimeblockTarget(null)}
+          initialTitle={timeblockTarget.task.title}
+          sourceNoteId={timeblockTarget.task.linkedNoteId}
+          sourceNoteTitle={timeblockTarget.task.linkedNoteTitle}
+          sourceItemId={timeblockTarget.task.linkedItemId}
+          sourceItemText={timeblockTarget.task.linkedItemText}
+          isFrog={timeblockTarget.isFrog}
+          userId={user?.id}
+          onSuccess={(ev, openedInGCal) => {
+            const msg = openedInGCal
+              ? `Tugas "${ev.title}" dijadwalkan & dibuka di Google Calendar!`
+              : `Tugas "${ev.title}" berhasil dijadwalkan di Kalender!`;
+            setFeedbackMessage(msg);
+            setTimeout(() => setFeedbackMessage(null), 3500);
+          }}
         />,
         document.body
       )}

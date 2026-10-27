@@ -847,6 +847,7 @@ export function HabitsHeatmapView({
         habits={habits}
         stats={stats}
         userName={userName}
+        heatmap={heatmap}
       />
 
       {/* Modern Notice / Confirmation Modal */}

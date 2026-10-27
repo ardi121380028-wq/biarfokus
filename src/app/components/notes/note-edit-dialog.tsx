@@ -608,6 +608,25 @@ export function NoteEditDialog({
             </button>
             <button
               type="button"
+              className="keep-pdf-export-btn"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent("biarfokus:open-timeblock", {
+                    detail: {
+                      title: draft.title || "(Catatan)",
+                      sourceNoteId: note.id,
+                      sourceNoteTitle: draft.title || "(Catatan)",
+                      isFrog: false,
+                    },
+                  })
+                );
+              }}
+              title="Jadwalkan catatan ini di Kalender / Google Calendar"
+            >
+              📅 Timeblock
+            </button>
+            <button
+              type="button"
               className="keep-delete-btn"
               onClick={() => setShowDeleteConfirm(true)}
             >

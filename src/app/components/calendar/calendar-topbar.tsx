@@ -32,6 +32,7 @@ type CalendarTopbarProps = {
   syncStatus?: "synced" | "saving" | "offline" | "error";
   onForceSync?: () => void;
   onLogout?: () => void;
+  onExportIcs?: () => void;
 };
 
 export function CalendarTopbar({
@@ -56,6 +57,7 @@ export function CalendarTopbar({
   syncStatus,
   onForceSync,
   onLogout,
+  onExportIcs,
 }: CalendarTopbarProps) {
   const { isPro } = useAppContext();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -268,6 +270,20 @@ export function CalendarTopbar({
             </div>
           )}
         </div>
+
+        {/* Export .ics for Google Calendar / Apple / Outlook */}
+        {onExportIcs && (
+          <button
+            type="button"
+            className="cal-topbar-export-btn topbar-desktop-only"
+            onClick={onExportIcs}
+            title="Ekspor seluruh jadwal ke format iCalendar (.ics) untuk Google Calendar, Outlook, atau Apple Calendar"
+            aria-label="Ekspor jadwal ke iCalendar (.ics)"
+          >
+            <span>📥</span>
+            <span>Ekspor .ics</span>
+          </button>
+        )}
 
         {/* Theme Toggle (Desktop Only) */}
         {onToggleDark && (

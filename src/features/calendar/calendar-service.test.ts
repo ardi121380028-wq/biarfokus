@@ -3,10 +3,13 @@ import assert from "node:assert/strict";
 import {
   addDays,
   addMonths,
+  buildGoogleCalendarUrl,
   formatPeriodLabel,
+  generateIcsContent,
   getCurrentTimeTop,
   getEventsForDate,
   getMonthCalendarWeeks,
+  getSmartTimeblockSlot,
   getVisibleDays,
   getWeekNumber,
   getYearCalendarMonths,
@@ -362,5 +365,56 @@ describe("calendar-service", () => {
     });
     assert.match(pastUntilErr || "", /tidak boleh sebelum/i);
   });
+
+  it("builds valid Google Calendar URLs with correct date-time parameters", () => {
+    const url = buildGoogleCalendarUrl({
+      title: "Deep Work Sesi 1",
+      description: "Fokus selesaikan fitur timeblock",
+      date: "2026-10-27",
+      startTime: "09:00",
+      endTime: "10:30",
+    });
+
+    assert.ok(url.startsWith("https://calendar.google.com/calendar/render?"));
+    assert.ok(url.includes("action=TEMPLATE"));
+    assert.ok(url.includes("text=Deep+Work+Sesi+1"));
+    assert.ok(url.includes("dates=20261027T090000%2F20261027T103000"));
+    assert.ok(url.includes("details="));
+  });
+
+  it("generates standard RFC-compliant iCalendar (.ics) content", () => {
+    const testEvents: CalendarEvent[] = [
+      {
+        id: "ev-test-1",
+        title: "Sprint Planning",
+        date: "2026-10-27",
+        startTime: "14:00",
+        endTime: "15:00",
+        color: "#0284c7",
+        category: "task",
+        description: "Review backlog",
+      },
+    ];
+
+    const ics = generateIcsContent(testEvents);
+    assert.ok(ics.includes("BEGIN:VCALENDAR"));
+    assert.ok(ics.includes("VERSION:2.0"));
+    assert.ok(ics.includes("BEGIN:VEVENT"));
+    assert.ok(ics.includes("UID:ev-test-1@biarfokus.site"));
+    assert.ok(ics.includes("DTSTART:20261027T140000"));
+    assert.ok(ics.includes("DTEND:20261027T150000"));
+    assert.ok(ics.includes("SUMMARY:Sprint Planning"));
+    assert.ok(ics.includes("END:VEVENT"));
+    assert.ok(ics.includes("END:VCALENDAR"));
+  });
+
+  it("computes smart timeblock slots rounded to sensible intervals", () => {
+    const slot = getSmartTimeblockSlot(50);
+    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(slot.date));
+    assert.ok(/^([01]\d|2[0-3]):[0-5]\d$/.test(slot.startTime));
+    assert.ok(/^([01]\d|2[0-3]):[0-5]\d$/.test(slot.endTime));
+    assert.ok(timeToMinutes(slot.endTime) >= timeToMinutes(slot.startTime));
+  });
 });
+
 

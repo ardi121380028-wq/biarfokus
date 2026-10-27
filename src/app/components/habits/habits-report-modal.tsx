@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import type { Habit, HabitStats } from "@/features/habits/habit-types";
-import { calculateStreak, shiftDateKey, getTodayKey } from "@/features/habits/habit-service";
+import type { Habit, HabitStats, HeatmapDay } from "@/features/habits/habit-types";
+import { calculateStreak, shiftDateKey, getTodayKey, buildConsistencyHeatmap } from "@/features/habits/habit-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 
 interface HabitsReportModalProps {
@@ -11,6 +11,7 @@ interface HabitsReportModalProps {
   habits: Habit[];
   stats: HabitStats;
   userName?: string;
+  heatmap?: HeatmapDay[];
 }
 
 export function HabitsReportModal({
@@ -19,6 +20,7 @@ export function HabitsReportModal({
   habits,
   stats,
   userName = "Pengguna BiarFokus",
+  heatmap,
 }: HabitsReportModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   useOutsideClick(modalRef, onClose, isOpen);
@@ -70,6 +72,30 @@ export function HabitsReportModal({
       return sA - sB;
     })[0];
   }, [habits]);
+
+  // Display Heatmap data (84 days = 12 weeks)
+  const displayHeatmap = useMemo(() => {
+    if (heatmap && heatmap.length > 0) return heatmap;
+    return buildConsistencyHeatmap(habits, 84);
+  }, [heatmap, habits]);
+
+  // Group into weeks of 7 days (Monday to Sunday)
+  const heatmapWeeks = useMemo(() => {
+    const list: HeatmapDay[][] = [];
+    let currentWeek: HeatmapDay[] = [];
+
+    for (const day of displayHeatmap) {
+      currentWeek.push(day);
+      if (currentWeek.length === 7) {
+        list.push(currentWeek);
+        currentWeek = [];
+      }
+    }
+    if (currentWeek.length > 0) {
+      list.push(currentWeek);
+    }
+    return list;
+  }, [displayHeatmap]);
 
   const handlePrint = () => {
     const sheet = document.getElementById("habits-printable-document");
@@ -183,9 +209,50 @@ export function HabitsReportModal({
             </div>
           </section>
 
-          {/* Section 2: Smart Insights */}
+          {/* Section 2: Visual Consistency Map (Heatmap) */}
+          <section className="print-section print-heatmap-section">
+            <div className="print-section-header-row">
+              <h2 className="print-section-title">II. Peta Konsistensi Visual (12 Minggu Terakhir)</h2>
+              <div className="print-heatmap-legend">
+                <span className="legend-label">Jarang</span>
+                <span className="print-heatmap-cell level-0" />
+                <span className="print-heatmap-cell level-1" />
+                <span className="print-heatmap-cell level-2" />
+                <span className="print-heatmap-cell level-3" />
+                <span className="print-heatmap-cell level-4" />
+                <span className="legend-label">Sangat Konsisten</span>
+              </div>
+            </div>
+
+            <div className="print-heatmap-wrapper">
+              <div className="print-heatmap-days-col" aria-hidden="true">
+                <span>Sen</span>
+                <span>Sel</span>
+                <span>Rab</span>
+                <span>Kam</span>
+                <span>Jum</span>
+                <span>Sab</span>
+                <span>Min</span>
+              </div>
+              <div className="print-heatmap-grid" role="grid" aria-label="Peta Konsistensi">
+                {heatmapWeeks.map((week, wIdx) => (
+                  <div key={`print-week-${wIdx}`} className="print-heatmap-col">
+                    {week.map((day) => (
+                      <div
+                        key={day.date}
+                        className={`print-heatmap-cell level-${day.level} ${day.isToday ? "today-cell" : ""}`}
+                        title={`${day.date}: ${day.count} kebiasaan selesai`}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Section 3: Smart Insights */}
           <section className="print-section">
-            <h2 className="print-section-title">II. Analisis Cerdas & Sorotan Kebiasaan</h2>
+            <h2 className="print-section-title">III. Analisis Cerdas & Sorotan Kebiasaan</h2>
             <div className="print-insights-grid">
               {topHabit && (
                 <div className="print-insight-box highlight">
@@ -210,9 +277,9 @@ export function HabitsReportModal({
             </div>
           </section>
 
-          {/* Section 3: Detailed Habits Table */}
+          {/* Section 4: Detailed Habits Table */}
           <section className="print-section">
-            <h2 className="print-section-title">III. Rincian & Evaluasi Tiap Kebiasaan</h2>
+            <h2 className="print-section-title">IV. Rincian & Evaluasi Tiap Kebiasaan</h2>
             <table className="print-table">
               <thead>
                 <tr>
