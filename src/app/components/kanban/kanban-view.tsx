@@ -574,6 +574,8 @@ export function KanbanView({
         }}
         onOpenSettings={onOpenSettings}
         onOpenShare={handleOpenShareModal}
+        archivedCount={archivedCards.length}
+        onOpenArchivedModal={() => setArchivedModalOpen(true)}
         dark={dark}
         onToggleDark={onToggleDark}
       />
@@ -728,21 +730,6 @@ export function KanbanView({
               🔍
             </button>
 
-            {/* Mobile Archived Items Button */}
-            <button
-              type="button"
-              className="kanban-bar-btn kanban-mobile-archived-toggle"
-              onClick={() => setArchivedModalOpen(true)}
-              title="Item Terarsip"
-              aria-label="Item Terarsip"
-            >
-              🗃️
-              {archivedCards.length > 0 && (
-                <span className="kanban-topbar-count-badge" style={{ marginLeft: 3 }}>
-                  {archivedCards.length}
-                </span>
-              )}
-            </button>
 
             {/* Realtime Cloud Sync Status Badge */}
             <button

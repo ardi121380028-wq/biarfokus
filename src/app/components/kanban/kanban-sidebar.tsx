@@ -18,6 +18,8 @@ type KanbanSidebarProps = {
   onNavigate: (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   onOpenShare?: () => void;
+  archivedCount?: number;
+  onOpenArchivedModal?: () => void;
   dark?: boolean;
   onToggleDark?: () => void;
 };
@@ -33,6 +35,8 @@ export function KanbanSidebar({
   onNavigate,
   onOpenSettings,
   onOpenShare,
+  archivedCount,
+  onOpenArchivedModal,
   dark,
   onToggleDark,
 }: KanbanSidebarProps) {
@@ -287,6 +291,71 @@ export function KanbanSidebar({
           )}
         </div>
       </div>
+
+      {/* Item Terarsip (Placed above Bagikan Papan, below Papan Proyek) */}
+      {!isCollapsed && onOpenArchivedModal && (
+        <div style={{ padding: "0 12px", marginTop: 6, marginBottom: 10 }}>
+          <button
+            type="button"
+            className="kanban-sidebar-board-item kanban-sidebar-archive-btn"
+            onClick={onOpenArchivedModal}
+            title="Lihat item yang diarsipkan di papan ini"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "9px 12px",
+              borderRadius: "10px",
+              background: "color-mix(in srgb, var(--ink) 4%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <span style={{ fontSize: 15 }}>🗃️</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
+                Item Terarsip
+              </span>
+            </div>
+            {typeof archivedCount === "number" && archivedCount > 0 ? (
+              <span className="kanban-sidebar-count-badge" style={{ margin: 0 }}>
+                {archivedCount}
+              </span>
+            ) : (
+              <span style={{ fontSize: 11, color: "var(--muted)" }}>0</span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {isCollapsed && onOpenArchivedModal && (
+        <div style={{ display: "flex", justifyContent: "center", margin: "6px 0" }}>
+          <button
+            type="button"
+            className="kanban-sidebar-icon-only-btn"
+            onClick={onOpenArchivedModal}
+            title={`Item Terarsip (${archivedCount || 0})`}
+            style={{ position: "relative" }}
+          >
+            🗃️
+            {typeof archivedCount === "number" && archivedCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -2,
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: "#0284c7",
+                }}
+              />
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Share / Team Shortcut Card */}
       {!isCollapsed && onOpenShare && (
