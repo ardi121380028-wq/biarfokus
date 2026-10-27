@@ -499,7 +499,7 @@ export function useKanban(userId?: string | null) {
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
-          if (b.id === activeBoard.id) {
+          if (b.id === activeBoard.id || b.lists.some((l) => l.cards.some((c) => c.id === cardId))) {
             updatedBoard = serviceArchiveCard(b, listId, cardId);
             return updatedBoard;
           }
@@ -517,7 +517,7 @@ export function useKanban(userId?: string | null) {
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
-          if (b.id === activeBoard.id) {
+          if (b.id === activeBoard.id || b.lists.some((l) => l.cards.some((c) => c.id === cardId))) {
             updatedBoard = serviceRestoreCard(b, listId, cardId);
             return updatedBoard;
           }
@@ -535,7 +535,7 @@ export function useKanban(userId?: string | null) {
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
-          if (b.id === activeBoard.id) {
+          if (b.id === activeBoard.id || b.lists.some((l) => l.cards.some((c) => c.id === cardId))) {
             updatedBoard = serviceDeleteCard(b, listId, cardId);
             return updatedBoard;
           }

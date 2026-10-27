@@ -363,6 +363,7 @@ export function normalizeBoard(raw: unknown): KanbanBoard {
                 startDate: typeof cardObj.startDate === "string" ? cardObj.startDate : undefined,
                 dueDate: typeof cardObj.dueDate === "string" ? cardObj.dueDate : undefined,
                 dueCompleted: Boolean(cardObj.dueCompleted),
+                archived: Boolean(cardObj.archived),
                 labels: Array.isArray(cardObj.labels) ? cardObj.labels : [],
                 checklists: Array.isArray(cardObj.checklists)
                   ? cardObj.checklists.map((chk: unknown) => {
@@ -617,13 +618,10 @@ export function archiveCard(board: KanbanBoard, listId: string, cardId: string):
   return {
     ...board,
     updatedAt: now,
-    lists: board.lists.map((l) => {
-      if (l.id !== listId) return l;
-      return {
-        ...l,
-        cards: l.cards.map((c) => (c.id === cardId ? { ...c, archived: true, updatedAt: now } : c)),
-      };
-    }),
+    lists: board.lists.map((l) => ({
+      ...l,
+      cards: l.cards.map((c) => (c.id === cardId ? { ...c, archived: true, updatedAt: now } : c)),
+    })),
   };
 }
 
@@ -632,13 +630,10 @@ export function restoreCard(board: KanbanBoard, listId: string, cardId: string):
   return {
     ...board,
     updatedAt: now,
-    lists: board.lists.map((l) => {
-      if (l.id !== listId) return l;
-      return {
-        ...l,
-        cards: l.cards.map((c) => (c.id === cardId ? { ...c, archived: false, updatedAt: now } : c)),
-      };
-    }),
+    lists: board.lists.map((l) => ({
+      ...l,
+      cards: l.cards.map((c) => (c.id === cardId ? { ...c, archived: false, updatedAt: now } : c)),
+    })),
   };
 }
 

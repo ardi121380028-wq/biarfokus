@@ -90,6 +90,12 @@ describe("kanban-service", () => {
     assert.ok(archivedCard);
     assert.equal(archivedCard.archived, true);
 
+    // Verify normalizeBoard preserves the archived flag (e.g. after storage / cloud sync)
+    const normalized = normalizeBoard(archived);
+    const normalizedCard = normalized.lists[0].cards.find((c) => c.id === cardId);
+    assert.ok(normalizedCard);
+    assert.equal(normalizedCard.archived, true);
+
     const restored = restoreCard(archived, list.id, cardId);
     const restoredCard = restored.lists[0].cards.find((c) => c.id === cardId);
     assert.ok(restoredCard);

@@ -46,7 +46,7 @@ export function KanbanColumn({
   const menuRef = useRef<HTMLDivElement>(null);
   useOutsideClick(menuRef, () => setMenuOpen(false), menuOpen);
 
-  const cards = Array.isArray(list.cards) ? list.cards : [];
+  const cards = Array.isArray(list.cards) ? list.cards.filter((c) => !c.archived) : [];
 
   function handleTitleBlur() {
     const trimmed = title.trim();
