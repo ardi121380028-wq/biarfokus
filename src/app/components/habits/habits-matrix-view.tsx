@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Habit } from "@/features/habits/habit-types";
 import { getTodayKey, calculateStreak } from "@/features/habits/habit-service";
+import { ConfirmModal } from "@/app/components/ui/confirm-modal";
 
 interface HabitsMatrixViewProps {
   habits: Habit[];
@@ -45,6 +46,7 @@ export function HabitsMatrixView({
   onOpenCreateModal,
 }: HabitsMatrixViewProps) {
   const [weekOffset, setWeekOffset] = useState(0);
+  const [deletingHabit, setDeletingHabit] = useState<Habit | null>(null);
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
   const todayKey = getTodayKey();
 
@@ -262,11 +264,7 @@ export function HabitsMatrixView({
                       <button
                         type="button"
                         className="matrix-action-btn delete"
-                        onClick={() => {
-                          if (confirm(`Hapus kebiasaan "${habit.title}"?`)) {
-                            onDelete(habit.id);
-                          }
-                        }}
+                        onClick={() => setDeletingHabit(habit)}
                         title={`Hapus kebiasaan "${habit.title}"`}
                         aria-label={`Hapus ${habit.title}`}
                       >
@@ -280,6 +278,32 @@ export function HabitsMatrixView({
           </tbody>
         </table>
       </div>
+
+      {/* Confirmation Modal for Habit Deletion */}
+      <ConfirmModal
+        isOpen={Boolean(deletingHabit)}
+        title="Hapus Kebiasaan?"
+        message="Apakah kamu yakin ingin menghapus kebiasaan ini? Seluruh riwayat check-in dan streak kebiasaan ini akan terhapus secara permanen."
+        itemName={deletingHabit?.title}
+        itemSubtext={
+          deletingHabit?.routineTime === "morning"
+            ? "Rutinitas: 🌅 Pagi"
+            : deletingHabit?.routineTime === "afternoon"
+            ? "Rutinitas: ☀️ Siang"
+            : deletingHabit?.routineTime === "evening"
+            ? "Rutinitas: 🌙 Malam"
+            : "Rutinitas: ⚡ Fleksibel"
+        }
+        confirmLabel="Ya, Hapus Kebiasaan"
+        cancelLabel="Batal"
+        onConfirm={() => {
+          if (deletingHabit) {
+            onDelete(deletingHabit.id);
+            setDeletingHabit(null);
+          }
+        }}
+        onCancel={() => setDeletingHabit(null)}
+      />
     </div>
   );
 }

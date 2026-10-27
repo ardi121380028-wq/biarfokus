@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Habit, HabitStats, HeatmapDay } from "@/features/habits/habit-types";
 import { getTodayKey, calculateStreak, shiftDateKey } from "@/features/habits/habit-service";
 import { HabitHeatmap } from "./habit-heatmap";
+import { HabitsReportModal } from "./habits-report-modal";
+import { ConfirmModal } from "@/app/components/ui/confirm-modal";
 
 interface HabitsHeatmapViewProps {
   stats: HabitStats;
   heatmap: HeatmapDay[];
   habits?: Habit[];
+  userName?: string;
   onToggleCheckin?: (habitId: string, dateKey?: string) => void;
   onEdit?: (habit: Habit) => void;
   onDelete?: (habitId: string) => void;
@@ -29,6 +32,7 @@ export function HabitsHeatmapView({
   stats,
   heatmap,
   habits = [],
+  userName = "Pengguna BiarFokus",
   onEdit,
   onOpenCreateModal,
 }: HabitsHeatmapViewProps) {
@@ -50,6 +54,58 @@ export function HabitsHeatmapView({
   // Dr. Phillippa Lally 66-day automaticity milestone
   const bestStreak = stats.bestCurrentStreak;
   const automaticityPercent = Math.min(100, Math.round((bestStreak / 66) * 100));
+
+  // Modern modal state
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [tableRoutineFilter, setTableRoutineFilter] = useState<"all" | "morning" | "afternoon" | "evening" | "anytime">("all");
+  const [noticeModal, setNoticeModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    itemName?: string;
+    itemSubtext?: string;
+  } | null>(null);
+
+  // Routine counts for table filters
+  const routineCounts = useMemo(() => {
+    return {
+      all: habits.length,
+      morning: habits.filter((h) => h.routineTime === "morning").length,
+      afternoon: habits.filter((h) => h.routineTime === "afternoon").length,
+      evening: habits.filter((h) => h.routineTime === "evening").length,
+      anytime: habits.filter((h) => h.routineTime === "anytime").length,
+    };
+  }, [habits]);
+
+  // Filtered habits for macro evaluation table
+  const filteredTableHabits = useMemo(() => {
+    if (tableRoutineFilter === "all") return habits;
+    return habits.filter((h) => h.routineTime === tableRoutineFilter);
+  }, [habits, tableRoutineFilter]);
+
+  // Smart Consistency Insights
+  const championHabit = useMemo(() => {
+    if (habits.length === 0) return null;
+    return [...habits].sort((a, b) => {
+      const streakA = calculateStreak(a.completedDates).current;
+      const streakB = calculateStreak(b.completedDates).current;
+      if (streakB !== streakA) return streakB - streakA;
+      return b.completedDates.length - a.completedDates.length;
+    })[0];
+  }, [habits]);
+
+  const opportunityHabit = useMemo(() => {
+    if (habits.length <= 1) return null;
+    return [...habits].sort((a, b) => {
+      const rateA = a.completedDates.filter((d) => d >= thirtyDaysAgoKey && d <= todayKey).length;
+      const rateB = b.completedDates.filter((d) => d >= thirtyDaysAgoKey && d <= todayKey).length;
+      return rateA - rateB;
+    })[0];
+  }, [habits, thirtyDaysAgoKey, todayKey]);
+
+  const estimatedInvestmentMinutes = useMemo(() => {
+    return stats.allTimeCheckins * 15;
+  }, [stats.allTimeCheckins]);
 
   // Gamified achievements calculation
   const achievements = useMemo<AchievementBadge[]>(() => {
@@ -141,7 +197,11 @@ export function HabitsHeatmapView({
   // Export CSV Handler
   const handleExportCsv = () => {
     if (habits.length === 0) {
-      alert("Belum ada data kebiasaan untuk diekspor.");
+      setNoticeModal({
+        isOpen: true,
+        title: "Belum Ada Data Kebiasaan",
+        message: "Belum ada data kebiasaan yang dapat diekspor ke CSV. Silakan buat kebiasaan pertama Anda terlebih dahulu.",
+      });
       return;
     }
 
@@ -203,7 +263,11 @@ export function HabitsHeatmapView({
   // Export JSON Backup Handler
   const handleExportJson = () => {
     if (habits.length === 0) {
-      alert("Belum ada data kebiasaan untuk diekspor.");
+      setNoticeModal({
+        isOpen: true,
+        title: "Belum Ada Data Kebiasaan",
+        message: "Belum ada data kebiasaan yang dapat diekspor ke format JSON. Silakan buat kebiasaan pertama Anda terlebih dahulu.",
+      });
       return;
     }
 
@@ -236,7 +300,15 @@ export function HabitsHeatmapView({
 
   // Print Report Handler
   const handlePrint = () => {
-    window.print();
+    if (habits.length === 0) {
+      setNoticeModal({
+        isOpen: true,
+        title: "Belum Ada Data Laporan",
+        message: "Tambahkan minimal satu kebiasaan aktif agar BiarFokus dapat mengompilasi lembar laporan konsistensi resmi untuk Anda.",
+      });
+      return;
+    }
+    setReportModalOpen(true);
   };
 
   return (
@@ -448,14 +520,57 @@ export function HabitsHeatmapView({
             </span>
           </div>
 
-          <span className="macro-table-count-pill">
-            Total {habits.length} Kebiasaan Aktif
-          </span>
+          <div className="macro-table-filters" role="tablist" aria-label="Filter Rutinitas Kebiasaan">
+            <button
+              type="button"
+              className={`macro-filter-btn ${tableRoutineFilter === "all" ? "is-active" : ""}`}
+              onClick={() => setTableRoutineFilter("all")}
+            >
+              <span>Semua</span>
+              <span className="macro-filter-count">{routineCounts.all}</span>
+            </button>
+            <button
+              type="button"
+              className={`macro-filter-btn ${tableRoutineFilter === "morning" ? "is-active" : ""}`}
+              onClick={() => setTableRoutineFilter("morning")}
+            >
+              <span>🌅 Pagi</span>
+              <span className="macro-filter-count">{routineCounts.morning}</span>
+            </button>
+            <button
+              type="button"
+              className={`macro-filter-btn ${tableRoutineFilter === "afternoon" ? "is-active" : ""}`}
+              onClick={() => setTableRoutineFilter("afternoon")}
+            >
+              <span>☀️ Siang</span>
+              <span className="macro-filter-count">{routineCounts.afternoon}</span>
+            </button>
+            <button
+              type="button"
+              className={`macro-filter-btn ${tableRoutineFilter === "evening" ? "is-active" : ""}`}
+              onClick={() => setTableRoutineFilter("evening")}
+            >
+              <span>🌙 Malam</span>
+              <span className="macro-filter-count">{routineCounts.evening}</span>
+            </button>
+            <button
+              type="button"
+              className={`macro-filter-btn ${tableRoutineFilter === "anytime" ? "is-active" : ""}`}
+              onClick={() => setTableRoutineFilter("anytime")}
+            >
+              <span>⚡ Fleksibel</span>
+              <span className="macro-filter-count">{routineCounts.anytime}</span>
+            </button>
+          </div>
         </div>
 
         {habits.length === 0 ? (
           <div className="macro-table-empty">
             <p>Belum ada kebiasaan yang dibuat.</p>
+          </div>
+        ) : filteredTableHabits.length === 0 ? (
+          <div className="macro-table-empty">
+            <p>Tidak ada kebiasaan untuk filter rutinitas yang dipilih.</p>
           </div>
         ) : (
           <div className="habits-macro-table-wrap">
@@ -473,7 +588,7 @@ export function HabitsHeatmapView({
                 </tr>
               </thead>
               <tbody>
-                {habits.map((habit) => {
+                {filteredTableHabits.map((habit) => {
                   const streak = calculateStreak(habit.completedDates);
                   const past30Count = habit.completedDates.filter(
                     (d) => d >= thirtyDaysAgoKey && d <= todayKey
@@ -588,6 +703,111 @@ export function HabitsHeatmapView({
         )}
       </section>
 
+      {/* Smart Consistency Insights & Macro Performance */}
+      {habits.length > 0 && (
+        <section className="habits-smart-insights-section" aria-label="Analisis Konsistensi Cerdas">
+          <div className="insights-section-title-group">
+            <h3 className="insights-section-heading">
+              <span>🧠</span>
+              <span>Analisis & Rekomendasi Konsistensi</span>
+            </h3>
+            <span className="insights-section-sub">
+              Sintesis otomatis dari ritme harianmu untuk mempercepat otomatisasi kebiasaan dan menjaga momentum.
+            </span>
+          </div>
+
+          <div className="habits-insights-grid">
+            {championHabit && (
+              <div className="habit-insight-card champion">
+                <div className="insight-card-head">
+                  <span className="insight-badge">🌟 Juara Konsistensi</span>
+                  <span className="insight-icon">{championHabit.icon || "👑"}</span>
+                </div>
+                <h4 className="insight-card-title">{championHabit.title}</h4>
+                <p className="insight-card-desc">
+                  Mencapai streak aktif <strong>{calculateStreak(championHabit.completedDates).current} hari</strong> dengan total <strong>{championHabit.completedDates.length} kali check-in</strong>. Terus pertahankan ritme ini sebagai fondasi utama harimu!
+                </p>
+                <div className="insight-card-meta">
+                  <span>
+                    Rutinitas:{" "}
+                    {championHabit.routineTime === "morning"
+                      ? "Pagi"
+                      : championHabit.routineTime === "afternoon"
+                      ? "Siang"
+                      : championHabit.routineTime === "evening"
+                      ? "Malam"
+                      : "Fleksibel"}
+                  </span>
+                  <span>
+                    Disiplin 30 Hari:{" "}
+                    {Math.round(
+                      (championHabit.completedDates.filter(
+                        (d) => d >= thirtyDaysAgoKey && d <= todayKey
+                      ).length /
+                        30) *
+                        100
+                    )}
+                    %
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {opportunityHabit && (
+              <div className="habit-insight-card opportunity">
+                <div className="insight-card-head">
+                  <span className="insight-badge">💡 Peluang Penguatan</span>
+                  <span className="insight-icon">{opportunityHabit.icon || "🌱"}</span>
+                </div>
+                <h4 className="insight-card-title">{opportunityHabit.title}</h4>
+                <p className="insight-card-desc">
+                  Tingkat konsistensi memerlukan perhatian khusus (disiplin 30 hari:{" "}
+                  <strong>
+                    {Math.round(
+                      (opportunityHabit.completedDates.filter(
+                        (d) => d >= thirtyDaysAgoKey && d <= todayKey
+                      ).length /
+                        30) *
+                        100
+                    )}
+                    %
+                  </strong>
+                  ). Coba sederhanakan dengan <em>Aturan 2 Menit</em> atau tautkan dengan kebiasaan yang sudah rutin.
+                </p>
+                <div className="insight-card-meta">
+                  <span>Pemicu: {opportunityHabit.cue || "Belum ditentukan"}</span>
+                  <span style={{ color: "#d97706" }}>Area Fokus Utama</span>
+                </div>
+              </div>
+            )}
+
+            <div className="habit-insight-card investment">
+              <div className="insight-card-head">
+                <span className="insight-badge">⏱️ Investasi Disiplin Diri</span>
+                <span className="insight-icon">⏳</span>
+              </div>
+              <h4 className="insight-card-title">
+                {estimatedInvestmentMinutes >= 60
+                  ? `~${(estimatedInvestmentMinutes / 60).toFixed(1)} Jam Pertumbuhan`
+                  : `~${estimatedInvestmentMinutes} Menit Pertumbuhan`}
+              </h4>
+              <p className="insight-card-desc">
+                Total perkiraan waktu yang telah kamu investasikan untuk perbaikan diri dari{" "}
+                <strong>{stats.allTimeCheckins} kali check-in</strong>. Perubahan 1% setiap hari berlipat ganda menjadi hasil luar biasa.
+              </p>
+              <div className="insight-card-meta">
+                <span>Rata-rata Disiplin Global: {average30DayRate}%</span>
+                <span>
+                  {automaticityPercent >= 100
+                    ? "Refleks Otomatis Tercapai"
+                    : `${automaticityPercent}% Menuju Otomatis`}
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Atomic Habits 4 Laws Philosophy Cards */}
       <section className="habits-philosophy-grid" aria-label="4 Kaidah Pembentukan Kebiasaan">
         <div className="habits-law-card">
@@ -619,6 +839,29 @@ export function HabitsHeatmapView({
           </p>
         </div>
       </section>
+
+      {/* Printable Consistency Report Modal */}
+      <HabitsReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        habits={habits}
+        stats={stats}
+        userName={userName}
+      />
+
+      {/* Modern Notice / Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(noticeModal?.isOpen)}
+        title={noticeModal?.title || "Pemberitahuan"}
+        message={noticeModal?.message || ""}
+        itemName={noticeModal?.itemName}
+        itemSubtext={noticeModal?.itemSubtext}
+        confirmLabel="Mengerti"
+        variant="info"
+        hideCancel
+        onConfirm={() => setNoticeModal(null)}
+        onCancel={() => setNoticeModal(null)}
+      />
     </div>
   );
 }

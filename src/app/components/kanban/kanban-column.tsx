@@ -4,6 +4,7 @@ import { useRef, useState, type DragEvent } from "react";
 import type { KanbanCard, KanbanList } from "@/types/domain";
 import { useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { KanbanCardItem } from "./kanban-card-item";
+import { ConfirmModal } from "@/app/components/ui/confirm-modal";
 
 type KanbanColumnProps = {
   list: KanbanList;
@@ -40,6 +41,7 @@ export function KanbanColumn({
   const [newCardTitle, setNewCardTitle] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
   useOutsideClick(menuRef, () => setMenuOpen(false), menuOpen);
@@ -164,9 +166,7 @@ export function KanbanColumn({
                   className="danger-text"
                   onClick={() => {
                     setMenuOpen(false);
-                    if (confirm(`Hapus kolom "${list.title}" dan seluruh kartunya?`)) {
-                      onDeleteList(list.id);
-                    }
+                    setShowDeleteConfirm(true);
                   }}
                 >
                   Hapus Kolom
@@ -258,6 +258,21 @@ export function KanbanColumn({
           )
         )}
       </div>
+      {/* Confirmation Modal for Column Deletion */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Hapus Kolom?"
+        message="Apakah kamu yakin ingin menghapus kolom ini beserta seluruh kartu di dalamnya?"
+        itemName={list.title}
+        itemSubtext={`Berisi ${list.cards.length} kartu`}
+        confirmLabel="Ya, Hapus Kolom"
+        cancelLabel="Batal"
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          onDeleteList(list.id);
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

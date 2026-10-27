@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Habit } from "@/features/habits/habit-types";
 import { getWeeklyStrip, getTodayKey, calculateStreak } from "@/features/habits/habit-service";
+import { ConfirmModal } from "@/app/components/ui/confirm-modal";
 
 interface HabitCardProps {
   habit: Habit;
@@ -14,6 +15,7 @@ interface HabitCardProps {
 
 export function HabitCard({ habit, onToggleCheckin, onEdit, onDelete }: HabitCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const todayKey = getTodayKey();
   const isDoneToday = habit.completedDates.includes(todayKey);
 
@@ -162,7 +164,7 @@ export function HabitCard({ habit, onToggleCheckin, onEdit, onDelete }: HabitCar
                   className="delete-item"
                   onClick={() => {
                     setMenuOpen(false);
-                    onDelete(habit.id);
+                    setShowDeleteConfirm(true);
                   }}
                 >
                   🗑️ Hapus
@@ -172,6 +174,21 @@ export function HabitCard({ habit, onToggleCheckin, onEdit, onDelete }: HabitCar
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Hapus Kebiasaan?"
+        message="Apakah kamu yakin ingin menghapus kebiasaan ini secara permanen?"
+        itemName={habit.title}
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          onDelete(habit.id);
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </article>
   );
 }

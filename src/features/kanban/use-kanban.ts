@@ -74,6 +74,7 @@ export function useKanban(userId?: string | null) {
 
   const [syncStatus, setSyncStatus] = useState<KanbanSyncStatus>(userId ? "saving" : "offline");
   const syncInProgressRef = useRef(false);
+  const recentLocalEditsRef = useRef<Map<string, number>>(new Map());
 
   const activeBoardId = useMemo(() => {
     const clean = parseStoredBoardId(activeBoardIdRaw);
@@ -168,7 +169,16 @@ export function useKanban(userId?: string | null) {
         const isOwner = cb.userId === userId;
         const role = isOwner ? ("owner" as const) : cb.role;
         const local = localBoards.find((l) => l.id === cb.id);
+        const lastLocalEdit = recentLocalEditsRef.current.get(cb.id) || 0;
+        const isRecentlyEditedLocally = Date.now() - lastLocalEdit < 10000;
+
         if (local && local.lists && local.lists.length > 0) {
+          if (isRecentlyEditedLocally) {
+            // Local user just modified or deleted cards/lists on this board within 10s.
+            // Do NOT overwrite with older/in-flight cloud data!
+            boardMap.set(cb.id, { ...cb, role, lists: local.lists });
+            continue;
+          }
           const localCardCount = local.lists.reduce((sum, l) => sum + (l.cards?.length || 0), 0);
           const cloudCardCount = cb.lists?.reduce((sum, l) => sum + (l.cards?.length || 0), 0) || 0;
           if (localCardCount > cloudCardCount) {
@@ -375,6 +385,7 @@ export function useKanban(userId?: string | null) {
 
   const updateBoard = useCallback(
     (boardId: string, updates: Partial<KanbanBoard>) => {
+      recentLocalEditsRef.current.set(boardId, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
@@ -446,6 +457,7 @@ export function useKanban(userId?: string | null) {
 
   const addCard = useCallback(
     (listId: string, title: string, meta?: Partial<KanbanCard>) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
@@ -463,6 +475,7 @@ export function useKanban(userId?: string | null) {
 
   const updateCard = useCallback(
     (listId: string, cardId: string, updates: Partial<KanbanCard>) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
@@ -480,6 +493,7 @@ export function useKanban(userId?: string | null) {
 
   const deleteCard = useCallback(
     (listId: string, cardId: string) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
@@ -497,6 +511,7 @@ export function useKanban(userId?: string | null) {
 
   const moveCard = useCallback(
     (sourceListId: string, destListId: string, sourceIndex: number, destIndex: number) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
@@ -514,6 +529,7 @@ export function useKanban(userId?: string | null) {
 
   const addList = useCallback(
     (title: string) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
@@ -531,6 +547,7 @@ export function useKanban(userId?: string | null) {
 
   const updateList = useCallback(
     (listId: string, title: string) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
@@ -548,6 +565,7 @@ export function useKanban(userId?: string | null) {
 
   const deleteList = useCallback(
     (listId: string) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {
@@ -565,6 +583,7 @@ export function useKanban(userId?: string | null) {
 
   const moveList = useCallback(
     (sourceIndex: number, destIndex: number) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) =>
         current.map((b) => {

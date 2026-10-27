@@ -1204,7 +1204,10 @@ export function KanbanView({
           onUpdate={(updates) =>
             updateCard(currentCardDetail.listId, currentCardDetail.card.id, updates)
           }
-          onDelete={() => deleteCard(currentCardDetail.listId, currentCardDetail.card.id)}
+          onDelete={() => {
+            deleteCard(currentCardDetail.listId, currentCardDetail.card.id);
+            setActiveCardData(null);
+          }}
           onClose={() => setActiveCardData(null)}
           onSendToFrog={(card) => handleSendCardToFrog(card)}
           onScheduleToCalendar={handleScheduleCardToCalendar}

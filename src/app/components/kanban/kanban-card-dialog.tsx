@@ -12,6 +12,7 @@ import type {
 } from "@/types/domain";
 import { createId, formatUpdatedAt, LABEL_PALETTE } from "@/features/kanban/kanban-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
+import { KanbanConfirmModal } from "./kanban-confirm-modal";
 
 type KanbanCardDialogProps = {
   card: KanbanCard;
@@ -81,6 +82,7 @@ export function KanbanCardDialog({
   const [newChecklistTitle, setNewChecklistTitle] = useState("Checklist");
   const [frogFeedback, setFrogFeedback] = useState<string | null>(null);
   const [calendarFeedback, setCalendarFeedback] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Mobile quick action inline panel state
   const [activeMobilePanel, setActiveMobilePanel] = useState<"date" | "move" | "pic" | "label" | "checklist" | "cover" | null>(null);
@@ -1641,11 +1643,7 @@ export function KanbanCardDialog({
                 <button
                   type="button"
                   className="kanban-sidebar-btn danger"
-                  onClick={() => {
-                    if (confirm(`Hapus kartu "${card.title}"?`)) {
-                      onDelete();
-                    }
-                  }}
+                  onClick={() => setShowDeleteConfirm(true)}
                 >
                   🗑️ Hapus Kartu
                 </button>
@@ -1654,6 +1652,22 @@ export function KanbanCardDialog({
           )}
         </div>
       </div>
+
+      {/* Confirmation Modal Pop-up (Replaces native browser alert/confirm) */}
+      <KanbanConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Hapus Kartu?"
+        message="Apakah kamu yakin ingin menghapus kartu ini secara permanen dari papan proyek?"
+        itemName={card.title}
+        itemSubtext={`Kolom: ${listTitle}`}
+        confirmLabel="Ya, Hapus Kartu"
+        cancelLabel="Batal"
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          onDelete();
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

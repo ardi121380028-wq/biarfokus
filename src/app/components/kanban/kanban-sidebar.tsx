@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { KanbanBoard } from "@/types/domain";
 import { useAppContext } from "@/app/providers/app-provider";
 import { ProBadge } from "@/app/components/ui/pro-badge";
+import { ConfirmModal } from "@/app/components/ui/confirm-modal";
 
 type KanbanSidebarProps = {
   isCollapsed: boolean;
@@ -37,6 +38,7 @@ export function KanbanSidebar({
 }: KanbanSidebarProps) {
   const { isPro, user, setLoginOpen } = useAppContext();
   const [searchBoard, setSearchBoard] = useState("");
+  const [deletingBoard, setDeletingBoard] = useState<KanbanBoard | null>(null);
 
   const filteredBoards = boards.filter((b) =>
     b.title.toLowerCase().includes(searchBoard.trim().toLowerCase()),
@@ -258,9 +260,7 @@ export function KanbanSidebar({
                         className="kanban-board-delete-mini"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`Hapus papan "${b.title}"?`)) {
-                            onDeleteBoard(b.id);
-                          }
+                          setDeletingBoard(b);
                         }}
                         title="Hapus papan"
                       >
@@ -343,6 +343,23 @@ export function KanbanSidebar({
           </button>
         )}
       </div>
+
+      {/* Confirmation Modal for Board Deletion */}
+      <ConfirmModal
+        isOpen={Boolean(deletingBoard)}
+        title="Hapus Papan Proyek?"
+        message="Apakah kamu yakin ingin menghapus papan ini beserta seluruh kolom dan tugas di dalamnya?"
+        itemName={deletingBoard?.title}
+        confirmLabel="Ya, Hapus Papan"
+        cancelLabel="Batal"
+        onConfirm={() => {
+          if (deletingBoard) {
+            onDeleteBoard(deletingBoard.id);
+            setDeletingBoard(null);
+          }
+        }}
+        onCancel={() => setDeletingBoard(null)}
+      />
     </aside>
   );
 }

@@ -212,6 +212,7 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
                 stats={stats}
                 heatmap={heatmap}
                 habits={habits}
+                userName={userName || user?.email?.split("@")[0] || "Pengguna BiarFokus"}
                 onToggleCheckin={toggleCheckin}
                 onEdit={handleOpenEdit}
                 onDelete={deleteHabit}

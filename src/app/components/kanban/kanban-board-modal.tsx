@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { KanbanBoard } from "@/types/domain";
 import { BOARD_BACKGROUNDS, TEMPLATES } from "@/features/kanban/kanban-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
+import { ConfirmModal } from "@/app/components/ui/confirm-modal";
 
 type KanbanBoardModalProps = {
   boards: KanbanBoard[];
@@ -36,6 +37,7 @@ export function KanbanBoardModal({
     return boards.length === 0 ? "create" : "boards";
   });
   const [newBoardTitle, setNewBoardTitle] = useState("");
+  const [boardToDelete, setBoardToDelete] = useState<KanbanBoard | null>(null);
   useEffect(() => {
     onRefreshBoards?.();
   }, [onRefreshBoards]);
@@ -185,9 +187,7 @@ export function KanbanBoardModal({
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`Hapus board "${b.title}"?`)) {
-                            onDeleteBoard(b.id);
-                          }
+                          setBoardToDelete(b);
                         }}
                         title="Hapus board"
                       >
@@ -307,6 +307,28 @@ export function KanbanBoardModal({
             </div>
           </div>
         )}
+
+        <ConfirmModal
+          isOpen={Boolean(boardToDelete)}
+          title="Hapus Board?"
+          message={`Board "${boardToDelete?.title}" beserta seluruh kolom dan kartu di dalamnya akan dihapus secara permanen.`}
+          itemName={boardToDelete?.title}
+          itemSubtext={
+            boardToDelete
+              ? `${boardToDelete.lists.length} kolom · ${boardToDelete.lists.reduce((acc, l) => acc + l.cards.length, 0)} kartu`
+              : undefined
+          }
+          confirmLabel="Ya, Hapus Board"
+          cancelLabel="Batal"
+          variant="danger"
+          onConfirm={() => {
+            if (boardToDelete) {
+              onDeleteBoard(boardToDelete.id);
+              setBoardToDelete(null);
+            }
+          }}
+          onCancel={() => setBoardToDelete(null)}
+        />
       </div>
     </div>
   );
