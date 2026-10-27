@@ -58,6 +58,110 @@ export function formatUpdatedAt(date: Date): string {
   });
 }
 
+const KANBAN_DELETED_LABELS_STORAGE_PREFIX = "biarfokus_kanban_deleted_labels_";
+const inMemoryDeletedLabels = new Map<string, string[]>();
+
+function getDeletedBoardLabelsStorageKey(boardId: string): string {
+  return `${KANBAN_DELETED_LABELS_STORAGE_PREFIX}${boardId || "default"}`;
+}
+
+export function loadDeletedBoardLabels(boardId?: string | null): string[] {
+  const result: string[] = [];
+  if (typeof window === "undefined") {
+    if (boardId && inMemoryDeletedLabels.has(boardId)) {
+      result.push(...(inMemoryDeletedLabels.get(boardId) || []));
+    }
+    if (inMemoryDeletedLabels.has("global")) {
+      result.push(...(inMemoryDeletedLabels.get("global") || []));
+    }
+    return Array.from(new Set(result.map((s) => String(s).trim().toLowerCase()).filter(Boolean)));
+  }
+
+  try {
+    if (boardId) {
+      const raw = window.localStorage.getItem(getDeletedBoardLabelsStorageKey(boardId));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) result.push(...parsed);
+      }
+    }
+    const rawGlobal = window.localStorage.getItem(getDeletedBoardLabelsStorageKey("global"));
+    if (rawGlobal) {
+      const parsedGlobal = JSON.parse(rawGlobal);
+      if (Array.isArray(parsedGlobal)) result.push(...parsedGlobal);
+    }
+  } catch {
+    // quota exceeded or private mode
+  }
+  return Array.from(new Set(result.map((s) => String(s).trim().toLowerCase()).filter(Boolean)));
+}
+
+export function saveDeletedBoardLabel(boardId: string | undefined | null, labelIdOrName: string): void {
+  if (!labelIdOrName) return;
+  const target = labelIdOrName.trim().toLowerCase();
+  if (!target) return;
+
+  if (typeof window === "undefined") {
+    const keys = ["global"];
+    if (boardId && boardId !== "global") keys.push(boardId);
+    for (const key of keys) {
+      const list = inMemoryDeletedLabels.get(key) || [];
+      if (!list.includes(target)) {
+        list.push(target);
+        inMemoryDeletedLabels.set(key, list);
+      }
+    }
+    return;
+  }
+
+  try {
+    const keys = ["global"];
+    if (boardId && boardId !== "global") keys.push(boardId);
+    for (const key of keys) {
+      const storageKey = getDeletedBoardLabelsStorageKey(key);
+      const raw = window.localStorage.getItem(storageKey);
+      const list: string[] = raw ? JSON.parse(raw) : [];
+      if (!list.map((s) => s.toLowerCase()).includes(target)) {
+        list.push(target);
+        window.localStorage.setItem(storageKey, JSON.stringify(list));
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export function unmarkDeletedBoardLabel(boardId: string | undefined | null, labelName: string): void {
+  if (!labelName) return;
+  const target = labelName.trim().toLowerCase();
+
+  if (typeof window === "undefined") {
+    const keys = ["global"];
+    if (boardId && boardId !== "global") keys.push(boardId);
+    for (const key of keys) {
+      const list = inMemoryDeletedLabels.get(key) || [];
+      inMemoryDeletedLabels.set(key, list.filter((s) => s.toLowerCase() !== target));
+    }
+    return;
+  }
+
+  try {
+    const keys = ["global"];
+    if (boardId && boardId !== "global") keys.push(boardId);
+    for (const key of keys) {
+      const storageKey = getDeletedBoardLabelsStorageKey(key);
+      const raw = window.localStorage.getItem(storageKey);
+      if (raw) {
+        const list: string[] = JSON.parse(raw);
+        const filtered = list.filter((s) => s.toLowerCase() !== target);
+        window.localStorage.setItem(storageKey, JSON.stringify(filtered));
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export const LABEL_PALETTE: { color: string; defaultName: string }[] = [
   { color: "#61bd4f", defaultName: "Done / Low Risk" },
   { color: "#f2d600", defaultName: "Medium Priority" },
@@ -78,6 +182,7 @@ export const LABEL_PALETTE: { color: string; defaultName: string }[] = [
  * 4. ANY label currently assigned to any card across all lists on the board
  * 5. Optional extra labels passed in (e.g. current card labels or draft labels)
  *
+ * Excludes any label that was explicitly deleted by the user.
  * Guaranteed deduplicated by label name (case-insensitive).
  */
 export function resolveBoardAvailableLabels(
@@ -86,12 +191,20 @@ export function resolveBoardAvailableLabels(
 ): KanbanLabel[] {
   const result: KanbanLabel[] = [];
   const seenNames = new Set<string>();
+  const deletedSet = new Set<string>(loadDeletedBoardLabels(board?.id));
 
   function addLabel(lbl: KanbanLabel) {
     if (!lbl || typeof lbl.name !== "string") return;
     const trimmed = lbl.name.trim();
     if (!trimmed) return;
     const lower = trimmed.toLowerCase();
+    const idLower = lbl.id ? String(lbl.id).toLowerCase() : "";
+
+    // If marked deleted, never re-add
+    if (deletedSet.has(lower) || (idLower && deletedSet.has(idLower))) {
+      return;
+    }
+
     if (seenNames.has(lower)) return;
     seenNames.add(lower);
     result.push({
@@ -155,32 +268,50 @@ export function resolveBoardAvailableLabels(
 
 /**
  * Removes a label board-wide from board definitions and from all cards in all lists.
+ * Also persists the deleted label in localStorage so it never resurrects.
  */
-export function deleteBoardLabel(board: KanbanBoard, labelIdOrName: string): KanbanBoard {
-  const lowerTarget = labelIdOrName.toLowerCase();
-  const nextLabels = (board.labels || []).filter(
-    (l) => l.id !== labelIdOrName && l.name.toLowerCase() !== lowerTarget,
-  );
+export function deleteBoardLabel(
+  board: KanbanBoard,
+  labelIdOrName: string,
+  labelName?: string,
+): KanbanBoard {
+  const targetId = (labelIdOrName || "").trim();
+  const targetName = (labelName || "").trim().toLowerCase();
+  const lowerIdOrName = targetId.toLowerCase();
+
+  // Save to deleted list so resolveBoardAvailableLabels never re-adds it
+  if (targetId) saveDeletedBoardLabel(board.id, targetId);
+  if (targetName) saveDeletedBoardLabel(board.id, targetName);
+  if (lowerIdOrName) saveDeletedBoardLabel(board.id, lowerIdOrName);
+
+  const isMatch = (l: KanbanLabel) => {
+    if (!l) return false;
+    if (l.id && (l.id === targetId || l.id.toLowerCase() === lowerIdOrName)) return true;
+    const lName = (l.name || "").trim().toLowerCase();
+    if (targetName && lName === targetName) return true;
+    if (lName === lowerIdOrName) return true;
+    return false;
+  };
+
+  const nextLabels = (board.labels || []).filter((l) => !isMatch(l));
+
   if (typeof window !== "undefined" && board.id) {
     saveCustomBoardLabels(board.id, nextLabels);
-    const globalPool = loadCustomBoardLabels("global").filter(
-      (l) => l.id !== labelIdOrName && l.name.toLowerCase() !== lowerTarget,
-    );
+    const globalPool = loadCustomBoardLabels("global").filter((l) => !isMatch(l));
     saveCustomBoardLabels("global", globalPool);
   }
+
   const now = formatUpdatedAt(new Date());
   return {
     ...board,
     labels: nextLabels,
     updatedAt: now,
-    lists: board.lists.map((list) => ({
+    lists: (board.lists || []).map((list) => ({
       ...list,
-      cards: list.cards.map((card) => ({
+      cards: (list.cards || []).map((card) => ({
         ...card,
         updatedAt: now,
-        labels: card.labels.filter(
-          (l) => l.id !== labelIdOrName && l.name.toLowerCase() !== lowerTarget,
-        ),
+        labels: (card.labels || []).filter((l) => !isMatch(l)),
       })),
     })),
   };

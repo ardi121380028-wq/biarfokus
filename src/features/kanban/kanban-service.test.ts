@@ -325,7 +325,7 @@ describe("kanban-service", () => {
     assert.ok(deduplicated.some((l) => l.name === "Design Sprint"));
   });
 
-  it("deletes a label board-wide and removes it from all cards", () => {
+  it("deletes a label board-wide, removes it from all cards, and prevents it from resurrecting", () => {
     const rawBoard = createNewBoard("Operations Board", "biarfokus-white");
     const board = addCardToList(rawBoard, rawBoard.lists[0].id, "Card with Labels");
     const card1Id = board.lists[0].cards[0]?.id;
@@ -343,12 +343,21 @@ describe("kanban-service", () => {
       labels: [{ id: "lbl-meeting", name: "meeting", color: "#eb5a46" }],
     };
 
-    const cleaned = deleteBoardLabel(boardWithDef, "lbl-meeting");
+    // 1. Delete custom label
+    const cleaned = deleteBoardLabel(boardWithDef, "lbl-meeting", "meeting");
     assert.equal(cleaned.labels?.some((l) => l.name.toLowerCase() === "meeting"), false);
     const targetCard = cleaned.lists[0].cards.find((c) => c.id === card1Id);
     assert.ok(targetCard);
     assert.equal(targetCard.labels.some((l) => l.name.toLowerCase() === "meeting"), false);
     assert.equal(targetCard.labels.some((l) => l.name === "Urgent"), true);
+
+    const availableAfter = resolveBoardAvailableLabels(cleaned);
+    assert.equal(availableAfter.some((l) => l.name.toLowerCase() === "meeting"), false);
+
+    // 2. Delete default palette label (e.g. "Trello Tip")
+    const cleanedDefault = deleteBoardLabel(cleaned, "lbl-default-6", "Trello Tip");
+    const availableAfterDefault = resolveBoardAvailableLabels(cleanedDefault);
+    assert.equal(availableAfterDefault.some((l) => l.name.toLowerCase() === "trello tip"), false);
   });
 });
 

@@ -16,6 +16,8 @@ import {
   LABEL_PALETTE,
   resolveBoardAvailableLabels,
   saveCustomBoardLabels,
+  saveDeletedBoardLabel,
+  unmarkDeletedBoardLabel,
 } from "@/features/kanban/kanban-service";
 import { toISODate } from "@/features/calendar/calendar-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
@@ -32,7 +34,7 @@ type KanbanCardDialogProps = {
   boardId?: string;
   boardLabels?: KanbanLabel[];
   onUpdateBoardLabels?: (labels: KanbanLabel[]) => void;
-  onDeleteBoardLabel?: (labelId: string) => void;
+  onDeleteBoardLabel?: (labelId: string, labelName?: string) => void;
   readOnly?: boolean;
   onUpdate: (updates: Partial<KanbanCard>) => void;
   onArchive?: () => void;
@@ -269,6 +271,9 @@ export function KanbanCardDialog({
     if (readOnly) return;
     const trimmed = newLabelName.trim();
     if (!trimmed) return;
+    // Unmark from deleted registry in case it was previously deleted
+    unmarkDeletedBoardLabel(boardId, trimmed);
+    unmarkDeletedBoardLabel("global", trimmed);
     const newLbl: KanbanLabel = {
       id: createId("lbl"),
       name: trimmed,
@@ -293,14 +298,24 @@ export function KanbanCardDialog({
     setIsCreatingLabel(false);
   }
 
-  // Delete label from board palette and card
+  // Delete label permanently from board palette, registry, and cards
   function handleDeleteLabel(labelId: string, e?: React.MouseEvent) {
     if (readOnly) return;
     if (e) e.stopPropagation();
     const targetLabel = availableLabels.find((l) => l.id === labelId);
-    const updatedPool = availableLabels.filter((l) => l.id !== labelId);
+    const targetName = targetLabel?.name || "";
+
+    // Save into deleted registry to prevent resurrecting from default palette or card scans
+    saveDeletedBoardLabel(boardId, labelId);
+    if (targetName) saveDeletedBoardLabel(boardId, targetName);
+    saveDeletedBoardLabel("global", labelId);
+    if (targetName) saveDeletedBoardLabel("global", targetName);
+
+    const updatedPool = availableLabels.filter(
+      (l) => l.id !== labelId && (!targetName || l.name.toLowerCase() !== targetName.toLowerCase()),
+    );
     if (onDeleteBoardLabel) {
-      onDeleteBoardLabel(labelId);
+      onDeleteBoardLabel(labelId, targetName);
     } else if (onUpdateBoardLabels) {
       onUpdateBoardLabels(updatedPool);
     }
@@ -308,7 +323,7 @@ export function KanbanCardDialog({
     saveCustomBoardLabels("global", updatedPool);
     onUpdate({
       labels: card.labels.filter(
-        (l) => l.id !== labelId && (!targetLabel || l.name.toLowerCase() !== targetLabel.name.toLowerCase()),
+        (l) => l.id !== labelId && (!targetName || l.name.toLowerCase() !== targetName.toLowerCase()),
       ),
     });
   }
@@ -1111,9 +1126,28 @@ export function KanbanCardDialog({
                       key={lbl.id}
                       className="kanban-dialog-label-chip"
                       style={{ backgroundColor: lbl.color }}
-                      onClick={() => !readOnly && setShowLabelPicker(true)}
                     >
-                      {lbl.name}
+                      <span
+                        className="kanban-dialog-label-chip-text"
+                        onClick={() => !readOnly && setShowLabelPicker(true)}
+                        title="Klik untuk memilih atau mengelola label"
+                      >
+                        {lbl.name}
+                      </span>
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          className="kanban-dialog-label-chip-remove"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleLabel(lbl);
+                          }}
+                          title={`Lepas label "${lbl.name}" dari kartu ini`}
+                          aria-label={`Lepas label ${lbl.name}`}
+                        >
+                          ✕
+                        </button>
+                      )}
                     </span>
                   ))}
                   {!readOnly && (

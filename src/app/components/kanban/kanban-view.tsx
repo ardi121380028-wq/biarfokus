@@ -1291,8 +1291,8 @@ export function KanbanView({
             saveCustomBoardLabels(activeBoard.id, newLabels);
             saveCustomBoardLabels("global", newLabels);
           }}
-          onDeleteBoardLabel={(labelId) => {
-            const updatedBoard = deleteBoardLabel(activeBoard, labelId);
+          onDeleteBoardLabel={(labelId, labelName) => {
+            const updatedBoard = deleteBoardLabel(activeBoard, labelId, labelName);
             updateBoard(activeBoard.id, { labels: updatedBoard.labels, lists: updatedBoard.lists });
             saveCustomBoardLabels(activeBoard.id, updatedBoard.labels || []);
           }}
