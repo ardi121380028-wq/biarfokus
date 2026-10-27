@@ -16,6 +16,7 @@ import { KanbanCardDialog } from "./kanban-card-dialog";
 import { KanbanBoardModal } from "./kanban-board-modal";
 import { KanbanShareModal } from "./kanban-share-modal";
 import { KanbanJoinModal } from "./kanban-join-modal";
+import { KanbanArchivedModal, type ArchivedCardItem } from "./kanban-archived-modal";
 import { useAppContext } from "@/app/providers/app-provider";
 import { ProBadge } from "@/app/components/ui/pro-badge";
 
@@ -60,6 +61,8 @@ export function KanbanView({
     deleteBoard,
     addCard,
     updateCard,
+    archiveCard,
+    restoreCard,
     deleteCard,
     moveCard,
     addList,
@@ -119,6 +122,38 @@ export function KanbanView({
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [boardModalOpen, setBoardModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [archivedModalOpen, setArchivedModalOpen] = useState(false);
+  const [archiveToast, setArchiveToast] = useState<{
+    message: string;
+    cardId: string;
+    listId: string;
+    cardTitle: string;
+  } | null>(null);
+
+  const handleArchiveCard = useCallback(
+    (listId: string, cardId: string, cardTitle: string) => {
+      archiveCard(listId, cardId);
+      setActiveCardData(null);
+      setArchiveToast({
+        message: `📦 Kartu "${cardTitle}" berhasil diarsipkan.`,
+        cardId,
+        listId,
+        cardTitle,
+      });
+      setTimeout(() => {
+        setArchiveToast((prev) => (prev?.cardId === cardId ? null : prev));
+      }, 5000);
+    },
+    [archiveCard],
+  );
+
+  const handleRestoreCard = useCallback(
+    (listId: string, cardId: string) => {
+      restoreCard(listId, cardId);
+      setArchiveToast(null);
+    },
+    [restoreCard],
+  );
 
   const handleOpenShareModal = useCallback(() => {
     if (boards.length === 0 || !activeBoard.id) {
@@ -334,15 +369,31 @@ export function KanbanView({
     } catch {}
   }, []);
 
+  const archivedCards: ArchivedCardItem[] = useMemo(() => {
+    const items: ArchivedCardItem[] = [];
+    currentBoard.lists.forEach((list: KanbanList) => {
+      (list.cards || []).forEach((card: KanbanCard) => {
+        if (card.archived) {
+          items.push({ card, listId: list.id, listTitle: list.title });
+        }
+      });
+    });
+    return items;
+  }, [currentBoard.lists]);
+
   const totalCardsCount = useMemo(() => {
-    return currentBoard.lists.reduce((acc: number, l: KanbanList) => acc + (Array.isArray(l.cards) ? l.cards.length : 0), 0);
+    return currentBoard.lists.reduce(
+      (acc: number, l: KanbanList) =>
+        acc + (Array.isArray(l.cards) ? l.cards.filter((c) => !c.archived).length : 0),
+      0,
+    );
   }, [currentBoard.lists]);
 
   const isOwner = Boolean(
     userId &&
       ((currentBoard.userId && currentBoard.userId === userId) ||
         (!currentBoard.isShared && currentBoard.role === "owner") ||
-        (currentBoard.role === "owner"))
+        (currentBoard.role === "owner")),
   );
 
   // Permission check: read-only unless user is owner, editor, or private board
@@ -355,24 +406,33 @@ export function KanbanView({
     return !currentBoard.isShared;
   }, [previewBoard, pendingInviteCode, isOwner, currentBoard.role, currentBoard.isShared]);
 
-  // Filtered lists if search query is active
+  // Filtered lists if search query is active, strictly excluding archived cards
   const displayedLists = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return currentBoard.lists;
 
-    return currentBoard.lists.map((list: KanbanList) => ({
-      ...list,
-      cards: list.cards.filter((card) => {
-        const titleMatch = card.title.toLowerCase().includes(q);
-        const descMatch = (card.description ?? "").toLowerCase().includes(q);
-        const labelMatch = card.labels.some((l) => l.name.toLowerCase().includes(q));
-        const picMatch = (card.assignees || []).some((a) => a.name.toLowerCase().includes(q));
-        const checkMatch = card.checklists.some((c) =>
-          c.items.some((i) => i.text.toLowerCase().includes(q)),
-        );
-        return titleMatch || descMatch || labelMatch || picMatch || checkMatch;
-      }),
-    }));
+    return currentBoard.lists.map((list: KanbanList) => {
+      const activeCards = (list.cards || []).filter((card) => !card.archived);
+      if (!q) {
+        return {
+          ...list,
+          cards: activeCards,
+        };
+      }
+
+      return {
+        ...list,
+        cards: activeCards.filter((card) => {
+          const titleMatch = card.title.toLowerCase().includes(q);
+          const descMatch = (card.description ?? "").toLowerCase().includes(q);
+          const labelMatch = card.labels.some((l) => l.name.toLowerCase().includes(q));
+          const picMatch = (card.assignees || []).some((a) => a.name.toLowerCase().includes(q));
+          const checkMatch = card.checklists.some((c) =>
+            c.items.some((i) => i.text.toLowerCase().includes(q)),
+          );
+          return titleMatch || descMatch || labelMatch || picMatch || checkMatch;
+        }),
+      };
+    });
   }, [currentBoard.lists, searchQuery]);
 
   function handleSaveBoardTitle() {
@@ -514,6 +574,8 @@ export function KanbanView({
         }}
         onOpenSettings={onOpenSettings}
         onOpenShare={handleOpenShareModal}
+        archivedCount={archivedCards.length}
+        onOpenArchivedModal={() => setArchivedModalOpen(true)}
         dark={dark}
         onToggleDark={onToggleDark}
       />
@@ -617,6 +679,20 @@ export function KanbanView({
                 </div>
               )}
             </div>
+
+            {/* Archived Items Button (Desktop) */}
+            <button
+              type="button"
+              className={`kanban-bar-btn kanban-desktop-only-btn ${archivedCards.length > 0 ? "has-badge" : ""}`}
+              onClick={() => setArchivedModalOpen(true)}
+              title="Lihat item yang diarsipkan di papan ini"
+            >
+              <span style={{ marginRight: 4 }}>🗃️</span>
+              <span>Terarsip</span>
+              {archivedCards.length > 0 && (
+                <span className="kanban-topbar-count-badge">{archivedCards.length}</span>
+              )}
+            </button>
           </div>
 
           {/* Right Search Box, Actions, & Profile (Trello-style) */}
@@ -652,6 +728,22 @@ export function KanbanView({
               aria-label="Cari kartu"
             >
               🔍
+            </button>
+
+            {/* Mobile Archived Items Button */}
+            <button
+              type="button"
+              className="kanban-bar-btn kanban-mobile-archived-toggle"
+              onClick={() => setArchivedModalOpen(true)}
+              title="Item Terarsip"
+              aria-label="Item Terarsip"
+            >
+              🗃️
+              {archivedCards.length > 0 && (
+                <span className="kanban-topbar-count-badge" style={{ marginLeft: 3 }}>
+                  {archivedCards.length}
+                </span>
+              )}
             </button>
 
             {/* Realtime Cloud Sync Status Badge */}
@@ -1204,6 +1296,17 @@ export function KanbanView({
           onUpdate={(updates) =>
             updateCard(currentCardDetail.listId, currentCardDetail.card.id, updates)
           }
+          onArchive={() =>
+            handleArchiveCard(
+              currentCardDetail.listId,
+              currentCardDetail.card.id,
+              currentCardDetail.card.title,
+            )
+          }
+          onRestore={() => {
+            handleRestoreCard(currentCardDetail.listId, currentCardDetail.card.id);
+            setActiveCardData(null);
+          }}
           onDelete={() => {
             deleteCard(currentCardDetail.listId, currentCardDetail.card.id);
             setActiveCardData(null);
@@ -1266,6 +1369,54 @@ export function KanbanView({
           }}
           onRequireLogin={onRequireLogin}
         />
+      )}
+
+      {/* Archived Cards Modal */}
+      <KanbanArchivedModal
+        isOpen={archivedModalOpen}
+        onClose={() => setArchivedModalOpen(false)}
+        archivedCards={archivedCards}
+        onRestoreCard={handleRestoreCard}
+        onDeleteCard={(listId, cardId) => deleteCard(listId, cardId)}
+        onOpenCardDetail={(card, listId) => {
+          setArchivedModalOpen(false);
+          setActiveCardData({ card, listId });
+        }}
+        readOnly={!canEdit}
+      />
+
+      {/* Floating Undo/Success Toast for Card Archiving */}
+      {archiveToast && (
+        <div className="kanban-archive-toast-notice" role="alert">
+          <span className="toast-text">{archiveToast.message}</span>
+          <div className="toast-actions">
+            <button
+              type="button"
+              className="toast-undo-btn"
+              onClick={() => handleRestoreCard(archiveToast.listId, archiveToast.cardId)}
+            >
+              ↩️ Urungkan
+            </button>
+            <button
+              type="button"
+              className="toast-view-btn"
+              onClick={() => {
+                setArchiveToast(null);
+                setArchivedModalOpen(true);
+              }}
+            >
+              Lihat Arsip
+            </button>
+            <button
+              type="button"
+              className="toast-close-btn"
+              onClick={() => setArchiveToast(null)}
+              aria-label="Tutup notifikasi"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

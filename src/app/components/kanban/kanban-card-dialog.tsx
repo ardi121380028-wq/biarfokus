@@ -26,7 +26,9 @@ type KanbanCardDialogProps = {
   onUpdateBoardLabels?: (labels: KanbanLabel[]) => void;
   readOnly?: boolean;
   onUpdate: (updates: Partial<KanbanCard>) => void;
-  onDelete: () => void;
+  onArchive?: () => void;
+  onRestore?: () => void;
+  onDelete?: () => void;
   onClose: () => void;
   onSendToFrog?: (card: KanbanCard) => void;
   onScheduleToCalendar?: (card: KanbanCard) => void;
@@ -59,14 +61,17 @@ export function KanbanCardDialog({
   readOnly = false,
   isLight = false,
   onUpdate,
+  onArchive,
+  onRestore,
   onDelete,
   onClose,
   onSendToFrog,
   onScheduleToCalendar,
 }: KanbanCardDialogProps) {
   const modalRef = useRef<HTMLDivElement>(null);
-  useOutsideClick(modalRef, onClose);
-  useEscapeKey(onClose);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  useOutsideClick(modalRef, onClose, !showDeleteConfirm);
+  useEscapeKey(onClose, !showDeleteConfirm);
 
   const [title, setTitle] = useState(card.title);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -82,7 +87,6 @@ export function KanbanCardDialog({
   const [newChecklistTitle, setNewChecklistTitle] = useState("Checklist");
   const [frogFeedback, setFrogFeedback] = useState<string | null>(null);
   const [calendarFeedback, setCalendarFeedback] = useState<string | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Mobile quick action inline panel state
   const [activeMobilePanel, setActiveMobilePanel] = useState<"date" | "move" | "pic" | "label" | "checklist" | "cover" | null>(null);
@@ -441,6 +445,44 @@ export function KanbanCardDialog({
           <div className="kanban-dialog-cover" style={{ background: card.coverColor }} />
         )}
 
+        {/* Archived Notice Banner */}
+        {card.archived && (
+          <div className="kanban-archived-card-banner">
+            <div className="archived-banner-text">
+              <span className="archived-banner-icon">📦</span>
+              <div>
+                <strong>Kartu ini telah diarsipkan.</strong>
+                <p>Kartu disembunyikan dari kolom papan aktif.</p>
+              </div>
+            </div>
+            <div className="archived-banner-actions">
+              {onRestore && !readOnly && (
+                <button
+                  type="button"
+                  className="kanban-primary-btn"
+                  onClick={() => {
+                    onRestore();
+                    onClose();
+                  }}
+                  style={{ fontSize: 13, padding: "6px 14px", fontWeight: 600 }}
+                >
+                  ↩️ Pulihkan ke Papan
+                </button>
+              )}
+              {onDelete && !readOnly && (
+                <button
+                  type="button"
+                  className="kanban-secondary-btn danger-text"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{ fontSize: 13, padding: "6px 14px" }}
+                >
+                  🗑️ Hapus Permanen
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Top Header Row */}
         <div className="kanban-dialog-header">
           <div className="kanban-dialog-title-area">
@@ -493,19 +535,41 @@ export function KanbanCardDialog({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            className="kanban-dialog-close-btn"
-            onClick={onClose}
-            aria-label="Tutup detail kartu"
-          >
-            ✕
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {!readOnly && !card.archived && onArchive && (
+              <button
+                type="button"
+                className="kanban-header-archive-btn"
+                onClick={onArchive}
+                title="Arsipkan kartu ini"
+              >
+                📦 Arsipkan
+              </button>
+            )}
+            <button
+              type="button"
+              className="kanban-dialog-close-btn"
+              onClick={onClose}
+              aria-label="Tutup detail kartu"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Quick Toolbar for Mobile & Fast Access */}
         {!readOnly && (
           <div className="kanban-dialog-quick-toolbar">
+            {!card.archived && onArchive && (
+              <button
+                type="button"
+                className="kanban-quick-btn kanban-quick-archive-btn"
+                onClick={onArchive}
+                title="Arsipkan kartu ini"
+              >
+                📦 Arsip
+              </button>
+            )}
             <button
               type="button"
               className={`kanban-quick-btn ${activeMobilePanel === "date" ? "active" : ""}`}
@@ -1640,37 +1704,85 @@ export function KanbanCardDialog({
 
               <div style={{ marginTop: 16 }}>
                 <span className="kanban-sidebar-heading">Aksi</span>
-                <button
-                  type="button"
-                  className="kanban-sidebar-btn"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  style={{
-                    background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.1)",
-                    color: isLight ? "#333333" : "#e2e8f0",
-                  }}
-                  title="Arsipkan kartu ini dari papan proyek"
-                >
-                  📦 Arsipkan Kartu
-                </button>
+                {!card.archived ? (
+                  <button
+                    type="button"
+                    className="kanban-sidebar-btn"
+                    onClick={() => {
+                      if (readOnly) return;
+                      if (onArchive) {
+                        onArchive();
+                      } else if (onDelete) {
+                        onDelete();
+                      }
+                    }}
+                    style={{
+                      background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.1)",
+                      color: isLight ? "#333333" : "#e2e8f0",
+                    }}
+                    title="Arsipkan kartu ini dari papan proyek"
+                  >
+                    📦 Arsipkan Kartu
+                  </button>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {onRestore && (
+                      <button
+                        type="button"
+                        className="kanban-sidebar-btn"
+                        onClick={() => {
+                          if (readOnly) return;
+                          onRestore();
+                          onClose();
+                        }}
+                        style={{
+                          background: "#0284c7",
+                          color: "#ffffff",
+                          fontWeight: 600,
+                        }}
+                        title="Kembalikan kartu ke kolom papan aktif"
+                      >
+                        ↩️ Pulihkan ke Papan
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        className="kanban-sidebar-btn danger-text"
+                        onClick={() => {
+                          if (readOnly) return;
+                          setShowDeleteConfirm(true);
+                        }}
+                        style={{
+                          background: isLight ? "rgba(239, 68, 68, 0.1)" : "rgba(239, 68, 68, 0.2)",
+                          color: "#ef4444",
+                        }}
+                        title="Hapus kartu ini secara permanen"
+                      >
+                        🗑️ Hapus Permanen
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Confirmation Modal Pop-up (Trello-style Arsipkan Kartu) */}
+      {/* Confirmation Modal Pop-up for Permanent Deletion */}
       <KanbanConfirmModal
         isOpen={showDeleteConfirm}
-        title="Arsipkan Kartu?"
-        message="Apakah kamu yakin ingin mengarsipkan kartu ini dari papan proyek? Kartu akan dipindahkan dari daftar kolom aktif."
+        title="Hapus Permanen Kartu?"
+        message="Apakah kamu yakin ingin menghapus kartu ini secara permanen? Kartu ini, checklist, serta seluruh komentarnya akan dihapus selamanya dan tidak dapat dikembalikan."
         itemName={card.title}
         itemSubtext={`Kolom: ${listTitle}`}
-        confirmLabel="Ya, Arsipkan Kartu"
+        confirmLabel="Ya, Hapus Permanen"
         cancelLabel="Batal"
-        variant="warning"
+        variant="danger"
         onConfirm={() => {
           setShowDeleteConfirm(false);
-          onDelete();
+          onDelete?.();
         }}
         onCancel={() => setShowDeleteConfirm(false)}
       />

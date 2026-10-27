@@ -7,6 +7,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   addCardToList as serviceAddCard,
   addList as serviceAddList,
+  archiveCard as serviceArchiveCard,
   createNewBoard,
   deleteCard as serviceDeleteCard,
   deleteList as serviceDeleteList,
@@ -17,6 +18,7 @@ import {
   moveList as serviceMoveList,
   parseStoredBoardId,
   parseStoredBoards,
+  restoreCard as serviceRestoreCard,
   updateCard as serviceUpdateCard,
   updateListTitle as serviceUpdateListTitle,
 } from "./kanban-service";
@@ -491,6 +493,42 @@ export function useKanban(userId?: string | null) {
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
 
+  const archiveCard = useCallback(
+    (listId: string, cardId: string) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
+      let updatedBoard: KanbanBoard | null = null;
+      updateBoards((current) =>
+        current.map((b) => {
+          if (b.id === activeBoard.id) {
+            updatedBoard = serviceArchiveCard(b, listId, cardId);
+            return updatedBoard;
+          }
+          return b;
+        }),
+      );
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
+    },
+    [activeBoard.id, updateBoards, syncBoardToCloud],
+  );
+
+  const restoreCard = useCallback(
+    (listId: string, cardId: string) => {
+      recentLocalEditsRef.current.set(activeBoard.id, Date.now());
+      let updatedBoard: KanbanBoard | null = null;
+      updateBoards((current) =>
+        current.map((b) => {
+          if (b.id === activeBoard.id) {
+            updatedBoard = serviceRestoreCard(b, listId, cardId);
+            return updatedBoard;
+          }
+          return b;
+        }),
+      );
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
+    },
+    [activeBoard.id, updateBoards, syncBoardToCloud],
+  );
+
   const deleteCard = useCallback(
     (listId: string, cardId: string) => {
       recentLocalEditsRef.current.set(activeBoard.id, Date.now());
@@ -636,6 +674,8 @@ export function useKanban(userId?: string | null) {
     deleteBoard,
     addCard,
     updateCard,
+    archiveCard,
+    restoreCard,
     deleteCard,
     moveCard,
     addList,

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   addCardToList,
   addList,
+  archiveCard,
   createDefaultGrowthBoard,
   createNewBoard,
   deleteCard,
@@ -12,6 +13,7 @@ import {
   normalizeBoard,
   parseStoredBoardId,
   parseStoredBoards,
+  restoreCard,
   TEMPLATES,
   updateCard,
   updateListTitle,
@@ -76,6 +78,22 @@ describe("kanban-service", () => {
 
     const deleted = deleteCard(updated, list.id, cardId);
     assert.equal(deleted.lists[0].cards.some((c) => c.id === cardId), false);
+  });
+
+  it("archives and restores a card correctly", () => {
+    const board = createDefaultGrowthBoard();
+    const list = board.lists[0];
+    const cardId = list.cards[0].id;
+
+    const archived = archiveCard(board, list.id, cardId);
+    const archivedCard = archived.lists[0].cards.find((c) => c.id === cardId);
+    assert.ok(archivedCard);
+    assert.equal(archivedCard.archived, true);
+
+    const restored = restoreCard(archived, list.id, cardId);
+    const restoredCard = restored.lists[0].cards.find((c) => c.id === cardId);
+    assert.ok(restoredCard);
+    assert.equal(restoredCard.archived, false);
   });
 
   it("moves a card within the same list (reordering)", () => {

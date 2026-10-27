@@ -612,6 +612,36 @@ export function updateCard(
   };
 }
 
+export function archiveCard(board: KanbanBoard, listId: string, cardId: string): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    ...board,
+    updatedAt: now,
+    lists: board.lists.map((l) => {
+      if (l.id !== listId) return l;
+      return {
+        ...l,
+        cards: l.cards.map((c) => (c.id === cardId ? { ...c, archived: true, updatedAt: now } : c)),
+      };
+    }),
+  };
+}
+
+export function restoreCard(board: KanbanBoard, listId: string, cardId: string): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    ...board,
+    updatedAt: now,
+    lists: board.lists.map((l) => {
+      if (l.id !== listId) return l;
+      return {
+        ...l,
+        cards: l.cards.map((c) => (c.id === cardId ? { ...c, archived: false, updatedAt: now } : c)),
+      };
+    }),
+  };
+}
+
 export function deleteCard(board: KanbanBoard, listId: string, cardId: string): KanbanBoard {
   const now = formatUpdatedAt(new Date());
   return {

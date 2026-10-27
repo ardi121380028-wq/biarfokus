@@ -68,7 +68,14 @@ export function ConfirmModal({
       : "ℹ️";
 
   return (
-    <div className="universal-confirm-backdrop" role="dialog" aria-modal="true">
+    <div
+      className="universal-confirm-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div ref={modalRef} className={`universal-confirm-dialog ${variant}`}>
         {/* Glowing Icon Badge */}
         <div className={`universal-confirm-icon-wrap ${variant}`}>

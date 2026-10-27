@@ -213,6 +213,7 @@ export type KanbanCard = {
   order: number;
   createdAt: string;
   updatedAt: string;
+  archived?: boolean;
 };
 
 export type KanbanList = {
