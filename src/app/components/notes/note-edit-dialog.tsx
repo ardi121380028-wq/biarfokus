@@ -621,7 +621,7 @@ export function NoteEditDialog({
                   })
                 );
               }}
-              title="Jadwalkan catatan ini di Kalender / Google Calendar"
+              title="Jadwalkan catatan ini di Kalender"
             >
               📅 Timeblock
             </button>

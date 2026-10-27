@@ -17,7 +17,7 @@ import {
   resolveBoardAvailableLabels,
   saveCustomBoardLabels,
 } from "@/features/kanban/kanban-service";
-import { buildGoogleCalendarUrl, toISODate } from "@/features/calendar/calendar-service";
+import { toISODate } from "@/features/calendar/calendar-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 import { KanbanConfirmModal } from "./kanban-confirm-modal";
 
@@ -1244,29 +1244,9 @@ export function KanbanCardDialog({
                         onClick={handleScheduleToCalendar}
                         title="Sinkronkan kartu tugas ini ke time-blocking Kalender"
                       >
-                        📅 Kalender
+                        📅 Jadwalkan ke Kalender
                       </button>
                     )}
-                    <button
-                      type="button"
-                      className="kanban-text-btn kanban-schedule-cal-btn"
-                      onClick={() => {
-                        const targetDate = card.dueDate || card.startDate || toISODate(new Date());
-                        const gcalUrl = buildGoogleCalendarUrl({
-                          title: card.title,
-                          description: card.description || `Kartu Kanban: ${card.title}`,
-                          date: targetDate,
-                          startTime: "09:00",
-                          endTime: "10:00",
-                        });
-                        window.open(gcalUrl, "_blank", "noopener,noreferrer");
-                        setCalendarFeedback("🌐 Jadwal dibuka di Google Calendar!");
-                        setTimeout(() => setCalendarFeedback(null), 3500);
-                      }}
-                      title="Buka & Tambahkan ke Google Calendar"
-                    >
-                      🌐 Google Calendar
-                    </button>
                   </div>
                 </div>
                 <div className="kanban-due-date-row">

@@ -633,18 +633,29 @@ export function downloadIcsFile(filename: string, events: CalendarEvent[]): void
   URL.revokeObjectURL(url);
 }
 
-export function getSmartTimeblockSlot(durationMinutes = 50): { startTime: string; endTime: string; date: string } {
+/**
+ * Calculates a smart upcoming timeblock slot on the calendar.
+ * Automatically aligns to the next 30-minute block and accounts for break recovery time.
+ * For example: 50m deep work + 10m break = 60m (1 hour) block.
+ */
+export function getSmartTimeblockSlot(
+  focusMinutes = 50,
+  breakMinutes = 10,
+  includeBreak = true,
+): { startTime: string; endTime: string; date: string; totalMinutes: number } {
   const now = new Date();
   const date = toISODate(now);
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const nextHalfHour = Math.ceil((currentMinutes + 5) / 30) * 30;
   const clampedStart = Math.min(nextHalfHour, 23 * 60);
-  const clampedEnd = Math.min(clampedStart + durationMinutes, 23 * 60 + 59);
+  const totalMinutes = focusMinutes + (includeBreak ? breakMinutes : 0);
+  const clampedEnd = Math.min(clampedStart + totalMinutes, 23 * 60 + 59);
 
   return {
     date,
     startTime: minutesToTime(clampedStart),
     endTime: minutesToTime(clampedEnd),
+    totalMinutes,
   };
 }
 

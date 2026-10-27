@@ -1206,11 +1206,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           sourceItemText={globalTimeblockData.sourceItemText}
           isFrog={globalTimeblockData.isFrog}
           userId={user?.id}
-          onSuccess={(ev, openedInGCal) => {
-            const msg = openedInGCal
-              ? `Tugas "${ev.title}" dijadwalkan & dibuka di Google Calendar!`
-              : `Tugas "${ev.title}" berhasil dijadwalkan di Kalender!`;
-            setInfoOpen(msg);
+          onSuccess={(ev) => {
+            setInfoOpen(`Tugas "${ev.title}" berhasil dijadwalkan di Kalender!`);
           }}
         />
       )}

@@ -107,29 +107,6 @@ export function NoteCard({
               >
                 🐸 Frog
               </button>
-              <button
-                type="button"
-                className="keep-timeblock-pill-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.dispatchEvent(
-                    new CustomEvent("biarfokus:open-timeblock", {
-                      detail: {
-                        title: item.text,
-                        sourceNoteId: note.id,
-                        sourceNoteTitle: note.title || "(Catatan)",
-                        sourceItemId: item.id,
-                        sourceItemText: item.text,
-                        isFrog: false,
-                      },
-                    })
-                  );
-                }}
-                title="Timeblock sub-task ini ke Kalender / Google Calendar"
-                aria-label="Timeblock ke Kalender"
-              >
-                📅 Timeblock
-              </button>
             </div>
           ))}
 
@@ -228,7 +205,7 @@ export function NoteCard({
                 })
               );
             }}
-            title="Timeblock catatan ini di Kalender / Google Calendar"
+            title="Timeblock catatan ini di Kalender"
             aria-label="Timeblock catatan di Kalender"
           >
             📅

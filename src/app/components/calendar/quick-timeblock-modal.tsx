@@ -4,7 +4,6 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import type { CalendarEvent } from "@/types/domain";
 import {
   CALENDAR_COLORS,
-  buildGoogleCalendarUrl,
   getSmartTimeblockSlot,
   minutesToTime,
   timeToMinutes,
@@ -23,14 +22,22 @@ export interface QuickTimeblockModalProps {
   sourceItemText?: string;
   isFrog?: boolean;
   userId?: string | null;
-  onSuccess?: (event: CalendarEvent, openedInGCal?: boolean) => void;
+  onSuccess?: (event: CalendarEvent) => void;
 }
 
-const PRESET_DURATIONS = [
-  { minutes: 25, label: "25m", sub: "Pomodoro", icon: "🍅" },
-  { minutes: 50, label: "50m", sub: "Deep Work", icon: "⚡" },
-  { minutes: 90, label: "90m", sub: "Ultra Focus", icon: "🎯" },
-  { minutes: 120, label: "2 Jam", sub: "Extended", icon: "⏰" },
+export interface DurationPreset {
+  focusMinutes: number;
+  breakMinutes: number;
+  label: string;
+  sub: string;
+  icon: string;
+}
+
+const PRESET_DURATIONS: DurationPreset[] = [
+  { focusMinutes: 25, breakMinutes: 5, label: "25m", sub: "Pomodoro", icon: "🍅" },
+  { focusMinutes: 50, breakMinutes: 10, label: "50m", sub: "Deep Work", icon: "⚡" },
+  { focusMinutes: 90, breakMinutes: 15, label: "90m", sub: "Ultra Focus", icon: "🎯" },
+  { focusMinutes: 120, breakMinutes: 20, label: "2 Jam", sub: "Extended", icon: "⏰" },
 ];
 
 export function QuickTimeblockModal({
@@ -53,10 +60,12 @@ export function QuickTimeblockModal({
 
   // Form states
   const [title, setTitle] = useState(initialTitle);
-  const [selectedDuration, setSelectedDuration] = useState<number>(50);
+  const [selectedFocus, setSelectedFocus] = useState<number>(50);
+  const [selectedBreak, setSelectedBreak] = useState<number>(10);
+  const [includeBreak, setIncludeBreak] = useState<boolean>(true);
   const [date, setDate] = useState<string>("");
   const [startTime, setStartTime] = useState<string>("09:00");
-  const [endTime, setEndTime] = useState<string>("09:50");
+  const [endTime, setEndTime] = useState<string>("10:00");
   const [color, setColor] = useState<string>(isFrog ? "#0b8043" : "#039be5");
   const [customNote, setCustomNote] = useState<string>("");
 
@@ -64,29 +73,47 @@ export function QuickTimeblockModal({
   useEffect(() => {
     if (isOpen) {
       setTitle(initialTitle);
-      const slot = getSmartTimeblockSlot(50);
+      // Default to 50m focus + 10m break (1 hour total block)
+      const slot = getSmartTimeblockSlot(50, 10, true);
       setDate(slot.date);
       setStartTime(slot.startTime);
       setEndTime(slot.endTime);
-      setSelectedDuration(50);
+      setSelectedFocus(50);
+      setSelectedBreak(10);
+      setIncludeBreak(true);
       setColor(isFrog ? "#0b8043" : "#039be5");
       setCustomNote("");
     }
   }, [isOpen, initialTitle, isFrog]);
 
   // Adjust end time when duration pill is clicked
-  const handleSelectDuration = (minutes: number) => {
-    setSelectedDuration(minutes);
+  const handleSelectDuration = (preset: DurationPreset) => {
+    setSelectedFocus(preset.focusMinutes);
+    setSelectedBreak(preset.breakMinutes);
+    const effectiveBreak = includeBreak ? preset.breakMinutes : 0;
+    const totalMinutes = preset.focusMinutes + effectiveBreak;
     const startMins = timeToMinutes(startTime);
-    const endMins = Math.min(startMins + minutes, 23 * 60 + 59);
+    const endMins = Math.min(startMins + totalMinutes, 23 * 60 + 59);
+    setEndTime(minutesToTime(endMins));
+  };
+
+  // Toggle break calculation on/off
+  const handleToggleBreak = (checked: boolean) => {
+    setIncludeBreak(checked);
+    const effectiveBreak = checked ? selectedBreak : 0;
+    const totalMinutes = selectedFocus + effectiveBreak;
+    const startMins = timeToMinutes(startTime);
+    const endMins = Math.min(startMins + totalMinutes, 23 * 60 + 59);
     setEndTime(minutesToTime(endMins));
   };
 
   // Adjust duration if start or end time manually modified
   const handleStartTimeChange = (newStart: string) => {
     setStartTime(newStart);
+    const effectiveBreak = includeBreak ? selectedBreak : 0;
+    const totalMinutes = selectedFocus + effectiveBreak;
     const startMins = timeToMinutes(newStart);
-    const endMins = Math.min(startMins + selectedDuration, 23 * 60 + 59);
+    const endMins = Math.min(startMins + totalMinutes, 23 * 60 + 59);
     setEndTime(minutesToTime(endMins));
   };
 
@@ -95,18 +122,32 @@ export function QuickTimeblockModal({
     const startMins = timeToMinutes(startTime);
     const endMins = timeToMinutes(newEnd);
     if (endMins > startMins) {
-      setSelectedDuration(endMins - startMins);
+      const diff = endMins - startMins;
+      setSelectedFocus(diff);
+      setSelectedBreak(0);
+      setIncludeBreak(false);
     }
   };
 
+  const currentTotalDuration = useMemo(() => {
+    const s = timeToMinutes(startTime);
+    const e = timeToMinutes(endTime);
+    return e > s ? e - s : selectedFocus + (includeBreak ? selectedBreak : 0);
+  }, [startTime, endTime, selectedFocus, selectedBreak, includeBreak]);
+
   const formattedDescription = useMemo(() => {
     const parts: string[] = [];
+    if (includeBreak && selectedBreak > 0) {
+      parts.push(`⏱️ Sesi ${selectedFocus}m fokus + ${selectedBreak}m istirahat (Total ${selectedFocus + selectedBreak} menit)`);
+    } else {
+      parts.push(`⏱️ Sesi Fokus: ${selectedFocus} menit`);
+    }
     if (customNote.trim()) parts.push(customNote.trim());
     if (isFrog) parts.push("🐸 Tugas Prioritas Tertinggi (Eat That Frog)");
     if (sourceNoteTitle) parts.push(`📝 Dari Catatan: ${sourceNoteTitle}`);
     if (sourceItemText && sourceItemText !== initialTitle) parts.push(`🎯 Sub-task: ${sourceItemText}`);
     return parts.join("\n\n");
-  }, [customNote, isFrog, sourceNoteTitle, sourceItemText, initialTitle]);
+  }, [selectedFocus, selectedBreak, includeBreak, customNote, isFrog, sourceNoteTitle, sourceItemText, initialTitle]);
 
   const handleScheduleBiarFokus = () => {
     const finalTitle = title.trim() || initialTitle || "Sesi Timeblock Fokus";
@@ -124,41 +165,7 @@ export function QuickTimeblockModal({
       linkedItemText: sourceItemText,
     });
 
-    onSuccess?.(created, false);
-    onClose();
-  };
-
-  const handleScheduleGoogleCalendar = () => {
-    const finalTitle = title.trim() || initialTitle || "Sesi Timeblock Fokus";
-    // Also save into BiarFokus so user has it in both places
-    const created = addEvent({
-      title: finalTitle,
-      date,
-      startTime,
-      endTime,
-      color,
-      category: "task",
-      description: formattedDescription,
-      linkedNoteId: sourceNoteId,
-      linkedNoteTitle: sourceNoteTitle,
-      linkedItemId: sourceItemId,
-      linkedItemText: sourceItemText,
-    });
-
-    // Generate Google Calendar Link
-    const gcalUrl = buildGoogleCalendarUrl({
-      title: finalTitle,
-      description: formattedDescription,
-      date,
-      startTime,
-      endTime,
-    });
-
-    if (typeof window !== "undefined") {
-      window.open(gcalUrl, "_blank", "noopener,noreferrer");
-    }
-
-    onSuccess?.(created, true);
+    onSuccess?.(created);
     onClose();
   };
 
@@ -223,16 +230,21 @@ export function QuickTimeblockModal({
 
           {/* Duration Presets */}
           <div className="quick-timeblock-field">
-            <span className="cal-field-label">Pilih Durasi Fokus:</span>
+            <div className="quick-timeblock-field-header">
+              <span className="cal-field-label">Pilih Durasi Fokus:</span>
+              <span className="quick-timeblock-break-hint">
+                {includeBreak ? `+${selectedBreak}m istirahat aktif` : "Tanpa istirahat"}
+              </span>
+            </div>
             <div className="quick-timeblock-duration-grid">
               {PRESET_DURATIONS.map((preset) => {
-                const isActive = selectedDuration === preset.minutes;
+                const isActive = selectedFocus === preset.focusMinutes;
                 return (
                   <button
-                    key={preset.minutes}
+                    key={preset.focusMinutes}
                     type="button"
                     className={`quick-duration-pill ${isActive ? "active" : ""}`}
-                    onClick={() => handleSelectDuration(preset.minutes)}
+                    onClick={() => handleSelectDuration(preset)}
                   >
                     <span className="dur-icon">{preset.icon}</span>
                     <span className="dur-label">{preset.label}</span>
@@ -240,6 +252,35 @@ export function QuickTimeblockModal({
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Break / Rest Recovery Toggle Card */}
+          <div className="quick-timeblock-break-card">
+            <div className="quick-timeblock-break-top">
+              <label className="quick-timeblock-break-checkbox-label">
+                <input
+                  type="checkbox"
+                  id="quick-tb-include-break"
+                  checked={includeBreak}
+                  onChange={(e) => handleToggleBreak(e.target.checked)}
+                />
+                <span className="break-checkbox-text">
+                  Hitung waktu istirahat pemulihan (<strong>+{selectedBreak} menit</strong>)
+                </span>
+              </label>
+              <span className={`break-badge-status ${includeBreak ? "included" : "excluded"}`}>
+                {includeBreak ? "☕ Ada Jeda" : "⚡ Fokus Saja"}
+              </span>
+            </div>
+            <div className="quick-timeblock-break-calc">
+              {includeBreak ? (
+                <span>
+                  🔥 <strong>{selectedFocus}m fokus</strong> + ☕ <strong>{selectedBreak}m istirahat</strong> = Total blok <strong>{selectedFocus + selectedBreak} menit</strong> {selectedFocus + selectedBreak === 60 ? "(1 Jam penuh)" : ""}
+                </span>
+              ) : (
+                <span>Blok waktu kalender hanya fokus murni <strong>{selectedFocus} menit</strong> (tanpa jeda pemulihan).</span>
+              )}
             </div>
           </div>
 
@@ -264,7 +305,9 @@ export function QuickTimeblockModal({
                   value={endTime}
                   onChange={handleEndTimeChange}
                 />
-                <span className="cal-duration-badge">({selectedDuration} menit)</span>
+                <span className="cal-duration-badge" title={`Total durasi blok kalender: ${currentTotalDuration} menit`}>
+                  ({currentTotalDuration} menit{includeBreak && selectedBreak > 0 ? `: ${selectedFocus}m + ${selectedBreak}m istirahat` : ""})
+                </span>
               </div>
             </div>
           </div>
@@ -316,27 +359,15 @@ export function QuickTimeblockModal({
             Batal
           </button>
 
-          <div className="quick-timeblock-submit-group">
-            <button
-              type="button"
-              className="quick-timeblock-btn-gcal"
-              onClick={handleScheduleGoogleCalendar}
-              title="Buka & Tambahkan langsung ke Google Calendar di tab baru"
-            >
-              <span>🌐</span>
-              <span>Buka di Google Calendar</span>
-            </button>
-
-            <button
-              type="button"
-              className="cal-btn-save quick-timeblock-btn-save"
-              onClick={handleScheduleBiarFokus}
-              disabled={!title.trim()}
-            >
-              <span>📅</span>
-              <span>Simpan di Kalender</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            className="cal-btn-save quick-timeblock-btn-save"
+            onClick={handleScheduleBiarFokus}
+            disabled={!title.trim()}
+          >
+            <span>📅</span>
+            <span>Jadwalkan ke Kalender</span>
+          </button>
         </footer>
       </div>
     </div>

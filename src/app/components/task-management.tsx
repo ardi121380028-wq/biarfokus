@@ -370,11 +370,10 @@ export function TaskManagement({
                   e.stopPropagation();
                   setTimeblockTarget({ task, isFrog: index === 0 });
                 }}
-                title={index === 0 ? "Timeblock target Eat Your Frog di Kalender / Google Calendar" : "Timeblock tugas ini di Kalender / Google Calendar"}
+                title={index === 0 ? "Timeblock target Eat Your Frog di Kalender" : "Timeblock tugas ini di Kalender"}
                 aria-label={`Timeblock ${task.title} di Kalender`}
               >
                 <span>📅</span>
-                <span>Timeblock</span>
               </button>
               <span className="task-pomos">🍅 {task.pomodoros}</span>
               <button
@@ -463,10 +462,8 @@ export function TaskManagement({
           sourceItemText={timeblockTarget.task.linkedItemText}
           isFrog={timeblockTarget.isFrog}
           userId={user?.id}
-          onSuccess={(ev, openedInGCal) => {
-            const msg = openedInGCal
-              ? `Tugas "${ev.title}" dijadwalkan & dibuka di Google Calendar!`
-              : `Tugas "${ev.title}" berhasil dijadwalkan di Kalender!`;
+          onSuccess={(ev) => {
+            const msg = `Tugas "${ev.title}" berhasil dijadwalkan di Kalender!`;
             setFeedbackMessage(msg);
             setTimeout(() => setFeedbackMessage(null), 3500);
           }}

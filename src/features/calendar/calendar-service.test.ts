@@ -408,12 +408,17 @@ describe("calendar-service", () => {
     assert.ok(ics.includes("END:VCALENDAR"));
   });
 
-  it("computes smart timeblock slots rounded to sensible intervals", () => {
-    const slot = getSmartTimeblockSlot(50);
-    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(slot.date));
-    assert.ok(/^([01]\d|2[0-3]):[0-5]\d$/.test(slot.startTime));
-    assert.ok(/^([01]\d|2[0-3]):[0-5]\d$/.test(slot.endTime));
-    assert.ok(timeToMinutes(slot.endTime) >= timeToMinutes(slot.startTime));
+  it("computes smart timeblock slots rounded to sensible intervals with break time included", () => {
+    // Default: 50m focus + 10m break = 60m total
+    const slotWithBreak = getSmartTimeblockSlot(50, 10, true);
+    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(slotWithBreak.date));
+    assert.ok(/^([01]\d|2[0-3]):[0-5]\d$/.test(slotWithBreak.startTime));
+    assert.ok(/^([01]\d|2[0-3]):[0-5]\d$/.test(slotWithBreak.endTime));
+    assert.strictEqual(slotWithBreak.totalMinutes, 60);
+
+    // Without break: 50m focus
+    const slotPure = getSmartTimeblockSlot(50, 10, false);
+    assert.strictEqual(slotPure.totalMinutes, 50);
   });
 });
 

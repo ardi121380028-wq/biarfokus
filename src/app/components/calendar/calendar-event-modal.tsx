@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from "react";
 import type { KanbanBoard, KeepNote, RecurrenceFrequency } from "@/types/domain";
 import {
   CALENDAR_COLORS,
-  buildGoogleCalendarUrl,
   formatDuration,
   validateEventDraft,
   type EventDraft,
@@ -763,30 +762,6 @@ export function CalendarEventModal({
           )}
 
           <div className="cal-action-btns-right">
-            <button
-              type="button"
-              className="cal-btn-google-calendar"
-              disabled={!draft.title.trim()}
-              onClick={() => {
-                const descParts: string[] = [];
-                if (draft.description) descParts.push(draft.description);
-                if (draft.linkedNoteTitle) descParts.push(`📝 Catatan: ${draft.linkedNoteTitle}`);
-                if (draft.linkedItemText) descParts.push(`🎯 Sub-task: ${draft.linkedItemText}`);
-                if (draft.linkedKanbanBoardTitle) descParts.push(`📋 Papan: ${draft.linkedKanbanBoardTitle}`);
-                const gcalUrl = buildGoogleCalendarUrl({
-                  title: draft.title.trim(),
-                  description: descParts.join("\n\n"),
-                  date: draft.date,
-                  startTime: draft.startTime,
-                  endTime: draft.endTime,
-                });
-                window.open(gcalUrl, "_blank", "noopener,noreferrer");
-              }}
-              title="Buka & Tambahkan ke Google Calendar"
-            >
-              <span>🌐</span>
-              <span>Google Calendar</span>
-            </button>
             <button
               type="button"
               className="cal-btn-cancel"
