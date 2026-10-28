@@ -18,6 +18,7 @@ import {
   saveCustomBoardLabels,
   saveDeletedBoardLabel,
   unmarkDeletedBoardLabel,
+  isLightHexColor,
 } from "@/features/kanban/kanban-service";
 import { toISODate } from "@/features/calendar/calendar-service";
 import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
@@ -1138,35 +1139,46 @@ export function KanbanCardDialog({
               <div className="kanban-dialog-section">
                 <span className="kanban-section-title">Labels</span>
                 <div className="kanban-dialog-labels">
-                  {card.labels.map((lbl) => (
-                    <span
-                      key={lbl.id}
-                      className="kanban-dialog-label-chip"
-                      style={{ backgroundColor: lbl.color }}
-                    >
+                  {card.labels.map((lbl) => {
+                    const isBright = isLightHexColor(lbl.color);
+                    return (
                       <span
-                        className="kanban-dialog-label-chip-text"
-                        onClick={() => !readOnly && setShowLabelPicker(true)}
-                        title="Klik untuk memilih atau mengelola label"
+                        key={lbl.id}
+                        className="kanban-dialog-label-chip"
+                        style={{
+                          backgroundColor: lbl.color,
+                          color: isBright ? "#0f172a" : "#ffffff",
+                        }}
                       >
-                        {lbl.name}
-                      </span>
-                      {!readOnly && (
-                        <button
-                          type="button"
-                          className="kanban-dialog-label-chip-remove"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleLabel(lbl);
-                          }}
-                          title={`Lepas label "${lbl.name}" dari kartu ini`}
-                          aria-label={`Lepas label ${lbl.name}`}
+                        <span
+                          className="kanban-dialog-label-chip-text"
+                          onClick={() => !readOnly && setShowLabelPicker(true)}
+                          title="Klik untuk memilih atau mengelola label"
+                          style={{ color: isBright ? "#0f172a" : "#ffffff" }}
                         >
-                          ✕
-                        </button>
-                      )}
-                    </span>
-                  ))}
+                          {lbl.name}
+                        </span>
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            className="kanban-dialog-label-chip-remove"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleLabel(lbl);
+                            }}
+                            title={`Lepas label "${lbl.name}" dari kartu ini`}
+                            aria-label={`Lepas label ${lbl.name}`}
+                            style={{
+                              color: isBright ? "#0f172a" : "rgba(255, 255, 255, 0.85)",
+                              background: isBright ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.22)",
+                            }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </span>
+                    );
+                  })}
                   {!readOnly && (
                     <button
                       type="button"
@@ -1193,26 +1205,32 @@ export function KanbanCardDialog({
                 <div className="kanban-palette-grid">
                   {availableLabels.map((item) => {
                     const isSelected = card.labels.some((l) => l.id === item.id || l.name === item.name);
+                    const isBright = isLightHexColor(item.color);
                     return (
                       <div
                         key={item.id}
                         className={`kanban-palette-item-wrap ${isSelected ? "selected" : ""}`}
-                        style={{ backgroundColor: item.color }}
+                        style={{
+                          backgroundColor: item.color,
+                          color: isBright ? "#0f172a" : "#ffffff",
+                        }}
                       >
                         <button
                           type="button"
                           className="kanban-palette-item-btn"
                           onClick={() => handleToggleLabel(item)}
                           title={`Terapkan label ${item.name}`}
+                          style={{ color: isBright ? "#0f172a" : "#ffffff" }}
                         >
                           <span className="label-item-name">{item.name}</span>
-                          {isSelected && <span className="label-check">✓</span>}
+                          {isSelected && <span className="label-check" style={{ color: isBright ? "#0f172a" : "#ffffff" }}>✓</span>}
                         </button>
                         <button
                           type="button"
                           className="kanban-palette-item-del-btn"
                           onClick={(e) => handleDeleteLabel(item.id, e)}
                           title="Hapus label dari daftar"
+                          style={{ color: isBright ? "#0f172a" : "rgba(255, 255, 255, 0.85)" }}
                         >
                           ✕
                         </button>

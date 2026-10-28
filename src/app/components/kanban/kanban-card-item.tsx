@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type DragEvent } from "react";
 import { createPortal } from "react-dom";
 import type { KanbanCard } from "@/types/domain";
 import { useEscapeKey } from "@/lib/hooks/use-dismiss";
+import { isLightHexColor } from "@/features/kanban/kanban-service";
 
 type KanbanCardItemProps = {
   card: KanbanCard;
@@ -289,16 +290,22 @@ export function KanbanCardItem({
       {/* Label Pills */}
       {card.labels && card.labels.length > 0 && (
         <div className="kanban-card-labels">
-          {card.labels.map((lbl) => (
-            <span
-              key={lbl.id}
-              className="kanban-label-pill"
-              style={{ backgroundColor: lbl.color }}
-              title={lbl.name}
-            >
-              {lbl.name}
-            </span>
-          ))}
+          {card.labels.map((lbl) => {
+            const isBright = isLightHexColor(lbl.color);
+            return (
+              <span
+                key={lbl.id}
+                className="kanban-label-pill"
+                style={{
+                  backgroundColor: lbl.color,
+                  color: isBright ? "#0f172a" : "#ffffff",
+                }}
+                title={lbl.name}
+              >
+                {lbl.name}
+              </span>
+            );
+          })}
         </div>
       )}
 

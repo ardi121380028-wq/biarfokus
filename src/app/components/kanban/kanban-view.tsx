@@ -1367,7 +1367,7 @@ export function KanbanView({
             saveCustomBoardLabels(activeBoard.id, updatedBoard.labels || []);
           }}
           readOnly={!canEdit}
-          isLight={!dark || isLightBg}
+          isLight={isLightBg}
           onUpdate={(updates) =>
             updateCard(currentCardDetail.listId, currentCardDetail.card.id, updates)
           }

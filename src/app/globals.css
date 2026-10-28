@@ -7296,6 +7296,91 @@ button:active:not(:disabled) {
   color: #334155 !important;
 }
 
+/* Light card PIC chips, add buttons, schedule button, date text, text buttons */
+.kanban-light-card .kanban-pic-chip {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-pic-chip-name {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-pic-remove-btn {
+  color: #64748b !important;
+}
+
+.kanban-light-card .kanban-pic-remove-btn:hover {
+  color: #ef4444 !important;
+}
+
+.kanban-light-card .kanban-add-mini-btn {
+  border: 1px dashed #94a3b8 !important;
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+
+.kanban-light-card .kanban-add-mini-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-schedule-cal-btn {
+  color: #0284c7 !important;
+  background: #e0f2fe !important;
+  border: 1px solid #bae6fd !important;
+  font-weight: 600 !important;
+}
+
+.kanban-light-card .kanban-schedule-cal-btn:hover {
+  background: #bae6fd !important;
+  color: #0369a1 !important;
+}
+
+.kanban-light-card .kanban-text-btn {
+  color: #0284c7 !important;
+}
+
+.kanban-light-card .kanban-text-btn:hover {
+  color: #0369a1 !important;
+}
+
+.kanban-light-card .kanban-due-date-row label {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-due-date-row strong {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-member-pick-item {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-member-pick-item:hover {
+  background: #f1f5f9 !important;
+}
+
+.kanban-light-card .kanban-member-pick-name {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-desc-placeholder {
+  color: #64748b !important;
+}
+
+.kanban-light-card .kanban-desc-preview {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.kanban-light-card .kanban-desc-preview:hover {
+  border-color: #cbd5e1 !important;
+  background: #f1f5f9 !important;
+}
+
 /* Date Inputs & Calendar Icon Contrast */
 .kanban-date-picker-box {
   display: flex;
