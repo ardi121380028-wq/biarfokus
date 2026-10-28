@@ -3025,6 +3025,12 @@ button:active:not(:disabled) {
   font-weight: 600;
 }
 
+.kanban-desc-autosave-badge.idle {
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.1);
+}
+
+
 
 .kanban-desc-preview {
   background: rgba(255, 255, 255, 0.05);

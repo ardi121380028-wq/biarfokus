@@ -86,8 +86,6 @@ export function KanbanCardDialog({
 }: KanbanCardDialogProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  useOutsideClick(modalRef, onClose, !showDeleteConfirm);
-  useEscapeKey(onClose, !showDeleteConfirm);
 
   const [title, setTitle] = useState(card.title);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -96,16 +94,55 @@ export function KanbanCardDialog({
   const [descSaveStatus, setDescSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const descDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync state if card prop changes
-  useEffect(() => {
-    setDescription(card.description || "");
-  }, [card.description]);
+  const descriptionRef = useRef(card.description || "");
+  const cardDescriptionRef = useRef(card.description || "");
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
 
-  // Cleanup debounce timer on unmount
+  const flushDescriptionSave = useCallback(() => {
+    if (descDebounceRef.current) {
+      clearTimeout(descDebounceRef.current);
+      descDebounceRef.current = null;
+    }
+    const currentVal = descriptionRef.current;
+    const trimmed = currentVal.trim();
+    if (trimmed !== (cardDescriptionRef.current || "").trim()) {
+      onUpdateRef.current({ description: trimmed });
+      cardDescriptionRef.current = trimmed;
+      setDescSaveStatus("saved");
+      setTimeout(() => setDescSaveStatus("idle"), 2500);
+      return true;
+    }
+    return false;
+  }, []);
+
+  const handleSafeClose = useCallback(() => {
+    flushDescriptionSave();
+    onClose();
+  }, [flushDescriptionSave, onClose]);
+
+  useOutsideClick(modalRef, handleSafeClose, !showDeleteConfirm);
+  useEscapeKey(handleSafeClose, !showDeleteConfirm);
+
+  // Sync state if card prop changes, but ONLY when user is NOT actively editing
+  useEffect(() => {
+    cardDescriptionRef.current = card.description || "";
+    if (!isEditingDesc) {
+      setDescription(card.description || "");
+      descriptionRef.current = card.description || "";
+    }
+  }, [card.description, isEditingDesc]);
+
+  // Flush on unmount so nothing is ever lost
   useEffect(() => {
     return () => {
       if (descDebounceRef.current) {
         clearTimeout(descDebounceRef.current);
+        descDebounceRef.current = null;
+      }
+      const trimmed = descriptionRef.current.trim();
+      if (trimmed !== (cardDescriptionRef.current || "").trim()) {
+        onUpdateRef.current({ description: trimmed });
       }
     };
   }, []);
@@ -300,46 +337,29 @@ export function KanbanCardDialog({
 
   const handleDescriptionChange = (newVal: string) => {
     setDescription(newVal);
+    descriptionRef.current = newVal;
     if (readOnly) return;
     setDescSaveStatus("saving");
     if (descDebounceRef.current) {
       clearTimeout(descDebounceRef.current);
     }
     descDebounceRef.current = setTimeout(() => {
-      const trimmed = newVal.trim();
-      if (trimmed !== (card.description || "").trim()) {
-        onUpdate({ description: trimmed });
-      }
-      setDescSaveStatus("saved");
-      setTimeout(() => setDescSaveStatus("idle"), 2500);
-    }, 700);
+      flushDescriptionSave();
+    }, 400);
   };
 
-  const handleDescriptionBlur = () => {
+  const handleDescriptionBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     if (readOnly) return;
-    if (descDebounceRef.current) {
-      clearTimeout(descDebounceRef.current);
-      descDebounceRef.current = null;
-    }
-    const trimmed = description.trim();
-    if (trimmed !== (card.description || "").trim()) {
-      onUpdate({ description: trimmed });
-      setDescSaveStatus("saved");
-      setTimeout(() => setDescSaveStatus("idle"), 2500);
+    flushDescriptionSave();
+    const nextTarget = e.relatedTarget as HTMLElement | null;
+    if (!nextTarget || !nextTarget.closest(".kanban-desc-editor")) {
+      setIsEditingDesc(false);
     }
   };
 
   function handleSaveDescription() {
     if (readOnly) return;
-    if (descDebounceRef.current) {
-      clearTimeout(descDebounceRef.current);
-      descDebounceRef.current = null;
-    }
-    const trimmed = description.trim();
-    if (trimmed !== (card.description || "").trim()) {
-      onUpdate({ description: trimmed });
-    }
-    setDescSaveStatus("saved");
+    flushDescriptionSave();
     setIsEditingDesc(false);
   }
 
@@ -708,7 +728,7 @@ export function KanbanCardDialog({
             <button
               type="button"
               className="kanban-dialog-close-btn"
-              onClick={onClose}
+              onClick={handleSafeClose}
               aria-label="Tutup detail kartu"
             >
               ✕
@@ -1467,17 +1487,13 @@ export function KanbanCardDialog({
                       className="kanban-primary-btn"
                       onClick={handleSaveDescription}
                     >
-                      Selesai
+                      Simpan
                     </button>
                     <button
                       type="button"
                       className="kanban-secondary-btn"
                       onClick={() => {
-                        if (descDebounceRef.current) {
-                          clearTimeout(descDebounceRef.current);
-                          descDebounceRef.current = null;
-                        }
-                        setDescription(card.description || "");
+                        flushDescriptionSave();
                         setIsEditingDesc(false);
                       }}
                     >
@@ -1491,6 +1507,11 @@ export function KanbanCardDialog({
                     {descSaveStatus === "saved" && (
                       <span className="kanban-desc-autosave-badge saved">
                         ✓ Tersimpan otomatis
+                      </span>
+                    )}
+                    {descSaveStatus === "idle" && (
+                      <span className="kanban-desc-autosave-badge idle">
+                        Auto-save aktif
                       </span>
                     )}
                   </div>
