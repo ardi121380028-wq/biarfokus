@@ -9,6 +9,8 @@ import { ConfirmModal } from "@/app/components/ui/confirm-modal";
 type KanbanColumnProps = {
   list: KanbanList;
   readOnly?: boolean;
+  columnIndex?: number;
+  totalColumns?: number;
   onCardClick: (card: KanbanCard, listId: string) => void;
   onSendToFrog?: (card: KanbanCard) => void;
   onAddCard: (listId: string, title: string) => void;
@@ -18,12 +20,17 @@ type KanbanColumnProps = {
   onDragEndCard: (e: DragEvent<HTMLDivElement>) => void;
   onDropCard: (destListId: string, dropIndex: number) => void;
   onDirectMoveCard?: (sourceListId: string, destListId: string, sourceIndex: number, destIndex: number) => void;
+  onMoveCardPosition?: (listId: string, cardId: string, direction: "top" | "up" | "down" | "bottom") => void;
+  onMoveList?: (sourceIndex: number, destIndex: number) => void;
+  onSortPriority?: (listId: string) => void;
   allLists?: { id: string; title: string }[];
 };
 
 export function KanbanColumn({
   list,
   readOnly = false,
+  columnIndex = 0,
+  totalColumns = 1,
   onCardClick,
   onSendToFrog,
   onAddCard,
@@ -33,6 +40,9 @@ export function KanbanColumn({
   onDragEndCard,
   onDropCard,
   onDirectMoveCard,
+  onMoveCardPosition,
+  onMoveList,
+  onSortPriority,
   allLists,
 }: KanbanColumnProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -40,6 +50,11 @@ export function KanbanColumn({
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dragOverCardInfo, setDragOverCardInfo] = useState<{
+    cardId: string;
+    index: number;
+    before: boolean;
+  } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -81,18 +96,54 @@ export function KanbanColumn({
   function handleDragOver(e: DragEvent<HTMLDivElement>) {
     if (readOnly) return;
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
     if (!isDragOver) setIsDragOver(true);
   }
 
-  function handleDragLeave() {
+  function handleDragLeave(e: DragEvent<HTMLDivElement>) {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
     setIsDragOver(false);
+    setDragOverCardInfo(null);
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
     if (readOnly) return;
     e.preventDefault();
     setIsDragOver(false);
-    onDropCard(list.id, list.cards.length);
+    setDragOverCardInfo(null);
+    onDropCard(list.id, cards.length);
+  }
+
+  function handleDragOverCard(
+    e: DragEvent<HTMLDivElement>,
+    cardId: string,
+    _listId: string,
+    index: number,
+    isUpperHalf: boolean,
+  ) {
+    if (readOnly) return;
+    setDragOverCardInfo({ cardId, index, before: isUpperHalf });
+    if (!isDragOver) setIsDragOver(true);
+  }
+
+  function handleDragLeaveCard(_e: DragEvent<HTMLDivElement>, cardId: string) {
+    if (readOnly) return;
+    setDragOverCardInfo((curr) => (curr?.cardId === cardId ? null : curr));
+  }
+
+  function handleDropOnCard(
+    e: DragEvent<HTMLDivElement>,
+    targetListId: string,
+    cardIndex: number,
+    insertBefore: boolean,
+  ) {
+    if (readOnly) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    setDragOverCardInfo(null);
+    const dropIndex = insertBefore ? cardIndex : cardIndex + 1;
+    onDropCard(targetListId, dropIndex);
   }
 
   return (
@@ -161,6 +212,40 @@ export function KanbanColumn({
                 >
                   + Tambah Kartu
                 </button>
+                {onSortPriority && cards.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSortPriority(list.id);
+                      setMenuOpen(false);
+                    }}
+                    title="Urutkan kartu berlabel High Priority / Urgent / Frog ke paling atas"
+                  >
+                    ⚡ Urutkan Prioritas Tertinggi ke Atas
+                  </button>
+                )}
+                {onMoveList && columnIndex > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onMoveList(columnIndex, columnIndex - 1);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    ◀️ Geser Kolom ke Kiri
+                  </button>
+                )}
+                {onMoveList && columnIndex < totalColumns - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onMoveList(columnIndex, columnIndex + 1);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    ▶️ Geser Kolom ke Kanan
+                  </button>
+                )}
                 <button
                   type="button"
                   className="danger-text"
@@ -185,12 +270,19 @@ export function KanbanColumn({
             card={card}
             listId={list.id}
             index={idx}
+            totalCards={cards.length}
             readOnly={readOnly}
             onClick={onCardClick}
             onSendToFrog={onSendToFrog}
             onDragStart={onDragStartCard}
             onDragEnd={onDragEndCard}
             onDirectMoveCard={onDirectMoveCard}
+            onMoveCardPosition={onMoveCardPosition}
+            onDragOverCard={handleDragOverCard}
+            onDragLeaveCard={handleDragLeaveCard}
+            onDropOnCard={handleDropOnCard}
+            isDropTargetBefore={dragOverCardInfo?.cardId === card.id && dragOverCardInfo.before}
+            isDropTargetAfter={dragOverCardInfo?.cardId === card.id && !dragOverCardInfo.before}
             allLists={allLists}
           />
         ))}
@@ -258,6 +350,7 @@ export function KanbanColumn({
           )
         )}
       </div>
+
       {/* Confirmation Modal for Column Deletion */}
       <ConfirmModal
         isOpen={showDeleteConfirm}

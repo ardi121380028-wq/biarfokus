@@ -29,6 +29,7 @@ type KanbanCardDialogProps = {
   currentListId?: string;
   boardLists?: { id: string; title: string }[];
   onMoveToList?: (destListId: string) => void;
+  onMoveCardPosition?: (listId: string, cardId: string, direction: "top" | "up" | "down" | "bottom") => void;
   boardMembers?: KanbanBoardMember[];
   currentUserId?: string | null;
   boardId?: string;
@@ -65,6 +66,7 @@ export function KanbanCardDialog({
   currentListId,
   boardLists,
   onMoveToList,
+  onMoveCardPosition,
   boardMembers = [],
   currentUserId,
   boardId,
@@ -771,6 +773,57 @@ export function KanbanCardDialog({
                       </button>
                     );
                   })}
+                  {onMoveCardPosition && currentListId && (
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid color-mix(in srgb, var(--ink) 12%, transparent)" }}>
+                      <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px", fontWeight: 600 }}>
+                        ⬆️ Posisi &amp; Prioritas di Kolom:
+                      </p>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                        <button
+                          type="button"
+                          className="mobile-move-column-btn"
+                          onClick={() => {
+                            onMoveCardPosition(currentListId, card.id, "top");
+                            setActiveMobilePanel(null);
+                          }}
+                          style={{ justifyContent: "center", fontSize: 12 }}
+                        >
+                          ⬆️ Paling Atas
+                        </button>
+                        <button
+                          type="button"
+                          className="mobile-move-column-btn"
+                          onClick={() => {
+                            onMoveCardPosition(currentListId, card.id, "up");
+                          }}
+                          style={{ justifyContent: "center", fontSize: 12 }}
+                        >
+                          ▲ Geser Naik
+                        </button>
+                        <button
+                          type="button"
+                          className="mobile-move-column-btn"
+                          onClick={() => {
+                            onMoveCardPosition(currentListId, card.id, "down");
+                          }}
+                          style={{ justifyContent: "center", fontSize: 12 }}
+                        >
+                          ▼ Geser Turun
+                        </button>
+                        <button
+                          type="button"
+                          className="mobile-move-column-btn"
+                          onClick={() => {
+                            onMoveCardPosition(currentListId, card.id, "bottom");
+                            setActiveMobilePanel(null);
+                          }}
+                          style={{ justifyContent: "center", fontSize: 12 }}
+                        >
+                          ⬇️ Paling Bawah
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1606,6 +1659,51 @@ export function KanbanCardDialog({
                         })}
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Priority Reordering Buttons directly inside Card Dialog */}
+              {onMoveCardPosition && currentListId && (
+                <div className="kanban-card-dialog-priority-box" style={{ marginTop: 8 }}>
+                  <span className="kanban-sidebar-heading">⬆️ Posisi &amp; Prioritas di Kolom</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 4 }}>
+                    <button
+                      type="button"
+                      className="kanban-sidebar-btn"
+                      onClick={() => onMoveCardPosition(currentListId, card.id, "top")}
+                      title="Pindah kartu ke paling atas (Prioritas Tertinggi)"
+                      style={{ justifyContent: "center", fontSize: 11.5, padding: "7px 8px" }}
+                    >
+                      ⬆️ Paling Atas
+                    </button>
+                    <button
+                      type="button"
+                      className="kanban-sidebar-btn"
+                      onClick={() => onMoveCardPosition(currentListId, card.id, "up")}
+                      title="Geser kartu naik satu tingkat"
+                      style={{ justifyContent: "center", fontSize: 11.5, padding: "7px 8px" }}
+                    >
+                      ▲ Geser Naik
+                    </button>
+                    <button
+                      type="button"
+                      className="kanban-sidebar-btn"
+                      onClick={() => onMoveCardPosition(currentListId, card.id, "down")}
+                      title="Geser kartu turun satu tingkat"
+                      style={{ justifyContent: "center", fontSize: 11.5, padding: "7px 8px" }}
+                    >
+                      ▼ Geser Turun
+                    </button>
+                    <button
+                      type="button"
+                      className="kanban-sidebar-btn"
+                      onClick={() => onMoveCardPosition(currentListId, card.id, "bottom")}
+                      title="Pindah kartu ke paling bawah"
+                      style={{ justifyContent: "center", fontSize: 11.5, padding: "7px 8px" }}
+                    >
+                      ⬇️ Paling Bawah
+                    </button>
                   </div>
                 </div>
               )}

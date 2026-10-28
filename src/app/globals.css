@@ -2873,25 +2873,214 @@ button:active:not(:disabled) {
 }
 
 .kanban-desc-preview {
-  background: var(--paper);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 14px;
   padding: 12px 14px;
   font-size: 13px;
   cursor: pointer;
   min-height: 52px;
-  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
-  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #dee4ea;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .kanban-desc-preview:hover {
-  border-color: color-mix(in srgb, var(--ink) 28%, transparent);
-  background: color-mix(in srgb, var(--ink) 2%, var(--paper));
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .kanban-desc-placeholder {
   margin: 0;
-  color: var(--muted);
+  color: #8b9bb4;
+}
+
+.kanban-light-card .kanban-desc-preview,
+.kanban-light-theme .kanban-desc-preview {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.kanban-light-card .kanban-desc-preview:hover,
+.kanban-light-theme .kanban-desc-preview:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.kanban-light-card .kanban-desc-placeholder,
+.kanban-light-theme .kanban-desc-placeholder {
+  color: #64748b;
+}
+
+.kanban-dialog-card.kanban-light-card {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #e2e8f0;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-dialog-title-input {
+  color: #0f172a;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-dialog-crumb {
+  color: #64748b;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-dialog-crumb strong {
+  color: #0f172a;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-dialog-close-btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: #475569;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-dialog-close-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #0f172a;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-section-title {
+  color: #64748b;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-desc-textarea {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-sidebar-heading {
+  color: #64748b;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-sidebar-btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1e293b;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-sidebar-btn:hover {
+  background: rgba(0, 0, 0, 0.09);
+  color: #0f172a;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-custom-select-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-custom-select-menu {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-select-option {
+  color: #1e293b;
+}
+
+.kanban-dialog-card.kanban-light-card .kanban-select-option:hover {
+  background: #f8fafc;
+}
+
+/* Card Drag Insertion Drop Indicator Lines */
+.kanban-card-item {
+  position: relative;
+}
+
+.kanban-card-item.drop-target-before::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #38bdf8;
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+  pointer-events: none;
+  z-index: 100;
+  animation: pulseDropLine 1s infinite alternate;
+}
+
+.kanban-card-item.drop-target-after::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #38bdf8;
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+  pointer-events: none;
+  z-index: 100;
+  animation: pulseDropLine 1s infinite alternate;
+}
+
+@keyframes pulseDropLine {
+  from { opacity: 0.7; transform: scaleY(0.9); }
+  to { opacity: 1; transform: scaleY(1.1); }
+}
+
+/* Quick Priority Reorder Buttons on Card Hover */
+.kanban-card-priority-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 2px 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.kanban-card-item:hover .kanban-card-priority-actions,
+.kanban-card-item:focus-within .kanban-card-priority-actions {
+  opacity: 1;
+}
+
+.kanban-card-prio-btn {
+  border: none;
+  background: transparent;
+  color: #dee4ea;
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+  line-height: 1;
+}
+
+.kanban-card-prio-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: scale(1.15);
+}
+
+.kanban-card-prio-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.kanban-light-theme .kanban-card-priority-actions {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.kanban-light-theme .kanban-card-prio-btn {
+  color: #475569;
+}
+
+.kanban-light-theme .kanban-card-prio-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 /* Checklist Details */

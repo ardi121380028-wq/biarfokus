@@ -9,12 +9,19 @@ type KanbanCardItemProps = {
   card: KanbanCard;
   listId: string;
   index: number;
+  totalCards?: number;
   readOnly?: boolean;
   onClick: (card: KanbanCard, listId: string) => void;
   onSendToFrog?: (card: KanbanCard) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>, cardId: string, listId: string, index: number) => void;
   onDragEnd: (e: DragEvent<HTMLDivElement>) => void;
   onDirectMoveCard?: (sourceListId: string, destListId: string, sourceIndex: number, destIndex: number) => void;
+  onMoveCardPosition?: (listId: string, cardId: string, direction: "top" | "up" | "down" | "bottom") => void;
+  onDragOverCard?: (e: React.DragEvent<HTMLDivElement>, cardId: string, listId: string, index: number, isUpperHalf: boolean) => void;
+  onDragLeaveCard?: (e: React.DragEvent<HTMLDivElement>, cardId: string) => void;
+  onDropOnCard?: (e: React.DragEvent<HTMLDivElement>, listId: string, cardIndex: number, insertBefore: boolean) => void;
+  isDropTargetBefore?: boolean;
+  isDropTargetAfter?: boolean;
   allLists?: { id: string; title: string }[];
 };
 
@@ -22,15 +29,21 @@ export function KanbanCardItem({
   card,
   listId,
   index,
+  totalCards,
   readOnly = false,
   onClick,
   onSendToFrog,
   onDragStart,
   onDragEnd,
   onDirectMoveCard,
+  onMoveCardPosition,
+  onDragOverCard,
+  onDragLeaveCard,
+  onDropOnCard,
+  isDropTargetBefore = false,
+  isDropTargetAfter = false,
   allLists,
 }: KanbanCardItemProps) {
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [mounted, setMounted] = useState(false);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const [touchDragging, setTouchDragging] = useState(false);
@@ -42,9 +55,6 @@ export function KanbanCardItem({
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
-    }
   }, []);
 
   function handlePointerDown(e: React.PointerEvent<HTMLButtonElement>) {
@@ -95,9 +105,20 @@ export function KanbanCardItem({
       const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
       const colBelow = elemBelow?.closest("[data-list-id]") as HTMLElement | null;
       const targetListId = colBelow?.getAttribute("data-list-id");
+      const cardBelow = elemBelow?.closest("[data-card-id]") as HTMLElement | null;
 
-      if (targetListId && targetListId !== listId && onDirectMoveCard) {
-        onDirectMoveCard(listId, targetListId, index, 9999);
+      if (targetListId && onDirectMoveCard) {
+        let destIdx = 9999;
+        if (cardBelow) {
+          const rawIdx = cardBelow.getAttribute("data-card-index");
+          if (rawIdx !== null) {
+            const cardRect = cardBelow.getBoundingClientRect();
+            const isUpper = e.clientY < cardRect.top + cardRect.height / 2;
+            const parsed = parseInt(rawIdx, 10);
+            destIdx = isUpper ? parsed : parsed + 1;
+          }
+        }
+        onDirectMoveCard(listId, targetListId, index, destIdx);
       }
     }
 
@@ -184,9 +205,13 @@ export function KanbanCardItem({
     }
   }
 
+  const effectiveTotal = typeof totalCards === "number" ? totalCards : 1;
+
   return (
     <div
-      className={`kanban-card-item ${readOnly ? "is-readonly" : ""} ${touchDragging ? "is-touch-dragging" : ""}`}
+      className={`kanban-card-item ${readOnly ? "is-readonly" : ""} ${touchDragging ? "is-touch-dragging" : ""} ${isDropTargetBefore ? "drop-target-before" : ""} ${isDropTargetAfter ? "drop-target-after" : ""}`}
+      data-card-id={card.id}
+      data-card-index={index}
       style={
         touchDragging
           ? {
@@ -196,11 +221,32 @@ export function KanbanCardItem({
             }
           : undefined
       }
-      draggable={!readOnly && !isTouchDevice}
+      draggable={!readOnly}
       onDragStart={(e) => {
         if (!readOnly) onDragStart(e, card.id, listId, index);
       }}
       onDragEnd={onDragEnd}
+      onDragOver={(e) => {
+        if (readOnly) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "move";
+        const rect = e.currentTarget.getBoundingClientRect();
+        const isUpperHalf = e.clientY < rect.top + rect.height / 2;
+        onDragOverCard?.(e, card.id, listId, index, isUpperHalf);
+      }}
+      onDragLeave={(e) => {
+        if (readOnly) return;
+        onDragLeaveCard?.(e, card.id);
+      }}
+      onDrop={(e) => {
+        if (readOnly) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const isUpperHalf = e.clientY < rect.top + rect.height / 2;
+        onDropOnCard?.(e, listId, index, isUpperHalf);
+      }}
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -253,70 +299,109 @@ export function KanbanCardItem({
       {/* Card Title */}
       <h4 className="kanban-card-title">{card.title}</h4>
 
-      {/* Badges footer */}
-      <div className="kanban-card-footer" onClick={(e) => e.stopPropagation()}>
-        <div className="kanban-badges-group">
+      {/* Badges and Assignees Footer Row */}
+      <div className="kanban-card-footer">
+        <div className="kanban-card-badges">
+          {/* Description indicator */}
           {card.description && (
             <span className="kanban-badge" title="Memiliki deskripsi">
               ≡
             </span>
           )}
 
-          {card.comments && card.comments.length > 0 && (
-            <span className="kanban-badge" title={`${card.comments.length} komentar`}>
-              💬 {card.comments.length}
-            </span>
-          )}
-
+          {/* Checklist progress */}
           {totalItems > 0 && (
             <span
-              className={`kanban-badge ${doneItems === totalItems ? "checklist-complete" : ""}`}
-              title={`${doneItems}/${totalItems} checklist selesai`}
+              className={`kanban-badge ${doneItems === totalItems ? "kanban-badge-done" : ""}`}
+              title={`${doneItems}/${totalItems} butir checklist selesai`}
             >
               ☑ {doneItems}/{totalItems}
             </span>
           )}
 
-          {(card.dueDate || card.startDate) && (
-            <span className={dueDateClass} title={`Rentang waktu: ${dueDateLabel}`}>
+          {/* Date Range / Due Date */}
+          {dueDateLabel && (
+            <span className={dueDateClass} title={`Tenggat: ${dueDateLabel}`}>
               🕒 {dueDateLabel}
             </span>
           )}
 
-          {card.pomodoros && card.pomodoros > 0 ? (
-            <span className="kanban-badge" title={`Estimasi fokus: ${card.pomodoros} pomodoro`}>
-              🍅 {card.pomodoros}
-            </span>
-          ) : null}
-
-          {card.frog && (
-            <span className="kanban-badge frog-badge" title="Sedang aktif di Eat Your Frog">
-              🐸 Frog
+          {/* Comments count */}
+          {card.comments && card.comments.length > 0 && (
+            <span className="kanban-badge" title={`${card.comments.length} komentar`}>
+              💬 {card.comments.length}
             </span>
           )}
         </div>
 
+        {/* Right side: PIC Avatars, Priority Reorder buttons & Frog button */}
         <div className="kanban-card-footer-right">
-          {/* Assignees / PIC Avatar Stack */}
+          {/* Quick Priority Reorder Controls (Paling Atas / Geser Naik / Turun) */}
+          {!readOnly && onMoveCardPosition && (
+            <div className="kanban-card-priority-actions" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="kanban-card-prio-btn top"
+                disabled={index === 0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveCardPosition(listId, card.id, "top");
+                }}
+                title="Pindah ke Paling Atas (Prioritas Utama)"
+                aria-label="Paling atas"
+              >
+                ⬆️
+              </button>
+              <button
+                type="button"
+                className="kanban-card-prio-btn up"
+                disabled={index === 0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveCardPosition(listId, card.id, "up");
+                }}
+                title="Geser ke atas"
+                aria-label="Geser ke atas"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                className="kanban-card-prio-btn down"
+                disabled={index >= effectiveTotal - 1}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveCardPosition(listId, card.id, "down");
+                }}
+                title="Geser ke bawah"
+                aria-label="Geser ke bawah"
+              >
+                ▼
+              </button>
+            </div>
+          )}
+
           {card.assignees && card.assignees.length > 0 && (
-            <div
-              className="kanban-card-assignees-stack"
-              title={`PIC: ${card.assignees.map((a) => a.name).join(", ")}`}
-            >
-              {card.assignees.slice(0, 3).map((assignee, idx) =>
-                assignee.avatarUrl ? (
+            <div className="kanban-card-pics">
+              {card.assignees.slice(0, 3).map((a) =>
+                a.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    key={assignee.id || idx}
-                    src={assignee.avatarUrl}
-                    alt={assignee.name}
+                    key={a.id}
+                    src={a.avatarUrl}
+                    alt={a.name}
                     className="kanban-card-pic-avatar"
+                    title={a.name}
                   />
                 ) : (
-                  <span key={assignee.id || idx} className="kanban-card-pic-avatar placeholder">
-                    {(assignee.name || "U").charAt(0).toUpperCase()}
+                  <span
+                    key={a.id}
+                    className="kanban-card-pic-initial"
+                    title={a.name}
+                  >
+                    {a.name.slice(0, 2).toUpperCase()}
                   </span>
-                ),
+                )
               )}
               {card.assignees.length > 3 && (
                 <span className="kanban-card-pic-more">+{card.assignees.length - 3}</span>
@@ -351,7 +436,7 @@ export function KanbanCardItem({
                     e.stopPropagation();
                     setShowMoveMenu(!showMoveMenu);
                   }}
-                  title="Pindahkan kartu ke kolom lain"
+                  title="Pindahkan kartu ke kolom lain atau urutkan prioritas"
                 >
                   ⇄ Pindah
                 </button>
@@ -365,7 +450,7 @@ export function KanbanCardItem({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
-                title="Tahan dan geser untuk memindahkan kartu"
+                title="Tahan dan geser untuk memindahkan kartu ke posisi mana pun"
                 aria-label="Geser kartu"
               >
                 ⠿
@@ -375,7 +460,7 @@ export function KanbanCardItem({
         </div>
       </div>
 
-      {/* Mobile Move Action Modal / Bottom Sheet (Portaled to document.body so it NEVER gets clipped) */}
+      {/* Mobile Move Action Modal / Bottom Sheet */}
       {showMoveMenu && mounted && allLists && allLists.length > 1 && createPortal(
         <div
           className="kanban-mobile-move-backdrop"
@@ -397,7 +482,7 @@ export function KanbanCardItem({
             <div className="kanban-mobile-move-header">
               <div className="kanban-mobile-move-header-text">
                 <h3 id={`move-title-${card.id}`} className="kanban-mobile-move-title">
-                  Pindahkan Kartu
+                  Pindahkan & Urutkan Kartu
                 </h3>
                 <p className="kanban-mobile-move-subtitle" title={card.title}>
                   {card.title}
@@ -412,6 +497,63 @@ export function KanbanCardItem({
                 ✕
               </button>
             </div>
+
+            {/* Quick Priority Reorder in this Column */}
+            {onMoveCardPosition && (
+              <div className="kanban-mobile-move-list" style={{ marginBottom: 12 }}>
+                <span className="kanban-mobile-move-label">URUTKAN PRIORITAS DI KOLOM INI</span>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 6 }}>
+                  <button
+                    type="button"
+                    className="kanban-mobile-move-option"
+                    disabled={index === 0}
+                    onClick={() => {
+                      setShowMoveMenu(false);
+                      onMoveCardPosition(listId, card.id, "top");
+                    }}
+                    style={{ justifyContent: "center", fontSize: 12, padding: "8px 10px" }}
+                  >
+                    <span>⬆️ Paling Atas (Prioritas Utama)</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="kanban-mobile-move-option"
+                    disabled={index === 0}
+                    onClick={() => {
+                      setShowMoveMenu(false);
+                      onMoveCardPosition(listId, card.id, "up");
+                    }}
+                    style={{ justifyContent: "center", fontSize: 12, padding: "8px 10px" }}
+                  >
+                    <span>▲ Geser ke Atas</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="kanban-mobile-move-option"
+                    disabled={index >= effectiveTotal - 1}
+                    onClick={() => {
+                      setShowMoveMenu(false);
+                      onMoveCardPosition(listId, card.id, "down");
+                    }}
+                    style={{ justifyContent: "center", fontSize: 12, padding: "8px 10px" }}
+                  >
+                    <span>▼ Geser ke Bawah</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="kanban-mobile-move-option"
+                    disabled={index >= effectiveTotal - 1}
+                    onClick={() => {
+                      setShowMoveMenu(false);
+                      onMoveCardPosition(listId, card.id, "bottom");
+                    }}
+                    style={{ justifyContent: "center", fontSize: 12, padding: "8px 10px" }}
+                  >
+                    <span>⬇️ Paling Bawah</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="kanban-mobile-move-list">
               <span className="kanban-mobile-move-label">PILIH KOLOM TUJUAN</span>

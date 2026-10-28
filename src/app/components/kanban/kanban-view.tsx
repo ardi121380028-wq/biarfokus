@@ -73,6 +73,7 @@ export function KanbanView({
     addList,
     updateList,
     deleteList,
+    moveList,
     joinBoard,
   } = useKanban(userId);
 
@@ -356,9 +357,11 @@ export function KanbanView({
   }, [currentBoard.background]);
 
   const isLightBg = Boolean(
-    currentBg.isLight ||
-    currentBg.textColor === "#0f172a" ||
-    currentBg.textColor === "#111111"
+    !dark && (
+      currentBg.isLight ||
+      currentBg.textColor === "#0f172a" ||
+      currentBg.textColor === "#111111"
+    )
   );
 
   // Month and Year format for Catatan-style headline
@@ -476,8 +479,69 @@ export function KanbanView({
   function handleDropCard(destListId: string, dropIndex: number) {
     if (!draggedCardInfo) return;
     const { sourceListId, sourceIndex } = draggedCardInfo;
-    moveCard(sourceListId, destListId, sourceIndex, dropIndex);
+    if (sourceListId === destListId) {
+      if (sourceIndex === dropIndex || (sourceIndex + 1 === dropIndex && dropIndex > sourceIndex)) {
+        setDraggedCardInfo(null);
+        return;
+      }
+      let adjustedIndex = dropIndex;
+      if (sourceIndex < dropIndex) {
+        adjustedIndex = Math.max(0, dropIndex - 1);
+      }
+      moveCard(sourceListId, destListId, sourceIndex, adjustedIndex);
+    } else {
+      moveCard(sourceListId, destListId, sourceIndex, dropIndex);
+    }
     setDraggedCardInfo(null);
+  }
+
+  function handleMoveCardPosition(
+    listId: string,
+    cardId: string,
+    direction: "top" | "up" | "down" | "bottom",
+  ) {
+    const list = activeBoard.lists.find((l) => l.id === listId);
+    if (!list) return;
+    const cards = Array.isArray(list.cards) ? list.cards.filter((c) => !c.archived) : [];
+    const currentIndex = cards.findIndex((c) => c.id === cardId);
+    if (currentIndex === -1) return;
+
+    let targetIndex = currentIndex;
+    if (direction === "top") {
+      targetIndex = 0;
+    } else if (direction === "up") {
+      targetIndex = Math.max(0, currentIndex - 1);
+    } else if (direction === "down") {
+      targetIndex = Math.min(cards.length - 1, currentIndex + 1);
+    } else if (direction === "bottom") {
+      targetIndex = cards.length - 1;
+    }
+
+    if (targetIndex !== currentIndex) {
+      moveCard(listId, listId, currentIndex, targetIndex);
+    }
+  }
+
+  function handleSortPriority(listId: string) {
+    const list = activeBoard.lists.find((l) => l.id === listId);
+    if (!list) return;
+    const cards = [...(list.cards || [])];
+    const getScore = (c: KanbanCard) => {
+      let score = 0;
+      if (c.frog) score += 100;
+      for (const l of c.labels || []) {
+        const name = (l.name || "").toLowerCase();
+        if (name.includes("urgent") || name.includes("blocker") || name.includes("kritis")) score += 80;
+        else if (name.includes("high") || name.includes("tinggi") || name.includes("prioritas")) score += 60;
+        else if (name.includes("medium") || name.includes("sedang")) score += 40;
+        else if (name.includes("low") || name.includes("rendah")) score += 20;
+      }
+      return score;
+    };
+    cards.sort((a, b) => getScore(b) - getScore(a));
+    updateBoard(activeBoard.id, {
+      lists: activeBoard.lists.map((l) => (l.id === listId ? { ...l, cards } : l)),
+    });
   }
 
   function handleSendCardToFrog(card: KanbanCard) {
@@ -1189,10 +1253,12 @@ export function KanbanView({
               onWheel={handleWheelCanvas}
             >
               <div className="kanban-columns-row">
-                {displayedLists.map((list) => (
+                {displayedLists.map((list, colIdx) => (
                   <KanbanColumn
                     key={list.id}
                     list={list}
+                    columnIndex={colIdx}
+                    totalColumns={displayedLists.length}
                     readOnly={!canEdit}
                     onCardClick={(card, listId) => setActiveCardData({ card, listId })}
                     onSendToFrog={handleSendCardToFrog}
@@ -1203,6 +1269,9 @@ export function KanbanView({
                     onDragEndCard={handleDragEndCard}
                     onDropCard={handleDropCard}
                     onDirectMoveCard={moveCard}
+                    onMoveCardPosition={handleMoveCardPosition}
+                    onMoveList={moveList}
+                    onSortPriority={handleSortPriority}
                     allLists={displayedLists.map((l) => ({ id: l.id, title: l.title }))}
                   />
                 ))}
@@ -1273,6 +1342,7 @@ export function KanbanView({
           listTitle={currentCardDetail.listTitle}
           currentListId={currentCardDetail.listId}
           boardLists={activeBoard.lists.map((l) => ({ id: l.id, title: l.title }))}
+          onMoveCardPosition={handleMoveCardPosition}
           onMoveToList={(destListId) => {
             if (destListId !== currentCardDetail.listId) {
               const cardId = currentCardDetail.card.id;
