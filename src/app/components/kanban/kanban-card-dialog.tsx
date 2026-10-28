@@ -112,6 +112,38 @@ export function KanbanCardDialog({
   const moveMenuRef = useRef<HTMLDivElement>(null);
   useOutsideClick(moveMenuRef, () => setMoveMenuOpen(false), moveMenuOpen);
 
+  // Member / PIC popover dismiss on click outside & escape
+  const memberPickerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showMemberPicker) return;
+    function handlePointerDown(e: PointerEvent) {
+      if (memberPickerRef.current && !memberPickerRef.current.contains(e.target as Node)) {
+        const target = e.target as HTMLElement;
+        if (target.closest(".kanban-member-trigger-btn")) return;
+        setShowMemberPicker(false);
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [showMemberPicker]);
+  useEscapeKey(() => setShowMemberPicker(false), showMemberPicker);
+
+  // Label popover dismiss on click outside & escape
+  const labelPickerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showLabelPicker) return;
+    function handlePointerDown(e: PointerEvent) {
+      if (labelPickerRef.current && !labelPickerRef.current.contains(e.target as Node)) {
+        const target = e.target as HTMLElement;
+        if (target.closest(".kanban-label-trigger-btn, .kanban-dialog-label-chip-text")) return;
+        setShowLabelPicker(false);
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [showLabelPicker]);
+  useEscapeKey(() => setShowLabelPicker(false), showLabelPicker);
+
   const handleToggleQuickAction = (panel: "date" | "move" | "pic" | "label" | "checklist" | "cover") => {
     setActiveMobilePanel((prev) => (prev === panel ? null : panel));
   };
@@ -1031,7 +1063,7 @@ export function KanbanCardDialog({
                   {!readOnly && (
                     <button
                       type="button"
-                      className="kanban-add-mini-btn"
+                      className="kanban-add-mini-btn kanban-member-trigger-btn"
                       onClick={() => setShowMemberPicker(!showMemberPicker)}
                       title="Tambah anggota / PIC"
                     >
@@ -1044,7 +1076,7 @@ export function KanbanCardDialog({
 
             {/* Member / PIC Picker Popover */}
             {!readOnly && showMemberPicker && (
-              <div className="kanban-popover-box kanban-member-popover">
+              <div ref={memberPickerRef} className="kanban-popover-box kanban-member-popover">
                 <div className="kanban-popover-head">
                   <span>Pilih Anggota / PIC</span>
                   <button type="button" onClick={() => setShowMemberPicker(false)}>✕</button>
@@ -1182,7 +1214,7 @@ export function KanbanCardDialog({
                   {!readOnly && (
                     <button
                       type="button"
-                      className="kanban-add-mini-btn"
+                      className="kanban-add-mini-btn kanban-label-trigger-btn"
                       onClick={() => setShowLabelPicker(!showLabelPicker)}
                       title="Tambah label"
                     >
@@ -1195,7 +1227,7 @@ export function KanbanCardDialog({
 
             {/* Label Picker Popover (With Create & Delete Capabilities) */}
             {!readOnly && showLabelPicker && (
-              <div className="kanban-popover-box kanban-labels-popover">
+              <div ref={labelPickerRef} className="kanban-popover-box kanban-labels-popover">
                 <div className="kanban-popover-head">
                   <span>Pilih &amp; Kelola Label</span>
                   <button type="button" onClick={() => setShowLabelPicker(false)}>✕</button>
@@ -1659,7 +1691,7 @@ export function KanbanCardDialog({
 
               <button
                 type="button"
-                className={`kanban-sidebar-btn ${showMemberPicker ? "active" : ""}`}
+                className={`kanban-sidebar-btn kanban-member-trigger-btn ${showMemberPicker ? "active" : ""}`}
                 onClick={() => setShowMemberPicker(!showMemberPicker)}
               >
                 👥 Anggota / PIC
@@ -1667,7 +1699,7 @@ export function KanbanCardDialog({
 
               <button
                 type="button"
-                className={`kanban-sidebar-btn ${showLabelPicker ? "active" : ""}`}
+                className={`kanban-sidebar-btn kanban-label-trigger-btn ${showLabelPicker ? "active" : ""}`}
                 onClick={() => setShowLabelPicker(!showLabelPicker)}
               >
                 🏷️ Labels
