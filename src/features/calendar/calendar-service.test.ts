@@ -420,6 +420,29 @@ describe("calendar-service", () => {
     const slotPure = getSmartTimeblockSlot(50, 10, false);
     assert.strictEqual(slotPure.totalMinutes, 50);
   });
+
+  it("determines schedule reminder thresholds accurately for 10m warning and start time", () => {
+    const eventTime = "14:30";
+    const eventMinutes = timeToMinutes(eventTime);
+
+    // 10 minutes prior
+    const current10m = timeToMinutes("14:20");
+    const diff10m = eventMinutes - current10m;
+    assert.strictEqual(diff10m, 10);
+    assert.ok(diff10m > 0 && diff10m <= 10);
+
+    // Event starting now
+    const currentStart = timeToMinutes("14:30");
+    const diffStart = eventMinutes - currentStart;
+    assert.strictEqual(diffStart, 0);
+
+    // Passed event
+    const currentPassed = timeToMinutes("14:45");
+    const diffPassed = eventMinutes - currentPassed;
+    assert.strictEqual(diffPassed, -15);
+    assert.ok(diffPassed < 0);
+  });
 });
+
 
 

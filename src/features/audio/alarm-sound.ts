@@ -174,3 +174,40 @@ export function playAlarmSound(type: AlarmSoundType = "bell", repeat = false): (
 
   return stopAlarmSound;
 }
+
+/**
+ * Plays a pleasant, two-tone notification chime for calendar event reminders.
+ * Designed to be non-intrusive yet distinct (e.g. 10m before or when event starts).
+ */
+export function playCalendarReminderChime(): void {
+  const AudioContextClass = getAudioContextConstructor();
+  if (!AudioContextClass) return;
+  try {
+    const context = new AudioContextClass();
+    const now = context.currentTime + 0.03;
+    const notes = [
+      { freq: 659.25, time: now, dur: 0.35, gain: 0.22 }, // E5
+      { freq: 987.77, time: now + 0.18, dur: 0.55, gain: 0.28 }, // B5
+    ];
+    notes.forEach(({ freq, time, dur, gain }) => {
+      const osc = context.createOscillator();
+      const gainNode = context.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, time);
+      gainNode.gain.setValueAtTime(0.001, time);
+      gainNode.gain.linearRampToValueAtTime(gain, time + 0.025);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+      osc.connect(gainNode);
+      gainNode.connect(context.destination);
+      osc.start(time);
+      osc.stop(time + dur + 0.05);
+    });
+    void context.resume();
+    window.setTimeout(() => {
+      try {
+        void context.close();
+      } catch {}
+    }, 1200);
+  } catch {}
+}
+

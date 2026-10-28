@@ -21,6 +21,9 @@ import { trackSiteVisit } from "@/features/analytics/visitor-tracker";
 import { ProBadge } from "@/app/components/ui/pro-badge";
 import { loadLocalSettings } from "@/features/settings/settings-service";
 import { FooterInteractiveEye } from "@/app/components/footer-interactive-eye";
+import { useCalendarEvents } from "@/features/calendar/use-calendar-events";
+import { useCalendarReminders } from "@/features/calendar/use-calendar-reminders";
+import { CalendarReminderToast } from "@/app/components/calendar/calendar-reminder-toast";
 
 const NAV_LINKS = [
   { href: "/", label: "Timer" },
@@ -177,6 +180,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   const isDarkBg = isDarkPageBg(selectedColor, dark);
+
+  // Proactive Calendar Reminders across all pages
+  const { events: calendarEvents } = useCalendarEvents(user?.id);
+  const { activeReminder, dismissReminder } = useCalendarReminders({
+    events: calendarEvents,
+    notificationsEnabled,
+    soundEnabled,
+  });
 
   const handleNavClick = (e: React.MouseEvent, href: string) => {
     // If logged in, or navigating to home or pricing, allow default navigation
@@ -913,6 +924,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       {pomodoroModalOpen && <PomodoroModal onClose={() => setPomodoroModalOpen(false)} />}
       {termsModalOpen && <TermsModal onClose={() => setTermsModalOpen(false)} />}
       {faqModalOpen && <FaqModal onClose={() => setFaqModalOpen(false)} />}
+
+      {/* Floating In-App Calendar Schedule Reminder */}
+      <CalendarReminderToast
+        reminder={activeReminder}
+        onDismiss={dismissReminder}
+      />
     </main>
   );
 }
