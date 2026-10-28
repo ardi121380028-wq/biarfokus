@@ -1886,41 +1886,63 @@ button:active:not(:disabled) {
   top: 100%;
   right: 0;
   margin-top: 6px;
-  background: var(--paper);
-  color: var(--ink);
-  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-  border-radius: 18px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-  padding: 8px;
+  background: #1c222c;
+  color: #dee4ea;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  z-index: 30;
-  min-width: 150px;
+  z-index: 50;
+  min-width: 190px;
 }
 
 .kanban-column-popover button {
   border: none;
   background: transparent;
-  color: var(--ink);
+  color: #dee4ea;
   padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 500;
   text-align: left;
   border-radius: 10px;
   cursor: pointer;
+  transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .kanban-column-popover button:hover {
-  background: color-mix(in srgb, var(--blue) 12%, transparent);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .kanban-column-popover button.danger-text {
-  color: #e53935;
+  color: #f87171;
 }
 
 .kanban-column-popover button.danger-text:hover {
-  background: rgba(229, 57, 53, 0.12);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.kanban-light-theme .kanban-column-popover {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.kanban-light-theme .kanban-column-popover button {
+  color: #0f172a;
+}
+
+.kanban-light-theme .kanban-column-popover button:hover {
+  background: #f1f5f9;
+  color: #0284c7;
 }
 
 /* Cards Scroll Area with Minimalist Rounded Scrollbar */
@@ -2066,6 +2088,8 @@ button:active:not(:disabled) {
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .kanban-badge-due.today {
@@ -2351,14 +2375,50 @@ button:active:not(:disabled) {
   line-height: 1;
 }
 
+.kanban-dialog-title-display-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+  max-width: 100%;
+}
+
+.kanban-dialog-title-display-box:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.kanban-dialog-title-display {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  color: #ffffff !important;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.kanban-dialog-title-edit-hint {
+  font-size: 14px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.kanban-dialog-title-display-box:hover .kanban-dialog-title-edit-hint {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
 .kanban-dialog-title-input {
   width: 100%;
-  font-family: Georgia, Cambria, "Times New Roman", serif;
+  font-family: inherit;
   font-size: 21px;
-  font-weight: 600;
-  background: transparent;
-  color: #fff;
-  border: 1px solid transparent;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   padding: 4px 8px;
   outline: none;
@@ -2366,17 +2426,17 @@ button:active:not(:disabled) {
 
 .kanban-dialog-title-input:focus {
   background: rgba(0, 0, 0, 0.4);
-  border-color: #0079bf;
+  border-color: #38bdf8;
 }
 
 .kanban-dialog-crumb {
   margin: 4px 0 0 8px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .kanban-dialog-crumb strong {
-  color: #fff;
+  color: #ffffff;
 }
 
 .kanban-dialog-close-btn {
@@ -3025,57 +3085,12 @@ button:active:not(:disabled) {
   to { opacity: 1; transform: scaleY(1.1); }
 }
 
-/* Quick Priority Reorder Buttons on Card Hover */
-.kanban-card-priority-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 2px 4px;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.kanban-card-item:hover .kanban-card-priority-actions,
-.kanban-card-item:focus-within .kanban-card-priority-actions {
-  opacity: 1;
-}
-
-.kanban-card-prio-btn {
-  border: none;
-  background: transparent;
-  color: #dee4ea;
-  font-size: 11px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.12s ease;
-  line-height: 1;
-}
-
-.kanban-card-prio-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  transform: scale(1.15);
-}
-
-.kanban-card-prio-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.kanban-light-theme .kanban-card-priority-actions {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-}
-
-.kanban-light-theme .kanban-card-prio-btn {
-  color: #475569;
+/* Card Dragging and Insertion Indicators */
+.kanban-card-item.is-dragging {
+  opacity: 0.45;
+  transform: scale(0.98);
+  border: 1.5px dashed #38bdf8 !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
 }
 
 .kanban-light-theme .kanban-card-prio-btn:hover:not(:disabled) {

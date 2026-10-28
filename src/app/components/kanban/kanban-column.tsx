@@ -98,6 +98,16 @@ export function KanbanColumn({
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (!isDragOver) setIsDragOver(true);
+
+    if (cards.length > 0) {
+      const firstCardEl = e.currentTarget.querySelector("[data-card-id]");
+      if (firstCardEl) {
+        const firstRect = firstCardEl.getBoundingClientRect();
+        if (e.clientY < firstRect.top + 8) {
+          setDragOverCardInfo({ cardId: cards[0].id, index: 0, before: true });
+        }
+      }
+    }
   }
 
   function handleDragLeave(e: DragEvent<HTMLDivElement>) {
@@ -110,6 +120,25 @@ export function KanbanColumn({
     if (readOnly) return;
     e.preventDefault();
     setIsDragOver(false);
+    if (dragOverCardInfo) {
+      const dropIndex = dragOverCardInfo.before ? dragOverCardInfo.index : dragOverCardInfo.index + 1;
+      setDragOverCardInfo(null);
+      onDropCard(list.id, dropIndex);
+      return;
+    }
+
+    if (cards.length > 0) {
+      const firstCardEl = e.currentTarget.querySelector("[data-card-id]");
+      if (firstCardEl) {
+        const firstRect = firstCardEl.getBoundingClientRect();
+        if (e.clientY <= firstRect.top + 10) {
+          setDragOverCardInfo(null);
+          onDropCard(list.id, 0);
+          return;
+        }
+      }
+    }
+
     setDragOverCardInfo(null);
     onDropCard(list.id, cards.length);
   }
@@ -126,8 +155,11 @@ export function KanbanColumn({
     if (!isDragOver) setIsDragOver(true);
   }
 
-  function handleDragLeaveCard(_e: DragEvent<HTMLDivElement>, cardId: string) {
+  function handleDragLeaveCard(e: DragEvent<HTMLDivElement>, cardId: string) {
     if (readOnly) return;
+    if (e.currentTarget && e.relatedTarget && e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
     setDragOverCardInfo((curr) => (curr?.cardId === cardId ? null : curr));
   }
 

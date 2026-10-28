@@ -49,6 +49,7 @@ export function KanbanCardItem({
   const [touchDragging, setTouchDragging] = useState(false);
   const [touchOffset, setTouchOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const touchMovedSignificantly = useRef(false);
+  const [isHtml5Dragging, setIsHtml5Dragging] = useState(false);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
 
   useEscapeKey(() => setShowMoveMenu(false), showMoveMenu);
@@ -205,11 +206,9 @@ export function KanbanCardItem({
     }
   }
 
-  const effectiveTotal = typeof totalCards === "number" ? totalCards : 1;
-
   return (
     <div
-      className={`kanban-card-item ${readOnly ? "is-readonly" : ""} ${touchDragging ? "is-touch-dragging" : ""} ${isDropTargetBefore ? "drop-target-before" : ""} ${isDropTargetAfter ? "drop-target-after" : ""}`}
+      className={`kanban-card-item ${readOnly ? "is-readonly" : ""} ${isHtml5Dragging ? "is-dragging" : ""} ${touchDragging ? "is-touch-dragging" : ""} ${isDropTargetBefore ? "drop-target-before" : ""} ${isDropTargetAfter ? "drop-target-after" : ""}`}
       data-card-id={card.id}
       data-card-index={index}
       style={
@@ -223,9 +222,15 @@ export function KanbanCardItem({
       }
       draggable={!readOnly}
       onDragStart={(e) => {
-        if (!readOnly) onDragStart(e, card.id, listId, index);
+        if (!readOnly) {
+          setIsHtml5Dragging(true);
+          onDragStart(e, card.id, listId, index);
+        }
       }}
-      onDragEnd={onDragEnd}
+      onDragEnd={(e) => {
+        setIsHtml5Dragging(false);
+        onDragEnd(e);
+      }}
       onDragOver={(e) => {
         if (readOnly) return;
         e.preventDefault();
@@ -237,6 +242,7 @@ export function KanbanCardItem({
       }}
       onDragLeave={(e) => {
         if (readOnly) return;
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
         onDragLeaveCard?.(e, card.id);
       }}
       onDrop={(e) => {
@@ -334,53 +340,8 @@ export function KanbanCardItem({
           )}
         </div>
 
-        {/* Right side: PIC Avatars, Priority Reorder buttons & Frog button */}
+        {/* Right side: PIC Avatars & Frog button */}
         <div className="kanban-card-footer-right">
-          {/* Quick Priority Reorder Controls (Paling Atas / Geser Naik / Turun) */}
-          {!readOnly && onMoveCardPosition && (
-            <div className="kanban-card-priority-actions" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                className="kanban-card-prio-btn top"
-                disabled={index === 0}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveCardPosition(listId, card.id, "top");
-                }}
-                title="Pindah ke Paling Atas (Prioritas Utama)"
-                aria-label="Paling atas"
-              >
-                ⬆️
-              </button>
-              <button
-                type="button"
-                className="kanban-card-prio-btn up"
-                disabled={index === 0}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveCardPosition(listId, card.id, "up");
-                }}
-                title="Geser ke atas"
-                aria-label="Geser ke atas"
-              >
-                ▲
-              </button>
-              <button
-                type="button"
-                className="kanban-card-prio-btn down"
-                disabled={index >= effectiveTotal - 1}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveCardPosition(listId, card.id, "down");
-                }}
-                title="Geser ke bawah"
-                aria-label="Geser ke bawah"
-              >
-                ▼
-              </button>
-            </div>
-          )}
-
           {card.assignees && card.assignees.length > 0 && (
             <div className="kanban-card-pics">
               {card.assignees.slice(0, 3).map((a) =>
