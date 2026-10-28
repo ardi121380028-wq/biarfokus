@@ -264,13 +264,28 @@ All tables have Row Level Security (RLS) enabled.
         - **Owner Protection**: Pembuat papan kebal terhadap penurunan hak akses (role downgrade). Walaupun membuka link invite 'viewer', status owner tetap dipertahankan dan auto-healed di `use-kanban.ts` serta `/api/kanban/join`.
         - **No Forced Auto-Join**: Membuka link invite tidak lagi langsung memasukkan akun secara paksa dalam beberapa detik. Modal undangan tetap terbuka dan memberi pengguna pilihan eksplisit: "👀 Lihat Pratinjau", "✓ Gabung", atau "Nanti Saja".
         - **Accessible High-Contrast Badges**: Badge peran 'Viewer' dan 'Editor' memiliki kontras tinggi yang jelas dan terbaca di Light Mode maupun Dark Mode (`.app.dark`).
-    - **Git Branches & Staging Workflow:**
-        - Branch `main`: Kode produksi utama yang bersih dan teruji.
-        - Branch `staging-final`: Branch staging aktif yang selalu sinkron dengan `main`.
-        - Branch `staging-mantap`: Snapshot staging stabil sebelumnya.
-    - **Test Coverage:** Suite unit test (90 test cases di 25 suite) terverifikasi lulus bersama build Next.js 16.4.2 tanpa error.
+    - **Habit Tracker Module (`/kebiasaan`):**
+        - Halaman pelacak kebiasaan harian dengan matriks mingguan, heatmap komputasi, penghitung rekor beruntun (*current streak* & *longest streak*), efek suara perayaan saat menyelesaikan kebiasaan, modal tambah/edit kebiasaan dengan emoji picker, serta cetak laporan resmi PDF.
+    - **Adaptive Contrast & Wallpaper Scoping pada Kanban:**
+        - **Dynamic Card Dialog Theme:** Modal detail kartu otomatis menyesuaikan tema dengan latar belakang board (`isLightBg`). Jika board menggunakan wallpaper palet terang (seperti krem, pink lembut, mint), dialog kartu otomatis beralih ke varian terang (`.kanban-light-card`) dengan teks hitam pekat (`#0f172a`), border bersih (`#e2e8f0`), dan background kartu komentar `#f8fafc`. Jika wallpaper gelap, dialog menggunakan dark glassmorphism.
+        - **Dynamic Label Text Contrast (`isLightHexColor`):** Algoritma penghitung luminansi hex warna otomatis. Warna terang seperti kuning lemon (`#f2d600`) menggunakan teks gelap (`#0f172a`) agar terbaca jelas, sedangkan warna gelap menggunakan teks putih murni (`#ffffff`).
+        - **Stacked Circular PIC Avatars:** Tampilan multi-assignee PIC di kartu kanban dan dialog menggunakan avatar lingkaran bertumpuk horizontal (*overlapping circular avatar stack*) dengan border pemisah yang elegan.
+        - **Pembersihan Tombol Pill:** Menghilangkan tombol pill `[ ⬆ ▲ ▼ ]` dari kartu kanban untuk tampilan yang lebih bersih, minimalis, dan modern.
+        - **Dismissal Popover Fleksibel:** Menu PIC picker dan Label picker kini menutup otomatis saat user mengklik area luar (*outside-click*) atau menekan tombol `Escape`.
+        - **Auto-Save Deskripsi Tugas Kanban:** Textarea deskripsi kartu kanban dilengkapi auto-save debounced (700ms) saat mengetik dan penyimpanan instan saat `onBlur` (klik di luar), lengkap dengan indikator status visual (`"Menyimpan..."` & `"✓ Tersimpan otomatis"`). Tidak memberatkan sistem karena berjalan secara lokal terlebih dahulu (optimistic update) dan disinkronkan ke cloud secara asinkron.
+    - **Proactive Calendar Schedule Reminders:**
+        - Engine pengingat proaktif global (`use-calendar-reminders.ts`) yang berjalan di seluruh halaman melalui `AppShell`.
+        - Memeriksa jadwal harian dan rekurensi setiap 15 detik.
+        - Tiga saluran peringatan: Web Notification browser native, audio chime harmonis dua nada sintetis (`playCalendarReminderChime`: E5 659Hz & B5 987Hz), serta in-app floating toast banner (`CalendarReminderToast`) di pojok kanan bawah dengan tombol pintas "Buka Kalender".
+        - Peringatan dikirimkan pada H-10 menit sebelum jadwal dan saat jadwal tepat dimulai.
+        - Deduplikasi anti-spam via `sessionStorage` per event ID dan tanggal agar tidak memicu notifikasi berulang kali.
+    - **Test Coverage Expansion:**
+        - Suite unit test resmi bertambah dari 90 menjadi 115 test cases di 27 suite (termasuk verifikasi threshold kalender dan domain logic), semuanya lulus (`npm test`) dalam < 350ms.
+    - **Git Branches & Production Workflow:**
+        - Branch `main`: Kode produksi utama yang selalu bersih, teruji, dan up-to-date di GitHub.
 
 ---
+
 
 ## 6. Environment Variables
 

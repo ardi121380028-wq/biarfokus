@@ -93,6 +93,22 @@ export function KanbanCardDialog({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [description, setDescription] = useState(card.description || "");
   const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [descSaveStatus, setDescSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const descDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync state if card prop changes
+  useEffect(() => {
+    setDescription(card.description || "");
+  }, [card.description]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (descDebounceRef.current) {
+        clearTimeout(descDebounceRef.current);
+      }
+    };
+  }, []);
   const [newCommentText, setNewCommentText] = useState("");
   const [showLabelPicker, setShowLabelPicker] = useState(false);
   const [showMemberPicker, setShowMemberPicker] = useState(false);
@@ -282,9 +298,48 @@ export function KanbanCardDialog({
     }
   }
 
+  const handleDescriptionChange = (newVal: string) => {
+    setDescription(newVal);
+    if (readOnly) return;
+    setDescSaveStatus("saving");
+    if (descDebounceRef.current) {
+      clearTimeout(descDebounceRef.current);
+    }
+    descDebounceRef.current = setTimeout(() => {
+      const trimmed = newVal.trim();
+      if (trimmed !== (card.description || "").trim()) {
+        onUpdate({ description: trimmed });
+      }
+      setDescSaveStatus("saved");
+      setTimeout(() => setDescSaveStatus("idle"), 2500);
+    }, 700);
+  };
+
+  const handleDescriptionBlur = () => {
+    if (readOnly) return;
+    if (descDebounceRef.current) {
+      clearTimeout(descDebounceRef.current);
+      descDebounceRef.current = null;
+    }
+    const trimmed = description.trim();
+    if (trimmed !== (card.description || "").trim()) {
+      onUpdate({ description: trimmed });
+      setDescSaveStatus("saved");
+      setTimeout(() => setDescSaveStatus("idle"), 2500);
+    }
+  };
+
   function handleSaveDescription() {
     if (readOnly) return;
-    onUpdate({ description: description.trim() });
+    if (descDebounceRef.current) {
+      clearTimeout(descDebounceRef.current);
+      descDebounceRef.current = null;
+    }
+    const trimmed = description.trim();
+    if (trimmed !== (card.description || "").trim()) {
+      onUpdate({ description: trimmed });
+    }
+    setDescSaveStatus("saved");
     setIsEditingDesc(false);
   }
 
@@ -1401,7 +1456,8 @@ export function KanbanCardDialog({
                     className="kanban-desc-textarea"
                     placeholder="Tambahkan penjelasan rinci tentang tugas ini..."
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) => handleDescriptionChange(e.target.value)}
+                    onBlur={handleDescriptionBlur}
                     rows={4}
                     autoFocus
                   />
@@ -1411,18 +1467,32 @@ export function KanbanCardDialog({
                       className="kanban-primary-btn"
                       onClick={handleSaveDescription}
                     >
-                      Simpan
+                      Selesai
                     </button>
                     <button
                       type="button"
                       className="kanban-secondary-btn"
                       onClick={() => {
+                        if (descDebounceRef.current) {
+                          clearTimeout(descDebounceRef.current);
+                          descDebounceRef.current = null;
+                        }
                         setDescription(card.description || "");
                         setIsEditingDesc(false);
                       }}
                     >
-                      Batal
+                      Tutup
                     </button>
+                    {descSaveStatus === "saving" && (
+                      <span className="kanban-desc-autosave-badge saving">
+                        Menyimpan...
+                      </span>
+                    )}
+                    {descSaveStatus === "saved" && (
+                      <span className="kanban-desc-autosave-badge saved">
+                        ✓ Tersimpan otomatis
+                      </span>
+                    )}
                   </div>
                 </div>
               ) : (

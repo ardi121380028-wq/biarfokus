@@ -2998,8 +2998,33 @@ button:active:not(:disabled) {
 
 .kanban-desc-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
+
+.kanban-desc-autosave-badge {
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.kanban-desc-autosave-badge.saving {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.kanban-desc-autosave-badge.saved {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  font-weight: 600;
+}
+
 
 .kanban-desc-preview {
   background: rgba(255, 255, 255, 0.05);
