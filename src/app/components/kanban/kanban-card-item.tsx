@@ -343,9 +343,22 @@ export function KanbanCardItem({
         {/* Right side: PIC Avatars & Frog button */}
         <div className="kanban-card-footer-right">
           {card.assignees && card.assignees.length > 0 && (
-            <div className="kanban-card-pics">
-              {card.assignees.slice(0, 3).map((a) =>
-                a.avatarUrl ? (
+            <div
+              className="kanban-card-pics"
+              title={card.assignees.map((a) => a.name).join(", ")}
+            >
+              {card.assignees.slice(0, 4).map((a, idx) => {
+                const words = (a.name || "U").trim().split(/\s+/);
+                const initials =
+                  words.length >= 2
+                    ? `${words[0][0]}.${words[1][0]}`.toUpperCase()
+                    : a.name.slice(0, 2).toUpperCase();
+
+                const bgColors = ["#f97316", "#0284c7", "#8b5cf6", "#10b981", "#ec4899", "#f59e0b"];
+                const charCodeSum = (a.name || "").split("").reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+                const bg = bgColors[charCodeSum % bgColors.length];
+
+                return a.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     key={a.id}
@@ -353,19 +366,23 @@ export function KanbanCardItem({
                     alt={a.name}
                     className="kanban-card-pic-avatar"
                     title={a.name}
+                    style={{ zIndex: idx + 1 }}
                   />
                 ) : (
                   <span
                     key={a.id}
                     className="kanban-card-pic-initial"
                     title={a.name}
+                    style={{ backgroundColor: bg, zIndex: idx + 1 }}
                   >
-                    {a.name.slice(0, 2).toUpperCase()}
+                    {initials}
                   </span>
-                )
-              )}
-              {card.assignees.length > 3 && (
-                <span className="kanban-card-pic-more">+{card.assignees.length - 3}</span>
+                );
+              })}
+              {card.assignees.length > 4 && (
+                <span className="kanban-card-pic-more" style={{ zIndex: 10 }}>
+                  +{card.assignees.length - 4}
+                </span>
               )}
             </div>
           )}
