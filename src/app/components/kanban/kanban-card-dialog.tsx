@@ -1568,10 +1568,10 @@ export function KanbanCardDialog({
                   {card.comments.map((cmt) => (
                     <div key={cmt.id} className="kanban-comment-card">
                       <div className="kanban-comment-meta">
-                        <strong>{cmt.authorName}</strong>
-                        <span>{cmt.createdAt}</span>
+                        <strong className="kanban-comment-author">{cmt.authorName}</strong>
+                        <span className="kanban-comment-date">{cmt.createdAt}</span>
                       </div>
-                      <p className="kanban-comment-body">{renderCommentBody(cmt.text)}</p>
+                      <p className="kanban-comment-body kanban-comment-text">{renderCommentBody(cmt.text)}</p>
                     </div>
                   ))}
                 </div>

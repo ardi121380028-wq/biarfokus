@@ -7283,17 +7283,61 @@ button:active:not(:disabled) {
   color: #0f172a !important;
 }
 
+.kanban-light-card .kanban-comment-card,
 .kanban-light-card .kanban-comment-item {
   background: #f8fafc !important;
-  border: 1px solid rgba(0, 0, 0, 0.07) !important;
-}
-
-.kanban-light-card .kanban-comment-author {
+  border: 1px solid #e2e8f0 !important;
   color: #0f172a !important;
 }
 
+.kanban-light-card .kanban-comment-meta {
+  color: #64748b !important;
+}
+
+.kanban-light-card .kanban-comment-meta strong,
+.kanban-light-card .kanban-comment-author {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.kanban-light-card .kanban-comment-meta span,
+.kanban-light-card .kanban-comment-date {
+  color: #64748b !important;
+}
+
+.kanban-light-card .kanban-comment-body,
 .kanban-light-card .kanban-comment-text {
   color: #334155 !important;
+}
+
+.kanban-light-card .kanban-comment-mention {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+  border: 1px solid #bae6fd !important;
+  font-weight: 700 !important;
+}
+
+.kanban-light-card .kanban-mention-popover {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+}
+
+.kanban-light-card .mention-popover-title {
+  color: #64748b !important;
+}
+
+.kanban-light-card .mention-candidate-item {
+  color: #0f172a !important;
+}
+
+.kanban-light-card .mention-candidate-item:hover {
+  background: #f1f5f9 !important;
+}
+
+.kanban-light-card .mention-candidate-name {
+  color: #0f172a !important;
 }
 
 /* Light card PIC chips, add buttons, schedule button, date text, text buttons */
