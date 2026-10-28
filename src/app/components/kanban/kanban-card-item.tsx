@@ -459,63 +459,6 @@ export function KanbanCardItem({
               </button>
             </div>
 
-            {/* Quick Priority Reorder in this Column */}
-            {onMoveCardPosition && (
-              <div className="kanban-mobile-move-list" style={{ marginBottom: 12 }}>
-                <span className="kanban-mobile-move-label">URUTKAN PRIORITAS DI KOLOM INI</span>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 6 }}>
-                  <button
-                    type="button"
-                    className="kanban-mobile-move-option"
-                    disabled={index === 0}
-                    onClick={() => {
-                      setShowMoveMenu(false);
-                      onMoveCardPosition(listId, card.id, "top");
-                    }}
-                    style={{ justifyContent: "center", fontSize: 12, padding: "8px 10px" }}
-                  >
-                    <span>⬆️ Paling Atas (Prioritas Utama)</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="kanban-mobile-move-option"
-                    disabled={index === 0}
-                    onClick={() => {
-                      setShowMoveMenu(false);
-                      onMoveCardPosition(listId, card.id, "up");
-                    }}
-                    style={{ justifyContent: "center", fontSize: 12, padding: "8px 10px" }}
-                  >
-                    <span>▲ Geser ke Atas</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="kanban-mobile-move-option"
-                    disabled={index >= effectiveTotal - 1}
-                    onClick={() => {
-                      setShowMoveMenu(false);
-                      onMoveCardPosition(listId, card.id, "down");
-                    }}
-                    style={{ justifyContent: "center", fontSize: 12, padding: "8px 10px" }}
-                  >
-                    <span>▼ Geser ke Bawah</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="kanban-mobile-move-option"
-                    disabled={index >= effectiveTotal - 1}
-                    onClick={() => {
-                      setShowMoveMenu(false);
-                      onMoveCardPosition(listId, card.id, "bottom");
-                    }}
-                    style={{ justifyContent: "center", fontSize: 12, padding: "8px 10px" }}
-                  >
-                    <span>⬇️ Paling Bawah</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
             <div className="kanban-mobile-move-list">
               <span className="kanban-mobile-move-label">PILIH KOLOM TUJUAN</span>
               {allLists.map((col) => {

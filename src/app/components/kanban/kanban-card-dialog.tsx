@@ -482,7 +482,7 @@ export function KanbanCardDialog({
     <div className="kanban-dialog-backdrop" role="presentation">
       <div
         ref={modalRef}
-        className={`kanban-dialog-card ${isLight ? "kanban-light-card" : "kanban-dark-card"}`}
+        className="kanban-dialog-card kanban-dark-card"
         role="dialog"
         aria-modal="true"
         aria-labelledby="kanban-dialog-title"
@@ -549,7 +549,7 @@ export function KanbanCardDialog({
                   id="kanban-dialog-title"
                   type="text"
                   className="kanban-dialog-title-input is-editing"
-                  style={{ color: isLight ? "#0f172a" : "#ffffff" }}
+                  style={{ color: "#ffffff" }}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   onBlur={() => {
@@ -583,15 +583,15 @@ export function KanbanCardDialog({
                 >
                   <h2
                     className="kanban-dialog-title-display"
-                    style={{ color: isLight ? "#0f172a" : "#ffffff" }}
+                    style={{ color: "#ffffff" }}
                   >
                     {title.trim() || "Kartu Tanpa Judul"}
                   </h2>
                   {!readOnly && <span className="kanban-dialog-title-edit-hint" aria-hidden="true">✏️</span>}
                 </div>
               )}
-              <p className="kanban-dialog-crumb" style={{ color: isLight ? "#64748b" : "rgba(255, 255, 255, 0.7)" }}>
-                dalam kolom <strong style={{ color: isLight ? "#0f172a" : "#ffffff" }}>{listTitle}</strong>
+              <p className="kanban-dialog-crumb" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                dalam kolom <strong style={{ color: "#ffffff" }}>{listTitle}</strong>
               </p>
             </div>
           </div>
