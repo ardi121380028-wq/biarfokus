@@ -160,6 +160,40 @@ export function NoteEditDialog({
     onClose();
   }
 
+  function handleArchiveAndClose() {
+    const nextArchived = !note.archived;
+    const cleanTitle = draft.title.trim();
+    if (draft.type === "checklist") {
+      const items = (draft.items || []).filter((it) => it.text.trim().length > 0);
+      if (cleanTitle || items.length > 0) {
+        onSave(note.id, {
+          ...draft,
+          title: cleanTitle,
+          items,
+          archived: nextArchived,
+          pinned: false,
+        });
+        onClose();
+        return;
+      }
+    } else {
+      const cleanContent = (draft.content || "").trim();
+      if (cleanTitle || cleanContent) {
+        onSave(note.id, {
+          ...draft,
+          title: cleanTitle,
+          content: cleanContent,
+          archived: nextArchived,
+          pinned: false,
+        });
+        onClose();
+        return;
+      }
+    }
+    onToggleArchive?.(note.id);
+    onClose();
+  }
+
   useOutsideClick(cardRef, handleSaveAndClose);
   useOutsideClick(checklistMenuRef, () => setChecklistMenuOpen(false));
   useEscapeKey(handleSaveAndClose);
@@ -258,10 +292,7 @@ export function NoteEditDialog({
               <button
                 type="button"
                 className="keep-edit-icon-btn"
-                onClick={() => {
-                  onToggleArchive(note.id);
-                  onClose();
-                }}
+                onClick={handleArchiveAndClose}
                 title={note.archived ? "Keluarkan dari arsip" : "Arsipkan catatan ini"}
               >
                 {note.archived ? "📤" : "📦"}
@@ -589,10 +620,7 @@ export function NoteEditDialog({
               <button
                 type="button"
                 className="keep-archive-btn"
-                onClick={() => {
-                  onToggleArchive(note.id);
-                  onClose();
-                }}
+                onClick={handleArchiveAndClose}
                 title={note.archived ? "Keluarkan dari arsip" : "Arsipkan catatan ini"}
               >
                 {note.archived ? "📤 Buka Arsip" : "📦 Arsip"}

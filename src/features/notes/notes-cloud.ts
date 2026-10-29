@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { KeepNote } from "@/types/domain";
 
+const ARCHIVED_LABEL_SENTINEL = "__biarfokus_archived__";
+
 type DbKeepNote = {
   id: string;
   user_id: string;
@@ -11,11 +13,21 @@ type DbKeepNote = {
   color: string;
   labels: string[] | null;
   pinned: boolean;
+  archived?: boolean | null;
   created_at: string;
   updated_at: string;
 };
 
 export function mapDbKeepNote(row: DbKeepNote): KeepNote {
+  const rawLabels = Array.isArray(row.labels) ? row.labels : [];
+  const hasArchivedSentinel = rawLabels.includes(ARCHIVED_LABEL_SENTINEL);
+  const cleanLabels = rawLabels.filter((l) => l !== ARCHIVED_LABEL_SENTINEL);
+
+  const archived =
+    typeof row.archived === "boolean"
+      ? Boolean(row.archived || hasArchivedSentinel)
+      : hasArchivedSentinel;
+
   return {
     id: row.id,
     title: row.title || "",
@@ -23,8 +35,9 @@ export function mapDbKeepNote(row: DbKeepNote): KeepNote {
     content: row.content || "",
     items: Array.isArray(row.items) ? (row.items as KeepNote["items"]) : [],
     color: row.color || "var(--paper)",
-    labels: Array.isArray(row.labels) ? row.labels : [],
+    labels: cleanLabels,
     pinned: Boolean(row.pinned),
+    archived,
     updatedAt: new Date(row.updated_at).toLocaleDateString("id-ID", {
       day: "numeric",
       month: "short",
@@ -54,7 +67,11 @@ export async function upsertCloudNote(
   userId: string,
   note: KeepNote,
 ): Promise<void> {
-  const payload = {
+  const cleanLabels = (note.labels || []).filter((l) => l !== ARCHIVED_LABEL_SENTINEL);
+  const isArchived = Boolean(note.archived);
+  const nowIso = new Date().toISOString();
+
+  const fullPayload = {
     id: note.id,
     user_id: userId,
     title: note.title || "",
@@ -62,13 +79,32 @@ export async function upsertCloudNote(
     content: note.content || "",
     items: note.items || [],
     color: note.color,
-    labels: note.labels || [],
+    labels: cleanLabels,
     pinned: Boolean(note.pinned),
-    updated_at: new Date().toISOString(),
+    archived: isArchived,
+    updated_at: nowIso,
   };
 
-  const { error } = await supabase.from("keep_notes").upsert(payload);
-  if (error) throw error;
+  const { error } = await supabase.from("keep_notes").upsert(fullPayload, { onConflict: "id" });
+  if (!error) return;
+
+  // Fallback when `archived` column migration has not yet been applied in Supabase:
+  // persist archive status via hidden sentinel in `labels` so cloud sync works immediately
+  const fallbackPayload = {
+    id: note.id,
+    user_id: userId,
+    title: note.title || "",
+    type: note.type,
+    content: note.content || "",
+    items: note.items || [],
+    color: note.color,
+    labels: isArchived ? [...cleanLabels, ARCHIVED_LABEL_SENTINEL] : cleanLabels,
+    pinned: Boolean(note.pinned),
+    updated_at: nowIso,
+  };
+
+  const { error: fallbackError } = await supabase.from("keep_notes").upsert(fallbackPayload, { onConflict: "id" });
+  if (fallbackError) throw fallbackError;
 }
 
 export async function deleteCloudNote(
@@ -96,7 +132,9 @@ export async function loadCloudLabels(
     .order("name", { ascending: true });
 
   if (error) throw error;
-  return ((data as Array<{ name: string }>) || []).map((row) => row.name);
+  return ((data as Array<{ name: string }>) || [])
+    .map((row) => row.name)
+    .filter((name) => name !== ARCHIVED_LABEL_SENTINEL);
 }
 
 export async function insertCloudLabel(

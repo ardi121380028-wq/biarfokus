@@ -4,6 +4,7 @@ import {
   convertDraftType,
   filterNotes,
   findLabel,
+  mergeCloudNotes,
   mergeLabels,
   normalizeLabel,
   parseStoredLabels,
@@ -96,6 +97,31 @@ describe("notes-service", () => {
     const archived = filterNotes(mixedNotes, "", null, true);
     assert.equal(archived.length, 1);
     assert.equal(archived[0].id, "note-2");
+  });
+
+  it("merges cloud notes while preserving archived state if DB column is not migrated yet", () => {
+    const localNotes: KeepNote[] = [
+      { ...sampleNotes[0], archived: true },
+      { ...sampleNotes[1], archived: false },
+    ];
+
+    // Case 1: DB does not have `archived` column yet (`archived` is undefined)
+    const cloudWithoutArchivedColumn: KeepNote[] = [
+      { ...sampleNotes[0], archived: undefined },
+      { ...sampleNotes[1], archived: undefined },
+    ];
+    const mergedFallback = mergeCloudNotes(cloudWithoutArchivedColumn, localNotes);
+    assert.equal(mergedFallback[0].archived, true);
+    assert.equal(mergedFallback[1].archived, false);
+
+    // Case 2: DB has `archived` column (`archived` is boolean) -> cloud is authoritative
+    const cloudWithArchivedColumn: KeepNote[] = [
+      { ...sampleNotes[0], archived: false },
+      { ...sampleNotes[1], archived: true },
+    ];
+    const mergedAuthoritative = mergeCloudNotes(cloudWithArchivedColumn, localNotes);
+    assert.equal(mergedAuthoritative[0].archived, false);
+    assert.equal(mergedAuthoritative[1].archived, true);
   });
 
   it("toggles checklist item done status", () => {

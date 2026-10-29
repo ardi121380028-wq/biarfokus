@@ -21,6 +21,7 @@ import {
   formatUpdatedAt,
   getLabelsStorageKey,
   getNotesStorageKey,
+  mergeCloudNotes,
   mergeLabels,
   normalizeLabel,
   parseStoredLabels,
@@ -54,7 +55,7 @@ export function useKeepNotes(userId?: string | null) {
       .then((cloudNotes) => {
         if (cancelled) return;
         if (cloudNotes.length > 0) {
-          updateNotes(() => cloudNotes);
+          updateNotes((current) => mergeCloudNotes(cloudNotes, current));
         }
       })
       .catch((err) => {
@@ -101,7 +102,13 @@ export function useKeepNotes(userId?: string | null) {
       updateNotes((current) =>
         current.map((n) => {
           if (n.id === id) {
-            updatedNote = { ...n, ...finalizeDraft(draft), updatedAt: formatUpdatedAt(new Date()) };
+            const finalized = finalizeDraft(draft);
+            updatedNote = {
+              ...n,
+              ...finalized,
+              archived: finalized.archived ?? n.archived,
+              updatedAt: formatUpdatedAt(new Date()),
+            };
             return updatedNote;
           }
           return n;
@@ -150,7 +157,12 @@ export function useKeepNotes(userId?: string | null) {
       updateNotes((current) =>
         current.map((n) => {
           if (n.id === id) {
-            updatedNote = { ...n, pinned: !n.pinned };
+            const nextPinned = !n.pinned;
+            updatedNote = {
+              ...n,
+              pinned: nextPinned,
+              archived: nextPinned ? false : n.archived,
+            };
             return updatedNote;
           }
           return n;
@@ -172,7 +184,9 @@ export function useKeepNotes(userId?: string | null) {
       let updatedNote: KeepNote | null = null;
       updateNotes((current) => {
         const next = current.map((n) =>
-          n.id === id ? { ...n, archived: !n.archived, pinned: false } : n
+          n.id === id
+            ? { ...n, archived: !n.archived, pinned: false, updatedAt: formatUpdatedAt(new Date()) }
+            : n,
         );
         updatedNote = next.find((n) => n.id === id) || null;
         return next;

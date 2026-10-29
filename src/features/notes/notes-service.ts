@@ -250,6 +250,23 @@ export function parseStoredNotes(raw: string | null): KeepNote[] {
   }
 }
 
+/**
+ * Merges notes fetched from Supabase with local cache.
+ * When the `archived` column exists in Supabase (`typeof cn.archived === "boolean"`),
+ * the cloud value is authoritative across devices. If the column migration has not
+ * been applied yet (`cn.archived === undefined`), preserves local `archived` state.
+ */
+export function mergeCloudNotes(cloudNotes: KeepNote[], localNotes: KeepNote[]): KeepNote[] {
+  const localById = new Map(localNotes.map((n) => [n.id, n]));
+  return cloudNotes.map((cn) => {
+    if (typeof cn.archived === "boolean") {
+      return cn;
+    }
+    const local = localById.get(cn.id);
+    return { ...cn, archived: Boolean(local?.archived) };
+  });
+}
+
 export function parseStoredLabels(raw: string | null): string[] {
   if (!raw) return DEFAULT_LABELS;
   try {

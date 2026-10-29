@@ -458,5 +458,14 @@ exception when others then
   -- publication or permission may vary, ignore if not allowed
 end $$;
 
+-- ------------------------------------------------------------------------------
+-- 8. KOLOM ARCHIVED DI keep_notes (Sinkronisasi Arsip Catatan)
+-- ------------------------------------------------------------------------------
+alter table public.keep_notes
+  add column if not exists archived boolean not null default false;
+
+create index if not exists keep_notes_user_archived_idx
+  on public.keep_notes (user_id, archived, updated_at desc);
+
 -- Notifikasi sukses setelah run script
 select 'Migrasi database berhasil dijalankan! Tabel site_visits, kanban_boards, kanban_board_members, kanban_board_invites, user_subscriptions, dan kolom relasi tasks siap digunakan.' as status;
