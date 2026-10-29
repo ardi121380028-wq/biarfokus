@@ -6,8 +6,10 @@ import {
   isUuid,
   loadTaskLinks,
   mapDbTask,
+  resolveAuthoritativeTaskOrder,
   resolveFocusedTask,
   saveTaskLink,
+  sortTasksByOrder,
 } from "./task-service.ts";
 
 describe("mapDbTask", () => {
@@ -79,6 +81,54 @@ describe("resolveFocusedTask and isUuid", () => {
     assert.equal(isUuid("550e8400-e29b-41d4-a716-446655440000"), true);
     assert.equal(isUuid("demo-1"), false);
     assert.equal(isUuid(null), false);
+  });
+});
+
+describe("cross-device task order synchronization", () => {
+  it("prefers newer cloud order from mobile over stale or legacy desktop localStorage order", () => {
+    // Legacy desktop order without timestamp (updatedAt = 0) vs cloud order from phone
+    const res1 = resolveAuthoritativeTaskOrder(
+      ["t1", "t2", "t3"],
+      0,
+      ["t3", "t1", "t2"],
+      1793244300000,
+    );
+    assert.equal(res1.source, "cloud");
+    assert.deepEqual(res1.order, ["t3", "t1", "t2"]);
+
+    // Older desktop timestamp vs newer phone cloud timestamp
+    const res2 = resolveAuthoritativeTaskOrder(
+      ["t1", "t2", "t3"],
+      1000,
+      ["t3", "t1", "t2"],
+      2000,
+    );
+    assert.equal(res2.source, "cloud");
+    assert.deepEqual(res2.order, ["t3", "t1", "t2"]);
+
+    // Newer local in-flight drag vs older cloud timestamp keeps local order
+    const res3 = resolveAuthoritativeTaskOrder(
+      ["t2", "t3", "t1"],
+      3000,
+      ["t3", "t1", "t2"],
+      2000,
+    );
+    assert.equal(res3.source, "local");
+    assert.deepEqual(res3.order, ["t2", "t3", "t1"]);
+  });
+
+  it("sorts tasks by orderIds while keeping newly added tasks at the end", () => {
+    const tasks = [
+      { id: "t1", title: "Satu", done: false, pomodoros: 1 },
+      { id: "t2", title: "Dua", done: false, pomodoros: 1 },
+      { id: "t3", title: "Create Sosmed", done: false, pomodoros: 2 },
+      { id: "t4", title: "Task Baru", done: false, pomodoros: 1 },
+    ];
+    const sorted = sortTasksByOrder(tasks, ["t3", "t1", "t2"]);
+    assert.deepEqual(
+      sorted.map((t) => t.id),
+      ["t3", "t1", "t2", "t4"],
+    );
   });
 });
 

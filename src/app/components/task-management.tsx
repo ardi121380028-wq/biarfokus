@@ -96,12 +96,14 @@ export function TaskManagement({
     const midY = rect.top + rect.height / 2;
     const isAbove = e.clientY < midY;
     let targetIndex = index;
-    if (!isAbove && draggedIndex < index) {
-      targetIndex = index;
-    } else if (isAbove && draggedIndex > index) {
-      targetIndex = index;
+    if (draggedIndex < index && isAbove) {
+      targetIndex = index - 1;
+    } else if (draggedIndex > index && !isAbove) {
+      targetIndex = index + 1;
     }
-    onReorderTasks(draggedIndex, targetIndex);
+    if (targetIndex !== draggedIndex) {
+      onReorderTasks(draggedIndex, targetIndex);
+    }
     setDraggedIndex(null);
     setDragOverIndex(null);
     setDragOverPos(null);
@@ -319,6 +321,7 @@ export function TaskManagement({
             >
               <span
                 className="task-drag-handle"
+                style={{ touchAction: "none" }}
                 title="Tahan dan geser untuk ubah urutan prioritas"
                 aria-label="Geser urutan prioritas"
                 onTouchStart={(e) => handleTouchStart(e, index)}

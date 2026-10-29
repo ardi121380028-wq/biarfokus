@@ -171,9 +171,20 @@ export async function saveUserSettings(
   userId: string,
   settings: UserSettings,
 ) {
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("settings")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const prev =
+    existing?.settings && typeof existing.settings === "object" && !Array.isArray(existing.settings)
+      ? (existing.settings as Record<string, unknown>)
+      : {};
+
   const { error } = await supabase
     .from("profiles")
-    .update({ settings })
+    .update({ settings: { ...prev, ...settings } })
     .eq("id", userId);
   if (error) throw error;
 }

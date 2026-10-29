@@ -467,5 +467,14 @@ alter table public.keep_notes
 create index if not exists keep_notes_user_archived_idx
   on public.keep_notes (user_id, archived, updated_at desc);
 
+-- ------------------------------------------------------------------------------
+-- 9. KOLOM SORT_ORDER DI tasks (Sinkronisasi Urutan Eat Your Frog Lintas Device)
+-- ------------------------------------------------------------------------------
+alter table public.tasks
+  add column if not exists sort_order integer default null;
+
+create index if not exists tasks_user_sort_order_idx
+  on public.tasks (user_id, sort_order asc nulls last, created_at asc);
+
 -- Notifikasi sukses setelah run script
 select 'Migrasi database berhasil dijalankan! Tabel site_visits, kanban_boards, kanban_board_members, kanban_board_invites, user_subscriptions, dan kolom relasi tasks siap digunakan.' as status;

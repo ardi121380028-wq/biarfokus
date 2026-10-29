@@ -54,6 +54,8 @@ import {
   loadTasks,
   recordCompletedSession,
   resolveFocusedTask,
+  saveCloudTaskOrder,
+  saveLocalTaskOrder,
   saveTaskLink,
   setTaskCompleted,
   updateTaskPomodoros,
@@ -403,23 +405,60 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  // Load Cloud Tasks
+  // Load Cloud Tasks & keep synced across devices (focus, visibility, realtime)
   useEffect(() => {
     if (!user) return;
     const userId = user.id;
     let cancelled = false;
+    const supabase = getSupabaseBrowserClient();
+
     async function loadCloudTasks() {
       try {
-        const supabase = getSupabaseBrowserClient();
         const cloudTasks = await loadTasks(supabase, userId);
         if (!cancelled) setTasks(cloudTasks);
       } catch (error) {
         if (!cancelled) console.error("Gagal memuat task cloud; menggunakan task lokal.", error);
       }
     }
+
     void loadCloudTasks();
+
+    const handleVisibilityOrFocus = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      void loadCloudTasks();
+    };
+
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(`biarfokus-tasks-${userId}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "tasks", filter: `user_id=eq.${userId}` },
+          () => {
+            void loadCloudTasks();
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${userId}` },
+          () => {
+            void loadCloudTasks();
+          },
+        )
+        .subscribe();
+    } catch {}
+
     return () => {
       cancelled = true;
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      if (channel) {
+        void supabase.removeChannel(channel);
+      }
     };
   }, [user]);
 
@@ -946,40 +985,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-    const reorderTasks = useCallback(
+  const reorderTasks = useCallback(
     (sourceIndex: number, destinationIndex: number) => {
-      setTasks((current) => {
-        const active = current.filter((t) => !t.done);
-        const done = current.filter((t) => t.done);
-        if (
-          sourceIndex < 0 ||
-          sourceIndex >= active.length ||
-          destinationIndex < 0 ||
-          destinationIndex >= active.length ||
-          sourceIndex === destinationIndex
-        ) {
-          return current;
-        }
-        const reorderedActive = [...active];
-        const [moved] = reorderedActive.splice(sourceIndex, 1);
-        reorderedActive.splice(destinationIndex, 0, moved);
-        const nextTasks = [...reorderedActive, ...done];
+      const active = tasks.filter((t) => !t.done);
+      const done = tasks.filter((t) => t.done);
+      if (
+        sourceIndex < 0 ||
+        sourceIndex >= active.length ||
+        destinationIndex < 0 ||
+        destinationIndex >= active.length ||
+        sourceIndex === destinationIndex
+      ) {
+        return;
+      }
+      const reorderedActive = [...active];
+      const [moved] = reorderedActive.splice(sourceIndex, 1);
+      reorderedActive.splice(destinationIndex, 0, moved);
+      const nextTasks = [...reorderedActive, ...done];
+      const orderedIds = nextTasks.map((t) => t.id);
+      const updatedAt = Date.now();
 
-        if (typeof window !== "undefined") {
-          try {
-            window.localStorage.setItem("biarfokus.tasks", JSON.stringify(nextTasks));
-            if (user) {
-              window.localStorage.setItem(
-                `biarfokus.tasks.order.${user.id}`,
-                JSON.stringify(nextTasks.map((t) => t.id)),
-              );
-            }
-          } catch {}
-        }
-        return nextTasks;
-      });
+      setTasks(nextTasks);
+
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem("biarfokus.tasks", JSON.stringify(nextTasks));
+        } catch {}
+      }
+
+      if (user) {
+        saveLocalTaskOrder(user.id, orderedIds, updatedAt);
+        void saveCloudTaskOrder(getSupabaseBrowserClient(), user.id, orderedIds, updatedAt);
+      }
     },
-    [user],
+    [tasks, user],
   );
 
   const handleDeleteAccount = useCallback(async () => {
@@ -1166,6 +1205,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notificationsEnabled,
       pomodoroModalOpen,
       profileDisplayName,
+      reorderTasks,
       repeatAlarm,
       resetTimer,
       running,

@@ -39,6 +39,120 @@ export type LinkedNoteMeta = {
 
 export const LOCAL_TASK_LINKS_KEY = "biarfokus.task_links";
 
+export function getTaskOrderStorageKey(userId: string): string {
+  return `biarfokus.tasks.order.${userId}`;
+}
+
+export function getTaskOrderTimestampKey(userId: string): string {
+  return `biarfokus.tasks.order_ts.${userId}`;
+}
+
+export function loadLocalTaskOrder(userId: string): { order: string[]; updatedAt: number } {
+  if (typeof window === "undefined") return { order: [], updatedAt: 0 };
+  try {
+    const rawOrder = window.localStorage.getItem(getTaskOrderStorageKey(userId));
+    const rawTs = window.localStorage.getItem(getTaskOrderTimestampKey(userId));
+    const parsedOrder: unknown = rawOrder ? JSON.parse(rawOrder) : [];
+    const order = Array.isArray(parsedOrder)
+      ? parsedOrder.filter((id): id is string => typeof id === "string")
+      : [];
+    const updatedAt = rawTs ? Number(rawTs) || 0 : 0;
+    return { order, updatedAt };
+  } catch {
+    return { order: [], updatedAt: 0 };
+  }
+}
+
+export function saveLocalTaskOrder(userId: string, order: string[], updatedAt: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(getTaskOrderStorageKey(userId), JSON.stringify(order));
+    window.localStorage.setItem(getTaskOrderTimestampKey(userId), String(updatedAt));
+  } catch {}
+}
+
+/**
+ * Picks the winning task order between cloud and local storage based on timestamps.
+ * Cloud wins whenever it has a non-empty order and its timestamp is >= local timestamp
+ * (including when local order is legacy without a timestamp, i.e. updatedAt === 0).
+ */
+export function resolveAuthoritativeTaskOrder(
+  localOrder: string[],
+  localUpdatedAt: number,
+  cloudOrder: string[],
+  cloudUpdatedAt: number,
+): { order: string[]; source: "cloud" | "local" | "none"; updatedAt: number } {
+  if (cloudOrder.length > 0 && cloudUpdatedAt >= localUpdatedAt) {
+    return { order: cloudOrder, source: "cloud", updatedAt: cloudUpdatedAt };
+  }
+  if (localOrder.length > 0) {
+    return { order: localOrder, source: "local", updatedAt: localUpdatedAt };
+  }
+  if (cloudOrder.length > 0) {
+    return { order: cloudOrder, source: "cloud", updatedAt: cloudUpdatedAt };
+  }
+  return { order: [], source: "none", updatedAt: 0 };
+}
+
+export function sortTasksByOrder(tasks: Task[], orderIds: string[]): Task[] {
+  if (orderIds.length === 0) return tasks;
+  const orderMap = new Map(orderIds.map((id, idx) => [id, idx]));
+  return [...tasks].sort((a, b) => {
+    const posA = orderMap.has(a.id) ? (orderMap.get(a.id) as number) : 99999;
+    const posB = orderMap.has(b.id) ? (orderMap.get(b.id) as number) : 99999;
+    return posA - posB;
+  });
+}
+
+export async function saveCloudTaskOrder(
+  supabase: SupabaseClient,
+  userId: string,
+  orderedIds: string[],
+  updatedAt: number = Date.now(),
+): Promise<void> {
+  // 1. Persist order in `profiles.settings` JSONB (works immediately with existing schema across all devices)
+  try {
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("settings")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const prevSettings =
+      existing?.settings && typeof existing.settings === "object" && !Array.isArray(existing.settings)
+        ? (existing.settings as Record<string, unknown>)
+        : {};
+
+    await supabase
+      .from("profiles")
+      .update({
+        settings: {
+          ...prevSettings,
+          taskOrder: orderedIds,
+          taskOrderUpdatedAt: updatedAt,
+        },
+      })
+      .eq("id", userId);
+  } catch (err) {
+    console.warn("Failed to sync task order to profile settings:", err);
+  }
+
+  // 2. Also persist `sort_order` per row in `public.tasks` when the optional column migration is present
+  try {
+    await Promise.all(
+      orderedIds.map((taskId, index) =>
+        supabase
+          .from("tasks")
+          .update({ sort_order: index })
+          .eq("id", taskId)
+          .eq("user_id", userId),
+      ),
+    );
+  } catch {
+    // Non-blocking if `sort_order` column is not migrated yet
+  }
+}
+
 export function loadTaskLinks(): Record<string, LinkedNoteMeta> {
   if (typeof window === "undefined") return {};
   try {
@@ -129,37 +243,87 @@ export function buildLocalTaskMigrationPayload(localTasks: Task[]) {
   }));
 }
 
+type DbTaskWithSort = DbTask & { sort_order?: number | null };
+
 export async function loadTasks(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<Task[]> {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select("id, title, completed, pomodoros, linked_note_id, linked_note_title, linked_item_id, linked_item_text")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: true });
+  const [tasksQueryResult, profileQueryResult] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("id, title, completed, pomodoros, sort_order, linked_note_id, linked_note_title, linked_item_id, linked_item_text")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("profiles")
+      .select("settings")
+      .eq("id", userId)
+      .maybeSingle(),
+  ]);
 
-  let loadedTasks: Task[] | null = null;
+  let { data, error } = tasksQueryResult;
+  let loadedRows: DbTaskWithSort[] | null = null;
 
   if (!error && data && data.length > 0) {
-    loadedTasks = (data as unknown as DbTask[]).map(mapDbTask);
+    loadedRows = data as unknown as DbTaskWithSort[];
   } else if (error && (error.message.includes("column") || error.code === "PGRST204" || error.code === "42703")) {
-    const fallback = await supabase
+    const retryLinked = await supabase
       .from("tasks")
-      .select("id, title, completed, pomodoros")
+      .select("id, title, completed, pomodoros, linked_note_id, linked_note_title, linked_item_id, linked_item_text")
       .eq("user_id", userId)
       .order("created_at", { ascending: true });
-    if (fallback.error) throw fallback.error;
-    if (fallback.data && fallback.data.length > 0) {
-      loadedTasks = (fallback.data as unknown as DbTask[]).map(mapDbTask);
+
+    if (!retryLinked.error) {
+      data = retryLinked.data as typeof data;
+      error = null;
+      if (retryLinked.data && retryLinked.data.length > 0) {
+        loadedRows = retryLinked.data as unknown as DbTaskWithSort[];
+      }
+    } else if (
+      retryLinked.error.message.includes("column") ||
+      retryLinked.error.code === "PGRST204" ||
+      retryLinked.error.code === "42703"
+    ) {
+      const fallback = await supabase
+        .from("tasks")
+        .select("id, title, completed, pomodoros")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      if (fallback.error) throw fallback.error;
+      error = null;
+      if (fallback.data && fallback.data.length > 0) {
+        loadedRows = fallback.data as unknown as DbTaskWithSort[];
+      }
+    } else {
+      throw retryLinked.error;
     }
   } else if (error) {
     throw error;
   }
 
-  if (loadedTasks) {
+  // Extract cloud task order from `profiles.settings` (or fallback to `tasks.sort_order`)
+  let cloudOrder: string[] = [];
+  let cloudUpdatedAt = 0;
+  const rawSettings = profileQueryResult.data?.settings;
+  if (rawSettings && typeof rawSettings === "object" && !Array.isArray(rawSettings)) {
+    const s = rawSettings as Record<string, unknown>;
+    if (Array.isArray(s.taskOrder)) {
+      cloudOrder = s.taskOrder.filter((id): id is string => typeof id === "string");
+      cloudUpdatedAt = typeof s.taskOrderUpdatedAt === "number" ? s.taskOrderUpdatedAt : 1;
+    }
+  }
+  if (cloudOrder.length === 0 && loadedRows && loadedRows.some((r) => typeof r.sort_order === "number")) {
+    cloudOrder = [...loadedRows]
+      .sort((a, b) => (a.sort_order ?? 99999) - (b.sort_order ?? 99999))
+      .map((r) => r.id);
+    cloudUpdatedAt = 1;
+  }
+
+  if (loadedRows) {
     const links = loadTaskLinks();
-    const mapped = loadedTasks.map((t) => {
+    const mapped = loadedRows.map((row) => {
+      const t = mapDbTask(row);
       const link = links[t.id];
       if (!link) return t;
       return {
@@ -171,30 +335,26 @@ export async function loadTasks(
       };
     });
 
-    if (typeof window !== "undefined") {
-      try {
-        const rawOrder = window.localStorage.getItem(`biarfokus.tasks.order.${userId}`);
-        if (rawOrder) {
-          const orderArr: string[] = JSON.parse(rawOrder);
-          const orderMap = new Map(orderArr.map((id, idx) => [id, idx]));
-          mapped.sort((a, b) => {
-            const posA = orderMap.has(a.id) ? (orderMap.get(a.id) as number) : 99999;
-            const posB = orderMap.has(b.id) ? (orderMap.get(b.id) as number) : 99999;
-            return posA - posB;
-          });
-        }
-      } catch {}
+    const { order: localOrder, updatedAt: localUpdatedAt } = loadLocalTaskOrder(userId);
+    const resolved = resolveAuthoritativeTaskOrder(
+      localOrder,
+      localUpdatedAt,
+      cloudOrder,
+      cloudUpdatedAt,
+    );
+
+    if (resolved.source === "cloud" && resolved.order.length > 0) {
+      saveLocalTaskOrder(userId, resolved.order, resolved.updatedAt);
     }
 
-    return mapped;
+    return sortTasksByOrder(mapped, resolved.order);
   }
 
+  // If user already had tasks previously and deleted all of them (data is empty array []),
+  // `migrate_local_tasks` RPC checks the marker so deleted tasks are never resurrected.
   const localTasks = loadLocalTasks();
   if (localTasks.length === 0) return [];
 
-  // The database decides whether this is the first migration for the user. It
-  // serialises concurrent calls (e.g. two tabs) and records a marker, so local
-  // tasks are imported at most once and never resurrected after being deleted.
   const { data: migratedTasks, error: migrationError } = await supabase.rpc(
     "migrate_local_tasks",
     { p_tasks: buildLocalTaskMigrationPayload(localTasks) },
