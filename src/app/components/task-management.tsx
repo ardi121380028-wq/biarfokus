@@ -55,6 +55,7 @@ export function TaskManagement({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragOverPos, setDragOverPos] = useState<"above" | "below" | null>(null);
   const touchStartRef = useRef<{ y: number; index: number } | null>(null);
+  const touchOverIndexRef = useRef<number | null>(null);
 
   function handleDragStart(e: React.DragEvent<HTMLDivElement>, index: number) {
     if (submitting || activeTaskId) return;
@@ -119,6 +120,7 @@ export function TaskManagement({
     if (submitting || activeTaskId) return;
     const touch = e.touches[0];
     touchStartRef.current = { y: touch.clientY, index };
+    touchOverIndexRef.current = index;
     setDraggedIndex(index);
   }
 
@@ -129,19 +131,22 @@ export function TaskManagement({
     const rowBelow = elemBelow?.closest("[data-task-index]") as HTMLElement | null;
     if (rowBelow) {
       const idx = Number(rowBelow.getAttribute("data-task-index"));
-      if (!Number.isNaN(idx) && idx !== dragOverIndex) {
+      if (!Number.isNaN(idx) && idx !== touchOverIndexRef.current) {
+        touchOverIndexRef.current = idx;
         setDragOverIndex(idx);
+        setDragOverPos(idx < touchStartRef.current.index ? "above" : "below");
       }
     }
   }
 
   function handleTouchEnd() {
-    if (touchStartRef.current && dragOverIndex !== null && onReorderTasks) {
-      if (touchStartRef.current.index !== dragOverIndex) {
-        onReorderTasks(touchStartRef.current.index, dragOverIndex);
-      }
+    const fromIdx = touchStartRef.current?.index ?? null;
+    const toIdx = touchOverIndexRef.current;
+    if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx && onReorderTasks) {
+      onReorderTasks(fromIdx, toIdx);
     }
     touchStartRef.current = null;
+    touchOverIndexRef.current = null;
     setDraggedIndex(null);
     setDragOverIndex(null);
     setDragOverPos(null);

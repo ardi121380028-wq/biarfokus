@@ -44,6 +44,7 @@ import type { LinkedNoteMeta } from "@/features/tasks/task-service";
 import { syncAmbientSound, stopAmbientSound } from "@/features/audio/ambient-sound";
 import { playAlarmSound, type AlarmSoundType } from "@/features/audio/alarm-sound";
 import {
+  areTasksEqual,
   createTask,
   deleteAllTasks as deleteAllCloudTasks,
   deleteTaskById,
@@ -55,7 +56,6 @@ import {
   recordCompletedSession,
   resolveFocusedTask,
   saveCloudTaskOrder,
-  saveLocalTaskOrder,
   saveTaskLink,
   setTaskCompleted,
   updateTaskPomodoros,
@@ -288,6 +288,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const lastTickedSecondRef = useRef<number | null>(null);
   const settingsHydratedRef = useRef(false);
   const settingsOwnerRef = useRef<string | null>(null);
+  const pendingTaskReorderRef = useRef(0);
+  const lastTaskReorderAtRef = useRef(0);
 
   // Document title sync
   useEffect(() => {
@@ -405,31 +407,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  // Load Cloud Tasks & keep synced across devices (focus, visibility, realtime)
+  // Load Cloud Tasks & keep synced across devices (focus, visibility, interval, realtime)
   useEffect(() => {
     if (!user) return;
     const userId = user.id;
     let cancelled = false;
     const supabase = getSupabaseBrowserClient();
 
-    async function loadCloudTasks() {
+    async function loadCloudTasks(isInitial = false) {
+      if (
+        !isInitial &&
+        (pendingTaskReorderRef.current > 0 || Date.now() - lastTaskReorderAtRef.current < 2500)
+      ) {
+        return;
+      }
       try {
         const cloudTasks = await loadTasks(supabase, userId);
-        if (!cancelled) setTasks(cloudTasks);
+        if (!cancelled && (isInitial || pendingTaskReorderRef.current === 0)) {
+          setTasks((prev) => (areTasksEqual(prev, cloudTasks) ? prev : cloudTasks));
+        }
       } catch (error) {
-        if (!cancelled) console.error("Gagal memuat task cloud; menggunakan task lokal.", error);
+        if (!cancelled && isInitial) {
+          console.error("Gagal memuat task cloud; menggunakan task lokal.", error);
+        }
       }
     }
 
-    void loadCloudTasks();
+    void loadCloudTasks(true);
 
     const handleVisibilityOrFocus = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-      void loadCloudTasks();
+      void loadCloudTasks(false);
     };
 
     window.addEventListener("focus", handleVisibilityOrFocus);
     document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    const syncInterval = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      void loadCloudTasks(false);
+    }, 4000);
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
     try {
@@ -439,14 +456,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           "postgres_changes",
           { event: "*", schema: "public", table: "tasks", filter: `user_id=eq.${userId}` },
           () => {
-            void loadCloudTasks();
-          },
-        )
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${userId}` },
-          () => {
-            void loadCloudTasks();
+            void loadCloudTasks(false);
           },
         )
         .subscribe();
@@ -454,6 +464,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true;
+      window.clearInterval(syncInterval);
       window.removeEventListener("focus", handleVisibilityOrFocus);
       document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
       if (channel) {
@@ -1003,7 +1014,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       reorderedActive.splice(destinationIndex, 0, moved);
       const nextTasks = [...reorderedActive, ...done];
       const orderedIds = nextTasks.map((t) => t.id);
-      const updatedAt = Date.now();
 
       setTasks(nextTasks);
 
@@ -1014,8 +1024,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       if (user) {
-        saveLocalTaskOrder(user.id, orderedIds, updatedAt);
-        void saveCloudTaskOrder(getSupabaseBrowserClient(), user.id, orderedIds, updatedAt);
+        pendingTaskReorderRef.current += 1;
+        lastTaskReorderAtRef.current = Date.now();
+        void saveCloudTaskOrder(getSupabaseBrowserClient(), user.id, orderedIds).finally(() => {
+          pendingTaskReorderRef.current = Math.max(0, pendingTaskReorderRef.current - 1);
+          lastTaskReorderAtRef.current = Date.now();
+        });
       }
     },
     [tasks, user],

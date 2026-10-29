@@ -39,118 +39,71 @@ export type LinkedNoteMeta = {
 
 export const LOCAL_TASK_LINKS_KEY = "biarfokus.task_links";
 
-export function getTaskOrderStorageKey(userId: string): string {
-  return `biarfokus.tasks.order.${userId}`;
-}
-
-export function getTaskOrderTimestampKey(userId: string): string {
-  return `biarfokus.tasks.order_ts.${userId}`;
-}
-
-export function loadLocalTaskOrder(userId: string): { order: string[]; updatedAt: number } {
-  if (typeof window === "undefined") return { order: [], updatedAt: 0 };
-  try {
-    const rawOrder = window.localStorage.getItem(getTaskOrderStorageKey(userId));
-    const rawTs = window.localStorage.getItem(getTaskOrderTimestampKey(userId));
-    const parsedOrder: unknown = rawOrder ? JSON.parse(rawOrder) : [];
-    const order = Array.isArray(parsedOrder)
-      ? parsedOrder.filter((id): id is string => typeof id === "string")
-      : [];
-    const updatedAt = rawTs ? Number(rawTs) || 0 : 0;
-    return { order, updatedAt };
-  } catch {
-    return { order: [], updatedAt: 0 };
+/**
+ * Compares two task lists for structural equality (including exact ordering)
+ * so background sync polls never trigger unnecessary React re-renders.
+ */
+export function areTasksEqual(a: Task[], b: Task[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i];
+    const y = b[i];
+    if (
+      x.id !== y.id ||
+      x.title !== y.title ||
+      x.done !== y.done ||
+      x.pomodoros !== y.pomodoros ||
+      x.linkedNoteId !== y.linkedNoteId ||
+      x.linkedNoteTitle !== y.linkedNoteTitle ||
+      x.linkedItemId !== y.linkedItemId ||
+      x.linkedItemText !== y.linkedItemText
+    ) {
+      return false;
+    }
   }
-}
-
-export function saveLocalTaskOrder(userId: string, order: string[], updatedAt: number): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(getTaskOrderStorageKey(userId), JSON.stringify(order));
-    window.localStorage.setItem(getTaskOrderTimestampKey(userId), String(updatedAt));
-  } catch {}
+  return true;
 }
 
 /**
- * Picks the winning task order between cloud and local storage based on timestamps.
- * Cloud wins whenever it has a non-empty order and its timestamp is >= local timestamp
- * (including when local order is legacy without a timestamp, i.e. updatedAt === 0).
+ * Computes monotonically increasing ISO timestamps (<= nowMs) for ordered task IDs.
+ * Because `public.tasks` is always queried with `ORDER BY created_at ASC`, updating
+ * `created_at` directly on `public.tasks` persists task priority across all devices
+ * using the guaranteed base schema (no extra table or manual SQL migration needed),
+ * while any newly created task (`default now()`) naturally lands at the bottom.
  */
-export function resolveAuthoritativeTaskOrder(
-  localOrder: string[],
-  localUpdatedAt: number,
-  cloudOrder: string[],
-  cloudUpdatedAt: number,
-): { order: string[]; source: "cloud" | "local" | "none"; updatedAt: number } {
-  if (cloudOrder.length > 0 && cloudUpdatedAt >= localUpdatedAt) {
-    return { order: cloudOrder, source: "cloud", updatedAt: cloudUpdatedAt };
-  }
-  if (localOrder.length > 0) {
-    return { order: localOrder, source: "local", updatedAt: localUpdatedAt };
-  }
-  if (cloudOrder.length > 0) {
-    return { order: cloudOrder, source: "cloud", updatedAt: cloudUpdatedAt };
-  }
-  return { order: [], source: "none", updatedAt: 0 };
-}
-
-export function sortTasksByOrder(tasks: Task[], orderIds: string[]): Task[] {
-  if (orderIds.length === 0) return tasks;
-  const orderMap = new Map(orderIds.map((id, idx) => [id, idx]));
-  return [...tasks].sort((a, b) => {
-    const posA = orderMap.has(a.id) ? (orderMap.get(a.id) as number) : 99999;
-    const posB = orderMap.has(b.id) ? (orderMap.get(b.id) as number) : 99999;
-    return posA - posB;
-  });
+export function buildOrderedTaskTimestamps(
+  orderedIds: string[],
+  nowMs: number = Date.now(),
+): Array<{ id: string; createdAt: string }> {
+  const validIds = orderedIds.filter(isUuid);
+  const baseMs = nowMs - (validIds.length + 2) * 1000;
+  return validIds.map((id, index) => ({
+    id,
+    createdAt: new Date(baseMs + index * 1000).toISOString(),
+  }));
 }
 
 export async function saveCloudTaskOrder(
   supabase: SupabaseClient,
   userId: string,
   orderedIds: string[],
-  updatedAt: number = Date.now(),
 ): Promise<void> {
-  // 1. Persist order in `profiles.settings` JSONB (works immediately with existing schema across all devices)
-  try {
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("settings")
-      .eq("id", userId)
-      .maybeSingle();
+  const updates = buildOrderedTaskTimestamps(orderedIds);
+  if (updates.length === 0) return;
 
-    const prevSettings =
-      existing?.settings && typeof existing.settings === "object" && !Array.isArray(existing.settings)
-        ? (existing.settings as Record<string, unknown>)
-        : {};
+  await Promise.all(
+    updates.map(async ({ id, createdAt }) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ created_at: createdAt })
+        .eq("id", id)
+        .eq("user_id", userId);
 
-    await supabase
-      .from("profiles")
-      .update({
-        settings: {
-          ...prevSettings,
-          taskOrder: orderedIds,
-          taskOrderUpdatedAt: updatedAt,
-        },
-      })
-      .eq("id", userId);
-  } catch (err) {
-    console.warn("Failed to sync task order to profile settings:", err);
-  }
-
-  // 2. Also persist `sort_order` per row in `public.tasks` when the optional column migration is present
-  try {
-    await Promise.all(
-      orderedIds.map((taskId, index) =>
-        supabase
-          .from("tasks")
-          .update({ sort_order: index })
-          .eq("id", taskId)
-          .eq("user_id", userId),
-      ),
-    );
-  } catch {
-    // Non-blocking if `sort_order` column is not migrated yet
-  }
+      if (error) {
+        console.error("Failed to sync task order to cloud:", error);
+      }
+    }),
+  );
 }
 
 export function loadTaskLinks(): Record<string, LinkedNoteMeta> {
@@ -243,87 +196,45 @@ export function buildLocalTaskMigrationPayload(localTasks: Task[]) {
   }));
 }
 
-type DbTaskWithSort = DbTask & { sort_order?: number | null };
-
 export async function loadTasks(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<Task[]> {
-  const [tasksQueryResult, profileQueryResult] = await Promise.all([
-    supabase
-      .from("tasks")
-      .select("id, title, completed, pomodoros, sort_order, linked_note_id, linked_note_title, linked_item_id, linked_item_text")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("profiles")
-      .select("settings")
-      .eq("id", userId)
-      .maybeSingle(),
-  ]);
+  // Clean up any legacy per-browser order keys so stale local order never overrides cloud order
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(`biarfokus.tasks.order.${userId}`);
+      window.localStorage.removeItem(`biarfokus.tasks.order_ts.${userId}`);
+    } catch {}
+  }
 
-  let { data, error } = tasksQueryResult;
-  let loadedRows: DbTaskWithSort[] | null = null;
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("id, title, completed, pomodoros, linked_note_id, linked_note_title, linked_item_id, linked_item_text")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+
+  let loadedTasks: Task[] | null = null;
 
   if (!error && data && data.length > 0) {
-    loadedRows = data as unknown as DbTaskWithSort[];
+    loadedTasks = (data as unknown as DbTask[]).map(mapDbTask);
   } else if (error && (error.message.includes("column") || error.code === "PGRST204" || error.code === "42703")) {
-    const retryLinked = await supabase
+    const fallback = await supabase
       .from("tasks")
-      .select("id, title, completed, pomodoros, linked_note_id, linked_note_title, linked_item_id, linked_item_text")
+      .select("id, title, completed, pomodoros")
       .eq("user_id", userId)
       .order("created_at", { ascending: true });
-
-    if (!retryLinked.error) {
-      data = retryLinked.data as typeof data;
-      error = null;
-      if (retryLinked.data && retryLinked.data.length > 0) {
-        loadedRows = retryLinked.data as unknown as DbTaskWithSort[];
-      }
-    } else if (
-      retryLinked.error.message.includes("column") ||
-      retryLinked.error.code === "PGRST204" ||
-      retryLinked.error.code === "42703"
-    ) {
-      const fallback = await supabase
-        .from("tasks")
-        .select("id, title, completed, pomodoros")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: true });
-      if (fallback.error) throw fallback.error;
-      error = null;
-      if (fallback.data && fallback.data.length > 0) {
-        loadedRows = fallback.data as unknown as DbTaskWithSort[];
-      }
-    } else {
-      throw retryLinked.error;
+    if (fallback.error) throw fallback.error;
+    if (fallback.data && fallback.data.length > 0) {
+      loadedTasks = (fallback.data as unknown as DbTask[]).map(mapDbTask);
     }
   } else if (error) {
     throw error;
   }
 
-  // Extract cloud task order from `profiles.settings` (or fallback to `tasks.sort_order`)
-  let cloudOrder: string[] = [];
-  let cloudUpdatedAt = 0;
-  const rawSettings = profileQueryResult.data?.settings;
-  if (rawSettings && typeof rawSettings === "object" && !Array.isArray(rawSettings)) {
-    const s = rawSettings as Record<string, unknown>;
-    if (Array.isArray(s.taskOrder)) {
-      cloudOrder = s.taskOrder.filter((id): id is string => typeof id === "string");
-      cloudUpdatedAt = typeof s.taskOrderUpdatedAt === "number" ? s.taskOrderUpdatedAt : 1;
-    }
-  }
-  if (cloudOrder.length === 0 && loadedRows && loadedRows.some((r) => typeof r.sort_order === "number")) {
-    cloudOrder = [...loadedRows]
-      .sort((a, b) => (a.sort_order ?? 99999) - (b.sort_order ?? 99999))
-      .map((r) => r.id);
-    cloudUpdatedAt = 1;
-  }
-
-  if (loadedRows) {
+  if (loadedTasks) {
     const links = loadTaskLinks();
-    const mapped = loadedRows.map((row) => {
-      const t = mapDbTask(row);
+    return loadedTasks.map((t) => {
       const link = links[t.id];
       if (!link) return t;
       return {
@@ -334,24 +245,8 @@ export async function loadTasks(
         linkedItemText: t.linkedItemText || link.linkedItemText,
       };
     });
-
-    const { order: localOrder, updatedAt: localUpdatedAt } = loadLocalTaskOrder(userId);
-    const resolved = resolveAuthoritativeTaskOrder(
-      localOrder,
-      localUpdatedAt,
-      cloudOrder,
-      cloudUpdatedAt,
-    );
-
-    if (resolved.source === "cloud" && resolved.order.length > 0) {
-      saveLocalTaskOrder(userId, resolved.order, resolved.updatedAt);
-    }
-
-    return sortTasksByOrder(mapped, resolved.order);
   }
 
-  // If user already had tasks previously and deleted all of them (data is empty array []),
-  // `migrate_local_tasks` RPC checks the marker so deleted tasks are never resurrected.
   const localTasks = loadLocalTasks();
   if (localTasks.length === 0) return [];
 
