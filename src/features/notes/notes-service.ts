@@ -106,6 +106,20 @@ export function removeLabelFromNotes(notes: KeepNote[], label: string): KeepNote
   );
 }
 
+export function renameLabelInNotes(notes: KeepNote[], oldName: string, newName: string): KeepNote[] {
+  const needle = oldName.toLowerCase();
+  const cleanNew = normalizeLabel(newName);
+  if (!cleanNew) return notes;
+  return notes.map((n) => {
+    if (!n.labels || !n.labels.some((l) => l.toLowerCase() === needle)) return n;
+    const filtered = n.labels.filter((l) => l.toLowerCase() !== needle);
+    if (!filtered.some((l) => l.toLowerCase() === cleanNew.toLowerCase())) {
+      filtered.push(cleanNew);
+    }
+    return { ...n, labels: filtered };
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* Note operations                                                     */
 /* ------------------------------------------------------------------ */

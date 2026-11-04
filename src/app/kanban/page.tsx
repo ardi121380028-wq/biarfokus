@@ -107,7 +107,7 @@ function KanbanContent() {
       userRole={userRole}
       dark={dark}
       onToggleDark={() => setDark((d) => !d)}
-      onOpenSettings={() => setShowSettings(true)}
+      onOpenSettings={() => router.push("/pengaturan")}
       onOpenProfile={() => setAccountOpen(true)}
       onNavigate={handleNavigate}
       onSendToFrog={(cardTitle) => {

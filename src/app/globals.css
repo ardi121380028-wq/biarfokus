@@ -3871,9 +3871,10 @@ button:active:not(:disabled) {
 
 .kanban-board-modal-header h2 {
   margin: 0;
-  font-family: Georgia, Cambria, "Times New Roman", serif;
-  font-size: 24px;
-  font-weight: 600;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .kanban-board-modal-header p {
@@ -13265,3 +13266,291 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 }
 
+
+/* Note Label Editing & Deletion */
+.notes-sidebar-filter-item-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.notes-sidebar-filter-item-wrap .notes-sidebar-filter-item {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.notes-label-item-actions {
+  display: none;
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  gap: 3px;
+  background: var(--paper);
+  padding: 2px 4px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  z-index: 2;
+}
+.notes-sidebar-filter-item-wrap:hover .notes-label-item-actions,
+.notes-sidebar-filter-item-wrap:focus-within .notes-label-item-actions {
+  display: flex;
+}
+.notes-label-action-btn {
+  background: none;
+  border: none;
+  padding: 3px 5px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0.75;
+  transition: all 0.1s ease;
+  line-height: 1;
+}
+.notes-label-action-btn:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.notes-label-action-btn.delete-btn:hover {
+  background: color-mix(in srgb, var(--danger, #ef4444) 15%, transparent);
+}
+.notes-sidebar-edit-label-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 4px 6px;
+  box-sizing: border-box;
+}
+.notes-sidebar-label-input.inline-edit {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--paper);
+  color: var(--ink);
+}
+.notes-label-inline-save-btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.notes-label-inline-cancel-btn {
+  border: none;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.keep-label-option-item-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+.keep-label-option-item-wrap:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.keep-label-option-item-wrap .keep-label-option-row {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  background: transparent !important;
+}
+.keep-label-option-delete-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 11px;
+  opacity: 0.6;
+  border-radius: 6px;
+  transition: all 0.12s ease;
+}
+.keep-label-option-delete-btn:hover {
+  opacity: 1;
+  color: var(--danger, #ef4444);
+  background: color-mix(in srgb, var(--danger, #ef4444) 12%, transparent);
+}
+
+/* Settings Dedicated Page & Workspace Layout */
+.settings-workspace-layout {
+  display: flex;
+  width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  background: #f7f8fa;
+}
+.app.dark .settings-workspace-layout {
+  background: #141414;
+}
+
+.settings-workspace-main {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.settings-page-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--paper);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.settings-page-tab-pills {
+  display: flex;
+  gap: 6px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.settings-tab-pill {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.settings-tab-pill:hover {
+  color: var(--ink);
+}
+
+.settings-tab-pill.active {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.settings-page-scroll-container {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+.settings-page-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 18px;
+  padding: 28px 36px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.settings-floating-save-toast {
+  position: absolute;
+  bottom: 24px;
+  right: 32px;
+  background: #10b981;
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  animation: fadeIn 0.2s ease;
+  z-index: 50;
+}
+
+@media (max-width: 768px) {
+  .settings-page-topbar {
+    padding: 10px 14px;
+  }
+  .settings-page-tab-pills {
+    display: none;
+  }
+  .settings-page-scroll-container {
+    padding: 14px;
+  }
+  .settings-page-card {
+    padding: 18px;
+    border-radius: 14px;
+  }
+}
+
+/* Admin Workspace Layout (Sidebar Mode & Wide Screen) */
+.admin-workspace-layout {
+  display: flex;
+  width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  background: #f7f8fa;
+}
+.app.dark .admin-workspace-layout {
+  background: #141414;
+}
+
+.admin-workspace-main {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.admin-workspace-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--paper);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.admin-workspace-scroll-container {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+.admin-workspace-fluid-content {
+  max-width: 1350px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .admin-workspace-topbar {
+    padding: 10px 14px;
+  }
+  .admin-workspace-scroll-container {
+    padding: 14px;
+  }
+}

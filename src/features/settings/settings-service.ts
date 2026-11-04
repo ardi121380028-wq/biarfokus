@@ -18,10 +18,17 @@ export type UserSettings = {
   language?: "id" | "en";
   timeFormat?: "24" | "12";
   notesDefaultView?: "grid" | "list";
+  notesConfirmDelete?: boolean;
+  notesAutoCopy?: boolean;
   calendarDefaultView?: "day" | "week" | "month";
   calendarDefaultDuration?: number;
   calendarConfirmDelete?: boolean;
+  calendarKanbanSync?: boolean;
   kanbanConfirmDelete?: boolean;
+  kanbanShowPIC?: boolean;
+  kanbanShowDueDate?: boolean;
+  kanbanFrogIntegration?: boolean;
+  kanbanMobileQuickMove?: boolean;
   loadingStyle?: "minimal" | "pro" | "classic";
 };
 
@@ -39,10 +46,17 @@ export const DEFAULT_SETTINGS: UserSettings = {
   language: "id",
   timeFormat: "24",
   notesDefaultView: "grid",
+  notesConfirmDelete: true,
+  notesAutoCopy: true,
   calendarDefaultView: "day",
   calendarDefaultDuration: 60,
   calendarConfirmDelete: true,
+  calendarKanbanSync: true,
   kanbanConfirmDelete: true,
+  kanbanShowPIC: true,
+  kanbanShowDueDate: true,
+  kanbanFrogIntegration: true,
+  kanbanMobileQuickMove: true,
   loadingStyle: "minimal",
 };
 

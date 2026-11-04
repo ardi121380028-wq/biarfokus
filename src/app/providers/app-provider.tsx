@@ -513,7 +513,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (event.key === "?" || (event.shiftKey && event.key === "/")) setShortcutsOpen(true);
       if (event.ctrlKey && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        setShowSettings(true);
+        if (typeof window !== "undefined") {
+          window.location.assign("/pengaturan");
+        }
         return;
       }
       // Space / R / S shortcuts for timer (when not inside modals)

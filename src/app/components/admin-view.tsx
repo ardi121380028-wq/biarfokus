@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import type { AdminOverview, AdminUserItem } from "@/types/domain";
 import { getSafeAvatarUrl } from "@/features/profile/profile-service";
+import { AppWorkspaceSidebar } from "@/app/components/ui/app-workspace-sidebar";
 import {
   fetchAdminOverviewFromApi,
   fetchAdminUsersFromApi,
@@ -46,6 +47,27 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
   const [demoPassword, setDemoPassword] = useState("Katakunci123!");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userFilterRole, setUserFilterRole] = useState<"all" | "pro" | "free" | "admin">("all");
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("biarfokus.admin.sidebar_collapsed");
+        if (stored !== null) return stored === "true";
+        return window.innerWidth < 1024;
+      } catch {}
+    }
+    return false;
+  });
+
+  function toggleSidebar() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("biarfokus.admin.sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -399,21 +421,47 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
   });
 
   return (
-    <div className="inner-page">
-      <div className="admin-header">
-        <div>
-          <p className="eyebrow">Workspace admin</p>
-          <h1>Overview & Manajemen Pengguna</h1>
-        </div>
-        <button
-          type="button"
-          className="secondary-button admin-action-button"
-          onClick={() => void handleAuditRefresh()}
-          disabled={recording}
-        >
-          {recording ? "Mencatat..." : "🔄 Catat Audit & Refresh"}
-        </button>
-      </div>
+    <div className="notes-app-workspace admin-workspace-layout">
+      <AppWorkspaceSidebar
+        badge="Admin"
+        activeModule="admin"
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebar}
+      />
+      <main className="notes-workspace-main admin-workspace-main">
+        {/* Top Header */}
+        <header className="notes-workspace-topbar admin-workspace-topbar">
+          <div className="notes-topbar-left" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              type="button"
+              className="notes-topbar-hamburger-btn"
+              onClick={toggleSidebar}
+              aria-label="Toggle Sidebar"
+            >
+              ☰
+            </button>
+            <div>
+              <p className="eyebrow" style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--accent)" }}>
+                WORKSPACE ADMIN
+              </p>
+              <h1 style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>
+                Overview &amp; Manajemen Pengguna
+              </h1>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="secondary-button admin-action-button"
+            onClick={() => void handleAuditRefresh()}
+            disabled={recording}
+          >
+            {recording ? "Mencatat..." : "🔄 Catat Audit & Refresh"}
+          </button>
+        </header>
+
+        {/* Fluid Scrollable Content */}
+        <div className="admin-workspace-scroll-container">
+          <div className="admin-workspace-fluid-content">
 
       {error && (
         <p className="task-error" role="alert">
@@ -1266,6 +1314,9 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
           </div>
         </div>
       )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

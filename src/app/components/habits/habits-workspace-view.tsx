@@ -174,7 +174,7 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
           onOpenCreateModal={handleOpenAdd}
           dark={dark}
           onToggleDark={() => setDark((d) => !d)}
-          onOpenSettings={() => setShowSettings(true)}
+          onOpenSettings={() => router.push("/pengaturan")}
           onOpenProfile={() => setAccountOpen(true)}
           onOpenStats={() => router.push("/statistik")}
           userName={userName}

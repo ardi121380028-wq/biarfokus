@@ -10,6 +10,7 @@ import {
   insertCloudLabel,
   loadCloudLabels,
   loadCloudNotes,
+  renameCloudLabel,
   upsertCloudNote,
 } from "./notes-cloud";
 import {
@@ -27,6 +28,7 @@ import {
   parseStoredLabels,
   parseStoredNotes,
   removeLabelFromNotes,
+  renameLabelInNotes,
   setChecklistItemStatus,
   toggleChecklistItem,
   type NoteDraft,
@@ -275,16 +277,62 @@ export function useKeepNotes(userId?: string | null) {
     [userId, labels, updateLabels],
   );
 
+  const renameLabel = useCallback(
+    (oldName: string, newName: string) => {
+      const cleanNew = normalizeLabel(newName);
+      if (!cleanNew || cleanNew.toLowerCase() === oldName.toLowerCase()) return;
+
+      const oldNeedle = oldName.toLowerCase();
+      updateLabels((current) => {
+        const withoutOld = current.filter((l) => l.toLowerCase() !== oldNeedle);
+        if (withoutOld.some((l) => l.toLowerCase() === cleanNew.toLowerCase())) {
+          return withoutOld;
+        }
+        return [...withoutOld, cleanNew];
+      });
+
+      let affectedNotes: KeepNote[] = [];
+      updateNotes((current) => {
+        const next = renameLabelInNotes(current, oldName, cleanNew);
+        affectedNotes = next.filter((n) =>
+          n.labels.some((l) => l.toLowerCase() === cleanNew.toLowerCase()),
+        );
+        return next;
+      });
+
+      if (userId) {
+        try {
+          renameCloudLabel(getSupabaseBrowserClient(), userId, oldName, cleanNew).catch((err) =>
+            console.warn("Failed to sync label rename to cloud:", err),
+          );
+          for (const note of affectedNotes) {
+            upsertCloudNote(getSupabaseBrowserClient(), userId, note).catch(() => {});
+          }
+        } catch {}
+      }
+    },
+    [userId, updateLabels, updateNotes],
+  );
+
   const deleteLabel = useCallback(
     (name: string) => {
       const needle = name.toLowerCase();
       updateLabels((current) => current.filter((l) => l.toLowerCase() !== needle));
-      updateNotes((current) => removeLabelFromNotes(current, name));
+      let affectedNotes: KeepNote[] = [];
+      updateNotes((current) => {
+        const notesWithOld = current.filter((n) => n.labels.some((l) => l.toLowerCase() === needle));
+        const next = removeLabelFromNotes(current, name);
+        affectedNotes = next.filter((n) => notesWithOld.some((old) => old.id === n.id));
+        return next;
+      });
       if (userId) {
         try {
           deleteCloudLabel(getSupabaseBrowserClient(), userId, name).catch((err) =>
             console.warn("Failed to sync label delete to cloud:", err),
           );
+          for (const note of affectedNotes) {
+            upsertCloudNote(getSupabaseBrowserClient(), userId, note).catch(() => {});
+          }
         } catch {}
       }
     },
@@ -302,6 +350,7 @@ export function useKeepNotes(userId?: string | null) {
     toggleItem,
     setItemDone,
     createLabel,
+    renameLabel,
     deleteLabel,
   };
 }

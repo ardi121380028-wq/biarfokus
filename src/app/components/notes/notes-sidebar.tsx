@@ -20,6 +20,8 @@ type NotesSidebarProps = {
   onSelectLabel: (label: string | null) => void;
   getLabelCount: (label: string) => number;
   onCreateLabel: (name: string) => void;
+  onRenameLabel?: (oldName: string, newName: string) => void;
+  onDeleteLabel?: (name: string) => void;
   onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   dark?: boolean;
@@ -41,14 +43,18 @@ export function NotesSidebar({
   onSelectLabel,
   getLabelCount,
   onCreateLabel,
+  onRenameLabel,
+  onDeleteLabel,
   onNavigate,
   onOpenSettings,
   dark,
   onToggleDark,
 }: NotesSidebarProps) {
-  const { isPro, user, setLoginOpen } = useAppContext();
+  const { isPro, user, userRole, setLoginOpen } = useAppContext();
   const [newLabelInput, setNewLabelInput] = useState("");
   const [showAddLabel, setShowAddLabel] = useState(false);
+  const [editingLabel, setEditingLabel] = useState<string | null>(null);
+  const [editLabelInput, setEditLabelInput] = useState("");
 
   function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -335,22 +341,100 @@ export function NotesSidebar({
           {labels.map((lbl) => {
             const count = getLabelCount(lbl);
             const isSelected = activeLabel === lbl;
+            const isEditing = editingLabel === lbl;
+
+            if (isEditing && !isCollapsed) {
+              return (
+                <form
+                  key={lbl}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const val = editLabelInput.trim();
+                    if (val && val !== lbl) {
+                      onRenameLabel?.(lbl, val);
+                    }
+                    setEditingLabel(null);
+                  }}
+                  className="notes-sidebar-edit-label-form"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="text"
+                    value={editLabelInput}
+                    onChange={(e) => setEditLabelInput(e.target.value)}
+                    className="notes-sidebar-label-input inline-edit"
+                    autoFocus
+                  />
+                  <button type="submit" className="notes-label-inline-save-btn" title="Simpan">
+                    ✓
+                  </button>
+                  <button
+                    type="button"
+                    className="notes-label-inline-cancel-btn"
+                    onClick={() => setEditingLabel(null)}
+                    title="Batal"
+                  >
+                    ✕
+                  </button>
+                </form>
+              );
+            }
+
             return (
-              <button
-                key={lbl}
-                type="button"
-                className={`notes-sidebar-filter-item ${isSelected ? "active" : ""}`}
-                onClick={() => handleSelectTag(isSelected ? null : lbl)}
-                title={`Filter label ${lbl}`}
-              >
-                <span className="filter-icon">🏷️</span>
+              <div key={lbl} className={`notes-sidebar-filter-item-wrap ${isSelected ? "active" : ""}`}>
+                <button
+                  type="button"
+                  className={`notes-sidebar-filter-item ${isSelected ? "active" : ""}`}
+                  onClick={() => handleSelectTag(isSelected ? null : lbl)}
+                  title={`Filter label ${lbl}`}
+                >
+                  <span className="filter-icon">🏷️</span>
+                  {!isCollapsed && (
+                    <>
+                      <span className="filter-title">{lbl}</span>
+                      <span className="filter-count">{count}</span>
+                    </>
+                  )}
+                </button>
                 {!isCollapsed && (
-                  <>
-                    <span className="filter-title">{lbl}</span>
-                    <span className="filter-count">{count}</span>
-                  </>
+                  <div className="notes-label-item-actions">
+                    {onRenameLabel && (
+                      <button
+                        type="button"
+                        className="notes-label-action-btn edit-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingLabel(lbl);
+                          setEditLabelInput(lbl);
+                        }}
+                        title={`Ubah nama label "${lbl}"`}
+                        aria-label={`Ubah nama label "${lbl}"`}
+                      >
+                        ✏️
+                      </button>
+                    )}
+                    {onDeleteLabel && (
+                      <button
+                        type="button"
+                        className="notes-label-action-btn delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Hapus label "${lbl}"? Label ini akan dilepas dari semua catatan.`)) {
+                            onDeleteLabel(lbl);
+                            if (activeLabel === lbl) {
+                              onSelectLabel(null);
+                            }
+                          }
+                        }}
+                        title={`Hapus label "${lbl}"`}
+                        aria-label={`Hapus label "${lbl}"`}
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -359,6 +443,20 @@ export function NotesSidebar({
       {/* Sidebar Footer - Identical to Kanban & Calendar */}
       {/* Sidebar Footer - Identical to Kanban & Calendar */}
       <div className="kanban-sidebar-footer">
+        {userRole === "admin" && (
+          <Link
+            href="/admin"
+            className="kanban-sidebar-footer-btn"
+            title="Admin Dashboard"
+          >
+            <span className="footer-icon-wrap" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </span>
+            {!isCollapsed && <span>Admin Dashboard</span>}
+          </Link>
+        )}
         <Link
           href="/fitur"
           className="kanban-sidebar-footer-btn"
@@ -373,22 +471,19 @@ export function NotesSidebar({
           </span>
           {!isCollapsed && <span>Fitur &amp; Panduan</span>}
         </Link>
-        {onOpenSettings && (
-          <button
-            type="button"
-            className="kanban-sidebar-footer-btn"
-            onClick={onOpenSettings}
-            title="Pengaturan"
-          >
-            <span className="footer-icon-wrap" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </span>
-            {!isCollapsed && <span>Pengaturan</span>}
-          </button>
-        )}
+        <Link
+          href="/pengaturan"
+          className="kanban-sidebar-footer-btn"
+          title="Pengaturan"
+        >
+          <span className="footer-icon-wrap" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </span>
+          {!isCollapsed && <span>Pengaturan</span>}
+        </Link>
       </div>
     </aside>
   );

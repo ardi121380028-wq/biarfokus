@@ -113,7 +113,7 @@ function CatatanContent() {
       userRole={userRole}
       dark={dark}
       onToggleDark={() => setDark((d) => !d)}
-      onOpenSettings={() => setShowSettings(true)}
+      onOpenSettings={() => router.push("/pengaturan")}
       onOpenProfile={() => setAccountOpen(true)}
       onOpenStats={() => router.push("/statistik")}
       onNavigate={handleNavigate}

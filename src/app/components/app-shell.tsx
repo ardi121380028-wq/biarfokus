@@ -166,13 +166,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     void trackSiteVisit(pathname || "/");
   }, [pathname]);
 
-  // Check if current view is a full workspace mode (Kanban, Kalender, Catatan, Kebiasaan)
+  // Check if current view is a full workspace mode (Kanban, Kalender, Catatan, Kebiasaan, Pengaturan, Admin)
   const isWorkspaceView =
     pathname.startsWith("/kanban") ||
     pathname.startsWith("/kalender") ||
     pathname.startsWith("/catatan") ||
     pathname.startsWith("/kebiasaan") ||
-    pathname.startsWith("/habits");
+    pathname.startsWith("/habits") ||
+    pathname.startsWith("/pengaturan") ||
+    pathname.startsWith("/admin");
 
   function isNavActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -313,12 +315,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <line x1="9" y1="16" x2="15" y2="16" />
               </svg>
             </button>
-            <button
+            <Link
+              href="/pengaturan"
               className="settings-button"
-              onClick={() => setShowSettings(true)}
             >
               ⚙ <span>Settings</span>
-            </button>
+            </Link>
             {user ? (
               <div className="profile-area">
                 <button
@@ -361,8 +363,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                       setProfileMenuOpen(false);
                     }}
                     onSettings={() => {
-                      setShowSettings(true);
                       setProfileMenuOpen(false);
+                      router.push("/pengaturan");
                     }}
                     onPremium={() => {
                       router.push("/upgrade");
@@ -673,15 +675,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="nav-icon">⚡</span>
           <span>Kebiasaan</span>
         </Link>
-        <button
-          type="button"
-          className={`mobile-bottom-nav-item ${showSettings ? "active" : ""}`}
-          onClick={() => setShowSettings(!showSettings)}
+        <Link
+          href="/pengaturan"
+          className={`mobile-bottom-nav-item ${pathname.startsWith("/pengaturan") ? "active" : ""}`}
+          onClick={() => {
+            setShowSettings(false);
+            setNotesOpen(false);
+          }}
           aria-label="Pengaturan"
         >
           <span className="nav-icon">⚙️</span>
           <span>Setting</span>
-        </button>
+        </Link>
       </nav>
 
       {/* Quick Notes Floating Action Button (Bottom-Right, 3D Glowing Orb) */}

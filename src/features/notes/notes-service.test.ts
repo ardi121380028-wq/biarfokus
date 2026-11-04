@@ -10,6 +10,7 @@ import {
   parseStoredLabels,
   parseStoredNotes,
   removeLabelFromNotes,
+  renameLabelInNotes,
   setChecklistItemStatus,
   toggleChecklistItem,
 } from "./notes-service.ts";
@@ -54,6 +55,10 @@ describe("notes-service", () => {
 
     const cleaned = removeLabelFromNotes(sampleNotes, "urgent");
     assert.equal(cleaned[0].labels.includes("Urgent"), false);
+
+    const renamed = renameLabelInNotes(sampleNotes, "urgent", "High Priority");
+    assert.equal(renamed[0].labels.includes("High Priority"), true);
+    assert.equal(renamed[0].labels.includes("Urgent"), false);
   });
 
   it("converts draft between text and checklist smoothly", () => {

@@ -48,6 +48,8 @@ export function NotesWorkspaceView({
     toggleArchive,
     toggleItem,
     createLabel,
+    renameLabel,
+    deleteLabel,
   } = useKeepNotes(userId);
 
   // Collapsible Sidebar state (persisted)
@@ -132,6 +134,8 @@ export function NotesWorkspaceView({
         onSelectLabel={setActiveLabel}
         getLabelCount={getLabelCount}
         onCreateLabel={createLabel}
+        onRenameLabel={renameLabel}
+        onDeleteLabel={deleteLabel}
         onNavigate={onNavigate}
         onOpenSettings={onOpenSettings}
         dark={dark}
@@ -174,6 +178,7 @@ export function NotesWorkspaceView({
                   labels={labels}
                   onCreateNote={createNote}
                   onCreateLabel={createLabel}
+                  onDeleteLabel={deleteLabel}
                 />
               </div>
             )}
@@ -283,6 +288,7 @@ export function NotesWorkspaceView({
           onDelete={deleteNote}
           onClose={() => setEditingNote(null)}
           onCreateLabel={createLabel}
+          onDeleteLabel={deleteLabel}
           onToggleArchive={toggleArchive}
         />
       )}

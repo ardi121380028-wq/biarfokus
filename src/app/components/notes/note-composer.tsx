@@ -21,12 +21,14 @@ type NoteComposerProps = {
   labels: string[];
   onCreateNote: (draft: NoteDraft) => void;
   onCreateLabel: (name: string) => string | null;
+  onDeleteLabel?: (name: string) => void;
 };
 
 export function NoteComposer({
   labels,
   onCreateNote,
   onCreateLabel,
+  onDeleteLabel,
 }: NoteComposerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFullyExpanded, setIsFullyExpanded] = useState(false);
@@ -309,6 +311,7 @@ export function NoteComposer({
             options={labels}
             onChange={(next) => setDraft({ ...draft, labels: next })}
             onCreateLabel={onCreateLabel}
+            onDeleteLabel={onDeleteLabel}
             placement="up"
           />
 

@@ -12,6 +12,7 @@ type LabelSelectProps = {
   onChange: (next: string[]) => void;
   /** Creates a label in the catalogue, returns canonical name (or null if invalid). */
   onCreateLabel: (name: string) => string | null;
+  onDeleteLabel?: (name: string) => void;
   /** Popover direction: "up" (recommended inside modal/composer near bottom) or "down" */
   placement?: "up" | "down" | "auto";
 };
@@ -27,6 +28,7 @@ export function LabelSelect({
   options,
   onChange,
   onCreateLabel,
+  onDeleteLabel,
   placement = "up",
 }: LabelSelectProps) {
   const [open, setOpen] = useState(false);
@@ -140,7 +142,7 @@ export function LabelSelect({
 
             <ul id={listId} className="keep-label-options-list">
               {filtered.map((label) => (
-                <li key={label}>
+                <li key={label} className="keep-label-option-item-wrap">
                   <label className="keep-label-option-row">
                     <input
                       type="checkbox"
@@ -150,6 +152,26 @@ export function LabelSelect({
                     />
                     <span className="keep-label-option-name">{label}</span>
                   </label>
+                  {onDeleteLabel && (
+                    <button
+                      type="button"
+                      className="keep-label-option-delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (window.confirm(`Hapus label "${label}"? Label ini akan dilepas dari semua catatan.`)) {
+                          onDeleteLabel(label);
+                          if (isSelected(label)) {
+                            onChange(value.filter((l) => l.toLowerCase() !== label.toLowerCase()));
+                          }
+                        }
+                      }}
+                      title={`Hapus label "${label}"`}
+                      aria-label={`Hapus label "${label}"`}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </li>
               ))}
               {filtered.length === 0 && !canCreate && (

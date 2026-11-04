@@ -162,3 +162,24 @@ export async function deleteCloudLabel(
 
   if (error) throw error;
 }
+
+export async function renameCloudLabel(
+  supabase: SupabaseClient,
+  userId: string,
+  oldName: string,
+  newName: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("keep_labels")
+    .update({ name: newName })
+    .eq("user_id", userId)
+    .ilike("name", oldName);
+
+  if (error) {
+    // If update fails due to conflict or RLS, remove old and insert new
+    try {
+      await supabase.from("keep_labels").delete().eq("user_id", userId).ilike("name", oldName);
+      await insertCloudLabel(supabase, userId, newName);
+    } catch {}
+  }
+}

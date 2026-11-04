@@ -22,6 +22,7 @@ type NoteEditDialogProps = {
   onDelete: (id: string) => void;
   onClose: () => void;
   onCreateLabel: (name: string) => string | null;
+  onDeleteLabel?: (name: string) => void;
   onToggleArchive?: (id: string) => void;
 };
 
@@ -32,6 +33,7 @@ export function NoteEditDialog({
   onDelete,
   onClose,
   onCreateLabel,
+  onDeleteLabel,
   onToggleArchive,
 }: NoteEditDialogProps) {
   const [draft, setDraft] = useState<NoteDraft>(() => ({
@@ -594,6 +596,7 @@ export function NoteEditDialog({
           options={labels}
           onChange={(next) => setDraft({ ...draft, labels: next })}
           onCreateLabel={onCreateLabel}
+          onDeleteLabel={onDeleteLabel}
           placement="up"
         />
 

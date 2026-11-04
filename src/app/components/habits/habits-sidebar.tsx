@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { Habit, HabitFilter } from "@/features/habits/habit-types";
+import Link from "next/link";
 import { useAppContext } from "@/app/providers/app-provider";
 
 export type HabitViewMode = "checklist" | "matrix" | "heatmap";
@@ -29,7 +30,7 @@ export function HabitsSidebar({
   onOpenCreateModal,
   onNavigate,
 }: HabitsSidebarProps) {
-  const { isPro, user, setLoginOpen } = useAppContext();
+  const { isPro, user, userRole, setLoginOpen } = useAppContext();
 
   function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
