@@ -66,6 +66,7 @@ export type AdminUserItem = {
   plan: SubscriptionPlan;
   status: SubscriptionStatus;
   createdAt: string;
+  lastSeenAt?: string | null;
 };
 
 export type DailyVisitStat = {

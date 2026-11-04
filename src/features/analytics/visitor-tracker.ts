@@ -26,7 +26,7 @@ export function getOrCreateVisitorId(): string {
   }
 }
 
-export async function trackSiteVisit(path = "/"): Promise<void> {
+export async function trackSiteVisit(path = "/", force = false): Promise<void> {
   if (typeof window === "undefined") return;
 
   try {
@@ -34,8 +34,8 @@ export async function trackSiteVisit(path = "/"): Promise<void> {
     const lastTracked = sessionStorage.getItem(sessionKey);
     const now = Date.now();
 
-    // Debounce within the same tab session (10 minutes)
-    if (lastTracked) {
+    // Debounce within the same tab session (10 minutes) unless forced by activity heartbeat
+    if (!force && lastTracked) {
       const parsedTime = Number.parseInt(lastTracked, 10);
       if (!Number.isNaN(parsedTime) && now - parsedTime < 10 * 60 * 1000) {
         return;

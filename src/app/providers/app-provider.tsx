@@ -473,6 +473,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
+  // Global user online presence & activity heartbeat for admin tracking
+  useEffect(() => {
+    if (!user?.id) return;
+    const userId = user.id;
+    const supabase = getSupabaseBrowserClient();
+
+    // 1. Initial ping & periodic active heartbeat (every 2.5 minutes while tab is visible)
+    void trackSiteVisit(typeof window !== "undefined" ? window.location.pathname || "/" : "/", true);
+
+    const heartbeatInterval = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void trackSiteVisit(typeof window !== "undefined" ? window.location.pathname || "/" : "/", true);
+      }
+    }, 150_000);
+
+    // 2. Realtime presence channel so admin sees online status live
+    let presenceChannel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      presenceChannel = supabase.channel("biarfokus-global-presence", {
+        config: { presence: { key: userId } },
+      });
+
+      presenceChannel.subscribe(async (status: string) => {
+        if (status === "SUBSCRIBED") {
+          await presenceChannel?.track({
+            user_id: userId,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+    } catch {}
+
+    return () => {
+      window.clearInterval(heartbeatInterval);
+      if (presenceChannel) {
+        void supabase.removeChannel(presenceChannel);
+      }
+    };
+  }, [user]);
+
   // Derived Task info
   const completedTasks = useMemo(() => tasks.filter((task) => task.done).length, [tasks]);
   const activeTasksCount = useMemo(() => tasks.filter((task) => !task.done).length, [tasks]);

@@ -281,19 +281,49 @@ export async function loadAdminUsers(
   supabase: SupabaseClient,
   limit = 50,
 ): Promise<import("@/types/domain").AdminUserItem[]> {
-  const [profilesRes, rolesRes, subsRes] = await Promise.all([
+  const [profilesRes, rolesRes, subsRes, visitsRes, sessionsRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, display_name, avatar_url, created_at")
+      .select("id, display_name, avatar_url, created_at, updated_at")
       .order("created_at", { ascending: false })
       .limit(limit),
     supabase.from("user_roles").select("user_id, role"),
     supabase.from("subscriptions").select("user_id, plan, status"),
+    supabase
+      .from("site_visits")
+      .select("user_id, created_at")
+      .not("user_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabase
+      .from("pomodoro_sessions")
+      .select("user_id, completed_at")
+      .order("completed_at", { ascending: false })
+      .limit(300),
   ]);
 
   if (profilesRes.error) throw profilesRes.error;
   if (rolesRes.error) throw rolesRes.error;
   if (subsRes.error) throw subsRes.error;
+
+  // Aggregate most recent activity timestamp for each user
+  const lastSeenMap = new Map<string, string>();
+  for (const s of (sessionsRes.data ?? []) as Array<{ user_id: string; completed_at: string }>) {
+    if (s.user_id && s.completed_at) {
+      const prev = lastSeenMap.get(s.user_id);
+      if (!prev || new Date(s.completed_at) > new Date(prev)) {
+        lastSeenMap.set(s.user_id, s.completed_at);
+      }
+    }
+  }
+  for (const v of (visitsRes.data ?? []) as Array<{ user_id: string; created_at: string }>) {
+    if (v.user_id && v.created_at) {
+      const prev = lastSeenMap.get(v.user_id);
+      if (!prev || new Date(v.created_at) > new Date(prev)) {
+        lastSeenMap.set(v.user_id, v.created_at);
+      }
+    }
+  }
 
   const roleMap = new Map((rolesRes.data ?? []).map((r) => [r.user_id, normalizeUserRole(r.role)]));
   const subMap = new Map(
@@ -308,6 +338,11 @@ export async function loadAdminUsers(
 
   return (profilesRes.data ?? []).map((p) => {
     const sub = subMap.get(p.id);
+    const lastSeenAt =
+      lastSeenMap.get(p.id) ??
+      (p as { updated_at?: string }).updated_at ??
+      p.created_at ??
+      null;
     return {
       id: p.id,
       displayName: p.display_name ?? null,
@@ -316,6 +351,7 @@ export async function loadAdminUsers(
       plan: sub?.plan === "pro" ? "pro" : "free",
       status: sub?.status ?? "inactive",
       createdAt: p.created_at,
+      lastSeenAt,
     };
   });
 }

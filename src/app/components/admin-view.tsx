@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import type { AdminOverview, AdminUserItem } from "@/types/domain";
 import { getSafeAvatarUrl } from "@/features/profile/profile-service";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { AppWorkspaceSidebar } from "@/app/components/ui/app-workspace-sidebar";
 import {
   fetchAdminOverviewFromApi,
@@ -30,6 +31,41 @@ function formatAuditTime(isoString: string) {
   });
 }
 
+function formatRelativeActivity(dateString?: string | null): string {
+  if (!dateString) return "Belum pernah aktif";
+  const date = new Date(dateString);
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  if (isNaN(diffMs) || diffMs < 0) return "Baru saja";
+
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffMin < 1) return "Baru saja";
+  if (diffMin < 60) return `${diffMin} mnt lalu`;
+  if (diffHour < 24) return `${diffHour} jam lalu`;
+  if (diffDay === 1) return "Kemarin";
+  if (diffDay < 7) return `${diffDay} hari lalu`;
+  return date.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+}
+
+function checkIsUserOnline(
+  user: AdminUserItem,
+  realtimeIds: Set<string>,
+  currentAdminId: string | null,
+): boolean {
+  if (currentAdminId && user.id === currentAdminId) return true;
+  if (realtimeIds.has(user.id)) return true;
+  if (user.lastSeenAt) {
+    const diffMs = Date.now() - new Date(user.lastSeenAt).getTime();
+    if (!isNaN(diffMs) && diffMs >= 0 && diffMs <= 5 * 60 * 1000) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function AdminView({ userId, isAdmin }: AdminViewProps) {
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [users, setUsers] = useState<AdminUserItem[]>([]);
@@ -46,7 +82,46 @@ export function AdminView({ userId, isAdmin }: AdminViewProps) {
   const [demoPasswordVisible, setDemoPasswordVisible] = useState(false);
   const [demoPassword, setDemoPassword] = useState("Katakunci123!");
   const [userSearchQuery, setUserSearchQuery] = useState("");
-  const [userFilterRole, setUserFilterRole] = useState<"all" | "pro" | "free" | "admin">("all");
+  const [userFilterRole, setUserFilterRole] = useState<"all" | "online" | "pro" | "free" | "admin">("all");
+  const [realtimeOnlineIds, setRealtimeOnlineIds] = useState<Set<string>>(new Set());
+
+  // Listen to Supabase Realtime presence channel for live online statuses
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    let presenceChannel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      presenceChannel = supabase.channel("biarfokus-global-presence", {
+        config: { presence: { key: userId || "admin-presence-viewer" } },
+      });
+
+      presenceChannel
+        .on("presence", { event: "sync" }, () => {
+          const state = presenceChannel?.presenceState() ?? {};
+          const online = new Set<string>();
+          for (const key of Object.keys(state)) {
+            const presences = state[key] as Array<{ user_id?: string }>;
+            for (const p of presences) {
+              if (p.user_id) online.add(p.user_id);
+            }
+          }
+          setRealtimeOnlineIds(online);
+        })
+        .subscribe(async (status: string) => {
+          if (status === "SUBSCRIBED" && userId) {
+            await presenceChannel?.track({
+              user_id: userId,
+              online_at: new Date().toISOString(),
+            });
+          }
+        });
+    } catch {}
+
+    return () => {
+      if (presenceChannel) {
+        void supabase.removeChannel(presenceChannel);
+      }
+    };
+  }, [userId]);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -339,11 +414,13 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
   }
 
   const userList = users || [];
+  const onlineCount = userList.filter((u) => checkIsUserOnline(u, realtimeOnlineIds, userId)).length;
   const proCount = userList.filter((u) => u.plan === "pro").length;
   const freeCount = userList.filter((u) => u.plan !== "pro").length;
   const adminCount = userList.filter((u) => u.role === "admin").length;
 
   const filteredUsers = userList.filter((u) => {
+    if (userFilterRole === "online" && !checkIsUserOnline(u, realtimeOnlineIds, userId)) return false;
     if (userFilterRole === "pro" && u.plan !== "pro") return false;
     if (userFilterRole === "free" && u.plan === "pro") return false;
     if (userFilterRole === "admin" && u.role !== "admin") return false;
@@ -611,6 +688,13 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
                 </button>
                 <button
                   type="button"
+                  className={`admin-filter-pill ${userFilterRole === "online" ? "active" : ""}`}
+                  onClick={() => setUserFilterRole("online")}
+                >
+                  🟢 Online ({onlineCount})
+                </button>
+                <button
+                  type="button"
                   className={`admin-filter-pill ${userFilterRole === "pro" ? "active" : ""}`}
                   onClick={() => setUserFilterRole("pro")}
                 >
@@ -645,15 +729,22 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
                   const safeAvatar = getSafeAvatarUrl(item.avatarUrl);
                   const isCurrentUser = item.id === userId;
                   const isPro = item.plan === "pro";
+                  const isOnline = checkIsUserOnline(item, realtimeOnlineIds, userId);
                   return (
                     <div className="admin-user-card" key={item.id}>
                       <div className="admin-user-info">
-                        <div className="admin-user-avatar">
-                          {safeAvatar ? (
-                            <Image src={safeAvatar} alt="" width={38} height={38} unoptimized />
-                          ) : (
-                            <span>{(item.displayName || "U").charAt(0).toUpperCase()}</span>
-                          )}
+                        <div className="admin-user-avatar-wrap">
+                          <div className="admin-user-avatar">
+                            {safeAvatar ? (
+                              <Image src={safeAvatar} alt="" width={38} height={38} unoptimized />
+                            ) : (
+                              <span>{(item.displayName || "U").charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <span
+                            className={`admin-avatar-status-badge ${isOnline ? "is-online" : "is-offline"}`}
+                            title={isOnline ? "Status: Sedang Online" : `Status: Offline (${formatRelativeActivity(item.lastSeenAt)})`}
+                          />
                         </div>
                         <div>
                           <div className="admin-user-title-row">
@@ -662,10 +753,19 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
                             <span className={item.role === "admin" ? "admin-role-badge is-admin" : "admin-role-badge"}>
                               {item.role === "admin" ? "Admin" : "User"}
                             </span>
+                            <span className={`admin-status-pill ${isOnline ? "online" : "offline"}`}>
+                              <span className="status-dot" />
+                              {isOnline ? "Online" : "Offline"}
+                            </span>
                           </div>
-                          <small className="admin-user-meta">
-                            ID: {item.id.slice(0, 13)}... · Terdaftar: {formatAuditTime(item.createdAt)}
-                          </small>
+                          <div className="admin-user-meta-sub">
+                            <small className="admin-user-meta">
+                              ID: {item.id.slice(0, 13)}... · Terdaftar: {formatAuditTime(item.createdAt)}
+                            </small>
+                            <span className={`admin-last-active-indicator ${isOnline ? "online" : ""}`}>
+                              • {isOnline ? "Aktif sekarang" : `Terakhir aktif: ${formatRelativeActivity(item.lastSeenAt)}`}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="admin-user-plan-action">
