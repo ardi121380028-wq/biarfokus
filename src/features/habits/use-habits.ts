@@ -9,6 +9,7 @@ import {
   calculateHabitStats,
   buildConsistencyHeatmap,
   getTodayKey,
+  reorderHabitsList,
 } from "./habit-service";
 
 export function useHabits(userId?: string | null) {
@@ -89,9 +90,37 @@ export function useHabits(userId?: string | null) {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...updates } : h)));
   }, []);
 
-  const deleteHabit = useCallback((id: string) => {
+    const deleteHabit = useCallback((id: string) => {
     setHabits((prev) => prev.filter((h) => h.id !== id));
   }, []);
+
+  const reorderHabits = useCallback(
+    (fromIndex: number, toIndex: number, currentList?: Habit[]) => {
+      setHabits((prev) => {
+        const list = currentList && currentList.length > 0 ? currentList : prev;
+        if (
+          fromIndex < 0 ||
+          fromIndex >= list.length ||
+          toIndex < 0 ||
+          toIndex >= list.length ||
+          fromIndex === toIndex
+        ) {
+          return prev;
+        }
+
+        const fromHabit = list[fromIndex];
+        const toHabit = list[toIndex];
+        if (!fromHabit || !toHabit) return prev;
+
+        const realFromIdx = prev.findIndex((h) => h.id === fromHabit.id);
+        const realToIdx = prev.findIndex((h) => h.id === toHabit.id);
+        if (realFromIdx === -1 || realToIdx === -1) return prev;
+
+        return reorderHabitsList(prev, realFromIdx, realToIdx);
+      });
+    },
+    []
+  );
 
   const filteredHabits = useMemo(() => {
     return habits.filter((h) => {
@@ -129,6 +158,7 @@ export function useHabits(userId?: string | null) {
     addHabit,
     updateHabit,
     deleteHabit,
+    reorderHabits,
     isLoaded,
   };
 }

@@ -42,6 +42,7 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
     addHabit,
     updateHabit,
     deleteHabit,
+    reorderHabits,
   } = useHabits(userId);
 
   // View Mode: matrix (default weekly view), checklist, heatmap
@@ -204,6 +205,7 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
                 onEdit={handleOpenEdit}
                 onDelete={deleteHabit}
                 onOpenCreateModal={handleOpenAdd}
+                onReorderHabits={reorderHabits}
               />
             )}
 

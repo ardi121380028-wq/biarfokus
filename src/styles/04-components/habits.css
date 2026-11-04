@@ -1105,7 +1105,8 @@
 .matrix-th-action,
 .matrix-td-action {
   text-align: center;
-  width: 96px;
+  width: 148px;
+  min-width: 148px;
   padding: 12px 14px;
 }
 
@@ -1143,6 +1144,76 @@
   background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
   box-shadow: 0 3px 8px rgba(239, 68, 68, 0.16);
+}
+
+
+/* Matrix Drag-and-Drop Reordering & Handle */
+.matrix-habit-row-drag-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.matrix-drag-handle {
+  cursor: grab;
+  user-select: none;
+  font-size: 16px;
+  color: var(--muted);
+  opacity: 0.45;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.habits-matrix-table tbody tr:hover .matrix-drag-handle {
+  opacity: 0.9;
+}
+
+.matrix-drag-handle:hover {
+  opacity: 1 !important;
+  color: #6366f1;
+  background: color-mix(in srgb, #6366f1 10%, transparent);
+}
+
+.matrix-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Dragging Row States */
+.habits-matrix-table tbody tr.matrix-row.is-dragging {
+  opacity: 0.35;
+  background: color-mix(in srgb, #6366f1 8%, transparent);
+}
+
+.habits-matrix-table tbody tr.matrix-row.drag-over-above {
+  box-shadow: inset 0 2.5px 0 0 #6366f1;
+}
+
+.habits-matrix-table tbody tr.matrix-row.drag-over-below {
+  box-shadow: inset 0 -2.5px 0 0 #6366f1;
+}
+
+/* Move Buttons & Disabled States */
+.matrix-action-btn.move {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.matrix-action-btn.move:hover:not(:disabled) {
+  color: #6366f1;
+}
+
+.matrix-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* ========================================================================== */

@@ -357,3 +357,22 @@ export function saveLocalHabits(habits: Habit[]): void {
     console.error("Failed to save habits to localStorage:", err);
   }
 }
+
+/**
+ * Safely reorders items in an array of habits
+ */
+export function reorderHabitsList(habits: Habit[], fromIndex: number, toIndex: number): Habit[] {
+  if (
+    fromIndex < 0 ||
+    fromIndex >= habits.length ||
+    toIndex < 0 ||
+    toIndex >= habits.length ||
+    fromIndex === toIndex
+  ) {
+    return habits;
+  }
+  const clone = [...habits];
+  const [moved] = clone.splice(fromIndex, 1);
+  clone.splice(toIndex, 0, moved);
+  return clone;
+}

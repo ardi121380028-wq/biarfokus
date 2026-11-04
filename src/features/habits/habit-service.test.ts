@@ -9,6 +9,7 @@ import {
   buildConsistencyHeatmap,
   calculateHabitStats,
   DEFAULT_HABITS,
+  reorderHabitsList,
 } from "./habit-service.ts";
 import type { Habit } from "./habit-types.ts";
 
@@ -109,5 +110,24 @@ describe("Habit Tracker Service & Behavioral Logic", () => {
     assert.equal(stats.completedTodayCount, 1);
     assert.equal(stats.todayRatePercent, 50);
     assert.equal(stats.bestCurrentStreak, 5);
+  });
+  it("reorders habits safely up and down", () => {
+    const list = [
+      { ...DEFAULT_HABITS[0], id: "h1" },
+      { ...DEFAULT_HABITS[1], id: "h2" },
+      { ...DEFAULT_HABITS[2], id: "h3" },
+    ];
+
+    // Move h3 to top
+    const reordered1 = reorderHabitsList(list, 2, 0);
+    assert.deepEqual(reordered1.map(h => h.id), ["h3", "h1", "h2"]);
+
+    // Move h1 to bottom
+    const reordered2 = reorderHabitsList(list, 0, 2);
+    assert.deepEqual(reordered2.map(h => h.id), ["h2", "h3", "h1"]);
+
+    // Out of bounds preserves list
+    const unchanged = reorderHabitsList(list, -1, 5);
+    assert.equal(unchanged, list);
   });
 });

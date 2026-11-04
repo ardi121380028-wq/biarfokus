@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { Habit } from "@/features/habits/habit-types";
 import { getTodayKey, calculateStreak } from "@/features/habits/habit-service";
 import { ConfirmModal } from "@/app/components/ui/confirm-modal";
@@ -11,6 +11,7 @@ interface HabitsMatrixViewProps {
   onEdit: (habit: Habit) => void;
   onDelete: (habitId: string) => void;
   onOpenCreateModal: () => void;
+  onReorderHabits?: (fromIndex: number, toIndex: number, currentList?: Habit[]) => void;
 }
 
 function getWeekDays(offsetWeeks = 0): { date: string; dayName: string; dayNumber: number; isToday: boolean }[] {
@@ -44,11 +45,121 @@ export function HabitsMatrixView({
   onEdit,
   onDelete,
   onOpenCreateModal,
+  onReorderHabits,
 }: HabitsMatrixViewProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [deletingHabit, setDeletingHabit] = useState<Habit | null>(null);
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
   const todayKey = getTodayKey();
+
+  // Drag and drop reordering states
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOverPos, setDragOverPos] = useState<"above" | "below" | null>(null);
+  const touchStartRef = useRef<{ y: number; index: number } | null>(null);
+  const touchOverIndexRef = useRef<number | null>(null);
+
+  function handleDragStart(e: React.DragEvent<HTMLTableRowElement>, index: number) {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLTableRowElement>, index: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (draggedIndex === null || draggedIndex === index) {
+      setDragOverIndex(null);
+      setDragOverPos(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const pos = e.clientY < midY ? "above" : "below";
+    setDragOverIndex(index);
+    setDragOverPos(pos);
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLTableRowElement>) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverIndex(null);
+      setDragOverPos(null);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLTableRowElement>, index: number) {
+    e.preventDefault();
+    if (draggedIndex === null || !onReorderHabits) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      setDragOverPos(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const isAbove = e.clientY < midY;
+    let targetIndex = index;
+    if (draggedIndex < index && isAbove) {
+      targetIndex = index - 1;
+    } else if (draggedIndex > index && !isAbove) {
+      targetIndex = index + 1;
+    }
+    if (targetIndex !== draggedIndex) {
+      onReorderHabits(draggedIndex, targetIndex, habits);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setDragOverPos(null);
+  }
+
+  function handleDragEnd() {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setDragOverPos(null);
+  }
+
+  function handleTouchStart(e: React.TouchEvent, index: number) {
+    const touch = e.touches[0];
+    touchStartRef.current = { y: touch.clientY, index };
+    touchOverIndexRef.current = index;
+    setDraggedIndex(index);
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!touchStartRef.current) return;
+    const touch = e.touches[0];
+    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    const rowBelow = elemBelow?.closest("[data-habit-index]") as HTMLElement | null;
+    if (rowBelow) {
+      const idx = Number(rowBelow.getAttribute("data-habit-index"));
+      if (!Number.isNaN(idx) && idx !== touchOverIndexRef.current) {
+        touchOverIndexRef.current = idx;
+        setDragOverIndex(idx);
+        setDragOverPos(idx < touchStartRef.current.index ? "above" : "below");
+      }
+    }
+  }
+
+  function handleTouchEnd() {
+    const fromIdx = touchStartRef.current?.index ?? null;
+    const toIdx = touchOverIndexRef.current;
+    if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx && onReorderHabits) {
+      onReorderHabits(fromIdx, toIdx, habits);
+    }
+    touchStartRef.current = null;
+    touchOverIndexRef.current = null;
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setDragOverPos(null);
+  }
+
+  function moveHabit(index: number, direction: "up" | "down") {
+    if (!onReorderHabits) return;
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target >= 0 && target < habits.length) {
+      onReorderHabits(index, target, habits);
+    }
+  }
 
   // Week range label (e.g. "20 Okt - 26 Okt 2026")
   const weekRangeLabel = useMemo(() => {
@@ -153,41 +264,67 @@ export function HabitsMatrixView({
             </tr>
           </thead>
           <tbody>
-            {habits.map((habit) => {
+            {habits.map((habit, index) => {
               const weekCompletedCount = weekDays.filter((d) =>
                 habit.completedDates.includes(d.date)
               ).length;
               const streakInfo = calculateStreak(habit.completedDates);
+              const isDragging = draggedIndex === index;
+              const isOver = dragOverIndex === index;
 
               return (
-                <tr key={habit.id} className="matrix-row">
+                <tr
+                  key={habit.id}
+                  className={`matrix-row ${isDragging ? "is-dragging" : ""} ${isOver ? (dragOverPos === "above" ? "drag-over-above" : "drag-over-below") : ""}`}
+                  data-habit-index={index}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                >
                   {/* Sticky Habit Info Column */}
                   <td className="matrix-td-habit">
-                    <div
-                      className="matrix-habit-cell is-clickable"
-                      onClick={() => onEdit(habit)}
-                      title={`Klik untuk edit ${habit.title}`}
-                      role="button"
-                      tabIndex={0}
-                    >
+                    <div className="matrix-habit-row-drag-wrap">
                       <span
-                        className="matrix-habit-icon"
-                        style={{
-                          background: `color-mix(in srgb, ${habit.color} 15%, var(--paper))`,
-                        }}
+                        className="matrix-drag-handle"
+                        style={{ touchAction: "none" }}
+                        title="Tahan dan geser untuk ubah urutan prioritas"
+                        aria-label="Geser urutan prioritas"
+                        onTouchStart={(e) => handleTouchStart(e, index)}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onTouchCancel={handleTouchEnd}
                       >
-                        {habit.icon || "✨"}
+                        ⠿
                       </span>
-                      <div className="matrix-habit-info">
-                        <span className="matrix-habit-title" title={habit.title}>
-                          {habit.title}
+                      <div
+                        className="matrix-habit-cell is-clickable"
+                        onClick={() => onEdit(habit)}
+                        title={`Klik untuk edit ${habit.title}`}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <span
+                          className="matrix-habit-icon"
+                          style={{
+                            background: `color-mix(in srgb, ${habit.color} 15%, var(--paper))`,
+                          }}
+                        >
+                          {habit.icon || "✨"}
                         </span>
-                        <span className="matrix-habit-time-badge">
-                          {habit.routineTime === "morning" && "🌅 Pagi"}
-                          {habit.routineTime === "afternoon" && "☀️ Siang"}
-                          {habit.routineTime === "evening" && "🌙 Malam"}
-                          {habit.routineTime === "anytime" && "⚡ Fleksibel"}
-                        </span>
+                        <div className="matrix-habit-info">
+                          <span className="matrix-habit-title" title={habit.title}>
+                            {habit.title}
+                          </span>
+                          <span className="matrix-habit-time-badge">
+                            {habit.routineTime === "morning" && "🌅 Pagi"}
+                            {habit.routineTime === "afternoon" && "☀️ Siang"}
+                            {habit.routineTime === "evening" && "🌙 Malam"}
+                            {habit.routineTime === "anytime" && "⚡ Fleksibel"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -249,9 +386,29 @@ export function HabitsMatrixView({
                     </span>
                   </td>
 
-                  {/* Action Column: Edit & Delete buttons */}
+                  {/* Action Column: Move, Edit & Delete buttons */}
                   <td className="matrix-td-action">
                     <div className="matrix-actions-group">
+                      <button
+                        type="button"
+                        className="matrix-action-btn move"
+                        onClick={() => moveHabit(index, "up")}
+                        disabled={index === 0}
+                        title="Pindah ke atas"
+                        aria-label="Pindah ke atas"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        className="matrix-action-btn move"
+                        onClick={() => moveHabit(index, "down")}
+                        disabled={index === habits.length - 1}
+                        title="Pindah ke bawah"
+                        aria-label="Pindah ke bawah"
+                      >
+                        ▼
+                      </button>
                       <button
                         type="button"
                         className="matrix-action-btn edit"
