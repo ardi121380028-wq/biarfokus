@@ -13,7 +13,20 @@ function AdminContent() {
 
 export default function AdminPage() {
   return (
-    <Suspense fallback={<div className="inner-page" style={{ minHeight: "80vh" }} />}>
+    <Suspense
+      fallback={
+        <div className="notes-app-workspace admin-workspace-layout">
+          <div
+            className="notes-workspace-main admin-workspace-main"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100dvh" }}
+          >
+            <p className="admin-note" style={{ color: "var(--muted)" }}>
+              Memuat...
+            </p>
+          </div>
+        </div>
+      }
+    >
       <AdminContent />
     </Suspense>
   );

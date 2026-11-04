@@ -60,6 +60,7 @@ export function SettingsView() {
     setDailyGoalPomodoros,
     tickingSoundEnabled,
     setTickingSoundEnabled,
+    setInfoOpen,
   } = useAppContext();
 
   // Collapsible sidebar state
@@ -118,16 +119,16 @@ export function SettingsView() {
     }
   }, []);
 
+  function triggerToast() {
+    setSavedToast(true);
+    window.setTimeout(() => setSavedToast(false), 2000);
+  }
+
   function handleUpdateExtraSetting<K extends keyof UserSettings>(key: K, val: UserSettings[K]) {
     const current = loadLocalSettings();
     const updated = { ...current, [key]: val };
     saveLocalSettings(updated);
     triggerToast();
-  }
-
-  function triggerToast() {
-    setSavedToast(true);
-    window.setTimeout(() => setSavedToast(false), 2000);
   }
 
   // Custom durations (minutes)
@@ -239,27 +240,21 @@ export function SettingsView() {
         </div>
       </AppWorkspaceSidebar>
 
-      {/* Main Settings Content Area (Fluid & Wide) */}
+      {/* Main Settings Content Area */}
       <main className="notes-workspace-main settings-workspace-main">
         {/* Top Header */}
         <header className="notes-workspace-topbar settings-page-topbar">
-          <div className="notes-topbar-left">
+          <div className="cal-topbar-left">
             <button
               type="button"
-              className="notes-topbar-hamburger-btn"
+              className="cal-topbar-hamburger-btn"
               onClick={toggleSidebar}
               aria-label="Toggle Sidebar"
+              title="Buka / Tutup sidebar"
             >
               ☰
             </button>
-            <div>
-              <p className="eyebrow" style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--accent)" }}>
-                BIARFOKUS WORKSPACE
-              </p>
-              <h1 style={{ margin: "2px 0 0", fontSize: 22, fontWeight: 700, color: "var(--ink)" }}>
-                Pengaturan
-              </h1>
-            </div>
+            <span className="notes-topbar-title">Pengaturan</span>
           </div>
 
           {/* Quick tab switcher pill bar on desktop/tablet */}
@@ -304,16 +299,18 @@ export function SettingsView() {
 
         {/* Scrollable Content Container */}
         <div className="settings-page-scroll-container">
-          <div className="settings-page-card">
+          <div className="settings-page-card settings-content" style={{ padding: "32px 36px" }}>
             {/* TAB 1: GENERAL */}
             {activeTab === "general" && (
-              <div className="settings-tab-pane">
+              <>
                 <div className="settings-section">
                   <p className="settings-section-title">TEMA TAMPILAN</p>
-                  <div className="settings-row">
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">Mode Gelap / Terang</p>
-                      <p className="settings-help">Pilih tampilan gelap untuk kenyamanan mata di malam hari.</p>
+                      <span style={{ fontWeight: 600 }}>Mode Gelap / Terang</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Pilih tampilan gelap untuk kenyamanan mata di malam hari.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -327,24 +324,26 @@ export function SettingsView() {
                     </button>
                   </div>
 
-                  <div className="settings-row">
+                  <div className="setting-row" style={{ marginTop: 12 }}>
                     <div>
-                      <p className="settings-label">Warna Aksen Halaman</p>
-                      <p className="settings-help">Warna tema personalisasi background kartu dan aksen.</p>
+                      <span style={{ fontWeight: 600 }}>Warna Aksen Halaman</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Warna tema personalisasi background kartu dan aksen.
+                      </p>
                     </div>
-                    <div className="settings-color-picker">
-                      {colorThemes.map((theme) => (
+                    <div className="theme-options">
+                      {colorThemes.map(({ color, name }) => (
                         <button
-                          key={theme.name}
+                          key={color}
                           type="button"
-                          className={`settings-color-swatch ${selectedColor === theme.color ? "active" : ""}`}
-                          style={{ backgroundColor: theme.color }}
+                          title={name}
+                          aria-label={name}
+                          className={selectedColor === color ? "theme-swatch selected" : "theme-swatch"}
+                          style={{ backgroundColor: color }}
                           onClick={() => {
-                            setSelectedColor(theme.color);
+                            setSelectedColor(color);
                             triggerToast();
                           }}
-                          aria-label={`Pilih tema ${theme.name}`}
-                          title={theme.name}
                         />
                       ))}
                     </div>
@@ -353,25 +352,24 @@ export function SettingsView() {
 
                 <div className="settings-section">
                   <p className="settings-section-title">NOTIFIKASI</p>
-                  <div className="settings-row">
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">Notifikasi Desktop Browser</p>
-                      <p className="settings-help">Kirim pemberitahuan saat sesi fokus atau istirahat selesai.</p>
+                      <span style={{ fontWeight: 600 }}>Notifikasi Desktop Browser</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Kirim pemberitahuan saat sesi fokus atau istirahat selesai.
+                      </p>
                     </div>
                     <button
                       type="button"
                       className={`settings-contrast-toggle ${notificationsEnabled ? "active" : ""}`}
                       onClick={async () => {
-                        if (!notificationsEnabled && "Notification" in window) {
+                        if (!notificationsEnabled && typeof Notification !== "undefined" && Notification.permission === "default") {
                           const permission = await Notification.requestPermission();
-                          if (permission === "granted") {
-                            setNotificationsEnabled(true);
-                            triggerToast();
-                          }
+                          setNotificationsEnabled(permission === "granted");
                         } else {
                           setNotificationsEnabled(!notificationsEnabled);
-                          triggerToast();
                         }
+                        triggerToast();
                       }}
                     >
                       {notificationsEnabled ? "Aktif" : "Nonaktif"}
@@ -381,20 +379,21 @@ export function SettingsView() {
 
                 <div className="settings-section">
                   <p className="settings-section-title">BAHASA &amp; FORMAT WAKTU</p>
-                  <div className="settings-row">
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">
-                        Bahasa Antarmuka{" "}
-                        <span style={{ fontSize: 10, background: "var(--accent)", color: "#fff", padding: "1px 5px", borderRadius: 4, marginLeft: 6, fontWeight: 700 }}>
-                          SEGERA HADIR
-                        </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontWeight: 600 }}>Bahasa Antarmuka</span>
+                        <span className="settings-coming-soon-pill">Segera Hadir</span>
+                      </div>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Pilih bahasa aplikasi untuk kenyamanan kerja kamu (saat ini aktif dalam Bahasa Indonesia).
                       </p>
-                      <p className="settings-help">Pilih bahasa aplikasi untuk kenyamanan kerja kamu (saat ini aktif dalam Bahasa Indonesia).</p>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                       <button
                         type="button"
-                        className={`settings-contrast-toggle ${language === "id" ? "active" : ""}`}
+                        className="settings-contrast-toggle active"
+                        title="Bahasa aktif: Indonesia"
                         onClick={() => {
                           setLanguage("id");
                           handleUpdateExtraSetting("language", "id");
@@ -404,23 +403,28 @@ export function SettingsView() {
                       </button>
                       <button
                         type="button"
-                        className={`settings-contrast-toggle ${language === "en" ? "active" : ""}`}
+                        className="settings-contrast-toggle"
+                        style={{ opacity: 0.65, cursor: "pointer" }}
                         onClick={() => {
-                          setLanguage("en");
-                          handleUpdateExtraSetting("language", "en");
+                          setInfoOpen?.(
+                            "Dukungan antarmuka bahasa Inggris sedang disiapkan dan akan segera hadir di pembaruan berikutnya!"
+                          );
                         }}
+                        title="Dukungan bahasa Inggris segera hadir (Coming Soon)"
                       >
-                        🇬🇧 English <small>(Soon)</small>
+                        🇬🇧 English <span style={{ fontSize: "10px", marginLeft: "4px", color: "var(--muted)", fontWeight: 600 }}>(Soon)</span>
                       </button>
                     </div>
                   </div>
 
-                  <div className="settings-row">
+                  <div className="setting-row" style={{ marginTop: 10 }}>
                     <div>
-                      <p className="settings-label">Format Jam &amp; Waktu</p>
-                      <p className="settings-help">Tampilan jam di kalender, timer, dan kartu tenggat waktu.</p>
+                      <span style={{ fontWeight: 600 }}>Format Jam &amp; Waktu</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Tampilan jam di kalender, timer, dan kartu tenggat waktu.
+                      </p>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 8 }}>
                       <button
                         type="button"
                         className={`settings-contrast-toggle ${timeFormat === "24" ? "active" : ""}`}
@@ -447,13 +451,14 @@ export function SettingsView() {
 
                 <div className="settings-section">
                   <p className="settings-section-title">GAYA LAYAR LOADING (SPLASH SCREEN)</p>
-                  <p className="settings-help" style={{ marginBottom: 14 }}>
+                  <p className="settings-help" style={{ margin: "0 0 12px" }}>
                     Pilih animasi tampilan pembuka (startup) aplikasi sesuai preferensi estetikamu:
                   </p>
-                  <div className="settings-loading-style-grid">
+
+                  <div className="loading-styles-grid">
                     <button
                       type="button"
-                      className={`settings-loading-card ${loadingStyle === "minimal" ? "active" : ""}`}
+                      className={`loading-style-card ${loadingStyle === "minimal" ? "active" : ""}`}
                       onClick={() => {
                         setLoadingStyle("minimal");
                         handleUpdateExtraSetting("loadingStyle", "minimal");
@@ -462,19 +467,19 @@ export function SettingsView() {
                         } catch {}
                       }}
                     >
-                      <div className="settings-loading-preview preview-minimal">
-                        <span className="preview-logo-icon">⚡</span>
-                        <div className="preview-rainbow-bar" />
+                      <div className="loading-style-preview">
+                        <span className="style-icon">⚡</span>
+                        <div className="prev-rainbow-bar" />
                       </div>
-                      <div className="settings-loading-meta">
-                        <span className="settings-loading-title">Minimalis (Pelangi Dinamis)</span>
-                        <span className="settings-loading-desc">Hanya logo besar dengan bar pelangi tipis tanpa teks.</span>
+                      <div className="loading-style-info">
+                        <strong>Minimalis (Pelangi Dinamis)</strong>
+                        <span>Hanya logo besar dengan bar pelangi tipis tanpa teks.</span>
                       </div>
                     </button>
 
                     <button
                       type="button"
-                      className={`settings-loading-card ${loadingStyle === "pro" ? "active" : ""}`}
+                      className={`loading-style-card ${loadingStyle === "pro" ? "active" : ""}`}
                       onClick={() => {
                         setLoadingStyle("pro");
                         handleUpdateExtraSetting("loadingStyle", "pro");
@@ -483,19 +488,19 @@ export function SettingsView() {
                         } catch {}
                       }}
                     >
-                      <div className="settings-loading-preview preview-pro">
-                        <span className="preview-pro-sparkle">✨</span>
-                        <span className="preview-pro-badge">PRO LUXURY</span>
+                      <div className="loading-style-preview pro-prev">
+                        <span className="style-icon">✨</span>
+                        <span className="prev-pro-pill">PRO LUXURY</span>
                       </div>
-                      <div className="settings-loading-meta">
-                        <span className="settings-loading-title">Pro Aurora (Layar Gelap &amp; Laser Mewah)</span>
-                        <span className="settings-loading-desc">Layar gelap immersif unboxed, ambient aurora glow, dan laser neon dinamis.</span>
+                      <div className="loading-style-info">
+                        <strong>Pro Aurora (Layar Gelap &amp; Laser Mewah)</strong>
+                        <span>Layar gelap immersif unboxed, ambient aurora glow, dan laser neon dinamis.</span>
                       </div>
                     </button>
 
                     <button
                       type="button"
-                      className={`settings-loading-card ${loadingStyle === "classic" ? "active" : ""}`}
+                      className={`loading-style-card ${loadingStyle === "classic" ? "active" : ""}`}
                       onClick={() => {
                         setLoadingStyle("classic");
                         handleUpdateExtraSetting("loadingStyle", "classic");
@@ -504,13 +509,13 @@ export function SettingsView() {
                         } catch {}
                       }}
                     >
-                      <div className="settings-loading-preview preview-classic">
-                        <span className="preview-classic-icon">🏛️</span>
-                        <span className="preview-classic-text">&ldquo;Fokus...&rdquo;</span>
+                      <div className="loading-style-preview classic-prev">
+                        <span className="style-icon">🏛️</span>
+                        <span className="prev-classic-text">&ldquo;Fokus...&rdquo;</span>
                       </div>
-                      <div className="settings-loading-meta">
-                        <span className="settings-loading-title">Klasik (BiarFokus Orisinal)</span>
-                        <span className="settings-loading-desc">Kartu fokus minimalis dengan kutipan produktivitas harian.</span>
+                      <div className="loading-style-info">
+                        <strong>Klasik (BiarFokus Orisinal)</strong>
+                        <span>Kartu fokus minimalis dengan kutipan produktivitas harian.</span>
                       </div>
                     </button>
                   </div>
@@ -518,248 +523,310 @@ export function SettingsView() {
 
                 <div className="settings-section">
                   <p className="settings-section-title">STATUS APLIKASI</p>
-                  <div className="settings-row">
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">Penyimpanan Workspace</p>
-                      <p className="settings-help">Sinkronisasi otomatis cloud Supabase dan cache lokal browser.</p>
+                      <span style={{ fontWeight: 600 }}>Penyimpanan Workspace</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Sinkronisasi otomatis cloud Supabase dan cache lokal browser.
+                      </p>
                     </div>
                     <span className="settings-badge-ok">
                       {user ? "Tersambung Cloud" : "Mode Tamu Lokal"}
                     </span>
                   </div>
                 </div>
-              </div>
+              </>
             )}
 
             {/* TAB 2: POMODORO / TIMER */}
             {activeTab === "pomodoro" && (
-              <div className="settings-tab-pane">
-                <div className="settings-section">
-                  <p className="settings-section-title">PRESET DURASI FOKUS CEPAT</p>
-                  <div className="settings-preset-buttons">
-                    <button
-                      type="button"
-                      className="settings-contrast-btn"
-                      onClick={() => {
-                        setTimerDurations(presetClassic);
-                        triggerToast();
-                      }}
-                    >
-                      Klasik (25 / 5 / 15m)
-                    </button>
-                    <button
-                      type="button"
-                      className="settings-contrast-btn"
-                      onClick={() => {
-                        setTimerDurations(presetDeepWork);
-                        triggerToast();
-                      }}
-                    >
-                      Deep Work (50 / 10 / 30m)
-                    </button>
-                    <button
-                      type="button"
-                      className="settings-contrast-btn"
-                      onClick={() => {
-                        setTimerDurations(presetSprint);
-                        triggerToast();
-                      }}
-                    >
-                      Sprint (15 / 3 / 10m)
-                    </button>
-                  </div>
-                </div>
+              <div className="settings-pomodoro-layout">
+                {/* Left Column: Durations, Presets & Cycles */}
+                <div className="settings-pomodoro-col">
+                  {/* Custom Durations Section */}
+                  <div className="settings-section">
+                    <p className="settings-section-title">CUSTOM WAKTU FOKUS (MENIT)</p>
+                    <p className="settings-help" style={{ margin: "0 0 10px" }}>
+                      Tentukan durasi bebas sesuai ritme kerja kamu.
+                    </p>
 
-                <div className="settings-section">
-                  <p className="settings-section-title">KUSTOMISASI DURASI (MENIT)</p>
-                  <div className="settings-durations-grid">
-                    <div className="settings-duration-input-card">
-                      <label htmlFor="custom-pomo">⏱️ Pomodoro</label>
-                      <input
-                        id="custom-pomo"
-                        type="number"
-                        min="1"
-                        max="180"
-                        value={customPomoMin}
-                        onChange={(e) => setCustomPomoMin(Number(e.target.value))}
-                        onBlur={() => handleApplyCustomMinutes(customPomoMin, customShortMin, customLongMin)}
-                      />
-                      <small>menit</small>
+                    <div className="settings-custom-durations-grid">
+                      <div className="duration-input-box">
+                        <label htmlFor="pomo-input">Fokus (Pomodoro)</label>
+                        <div className="duration-input-stepper">
+                          <input
+                            id="pomo-input"
+                            type="number"
+                            min={1}
+                            max={180}
+                            value={customPomoMin}
+                            onChange={(e) => {
+                              const v = parseInt(e.target.value, 10) || 1;
+                              handleApplyCustomMinutes(v, customShortMin, customLongMin);
+                            }}
+                          />
+                          <span className="stepper-unit">menit</span>
+                        </div>
+                      </div>
+
+                      <div className="duration-input-box">
+                        <label htmlFor="short-input">Istirahat Pendek</label>
+                        <div className="duration-input-stepper">
+                          <input
+                            id="short-input"
+                            type="number"
+                            min={1}
+                            max={60}
+                            value={customShortMin}
+                            onChange={(e) => {
+                              const v = parseInt(e.target.value, 10) || 1;
+                              handleApplyCustomMinutes(customPomoMin, v, customLongMin);
+                            }}
+                          />
+                          <span className="stepper-unit">menit</span>
+                        </div>
+                      </div>
+
+                      <div className="duration-input-box">
+                        <label htmlFor="long-input">Istirahat Panjang</label>
+                        <div className="duration-input-stepper">
+                          <input
+                            id="long-input"
+                            type="number"
+                            min={1}
+                            max={120}
+                            value={customLongMin}
+                            onChange={(e) => {
+                              const v = parseInt(e.target.value, 10) || 1;
+                              handleApplyCustomMinutes(customPomoMin, customShortMin, v);
+                            }}
+                          />
+                          <span className="stepper-unit">menit</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="settings-duration-input-card">
-                      <label htmlFor="custom-short">☕ Istirahat Pendek</label>
-                      <input
-                        id="custom-short"
-                        type="number"
-                        min="1"
-                        max="60"
-                        value={customShortMin}
-                        onChange={(e) => setCustomShortMin(Number(e.target.value))}
-                        onBlur={() => handleApplyCustomMinutes(customPomoMin, customShortMin, customLongMin)}
-                      />
-                      <small>menit</small>
-                    </div>
-                    <div className="settings-duration-input-card">
-                      <label htmlFor="custom-long">🌴 Istirahat Panjang</label>
-                      <input
-                        id="custom-long"
-                        type="number"
-                        min="1"
-                        max="120"
-                        value={customLongMin}
-                        onChange={(e) => setCustomLongMin(Number(e.target.value))}
-                        onBlur={() => handleApplyCustomMinutes(customPomoMin, customShortMin, customLongMin)}
-                      />
-                      <small>menit</small>
+
+                    {/* Quick Presets */}
+                    <div style={{ marginTop: 12 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
+                        Template Durasi Cepat
+                      </span>
+                      <div className="settings-presets-row" style={{ marginTop: 6 }}>
+                        <button
+                          type="button"
+                          className="settings-preset-chip"
+                          onClick={() => handleApplyCustomMinutes(25, 5, 15)}
+                        >
+                          🎯 Klasik (25/5/15)
+                        </button>
+                        <button
+                          type="button"
+                          className="settings-preset-chip"
+                          onClick={() => handleApplyCustomMinutes(50, 10, 30)}
+                        >
+                          🧠 Deep Work (50/10/30)
+                        </button>
+                        <button
+                          type="button"
+                          className="settings-preset-chip"
+                          onClick={() => handleApplyCustomMinutes(15, 3, 10)}
+                        >
+                          ⚡ Kilat (15/3/10)
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="settings-section">
-                  <p className="settings-section-title">SUARA ALARM &amp; AUDIO</p>
-                  <div className="settings-row">
-                    <div>
-                      <p className="settings-label">Pilihan Suara Alarm</p>
-                      <p className="settings-help">Nada saat sesi fokus selesai.</p>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <select
-                        value={alarmSound}
-                        onChange={(e) => {
-                          setAlarmSound(e.target.value as AlarmSoundType);
-                          triggerToast();
-                        }}
-                        className="settings-select"
-                      >
-                        {ALARM_SOUND_OPTIONS.map((opt) => (
-                          <option key={opt.type} value={opt.type}>
-                            {opt.label}
-                          </option>
+                  {/* Interval & Daily Goal */}
+                  <div className="settings-section">
+                    <p className="settings-section-title">SIKLUS &amp; TARGET</p>
+                    <div className="setting-row">
+                      <div>
+                        <span style={{ fontWeight: 600 }}>Interval Istirahat Panjang</span>
+                        <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                          Sesi istirahat panjang dimulai setiap {longBreakInterval} sesi.
+                        </p>
+                      </div>
+                      <div className="interval-options" role="group">
+                        {[2, 3, 4, 5, 6].map((count) => (
+                          <button
+                            key={count}
+                            type="button"
+                            className={longBreakInterval === count ? "interval-chip active" : "interval-chip"}
+                            onClick={() => {
+                              setLongBreakInterval(count);
+                              triggerToast();
+                            }}
+                          >
+                            {count} sesi
+                          </button>
                         ))}
-                      </select>
+                      </div>
+                    </div>
+
+                    <div className="setting-row" style={{ marginTop: 8 }}>
+                      <div>
+                        <span style={{ fontWeight: 600 }}>Target Harian Pomodoro</span>
+                        <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                          Target: {dailyGoalPomodoros} sesi (~{Math.round(((dailyGoalPomodoros * customPomoMin) / 60) * 10) / 10} jam).
+                        </p>
+                      </div>
+                      <div className="interval-options" role="group">
+                        {[4, 6, 8, 10, 12].map((count) => (
+                          <button
+                            key={count}
+                            type="button"
+                            className={dailyGoalPomodoros === count ? "interval-chip active" : "interval-chip"}
+                            onClick={() => {
+                              setDailyGoalPomodoros(count);
+                              triggerToast();
+                            }}
+                          >
+                            {count}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Sound, Alarms & Audio Tone Cards */}
+                <div className="settings-pomodoro-col">
+                  {/* Sound & Alarm */}
+                  <div className="settings-section">
+                    <p className="settings-section-title">SUARA &amp; ALARM</p>
+
+                    <div className="setting-row">
+                      <div>
+                        <span style={{ fontWeight: 600 }}>Suara Alarm Selesai</span>
+                        <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                          Bunyi saat waktu fokus atau istirahat berakhir.
+                        </p>
+                      </div>
                       <button
                         type="button"
-                        className="settings-contrast-btn"
-                        onClick={toggleAlarmPreview}
-                        style={{ padding: "6px 12px", fontSize: 12 }}
+                        className={`settings-contrast-toggle ${soundEnabled ? "active" : ""}`}
+                        onClick={() => {
+                          setSoundEnabled(!soundEnabled);
+                          triggerToast();
+                        }}
                       >
-                        {isPlayingPreview ? "⏹ Stop" : "▶ Test"}
+                        {soundEnabled ? "Aktif" : "Bisu"}
                       </button>
                     </div>
-                  </div>
 
-                  <div className="settings-row">
-                    <div>
-                      <p className="settings-label">Ulangi Bunyi Alarm</p>
-                      <p className="settings-help">Alarm berbunyi 3 kali berturut-turut.</p>
+                    <div className="setting-row" style={{ marginTop: 8 }}>
+                      <div>
+                        <span style={{ fontWeight: 600 }}>Ulangi Alarm (Repeat Alarm)</span>
+                        <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                          Terus berbunyi berulang sampai timer diklik.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={`settings-contrast-toggle ${repeatAlarm ? "active" : ""}`}
+                        onClick={() => {
+                          setRepeatAlarm(!repeatAlarm);
+                          triggerToast();
+                        }}
+                      >
+                        {repeatAlarm ? "Aktif" : "Sekali"}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className={`settings-contrast-toggle ${repeatAlarm ? "active" : ""}`}
-                      onClick={() => {
-                        setRepeatAlarm(!repeatAlarm);
-                        triggerToast();
-                      }}
-                    >
-                      {repeatAlarm ? "Aktif" : "Mati"}
-                    </button>
-                  </div>
 
-                  <div className="settings-row">
-                    <div>
-                      <p className="settings-label">Detik Jam Ticking</p>
-                      <p className="settings-help">Bunyi detik halus saat timer berjalan.</p>
+                    <div className="setting-row" style={{ marginTop: 8 }}>
+                      <div>
+                        <span style={{ fontWeight: 600 }}>Detak Jam (Clock Ticking)</span>
+                        <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                          Detik lembut setiap detik timer aktif.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={`settings-contrast-toggle ${tickingSoundEnabled ? "active" : ""}`}
+                        onClick={() => {
+                          setTickingSoundEnabled(!tickingSoundEnabled);
+                          triggerToast();
+                        }}
+                      >
+                        {tickingSoundEnabled ? "Aktif" : "Mati"}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className={`settings-contrast-toggle ${tickingSoundEnabled ? "active" : ""}`}
-                      onClick={() => {
-                        setTickingSoundEnabled(!tickingSoundEnabled);
-                        triggerToast();
-                      }}
-                    >
-                      {tickingSoundEnabled ? "Aktif" : "Mati"}
-                    </button>
-                  </div>
-                </div>
 
-                <div className="settings-section">
-                  <p className="settings-section-title">ALUR OTOMATIS &amp; TARGET</p>
-                  <div className="settings-row">
-                    <div>
-                      <p className="settings-label">Otomatis Lanjut Sesi</p>
-                      <p className="settings-help">Langsung mulai hitung mundur saat transisi mode.</p>
+                    <div className="setting-row" style={{ marginTop: 8 }}>
+                      <div>
+                        <span style={{ fontWeight: 600 }}>Mulai Otomatis Sesi</span>
+                        <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                          Langsung mulai istirahat saat fokus selesai.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={`settings-contrast-toggle ${autoStart ? "active" : ""}`}
+                        onClick={() => {
+                          setAutoStart(!autoStart);
+                          triggerToast();
+                        }}
+                      >
+                        {autoStart ? "Aktif" : "Manual"}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className={`settings-contrast-toggle ${autoStart ? "active" : ""}`}
-                      onClick={() => {
-                        setAutoStart(!autoStart);
-                        triggerToast();
-                      }}
-                    >
-                      {autoStart ? "Aktif" : "Mati"}
-                    </button>
-                  </div>
 
-                  <div className="settings-row">
-                    <div>
-                      <p className="settings-label">Interval Istirahat Panjang</p>
-                      <p className="settings-help">Istirahat panjang setiap berapa kali sesi fokus?</p>
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {[2, 3, 4, 5].map((count) => (
+                    {/* Alarm Sound Picker */}
+                    <div style={{ marginTop: 12 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
+                        Pilihan Nada Alarm
+                      </span>
+                      <div className="alarm-options" role="radiogroup" style={{ marginTop: 6 }}>
+                        {ALARM_SOUND_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.type}
+                            type="button"
+                            role="radio"
+                            aria-checked={alarmSound === opt.type}
+                            className={alarmSound === opt.type ? "alarm-option-card active" : "alarm-option-card"}
+                            onClick={() => {
+                              setAlarmSound(opt.type);
+                              triggerToast();
+                            }}
+                          >
+                            <div className="alarm-option-header">
+                              <strong>{opt.label}</strong>
+                              {alarmSound === opt.type && <span className="alarm-check">✓ Dipilih</span>}
+                            </div>
+                            <p>{opt.description}</p>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="alarm-test-wrap" style={{ marginTop: 10 }}>
                         <button
-                          key={count}
                           type="button"
-                          className={`settings-contrast-toggle ${longBreakInterval === count ? "active" : ""}`}
-                          onClick={() => {
-                            setLongBreakInterval(count);
-                            triggerToast();
-                          }}
+                          className={`settings-contrast-btn ${isPlayingPreview ? "playing" : ""}`}
+                          onClick={toggleAlarmPreview}
                         >
-                          {count}x
+                          {isPlayingPreview ? "⏹ Hentikan Bunyi" : "▶ Uji Nada Alarm"}
                         </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="settings-row">
-                    <div>
-                      <p className="settings-label">Target Pomodoro Harian</p>
-                      <p className="settings-help">Jumlah tomat target untuk dicapai setiap hari.</p>
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {[4, 6, 8, 10, 12].map((goal) => (
-                        <button
-                          key={goal}
-                          type="button"
-                          className={`settings-contrast-toggle ${dailyGoalPomodoros === goal ? "active" : ""}`}
-                          onClick={() => {
-                            setDailyGoalPomodoros(goal);
-                            triggerToast();
-                          }}
-                        >
-                          {goal} 🍅
-                        </button>
-                      ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* TAB 3: CATATAN & TODO */}
+            {/* TAB 3: CATATAN */}
             {activeTab === "catatan" && (
-              <div className="settings-tab-pane">
+              <>
                 <div className="settings-section">
-                  <p className="settings-section-title">TAMPILAN CATATAN</p>
-                  <div className="settings-row">
+                  <p className="settings-section-title">TAMPILAN &amp; TATA LETAK CATATAN</p>
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">Layout Default Grid / List</p>
-                      <p className="settings-help">Susunan kartu catatan di ruang kerja Catatan &amp; Todo.</p>
+                      <span style={{ fontWeight: 600 }}>Tampilan Default Catatan</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Pilih format kisi kartu atau daftar vertikal saat membuka catatan.
+                      </p>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 8 }}>
                       <button
                         type="button"
                         className={`settings-contrast-toggle ${notesDefaultView === "grid" ? "active" : ""}`}
@@ -768,7 +835,7 @@ export function SettingsView() {
                           handleUpdateExtraSetting("notesDefaultView", "grid");
                         }}
                       >
-                        🗂️ Grid (Kartu)
+                        ⊞ Grid Kotak
                       </button>
                       <button
                         type="button"
@@ -778,15 +845,17 @@ export function SettingsView() {
                           handleUpdateExtraSetting("notesDefaultView", "list");
                         }}
                       >
-                        📑 Baris (List)
+                        ☰ Daftar Vertikal
                       </button>
                     </div>
                   </div>
 
-                  <div className="settings-row">
+                  <div className="setting-row" style={{ marginTop: 10 }}>
                     <div>
-                      <p className="settings-label">Konfirmasi Sebelum Menghapus</p>
-                      <p className="settings-help">Minta konfirmasi dialog saat tombol hapus catatan diklik.</p>
+                      <span style={{ fontWeight: 600 }}>Konfirmasi Sebelum Hapus Catatan</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Tampilkan dialog peringatan konfirmasi agar catatan tidak terhapus tidak sengaja.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -797,17 +866,19 @@ export function SettingsView() {
                         handleUpdateExtraSetting("notesConfirmDelete", val);
                       }}
                     >
-                      {notesConfirmDelete ? "Wajib Konfirmasi" : "Langsung Hapus"}
+                      {notesConfirmDelete ? "Aktif" : "Nonaktif"}
                     </button>
                   </div>
                 </div>
 
                 <div className="settings-section">
                   <p className="settings-section-title">PENYIMPANAN &amp; EKSPOR</p>
-                  <div className="settings-row">
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">Auto-copy Teks Catatan Selesai</p>
-                      <p className="settings-help">Salin checklist yang selesai ke papan klip secara otomatis.</p>
+                      <span style={{ fontWeight: 600 }}>Salin Teks ke Clipboard saat Ekspor</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Otomatis salin ringkasan catatan saat menekan tombol ekspor atau bagikan.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -821,21 +892,33 @@ export function SettingsView() {
                       {notesAutoCopy ? "Aktif" : "Nonaktif"}
                     </button>
                   </div>
+
+                  <div className="setting-row" style={{ marginTop: 10 }}>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Format Ekspor PDF &amp; Markdown</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Mendukung ekspor langsung ke format PDF dan format teks Markdown (.md).
+                      </p>
+                    </div>
+                    <span className="settings-badge-ok">Tersedia</span>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
             {/* TAB 4: KALENDER */}
             {activeTab === "kalender" && (
-              <div className="settings-tab-pane">
+              <>
                 <div className="settings-section">
                   <p className="settings-section-title">TAMPILAN AWAL KALENDER</p>
-                  <div className="settings-row">
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">Mode Default Kalender</p>
-                      <p className="settings-help">Tampilan yang dibuka pertama kali di halaman Kalender.</p>
+                      <span style={{ fontWeight: 600 }}>Tampilan Default Kalender</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Mode waktu yang otomatis terbuka pertama kali saat membuka menu Kalender.
+                      </p>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 8 }}>
                       <button
                         type="button"
                         className={`settings-contrast-toggle ${calendarDefaultView === "day" ? "active" : ""}`}
@@ -844,7 +927,7 @@ export function SettingsView() {
                           handleUpdateExtraSetting("calendarDefaultView", "day");
                         }}
                       >
-                        Hari
+                        Hari (Day)
                       </button>
                       <button
                         type="button"
@@ -854,7 +937,7 @@ export function SettingsView() {
                           handleUpdateExtraSetting("calendarDefaultView", "week");
                         }}
                       >
-                        Minggu
+                        Minggu (Week)
                       </button>
                       <button
                         type="button"
@@ -864,17 +947,19 @@ export function SettingsView() {
                           handleUpdateExtraSetting("calendarDefaultView", "month");
                         }}
                       >
-                        Bulan
+                        Bulan (Month)
                       </button>
                     </div>
                   </div>
 
-                  <div className="settings-row">
+                  <div className="setting-row" style={{ marginTop: 10 }}>
                     <div>
-                      <p className="settings-label">Durasi Default Event Baru</p>
-                      <p className="settings-help">Durasi waktu awal saat klik di kalender (menit).</p>
+                      <span style={{ fontWeight: 600 }}>Durasi Standar Jadwal Baru</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Durasi bawaan saat mengklik kalender untuk menambah acara baru.
+                      </p>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 8 }}>
                       {[15, 30, 60].map((mins) => (
                         <button
                           key={mins}
@@ -894,54 +979,60 @@ export function SettingsView() {
 
                 <div className="settings-section">
                   <p className="settings-section-title">PENGELOLAAN &amp; INTEGRASI JADWAL</p>
-                  <div className="settings-row">
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">Konfirmasi Hapus Event</p>
-                      <p className="settings-help">Tampilkan konfirmasi sebelum jadwal dihapus permanen.</p>
+                      <span style={{ fontWeight: 600 }}>Konfirmasi Sebelum Hapus Jadwal</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Tampilkan notifikasi peringatan sebelum acara kalender dihapus permanen.
+                      </p>
                     </div>
                     <button
                       type="button"
                       className={`settings-contrast-toggle ${calendarConfirmDelete ? "active" : ""}`}
                       onClick={() => {
-                        const val = !calendarConfirmDelete;
-                        setCalendarConfirmDelete(val);
-                        handleUpdateExtraSetting("calendarConfirmDelete", val);
+                        const next = !calendarConfirmDelete;
+                        setCalendarConfirmDelete(next);
+                        handleUpdateExtraSetting("calendarConfirmDelete", next);
                       }}
                     >
-                      {calendarConfirmDelete ? "Wajib Konfirmasi" : "Langsung Hapus"}
+                      {calendarConfirmDelete ? "Aktif" : "Nonaktif"}
                     </button>
                   </div>
 
-                  <div className="settings-row">
+                  <div className="setting-row" style={{ marginTop: 10 }}>
                     <div>
-                      <p className="settings-label">Integrasi Jadwal ke Kanban</p>
-                      <p className="settings-help">Otomatis sinkronisasi event kalender yang terhubung kartu kanban.</p>
+                      <span style={{ fontWeight: 600 }}>Integrasi Otomatis Kartu Kanban</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Kartu kanban yang memiliki rentang tanggal tenggat otomatis tampil di kalender.
+                      </p>
                     </div>
                     <button
                       type="button"
                       className={`settings-contrast-toggle ${calendarKanbanSync ? "active" : ""}`}
                       onClick={() => {
-                        const val = !calendarKanbanSync;
-                        setCalendarKanbanSync(val);
-                        handleUpdateExtraSetting("calendarKanbanSync", val);
+                        const next = !calendarKanbanSync;
+                        setCalendarKanbanSync(next);
+                        handleUpdateExtraSetting("calendarKanbanSync", next);
                       }}
                     >
                       {calendarKanbanSync ? "Aktif" : "Nonaktif"}
                     </button>
                   </div>
                 </div>
-              </div>
+              </>
             )}
 
             {/* TAB 5: KANBAN */}
             {activeTab === "kanban" && (
-              <div className="settings-tab-pane">
+              <>
                 <div className="settings-section">
                   <p className="settings-section-title">PENGATURAN KARTU &amp; PAPAN PROYEK</p>
-                  <div className="settings-row">
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">Konfirmasi Hapus Kartu</p>
-                      <p className="settings-help">Tampilkan peringatan saat kartu kanban dihapus.</p>
+                      <span style={{ fontWeight: 600 }}>Konfirmasi Sebelum Hapus Kartu</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Mencegah kartu proyek tidak sengaja terhapus dengan peringatan konfirmasi.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -952,14 +1043,16 @@ export function SettingsView() {
                         handleUpdateExtraSetting("kanbanConfirmDelete", val);
                       }}
                     >
-                      {kanbanConfirmDelete ? "Wajib Konfirmasi" : "Langsung Hapus"}
+                      {kanbanConfirmDelete ? "Aktif" : "Nonaktif"}
                     </button>
                   </div>
 
-                  <div className="settings-row">
+                  <div className="setting-row" style={{ marginTop: 10 }}>
                     <div>
-                      <p className="settings-label">Tampilkan PIC / Penanggung Jawab</p>
-                      <p className="settings-help">Tampilkan avatar PIC di kartu kanban depan.</p>
+                      <span style={{ fontWeight: 600 }}>Tampilkan PIC / Penanggung Jawab</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Tampilkan avatar nama PIC di bagian muka kartu kanban.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -970,14 +1063,16 @@ export function SettingsView() {
                         handleUpdateExtraSetting("kanbanShowPIC", val);
                       }}
                     >
-                      {kanbanShowPIC ? "Tampilkan" : "Sembunyikan"}
+                      {kanbanShowPIC ? "Aktif" : "Nonaktif"}
                     </button>
                   </div>
 
-                  <div className="settings-row">
+                  <div className="setting-row" style={{ marginTop: 10 }}>
                     <div>
-                      <p className="settings-label">Tampilkan Tanggal Tenggat (Due Date)</p>
-                      <p className="settings-help">Beri penanda warna status tenggat di kartu kanban.</p>
+                      <span style={{ fontWeight: 600 }}>Tampilkan Tanggal Tenggat (Due Date)</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Tampilkan badge peringatan tanggal tenggat waktu di kartu kanban.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -988,17 +1083,19 @@ export function SettingsView() {
                         handleUpdateExtraSetting("kanbanShowDueDate", val);
                       }}
                     >
-                      {kanbanShowDueDate ? "Tampilkan" : "Sembunyikan"}
+                      {kanbanShowDueDate ? "Aktif" : "Nonaktif"}
                     </button>
                   </div>
                 </div>
 
                 <div className="settings-section">
-                  <p className="settings-section-title">FITUR WORKFLOW PRODUKTIVITAS</p>
-                  <div className="settings-row">
+                  <p className="settings-section-title">INTEGRASI &amp; PRODUKTIVITAS</p>
+                  <div className="setting-row">
                     <div>
-                      <p className="settings-label">Integrasi Eat Your Frog</p>
-                      <p className="settings-help">Sorot kartu penting dengan badge katak prioritas.</p>
+                      <span style={{ fontWeight: 600 }}>Integrasi Eat Your Frog</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Beri tanda bintang katak dan sinkronkan tugas prioritas kanban ke daftar katak harian.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -1013,10 +1110,12 @@ export function SettingsView() {
                     </button>
                   </div>
 
-                  <div className="settings-row">
+                  <div className="setting-row" style={{ marginTop: 10 }}>
                     <div>
-                      <p className="settings-label">Menu Pindah Cepat di Mobile</p>
-                      <p className="settings-help">Tampilkan tombol panah geser kolom langsung di kartu mobile.</p>
+                      <span style={{ fontWeight: 600 }}>Pindah Cepat Kolom di Mobile</span>
+                      <p className="settings-help" style={{ margin: "2px 0 0" }}>
+                        Tampilkan tombol panah untuk memindahkan kartu antar kolom di smartphone tanpa drag &amp; drop.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -1031,7 +1130,7 @@ export function SettingsView() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>

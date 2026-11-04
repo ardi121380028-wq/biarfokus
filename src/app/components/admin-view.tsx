@@ -338,58 +338,21 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
     copyToClipboard(erdMarkdown, "Spesifikasi ERD Database (Markdown)");
   }
 
-  if (!userId) {
-    return (
-      <div className="inner-page">
-        <p className="eyebrow">Workspace admin</p>
-        <h1>Akses Terbatas</h1>
-        <p className="admin-note">
-          Silakan masuk dengan akun administrator untuk mengakses halaman ini.
-        </p>
-      </div>
-    );
-  }
+  const userList = users || [];
+  const proCount = userList.filter((u) => u.plan === "pro").length;
+  const freeCount = userList.filter((u) => u.plan !== "pro").length;
+  const adminCount = userList.filter((u) => u.role === "admin").length;
 
-  if (!isAdmin) {
-    return (
-      <div className="inner-page">
-        <p className="eyebrow">Workspace admin</p>
-        <h1>Akses Ditolak</h1>
-        <p className="task-error" role="alert">
-          Akun kamu tidak memiliki izin administrator untuk membuka halaman ini.
-        </p>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="inner-page">
-        <p className="eyebrow">Workspace admin</p>
-        <h1>Overview</h1>
-        <p className="admin-note">Memuat metrik real-time, daftar pengguna, dan audit log...</p>
-      </div>
-    );
-  }
-
-  if (error && !overview) {
-    return (
-      <div className="inner-page">
-        <p className="eyebrow">Workspace admin</p>
-        <h1>Overview</h1>
-        <p className="task-error" role="alert">
-          Gagal memuat data admin: {error}
-        </p>
-        <button
-          type="button"
-          className="secondary-button admin-action-button"
-          onClick={() => void loadData()}
-        >
-          Coba lagi
-        </button>
-      </div>
-    );
-  }
+  const filteredUsers = userList.filter((u) => {
+    if (userFilterRole === "pro" && u.plan !== "pro") return false;
+    if (userFilterRole === "free" && u.plan === "pro") return false;
+    if (userFilterRole === "admin" && u.role !== "admin") return false;
+    if (!userSearchQuery.trim()) return true;
+    const q = userSearchQuery.toLowerCase();
+    const name = (u.displayName || "").toLowerCase();
+    const id = (u.id || "").toLowerCase();
+    return name.includes(q) || id.includes(q);
+  });
 
   const data = overview ?? {
     totalUsers: 0,
@@ -405,21 +368,6 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
     auditLogs: [],
   };
 
-  const proCount = users.filter((u) => u.plan === "pro").length;
-  const freeCount = users.filter((u) => u.plan !== "pro").length;
-  const adminCount = users.filter((u) => u.role === "admin").length;
-
-  const filteredUsers = users.filter((u) => {
-    if (userFilterRole === "pro" && u.plan !== "pro") return false;
-    if (userFilterRole === "free" && u.plan === "pro") return false;
-    if (userFilterRole === "admin" && u.role !== "admin") return false;
-    if (!userSearchQuery.trim()) return true;
-    const q = userSearchQuery.toLowerCase();
-    const name = (u.displayName || "").toLowerCase();
-    const id = (u.id || "").toLowerCase();
-    return name.includes(q) || id.includes(q);
-  });
-
   return (
     <div className="notes-app-workspace admin-workspace-layout">
       <AppWorkspaceSidebar
@@ -431,37 +379,66 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
       <main className="notes-workspace-main admin-workspace-main">
         {/* Top Header */}
         <header className="notes-workspace-topbar admin-workspace-topbar">
-          <div className="notes-topbar-left" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div className="cal-topbar-left">
             <button
               type="button"
-              className="notes-topbar-hamburger-btn"
+              className="cal-topbar-hamburger-btn"
               onClick={toggleSidebar}
               aria-label="Toggle Sidebar"
+              title="Buka / Tutup sidebar"
             >
               ☰
             </button>
-            <div>
-              <p className="eyebrow" style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--accent)" }}>
-                WORKSPACE ADMIN
-              </p>
-              <h1 style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>
-                Overview &amp; Manajemen Pengguna
-              </h1>
-            </div>
+            <span className="notes-topbar-title">Overview &amp; Manajemen Pengguna</span>
           </div>
-          <button
-            type="button"
-            className="secondary-button admin-action-button"
-            onClick={() => void handleAuditRefresh()}
-            disabled={recording}
-          >
-            {recording ? "Mencatat..." : "🔄 Catat Audit & Refresh"}
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              className="secondary-button admin-action-button"
+              onClick={() => void handleAuditRefresh()}
+              disabled={recording || loading}
+            >
+              {recording ? "Mencatat..." : "🔄 Catat Audit & Refresh"}
+            </button>
+          )}
         </header>
 
         {/* Fluid Scrollable Content */}
         <div className="admin-workspace-scroll-container">
           <div className="admin-workspace-fluid-content">
+            {!userId ? (
+              <div style={{ padding: "48px 24px", textAlign: "center", background: "var(--paper)", borderRadius: 16, border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)", maxWidth: 500, margin: "40px auto" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "var(--ink)" }}>Akses Terbatas</h2>
+                <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Silakan masuk dengan akun administrator untuk mengakses halaman ini.</p>
+              </div>
+            ) : !isAdmin ? (
+              <div style={{ padding: "48px 24px", textAlign: "center", background: "var(--paper)", borderRadius: 16, border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)", maxWidth: 500, margin: "40px auto" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🚫</div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "var(--danger, #ef4444)" }}>Akses Ditolak</h2>
+                <p className="task-error" role="alert" style={{ margin: 0 }}>Akun kamu tidak memiliki izin administrator untuk membuka halaman ini.</p>
+              </div>
+            ) : loading ? (
+              <div style={{ padding: "48px 24px", textAlign: "center", background: "var(--paper)", borderRadius: 16, border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)", maxWidth: 500, margin: "40px auto" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "var(--ink)" }}>Memuat Dashboard Admin</h2>
+                <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Memuat metrik real-time, daftar pengguna, dan audit log...</p>
+              </div>
+            ) : error && !overview ? (
+              <div style={{ padding: "48px 24px", textAlign: "center", background: "var(--paper)", borderRadius: 16, border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)", maxWidth: 500, margin: "40px auto" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "var(--ink)" }}>Gagal Memuat Data Admin</h2>
+                <p className="task-error" role="alert" style={{ margin: "0 0 16px" }}>Gagal memuat data admin: {error}</p>
+                <button
+                  type="button"
+                  className="secondary-button admin-action-button"
+                  onClick={() => void loadData()}
+                >
+                  Coba lagi
+                </button>
+              </div>
+            ) : (
+              <>
 
       {error && (
         <p className="task-error" role="alert">
@@ -1314,6 +1291,8 @@ Security: 100% tables protected by Row Level Security (RLS) via \`auth.uid() = u
           </div>
         </div>
       )}
+              </>
+            )}
           </div>
         </div>
       </main>

@@ -13466,6 +13466,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
+.theme-swatch {
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, outline 0.15s ease;
+}
+
+.theme-swatch:hover {
+  transform: scale(1.12);
+}
+
+.theme-swatch.selected {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
 .settings-floating-save-toast {
   position: absolute;
   bottom: 24px;
