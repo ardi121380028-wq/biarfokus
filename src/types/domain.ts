@@ -13,6 +13,8 @@ export type Task = {
   linkedNoteTitle?: string;
   linkedItemId?: string;
   linkedItemText?: string;
+  sourceHabitId?: string;
+  sourceHabitTitle?: string;
 };
 
 export type DbTask = {

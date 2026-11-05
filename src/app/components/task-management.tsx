@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import type { KeepNote, Task } from "@/types/domain";
 import type { LinkedNoteMeta } from "@/features/tasks/task-service";
@@ -346,7 +347,16 @@ export function TaskManagement({
                 <span className="checkmark" />
                 <div className="task-title-group">
                   <span className="task-title">{task.title}</span>
-                  {task.linkedNoteTitle && (
+                  {(task.sourceHabitTitle || task.linkedNoteTitle === "Kebiasaan") ? (
+                    <Link
+                      href="/kebiasaan"
+                      className="task-linked-badge habit-badge"
+                      onClick={(e) => e.stopPropagation()}
+                      title={`Berasal dari Kebiasaan: "${task.sourceHabitTitle || task.title}". Klik untuk membuka Kebiasaan.`}
+                    >
+                      ✨ Kebiasaan
+                    </Link>
+                  ) : task.linkedNoteTitle ? (
                     <span
                       className="task-linked-badge"
                       onClick={(e) => {
@@ -359,31 +369,33 @@ export function TaskManagement({
                       📝 {task.linkedNoteTitle}
                       {task.linkedItemText && task.linkedItemText !== task.title ? ` · ${task.linkedItemText}` : ""}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </label>
-              <button
-                type="button"
-                className={isFocused ? "task-focus-btn active" : "task-focus-btn"}
-                onClick={() => onSelectTask(isFocused ? null : task.id)}
-                aria-pressed={isFocused}
-                title={isFocused ? "Klik untuk membatalkan fokus aktif" : "Jadikan fokus aktif"}
-              >
-                {isFocused ? "🎯 Fokus" : "Pilih"}
-              </button>
-              <button
-                type="button"
-                className="task-timeblock-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTimeblockTarget({ task, isFrog: index === 0 });
-                }}
-                title={index === 0 ? "Timeblock target Eat Your Frog di Kalender" : "Timeblock tugas ini di Kalender"}
-                aria-label={`Timeblock ${task.title} di Kalender`}
-              >
-                <span>📅</span>
-              </button>
-              <span className="task-pomos">🍅 {task.pomodoros}</span>
+              <div className="task-actions-group">
+                <button
+                  type="button"
+                  className={isFocused ? "task-focus-btn active" : "task-focus-btn"}
+                  onClick={() => onSelectTask(isFocused ? null : task.id)}
+                  aria-pressed={isFocused}
+                  title={isFocused ? "Klik untuk membatalkan fokus aktif" : "Jadikan fokus aktif"}
+                >
+                  {isFocused ? "🎯 Fokus" : "Pilih"}
+                </button>
+                <button
+                  type="button"
+                  className="task-timeblock-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTimeblockTarget({ task, isFrog: index === 0 });
+                  }}
+                  title={index === 0 ? "Timeblock target Eat Your Frog di Kalender" : "Timeblock tugas ini di Kalender"}
+                  aria-label={`Timeblock ${task.title} di Kalender`}
+                >
+                  <span>📅</span>
+                </button>
+                <span className="task-pomos">🍅 {task.pomodoros}</span>
+              </div>
               <button
                 type="button"
                 className="task-delete"
@@ -408,7 +420,16 @@ export function TaskManagement({
                 <span className="checkmark" />
                 <div className="task-title-group">
                   <span className="task-title">{task.title}</span>
-                  {task.linkedNoteTitle && (
+                  {(task.sourceHabitTitle || task.linkedNoteTitle === "Kebiasaan") ? (
+                    <Link
+                      href="/kebiasaan"
+                      className="task-linked-badge habit-badge"
+                      onClick={(e) => e.stopPropagation()}
+                      title={`Berasal dari Kebiasaan: "${task.sourceHabitTitle || task.title}". Klik untuk membuka Kebiasaan.`}
+                    >
+                      ✨ Kebiasaan
+                    </Link>
+                  ) : task.linkedNoteTitle ? (
                     <span
                       className="task-linked-badge"
                       onClick={(e) => {
@@ -420,7 +441,7 @@ export function TaskManagement({
                     >
                       📝 {task.linkedNoteTitle}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </label>
               <span className="task-pomos">🍅 {task.pomodoros}</span>

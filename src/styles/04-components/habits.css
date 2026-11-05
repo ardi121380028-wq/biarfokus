@@ -1002,6 +1002,38 @@
   color: var(--muted);
 }
 
+/* Matrix Habit Meta Row & Quick Frog Button */
+.matrix-habit-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.matrix-quick-frog-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #10b981 35%, transparent);
+  background: color-mix(in srgb, #10b981 12%, var(--paper));
+  color: #047857;
+  font-size: 10.5px;
+  font-weight: 750;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: all 0.14s ease;
+}
+
+.matrix-quick-frog-btn:hover {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+  transform: scale(1.04);
+}
+
 .matrix-td-day {
   text-align: center;
   padding: 12px 6px;
@@ -4250,28 +4282,27 @@ body:has(.habit-modal-backdrop) .mobile-bottom-nav {
 
   /* Matrix table sticky column on mobile: wider & wraps 2 lines so full titles are clearly visible */
   .matrix-th-habit {
-    width: 195px !important;
-    min-width: 195px !important;
-    max-width: 210px !important;
-    padding: 10px 8px !important;
+    width: 225px !important;
+    min-width: 225px !important;
+    max-width: 260px !important;
+    padding: 10px 10px !important;
   }
 
   .matrix-td-habit {
-    width: 195px !important;
-    min-width: 195px !important;
-    max-width: 210px !important;
-    padding: 10px 8px !important;
+    width: 225px !important;
+    min-width: 225px !important;
+    max-width: 260px !important;
+    padding: 10px 10px !important;
   }
 
   .matrix-habit-title {
     font-size: 13px !important;
     white-space: normal !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
+    display: block !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
     word-break: break-word !important;
-    line-height: 1.25 !important;
+    line-height: 1.35 !important;
   }
 
   .matrix-th-action,

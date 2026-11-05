@@ -428,6 +428,9 @@ export function buildHabitFrogTask(habit: Habit, id = `task-habit-${Date.now()}`
     title: habit.title,
     done: false,
     pomodoros,
+    linkedNoteTitle: "Kebiasaan",
+    sourceHabitId: habit.id,
+    sourceHabitTitle: habit.title,
   };
 }
 
@@ -490,8 +493,17 @@ export async function addHabitAsFrogTask(
         const { getSupabaseBrowserClient } = await import("../../lib/supabase/client");
         const { createTask, saveCloudTaskOrder } = await import("../tasks/task-service");
         const supabase = getSupabaseBrowserClient();
-        const serverTask = await createTask(supabase, userId, habit.title);
-        createdTask = { ...serverTask, pomodoros: frogTask.pomodoros };
+        const serverTask = await createTask(supabase, userId, habit.title, {
+          linkedNoteTitle: "Kebiasaan",
+          linkedItemText: habit.title,
+        });
+        createdTask = {
+          ...serverTask,
+          pomodoros: frogTask.pomodoros,
+          linkedNoteTitle: "Kebiasaan",
+          sourceHabitId: habit.id,
+          sourceHabitTitle: habit.title,
+        };
 
         const existing = loadLocalTasks();
         const active = existing.filter((t) => !t.done && t.id !== createdTask.id);

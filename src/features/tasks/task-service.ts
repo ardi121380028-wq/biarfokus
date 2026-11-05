@@ -56,7 +56,8 @@ export function areTasksEqual(a: Task[], b: Task[]): boolean {
       x.linkedNoteId !== y.linkedNoteId ||
       x.linkedNoteTitle !== y.linkedNoteTitle ||
       x.linkedItemId !== y.linkedItemId ||
-      x.linkedItemText !== y.linkedItemText
+      x.linkedItemText !== y.linkedItemText ||
+      x.sourceHabitTitle !== y.sourceHabitTitle
     ) {
       return false;
     }

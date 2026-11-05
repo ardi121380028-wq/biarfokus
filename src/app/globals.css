@@ -13679,3 +13679,93 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .app.dark .admin-last-active-indicator.online {
   color: #34d399;
 }
+
+
+/* Task Actions Group & Habit Badge */
+.task-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.task-linked-badge.habit-badge {
+  background: color-mix(in srgb, #6366f1 14%, var(--paper)) !important;
+  color: #6366f1 !important;
+  border: 1px solid color-mix(in srgb, #6366f1 28%, transparent) !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+.task-linked-badge.habit-badge:hover {
+  background: color-mix(in srgb, #6366f1 24%, var(--paper)) !important;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .task {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    position: relative !important;
+    padding: 12px 34px 12px 8px !important;
+    gap: 6px 8px !important;
+  }
+
+  .task-drag-handle {
+    margin-top: 3px !important;
+    flex: none !important;
+  }
+
+  .task-check {
+    flex: 1 1 calc(100% - 30px) !important;
+    min-width: 0 !important;
+    align-items: flex-start !important;
+    overflow: visible !important;
+  }
+
+  .task-check .checkmark {
+    margin-top: 2px !important;
+    flex: none !important;
+  }
+
+  .task-title-group {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  .task-title {
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.35 !important;
+    font-size: 14.5px !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    display: block !important;
+  }
+
+  .task-delete {
+    position: absolute !important;
+    top: 8px !important;
+    right: 6px !important;
+    padding: 4px !important;
+    line-height: 1 !important;
+    font-size: 22px !important;
+  }
+
+  .task-actions-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding-left: 36px !important;
+    margin-top: 3px !important;
+  }
+}

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { loadCloudHabits, saveCloudHabits } from "./habit-cloud";
 import type { Habit, HabitFilter, HabitStats, HeatmapDay } from "./habit-types";
 import {
   loadLocalHabits,
@@ -18,18 +20,105 @@ export function useHabits(userId?: string | null) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initialize habits from local storage
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize habits from local storage and sync with Supabase cloud
   useEffect(() => {
-    const loaded = loadLocalHabits();
-    setHabits(loaded);
+    let isCancelled = false;
+    const local = loadLocalHabits();
+    setHabits(local);
     setIsLoaded(true);
+
+    if (!userId) return;
+
+    // Load from Supabase cloud
+    (async () => {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const cloud = await loadCloudHabits(supabase, userId);
+        if (isCancelled) return;
+        if (cloud && cloud.length > 0) {
+          setHabits(cloud);
+          saveLocalHabits(cloud);
+        } else if (local && local.length > 0) {
+          await saveCloudHabits(supabase, userId, local);
+        }
+      } catch (err) {
+        console.warn("[BiarFokus Habits] Cloud sync init failed:", err);
+      }
+    })();
+
+    // Realtime Supabase subscription on profiles
+    let channel: any = null;
+    try {
+      const supabase = getSupabaseBrowserClient();
+      channel = supabase
+        .channel(`habits_realtime_${userId}_${Date.now()}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "profiles",
+            filter: `id=eq.${userId}`,
+          },
+          (payload: any) => {
+            if (isCancelled) return;
+            const updatedHabits = payload.new?.settings?.habits;
+            if (Array.isArray(updatedHabits) && updatedHabits.length > 0) {
+              setHabits(updatedHabits);
+              saveLocalHabits(updatedHabits);
+            }
+          }
+        )
+        .subscribe();
+    } catch {}
+
+    // Tab visibility and focus change (e.g. mobile returns from background or desktop window focused)
+    const handleVisibilityOrFocus = async () => {
+      if (document.visibilityState === "visible" && !isCancelled) {
+        try {
+          const supabase = getSupabaseBrowserClient();
+          const cloud = await loadCloudHabits(supabase, userId);
+          if (cloud && cloud.length > 0) {
+            setHabits(cloud);
+            saveLocalHabits(cloud);
+          }
+        } catch {}
+      }
+    };
+
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    return () => {
+      isCancelled = true;
+      if (channel) void channel.unsubscribe();
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+    };
   }, [userId]);
 
-  // Save to localStorage whenever habits change after initial load
+  // Save to localStorage and cloud whenever habits change after initial load
   useEffect(() => {
     if (!isLoaded) return;
     saveLocalHabits(habits);
-  }, [habits, isLoaded]);
+
+    if (!userId) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        await saveCloudHabits(supabase, userId, habits);
+      } catch (err) {
+        console.warn("[BiarFokus Habits] Debounced save failed:", err);
+      }
+    }, 600);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [habits, isLoaded, userId]);
 
   // Audio feedback on habit check-in
   const playCheckinSound = useCallback(() => {

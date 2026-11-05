@@ -322,12 +322,26 @@ export function HabitsMatrixView({
                           <span className="matrix-habit-title" title={habit.title}>
                             {habit.title}
                           </span>
-                          <span className="matrix-habit-time-badge">
-                            {habit.routineTime === "morning" && "🌅 Pagi"}
-                            {habit.routineTime === "afternoon" && "☀️ Siang"}
-                            {habit.routineTime === "evening" && "🌙 Malam"}
-                            {habit.routineTime === "anytime" && "⚡ Fleksibel"}
-                          </span>
+                          <div className="matrix-habit-meta-row">
+                            <span className="matrix-habit-time-badge">
+                              {habit.routineTime === "morning" && "🌅 Pagi"}
+                              {habit.routineTime === "afternoon" && "☀️ Siang"}
+                              {habit.routineTime === "evening" && "🌙 Malam"}
+                              {habit.routineTime === "anytime" && "⚡ Fleksibel"}
+                            </span>
+                            <button
+                              type="button"
+                              className="matrix-quick-frog-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAddToFrog?.(habit);
+                              }}
+                              title={`Jadikan "${habit.title}" sebagai target Eat That Frog di Beranda`}
+                              aria-label={`Jadikan Eat That Frog ${habit.title}`}
+                            >
+                              🐸 +Frog
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -393,6 +407,24 @@ export function HabitsMatrixView({
                   {/* Action Column: Move, Edit & Delete buttons */}
                   <td className="matrix-td-action">
                     <div className="matrix-actions-group">
+                      <button
+                        type="button"
+                        className="matrix-action-btn frog"
+                        onClick={() => onAddToFrog?.(habit)}
+                        title={`Jadikan "${habit.title}" sebagai Eat That Frog di Beranda`}
+                        aria-label={`Jadikan Eat That Frog ${habit.title}`}
+                      >
+                        🐸
+                      </button>
+                      <button
+                        type="button"
+                        className="matrix-action-btn calendar"
+                        onClick={() => onAddToCalendar?.(habit)}
+                        title={`Jadwalkan "${habit.title}" ke Kalender Hari Ini`}
+                        aria-label={`Jadwalkan ${habit.title} ke Kalender`}
+                      >
+                        📅
+                      </button>
                       <button
                         type="button"
                         className="matrix-action-btn move"
