@@ -5,7 +5,10 @@ import type { Habit, RoutineTime } from "@/features/habits/habit-types";
 
 interface HabitModalProps {
   initialHabit?: Habit | null;
-  onSave: (habitData: Omit<Habit, "id" | "completedDates" | "streakCurrent" | "streakBest" | "createdAt">) => void;
+  onSave: (
+    habitData: Omit<Habit, "id" | "completedDates" | "streakCurrent" | "streakBest" | "createdAt">,
+    extraActions?: { addToFrog?: boolean; addToCalendar?: boolean }
+  ) => void;
   onClose: () => void;
 }
 
@@ -91,6 +94,18 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
   const [linkedPomodoroMinutes, setLinkedPomodoroMinutes] = useState<number | undefined>(
     initialHabit?.linkedPomodoroMinutes
   );
+  const isPresetPomodoro =
+    initialHabit?.linkedPomodoroMinutes === undefined ||
+    [15, 25, 50].includes(initialHabit?.linkedPomodoroMinutes);
+  const [isCustomPomo, setIsCustomPomo] = useState<boolean>(!isPresetPomodoro);
+  const [customMinutes, setCustomMinutes] = useState<string>(
+    !isPresetPomodoro && initialHabit?.linkedPomodoroMinutes
+      ? String(initialHabit.linkedPomodoroMinutes)
+      : "30"
+  );
+  const [addToFrog, setAddToFrog] = useState(false);
+  const [addToCalendar, setAddToCalendar] = useState(false);
+
   // Mobile tab state to toggle between form inputs and ready-made templates
   const [mobileTab, setMobileTab] = useState<"form" | "templates">("form");
 
@@ -103,6 +118,12 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
     setColor(tpl.color);
     setIcon(tpl.icon);
     setLinkedPomodoroMinutes(tpl.linkedPomodoroMinutes);
+    if (tpl.linkedPomodoroMinutes && ![15, 25, 50].includes(tpl.linkedPomodoroMinutes)) {
+      setIsCustomPomo(true);
+      setCustomMinutes(String(tpl.linkedPomodoroMinutes));
+    } else {
+      setIsCustomPomo(false);
+    }
     // On mobile, automatically navigate back to form so user can review/save
     setMobileTab("form");
   };
@@ -123,6 +144,9 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
       color,
       icon,
       linkedPomodoroMinutes,
+    }, {
+      addToFrog,
+      addToCalendar,
     });
     onClose();
   };
@@ -292,6 +316,35 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
                 />
               </div>
 
+              {/* Quick Actions: Eat That Frog & Calendar */}
+              <div className="habit-modal-integrations-box">
+                <span className="integrations-title">⚡ Tambahkan ke Jadwal Hari Ini:</span>
+                <div className="integrations-checkbox-group">
+                  <label className="habit-integration-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={addToFrog}
+                      onChange={(e) => setAddToFrog(e.target.checked)}
+                    />
+                    <span className="checkbox-label-text">
+                      <strong>🐸 Jadikan Eat That Frog di Beranda</strong>
+                      <span className="checkbox-subtext">Masuk sebagai target fokus utama #1 di Timer hari ini</span>
+                    </span>
+                  </label>
+                  <label className="habit-integration-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={addToCalendar}
+                      onChange={(e) => setAddToCalendar(e.target.checked)}
+                    />
+                    <span className="checkbox-label-text">
+                      <strong>📅 Jadwalkan di Kalender Hari Ini</strong>
+                      <span className="checkbox-subtext">Otomatis buat blok waktu sesuai jam rutinitas ({routineTime === "morning" ? "07:30" : routineTime === "afternoon" ? "13:00" : routineTime === "evening" ? "19:30" : "09:00"})</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
               {/* Pomodoro & Accent Color Row */}
               <div className="form-row-two-col">
                 <div className="form-group">
@@ -303,20 +356,63 @@ export function HabitModal({ initialHabit, onSave, onClose }: HabitModalProps) {
                       { value: 25, label: "25 Menit", icon: "🍅" },
                       { value: 50, label: "50 Menit", icon: "🍅" },
                     ].map((opt) => {
-                      const isSelected = linkedPomodoroMinutes === opt.value;
+                      const isSelected = !isCustomPomo && linkedPomodoroMinutes === opt.value;
                       return (
                         <button
                           key={opt.label}
                           type="button"
                           className={`pomodoro-opt-pill ${isSelected ? "selected" : ""}`}
-                          onClick={() => setLinkedPomodoroMinutes(opt.value)}
+                          onClick={() => {
+                            setIsCustomPomo(false);
+                            setLinkedPomodoroMinutes(opt.value);
+                          }}
                         >
                           <span className="pomo-opt-icon">{opt.icon}</span>
                           <span className="pomo-opt-label">{opt.label}</span>
                         </button>
                       );
                     })}
+                    <button
+                      type="button"
+                      className={`pomodoro-opt-pill ${isCustomPomo ? "selected" : ""}`}
+                      onClick={() => {
+                        setIsCustomPomo(true);
+                        const parsed = parseInt(customMinutes, 10);
+                        setLinkedPomodoroMinutes(!isNaN(parsed) && parsed > 0 ? parsed : 30);
+                      }}
+                      title="Atur durasi timer kustom bebas"
+                    >
+                      <span className="pomo-opt-icon">⚙️</span>
+                      <span className="pomo-opt-label">Kustom</span>
+                    </button>
                   </div>
+                  {isCustomPomo && (
+                    <div className="custom-pomo-input-row">
+                      <label htmlFor="custom-pomo-input" className="custom-pomo-label">
+                        Durasi Timer:
+                      </label>
+                      <div className="custom-pomo-field">
+                        <input
+                          id="custom-pomo-input"
+                          type="number"
+                          min="1"
+                          max="180"
+                          value={customMinutes}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCustomMinutes(val);
+                            const parsed = parseInt(val, 10);
+                            if (!isNaN(parsed) && parsed > 0) {
+                              setLinkedPomodoroMinutes(parsed);
+                            }
+                          }}
+                          className="text-input custom-pomo-input"
+                          placeholder="30"
+                        />
+                        <span className="custom-pomo-unit">Menit fokus</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">

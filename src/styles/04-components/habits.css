@@ -1105,8 +1105,8 @@
 .matrix-th-action,
 .matrix-td-action {
   text-align: center;
-  width: 148px;
-  min-width: 148px;
+  width: 205px;
+  min-width: 205px;
   padding: 12px 14px;
 }
 
@@ -1144,6 +1144,113 @@
   background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
   box-shadow: 0 3px 8px rgba(239, 68, 68, 0.16);
+}
+
+.matrix-action-btn.frog:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.2);
+}
+
+.matrix-action-btn.calendar:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow: 0 3px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* Custom Pomodoro Duration Input in Habit Modal */
+.custom-pomo-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--paper) 90%, var(--surface));
+  border: 1px dashed color-mix(in srgb, #6366f1 35%, transparent);
+}
+
+.custom-pomo-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.custom-pomo-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.custom-pomo-input {
+  width: 72px !important;
+  padding: 5px 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 750 !important;
+  text-align: center;
+  border-radius: 7px !important;
+}
+
+.custom-pomo-unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Quick Integrations in Habit Modal */
+.habit-modal-integrations-box {
+  margin-top: 14px;
+  margin-bottom: 6px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--paper) 95%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+.integrations-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.integrations-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.habit-integration-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.habit-integration-checkbox input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: #6366f1;
+}
+
+.checkbox-label-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.checkbox-label-text strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.checkbox-subtext {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 
@@ -4141,23 +4248,51 @@ body:has(.habit-modal-backdrop) .mobile-bottom-nav {
     justify-content: space-between;
   }
 
-  /* Matrix table sticky column on mobile */
+  /* Matrix table sticky column on mobile: wider & wraps 2 lines so full titles are clearly visible */
   .matrix-th-habit {
-    width: 125px !important;
-    min-width: 125px !important;
-    max-width: 125px !important;
-    padding: 8px 8px !important;
+    width: 195px !important;
+    min-width: 195px !important;
+    max-width: 210px !important;
+    padding: 10px 8px !important;
   }
 
   .matrix-td-habit {
-    width: 125px !important;
-    min-width: 125px !important;
-    max-width: 125px !important;
-    padding: 8px 8px !important;
+    width: 195px !important;
+    min-width: 195px !important;
+    max-width: 210px !important;
+    padding: 10px 8px !important;
   }
 
   .matrix-habit-title {
-    font-size: 12.5px;
+    font-size: 13px !important;
+    white-space: normal !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
+    line-height: 1.25 !important;
+  }
+
+  .matrix-th-action,
+  .matrix-td-action {
+    width: 110px !important;
+    min-width: 110px !important;
+    padding: 6px 3px !important;
+  }
+
+  .matrix-actions-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    justify-content: center !important;
+    width: 98px !important;
+  }
+
+  .matrix-action-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11.5px !important;
   }
 
   .matrix-habit-cell {

@@ -1,4 +1,7 @@
 import type { Habit, DayCheckin, HabitStats, HeatmapDay, RoutineTime } from "./habit-types.ts";
+import type { CalendarEvent, Task } from "../../types/domain.ts";
+import { getCalendarStorageKey, parseStoredEvents } from "../calendar/calendar-service.ts";
+import { LOCAL_TASKS_KEY, loadLocalTasks } from "../tasks/task-service.ts";
 
 export const HABIT_STORAGE_KEY = "biarfokus.habits_v1";
 
@@ -375,4 +378,147 @@ export function reorderHabitsList(habits: Habit[], fromIndex: number, toIndex: n
   const [moved] = clone.splice(fromIndex, 1);
   clone.splice(toIndex, 0, moved);
   return clone;
+}
+
+
+/**
+ * Maps a habit into a CalendarEvent draft for today
+ */
+export function buildHabitCalendarEvent(habit: Habit, dateStr = getTodayKey()): Omit<CalendarEvent, "id"> {
+  let startTime = "08:00";
+  if (habit.routineTime === "morning") startTime = "07:30";
+  else if (habit.routineTime === "afternoon") startTime = "13:00";
+  else if (habit.routineTime === "evening") startTime = "19:30";
+  else startTime = "09:00";
+
+  const durationMin = habit.linkedPomodoroMinutes && habit.linkedPomodoroMinutes > 0 ? habit.linkedPomodoroMinutes : 30;
+
+  const [startH, startM] = startTime.split(":").map(Number);
+  const totalEndM = startH * 60 + startM + durationMin;
+  const endH = Math.min(23, Math.floor(totalEndM / 60));
+  const endM = totalEndM % 60;
+  const endTime = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+
+  const descriptionParts: string[] = [];
+  if (habit.cue) descriptionParts.push(`Pemicu: ${habit.cue}`);
+  if (habit.identity) descriptionParts.push(`Identitas: ${habit.identity}`);
+  if (habit.twoMinuteRule) descriptionParts.push(`Aturan 2 Menit: ${habit.twoMinuteRule}`);
+
+  return {
+    title: `${habit.icon ? habit.icon + " " : ""}${habit.title}`,
+    date: dateStr,
+    startTime,
+    endTime,
+    color: habit.color || "#6366f1",
+    category: "task",
+    description: descriptionParts.length > 0 ? descriptionParts.join("\n") : undefined,
+  };
+}
+
+/**
+ * Builds an Eat That Frog task from a habit
+ */
+export function buildHabitFrogTask(habit: Habit, id = `task-habit-${Date.now()}`): Task {
+  const pomodoros = habit.linkedPomodoroMinutes && habit.linkedPomodoroMinutes >= 25
+    ? Math.max(1, Math.round(habit.linkedPomodoroMinutes / 25))
+    : 1;
+
+  return {
+    id,
+    title: habit.title,
+    done: false,
+    pomodoros,
+  };
+}
+
+/**
+ * Persists a habit to the Calendar (localStorage + optional Supabase cloud)
+ */
+export async function addHabitToCalendar(
+  habit: Habit,
+  userId?: string | null,
+  dateStr = getTodayKey()
+): Promise<CalendarEvent> {
+  const draft = buildHabitCalendarEvent(habit, dateStr);
+  const newEvent: CalendarEvent = {
+    ...draft,
+    id: `ev-habit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  };
+
+  if (typeof window !== "undefined") {
+    try {
+      const storageKey = getCalendarStorageKey(userId);
+      const raw = window.localStorage.getItem(storageKey);
+      const existing = parseStoredEvents(raw);
+      const updated = [...existing, newEvent];
+      window.localStorage.setItem(storageKey, JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("biarfokus:calendar-updated", { detail: newEvent }));
+    } catch (err) {
+      console.warn("Failed to save habit event to localStorage:", err);
+    }
+
+    if (userId) {
+      try {
+        const { getSupabaseBrowserClient } = await import("../../lib/supabase/client");
+        const { upsertCloudEvent } = await import("../calendar/calendar-cloud");
+        const supabase = getSupabaseBrowserClient();
+        await upsertCloudEvent(supabase, userId, newEvent);
+      } catch (err) {
+        console.warn("Failed to upload habit event to cloud calendar:", err);
+      }
+    }
+  }
+
+  return newEvent;
+}
+
+/**
+ * Persists a habit as the #1 Eat That Frog task in the task list
+ */
+export async function addHabitAsFrogTask(
+  habit: Habit,
+  userId?: string | null
+): Promise<Task> {
+  const frogTask = buildHabitFrogTask(habit, typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `task-${Date.now()}`);
+
+  if (typeof window !== "undefined") {
+    let createdTask = frogTask;
+
+    if (userId) {
+      try {
+        const { getSupabaseBrowserClient } = await import("../../lib/supabase/client");
+        const { createTask, saveCloudTaskOrder } = await import("../tasks/task-service");
+        const supabase = getSupabaseBrowserClient();
+        const serverTask = await createTask(supabase, userId, habit.title);
+        createdTask = { ...serverTask, pomodoros: frogTask.pomodoros };
+
+        const existing = loadLocalTasks();
+        const active = existing.filter((t) => !t.done && t.id !== createdTask.id);
+        const done = existing.filter((t) => t.done && t.id !== createdTask.id);
+        const nextTasks = [createdTask, ...active, ...done];
+
+        window.localStorage.setItem(LOCAL_TASKS_KEY, JSON.stringify(nextTasks));
+        void saveCloudTaskOrder(supabase, userId, nextTasks.map((t) => t.id)).catch(() => {});
+      } catch (err) {
+        const existing = loadLocalTasks();
+        const active = existing.filter((t) => !t.done);
+        const done = existing.filter((t) => t.done);
+        const nextTasks = [createdTask, ...active, ...done];
+        window.localStorage.setItem(LOCAL_TASKS_KEY, JSON.stringify(nextTasks));
+      }
+    } else {
+      const existing = loadLocalTasks();
+      const active = existing.filter((t) => !t.done);
+      const done = existing.filter((t) => t.done);
+      const nextTasks = [createdTask, ...active, ...done];
+      window.localStorage.setItem(LOCAL_TASKS_KEY, JSON.stringify(nextTasks));
+    }
+
+    window.dispatchEvent(new CustomEvent("biarfokus:frog-task-added", { detail: createdTask }));
+    window.dispatchEvent(new Event("storage"));
+    return createdTask;
+  }
+
+  return frogTask;
 }

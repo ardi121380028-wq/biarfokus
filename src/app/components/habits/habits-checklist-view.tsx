@@ -13,6 +13,8 @@ interface HabitsChecklistViewProps {
   onDelete: (habitId: string) => void;
   onOpenCreateModal: () => void;
   activeFilter: string;
+  onAddToFrog?: (habit: Habit) => void;
+  onAddToCalendar?: (habit: Habit) => void;
 }
 
 const ROUTINE_CONFIG: Record<RoutineTime, { title: string; icon: string; subtitle: string }> = {
@@ -55,6 +57,8 @@ export function HabitsChecklistView({
   onDelete,
   onOpenCreateModal,
   activeFilter,
+  onAddToFrog,
+  onAddToCalendar,
 }: HabitsChecklistViewProps) {
   const todayKey = getTodayKey();
   const [deletingHabit, setDeletingHabit] = useState<Habit | null>(null);
@@ -207,6 +211,8 @@ interface HabitChecklistRowProps {
   onToggleCheckin: (habitId: string, dateKey?: string) => void;
   onEdit: (habit: Habit) => void;
   onRequestDelete: (habit: Habit) => void;
+  onAddToFrog?: (habit: Habit) => void;
+  onAddToCalendar?: (habit: Habit) => void;
 }
 
 function HabitChecklistRow({
@@ -215,6 +221,8 @@ function HabitChecklistRow({
   onToggleCheckin,
   onEdit,
   onRequestDelete,
+  onAddToFrog,
+  onAddToCalendar,
 }: HabitChecklistRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const isDoneToday = habit.completedDates.includes(todayKey);

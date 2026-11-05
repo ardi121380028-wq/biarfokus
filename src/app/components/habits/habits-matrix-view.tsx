@@ -12,6 +12,8 @@ interface HabitsMatrixViewProps {
   onDelete: (habitId: string) => void;
   onOpenCreateModal: () => void;
   onReorderHabits?: (fromIndex: number, toIndex: number, currentList?: Habit[]) => void;
+  onAddToFrog?: (habit: Habit) => void;
+  onAddToCalendar?: (habit: Habit) => void;
 }
 
 function getWeekDays(offsetWeeks = 0): { date: string; dayName: string; dayNumber: number; isToday: boolean }[] {
@@ -46,6 +48,8 @@ export function HabitsMatrixView({
   onDelete,
   onOpenCreateModal,
   onReorderHabits,
+  onAddToFrog,
+  onAddToCalendar,
 }: HabitsMatrixViewProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [deletingHabit, setDeletingHabit] = useState<Habit | null>(null);

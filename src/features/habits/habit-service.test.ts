@@ -10,6 +10,8 @@ import {
   calculateHabitStats,
   DEFAULT_HABITS,
   reorderHabitsList,
+  buildHabitCalendarEvent,
+  buildHabitFrogTask,
 } from "./habit-service.ts";
 import type { Habit } from "./habit-types.ts";
 
@@ -129,5 +131,42 @@ describe("Habit Tracker Service & Behavioral Logic", () => {
     // Out of bounds preserves list
     const unchanged = reorderHabitsList(list, -1, 5);
     assert.equal(unchanged, list);
+  });
+  it("builds calendar event draft from habit with correct routine time & cues", () => {
+    const habit = {
+      ...DEFAULT_HABITS[0],
+      title: "Baca Buku",
+      icon: "📚",
+      routineTime: "morning" as const,
+      linkedPomodoroMinutes: 45,
+      cue: "Setelah sarapan",
+      identity: "Pembelajar",
+      twoMinuteRule: "Baca 1 baris",
+      color: "#10b981",
+    };
+
+    const eventDraft = buildHabitCalendarEvent(habit, "2026-11-05");
+    assert.equal(eventDraft.title, "📚 Baca Buku");
+    assert.equal(eventDraft.date, "2026-11-05");
+    assert.equal(eventDraft.startTime, "07:30");
+    assert.equal(eventDraft.endTime, "08:15");
+    assert.equal(eventDraft.color, "#10b981");
+    assert.equal(eventDraft.category, "task");
+    assert.ok(eventDraft.description?.includes("Pemicu: Setelah sarapan"));
+    assert.ok(eventDraft.description?.includes("Identitas: Pembelajar"));
+  });
+
+  it("builds Eat That Frog task from habit with proportional pomodoros", () => {
+    const habit = {
+      ...DEFAULT_HABITS[0],
+      title: "Deep Work Penting",
+      linkedPomodoroMinutes: 50,
+    };
+
+    const task = buildHabitFrogTask(habit, "task-frog-test");
+    assert.equal(task.id, "task-frog-test");
+    assert.equal(task.title, "Deep Work Penting");
+    assert.equal(task.done, false);
+    assert.equal(task.pomodoros, 2); // 50 / 25 = 2 pomodoros
   });
 });

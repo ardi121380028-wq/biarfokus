@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/app/providers/app-provider";
 import { useHabits } from "@/features/habits/use-habits";
+import { addHabitAsFrogTask, addHabitToCalendar } from "@/features/habits/habit-service";
 import { HabitsSidebar, type HabitViewMode } from "./habits-sidebar";
 import { HabitsTopbar } from "./habits-topbar";
 import { HabitsChecklistView } from "./habits-checklist-view";
@@ -27,6 +28,7 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
     setShowSettings,
     setAccountOpen,
     setLoginOpen,
+    setInfoOpen,
   } = useAppContext();
 
   const {
@@ -128,13 +130,43 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
     setModalOpen(true);
   };
 
-  const handleSaveModal = (
-    data: Omit<Habit, "id" | "completedDates" | "streakCurrent" | "streakBest" | "createdAt">
+    const handleAddToFrog = async (habit: Habit) => {
+    try {
+      await addHabitAsFrogTask(habit, user?.id);
+      setInfoOpen(`Kebiasaan "${habit.title}" berhasil dijadikan target Eat That Frog di Beranda! 🐸`);
+    } catch (err) {
+      console.error(err);
+      setInfoOpen("Gagal menambahkan ke Eat That Frog.");
+    }
+  };
+
+  const handleAddToCalendar = async (habit: Habit) => {
+    try {
+      await addHabitToCalendar(habit, user?.id);
+      setInfoOpen(`Kebiasaan "${habit.title}" berhasil dijadwalkan ke Kalender hari ini! 📅`);
+    } catch (err) {
+      console.error(err);
+      setInfoOpen("Gagal menambahkan ke Kalender.");
+    }
+  };
+
+  const handleSaveModal = async (
+    data: Omit<Habit, "id" | "completedDates" | "streakCurrent" | "streakBest" | "createdAt">,
+    extraActions?: { addToFrog?: boolean; addToCalendar?: boolean }
   ) => {
+    let savedHabit: Habit;
     if (editingHabit) {
       updateHabit(editingHabit.id, data);
+      savedHabit = { ...editingHabit, ...data };
     } else {
-      addHabit(data);
+      savedHabit = addHabit(data);
+    }
+
+    if (extraActions?.addToFrog) {
+      void handleAddToFrog(savedHabit);
+    }
+    if (extraActions?.addToCalendar) {
+      void handleAddToCalendar(savedHabit);
     }
   };
 
@@ -195,6 +227,8 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
                 onDelete={deleteHabit}
                 onOpenCreateModal={handleOpenAdd}
                 activeFilter={filter}
+                onAddToFrog={handleAddToFrog}
+                onAddToCalendar={handleAddToCalendar}
               />
             )}
 
@@ -206,6 +240,8 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
                 onDelete={deleteHabit}
                 onOpenCreateModal={handleOpenAdd}
                 onReorderHabits={reorderHabits}
+                onAddToFrog={handleAddToFrog}
+                onAddToCalendar={handleAddToCalendar}
               />
             )}
 
