@@ -157,14 +157,6 @@ export function HabitsMatrixView({
     setDragOverPos(null);
   }
 
-  function moveHabit(index: number, direction: "up" | "down") {
-    if (!onReorderHabits) return;
-    const target = direction === "up" ? index - 1 : index + 1;
-    if (target >= 0 && target < habits.length) {
-      onReorderHabits(index, target, habits);
-    }
-  }
-
   // Week range label (e.g. "20 Okt - 26 Okt 2026")
   const weekRangeLabel = useMemo(() => {
     if (weekDays.length === 0) return "";
@@ -424,26 +416,6 @@ export function HabitsMatrixView({
                         aria-label={`Jadwalkan ${habit.title} ke Kalender`}
                       >
                         📅
-                      </button>
-                      <button
-                        type="button"
-                        className="matrix-action-btn move"
-                        onClick={() => moveHabit(index, "up")}
-                        disabled={index === 0}
-                        title="Pindah ke atas"
-                        aria-label="Pindah ke atas"
-                      >
-                        ▲
-                      </button>
-                      <button
-                        type="button"
-                        className="matrix-action-btn move"
-                        onClick={() => moveHabit(index, "down")}
-                        disabled={index === habits.length - 1}
-                        title="Pindah ke bawah"
-                        aria-label="Pindah ke bawah"
-                      >
-                        ▼
                       </button>
                       <button
                         type="button"

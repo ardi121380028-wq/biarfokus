@@ -885,7 +885,7 @@
 .habits-matrix-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 740px;
+  min-width: 100%;
   text-align: left;
 }
 
@@ -915,7 +915,7 @@
 
 .matrix-th-day {
   text-align: center;
-  width: 65px;
+  width: 50px;
 }
 
 .matrix-th-day.matrix-today-col {
@@ -938,7 +938,7 @@
 .matrix-th-stat,
 .matrix-th-streak {
   text-align: center;
-  width: 80px;
+  width: 68px;
 }
 
 .habits-matrix-table tbody tr {
@@ -1137,8 +1137,8 @@
 .matrix-th-action,
 .matrix-td-action {
   text-align: center;
-  width: 205px;
-  min-width: 205px;
+  width: 150px;
+  min-width: 150px;
   padding: 12px 14px;
 }
 
