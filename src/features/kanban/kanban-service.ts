@@ -1760,6 +1760,7 @@ export function archiveBoard(
     ...target,
     archived: true,
     archivedAt: now,
+    starred: false,
     updatedAt: now,
   };
 

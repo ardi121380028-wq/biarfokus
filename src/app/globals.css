@@ -120,12 +120,13 @@ button:active:not(:disabled) {
 .sound-toggle { border:1px solid color-mix(in srgb,var(--ink) 15%,transparent); border-radius:9px; background:transparent; color:var(--ink); padding:9px 10px; width:100%; text-align:left; }
 .modal-backdrop { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:32px 16px; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); overflow-y:auto; }.modal { position:relative; width:min(420px,100%); border-radius:22px; background:var(--paper); color:var(--ink); padding:32px; box-shadow:0 20px 70px #0005; }.modal h2 { margin:0 0 10px; font:30px Georgia,serif; }.modal-copy { color:var(--muted); line-height:1.6; }.modal-close { position:absolute; top:12px; right:16px; z-index:1; border:0; background:none; color:var(--muted); font-size:28px; cursor:pointer; }.google-button,.secondary-button { width:100%; padding:13px; border-radius:10px; margin-top:10px; }.google-button { border:0; background:var(--blue); color:white; }.secondary-button { border:1px solid color-mix(in srgb,var(--ink) 18%,transparent); background:transparent; color:var(--ink); cursor:pointer; }
 
-/* Account Settings Modal Card (Modern & Consistent) */
+/* Account Settings Modal Card (Modern 2-Column Responsive) */
 .account-modal,
 .account-modal-card {
   position: relative;
-  width: min(640px, 95vw);
-  max-width: 640px;
+  width: min(840px, 95vw);
+  max-width: 840px;
+  max-height: min(90vh, 760px);
   overflow: hidden;
   border-radius: 24px;
   background: var(--paper);
@@ -136,12 +137,61 @@ button:active:not(:disabled) {
   flex-direction: column;
 }
 
+.account-modal-scrollable-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.account-modal-columns {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.account-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-socials-box {
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.account-socials-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.account-privacy-box {
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
 .account-card-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 24px 28px 16px;
+  padding: 22px 28px 16px;
   border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  flex-shrink: 0;
 }
 
 .account-header-badge {
@@ -172,10 +222,10 @@ button:active:not(:disabled) {
 .account-identity-banner {
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin: 20px 24px 10px;
-  padding: 16px 20px;
-  border-radius: 18px;
+  gap: 14px;
+  margin: 0 0 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
   background: color-mix(in srgb, var(--ink) 4%, var(--paper));
   border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
@@ -12808,6 +12858,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
   .account-form-body {
     padding: 16px !important;
+  }
+
+  .account-modal-scrollable-body {
+    padding: 16px 14px 20px !important;
+  }
+
+  .account-modal-columns {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .account-socials-grid {
+    grid-template-columns: 1fr !important;
   }
 
   .account-card-footer {

@@ -19,6 +19,8 @@ export function mapDbKanbanBoard(
     background: row.background || "wave-blue",
     lists: Array.isArray(row.lists) ? (row.lists as KanbanList[]) : [],
     starred: Boolean(row.starred),
+    archived: Boolean((row as unknown as { archived?: boolean }).archived),
+    archivedAt: (row as unknown as { archived_at?: string; archivedAt?: string }).archived_at || (row as unknown as { archivedAt?: string }).archivedAt || undefined,
     labels: Array.isArray((row as unknown as { labels?: unknown }).labels)
       ? ((row as unknown as { labels: KanbanLabel[] }).labels)
       : undefined,
@@ -163,7 +165,7 @@ export async function upsertCloudBoard(
     }
 
     // Owned board: ensure user_id is the authenticated user's UUID
-    const payload = {
+    const basePayload = {
       id: board.id,
       user_id: userId,
       title: board.title || "My Board",
@@ -174,40 +176,77 @@ export async function upsertCloudBoard(
       updated_at: new Date().toISOString(),
     };
 
-    // 1. Direct Supabase upsert (clean, atomic, and standard just like notes & calendar)
-    const { error: upsertError } = await supabase
-      .from("kanban_boards")
-      .upsert(payload, { onConflict: "id" });
+    const payloadWithArchived = {
+      ...basePayload,
+      archived: Boolean(board.archived),
+      archived_at: board.archivedAt || (board.archived ? new Date().toISOString() : null),
+    };
 
-    if (!upsertError) {
+    // 1. Direct Supabase upsert (clean, atomic, and standard just like notes & calendar)
+    let upsertRes = await supabase
+      .from("kanban_boards")
+      .upsert(payloadWithArchived, { onConflict: "id" });
+
+    // Fallback if column 'archived' does not exist yet in live Supabase schema
+    if (upsertRes.error && (upsertRes.error.code === "42703" || upsertRes.error.message?.includes("archived"))) {
+      upsertRes = await supabase
+        .from("kanban_boards")
+        .upsert(basePayload, { onConflict: "id" });
+    }
+
+    if (!upsertRes.error) {
       return true;
     }
 
     // 2. If upsert threw conflict or RLS quirk, try insert
-    const { error: insertError } = await supabase
+    let insertRes = await supabase
       .from("kanban_boards")
-      .insert(payload);
+      .insert(payloadWithArchived);
 
-    if (!insertError) {
+    if (insertRes.error && (insertRes.error.code === "42703" || insertRes.error.message?.includes("archived"))) {
+      insertRes = await supabase
+        .from("kanban_boards")
+        .insert(basePayload);
+    }
+
+    if (!insertRes.error) {
       return true;
     }
 
     // 3. Or try update
-    const { data: updateData, error: updateError } = await supabase
+    let updateRes = await supabase
       .from("kanban_boards")
       .update({
-        title: payload.title,
-        description: payload.description,
-        background: payload.background,
-        lists: payload.lists,
-        starred: payload.starred,
-        updated_at: payload.updated_at,
+        title: basePayload.title,
+        description: basePayload.description,
+        background: basePayload.background,
+        lists: basePayload.lists,
+        starred: basePayload.starred,
+        archived: Boolean(board.archived),
+        archived_at: board.archivedAt || (board.archived ? new Date().toISOString() : null),
+        updated_at: basePayload.updated_at,
       })
       .eq("id", board.id)
       .eq("user_id", userId)
       .select("id");
 
-    if (!updateError && updateData && updateData.length > 0) {
+    if (updateRes.error && (updateRes.error.code === "42703" || updateRes.error.message?.includes("archived"))) {
+      updateRes = await supabase
+        .from("kanban_boards")
+        .update({
+          title: basePayload.title,
+          description: basePayload.description,
+          background: basePayload.background,
+          lists: basePayload.lists,
+          starred: basePayload.starred,
+          updated_at: basePayload.updated_at,
+        })
+        .eq("id", board.id)
+        .eq("user_id", userId)
+        .select("id");
+    }
+
+    if (!updateRes.error && updateRes.data && updateRes.data.length > 0) {
       return true;
     }
 
@@ -235,7 +274,7 @@ export async function upsertCloudBoard(
       } catch {}
     }
 
-    console.warn("[BiarFokus Cloud] Cloud kanban save failed across all methods:", upsertError, insertError, updateError);
+    console.warn("[BiarFokus Cloud] Cloud kanban save failed across all methods:", upsertRes.error, insertRes.error, updateRes.error);
     return false;
   } catch (err) {
     console.warn("[BiarFokus Cloud] Cloud kanban upsert skipped or failed.", err);

@@ -31,6 +31,7 @@ import { deleteCloudBoard, loadCloudBoards, upsertCloudBoard } from "./kanban-cl
 export type KanbanSyncStatus = "synced" | "saving" | "offline" | "error";
 
 const DELETED_BOARDS_PREFIX = "biarfokus.kanban.deleted";
+const ARCHIVED_BOARDS_PREFIX = "biarfokus.kanban.archived";
 
 function getDeletedBoardIds(userId?: string | null): Set<string> {
   if (typeof window === "undefined" || !userId) return new Set();
@@ -51,6 +52,39 @@ function markBoardDeleted(boardId: string, userId?: string | null): void {
     set.add(boardId);
     const arr = Array.from(set).slice(-100);
     window.localStorage.setItem(`${DELETED_BOARDS_PREFIX}.${userId}`, JSON.stringify(arr));
+  } catch {}
+}
+
+function getArchivedBoardIds(userId?: string | null): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const key = `${ARCHIVED_BOARDS_PREFIX}.${userId || "guest"}`;
+    const raw = window.localStorage.getItem(key);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch {}
+  return new Set();
+}
+
+function markBoardArchived(boardId: string, userId?: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    const set = getArchivedBoardIds(userId);
+    set.add(boardId);
+    const key = `${ARCHIVED_BOARDS_PREFIX}.${userId || "guest"}`;
+    window.localStorage.setItem(key, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+function unmarkBoardArchived(boardId: string, userId?: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    const set = getArchivedBoardIds(userId);
+    set.delete(boardId);
+    const key = `${ARCHIVED_BOARDS_PREFIX}.${userId || "guest"}`;
+    window.localStorage.setItem(key, JSON.stringify(Array.from(set)));
   } catch {}
 }
 
@@ -127,6 +161,7 @@ export function useKanban(userId?: string | null) {
       const supabase = getSupabaseBrowserClient();
       const cloudBoards = await loadCloudBoards(supabase, userId);
       const deletedIds = getDeletedBoardIds(userId);
+      const archivedIds = getArchivedBoardIds(userId);
 
       const isGtGrowthPurged = typeof window !== "undefined" && window.localStorage.getItem("biarfokus.kanban.gt_growth_purged") === "true";
 
@@ -186,21 +221,45 @@ export function useKanban(userId?: string | null) {
 
         const effectiveLabels = local?.labels && local.labels.length > 0 ? local.labels : cb.labels;
 
+        // CRITICAL: Preserve archived status across cloud and local syncing
+        const isArchived = Boolean(local?.archived || cb.archived || archivedIds.has(cb.id));
+        const archivedAt = local?.archivedAt || cb.archivedAt || (isArchived ? (local?.archivedAt || new Date().toISOString()) : undefined);
+
         if (local && local.lists && local.lists.length > 0) {
           if (isRecentlyEditedLocally) {
             // Local user just modified or deleted cards/lists on this board within 10s.
             // Do NOT overwrite with older/in-flight cloud data!
-            boardMap.set(cb.id, { ...cb, role, lists: local.lists, labels: effectiveLabels });
+            boardMap.set(cb.id, {
+              ...cb,
+              role,
+              lists: local.lists,
+              labels: effectiveLabels,
+              archived: isArchived,
+              archivedAt,
+            });
             continue;
           }
           const localCardCount = local.lists.reduce((sum, l) => sum + (l.cards?.length || 0), 0);
           const cloudCardCount = cb.lists?.reduce((sum, l) => sum + (l.cards?.length || 0), 0) || 0;
           if (localCardCount > cloudCardCount) {
-            boardMap.set(cb.id, { ...cb, role, lists: local.lists, labels: effectiveLabels });
+            boardMap.set(cb.id, {
+              ...cb,
+              role,
+              lists: local.lists,
+              labels: effectiveLabels,
+              archived: isArchived,
+              archivedAt,
+            });
             continue;
           }
         }
-        boardMap.set(cb.id, { ...cb, role, labels: effectiveLabels });
+        boardMap.set(cb.id, {
+          ...cb,
+          role,
+          labels: effectiveLabels,
+          archived: isArchived,
+          archivedAt,
+        });
       }
 
       // 2. Add genuine local drafts (ensuring only unsynced new drafts are uploaded)
@@ -222,10 +281,13 @@ export function useKanban(userId?: string | null) {
         }
 
         // Board is a genuine new local draft created offline: preserve it and sync to cloud
+        const isArchived = Boolean(lb.archived || archivedIds.has(lb.id));
         const preservedBoard: KanbanBoard = {
           ...lb,
           userId: userId || lb.userId,
           role: "owner",
+          archived: isArchived,
+          archivedAt: lb.archivedAt || (isArchived ? new Date().toISOString() : undefined),
         };
         boardMap.set(lb.id, preservedBoard);
         missingInCloud.push(preservedBoard);
@@ -449,6 +511,7 @@ export function useKanban(userId?: string | null) {
 
   const deleteBoard = useCallback(
     (boardId: string) => {
+      unmarkBoardArchived(boardId, userId);
       markBoardDeleted(boardId, userId);
 
       if (boardId === "board-gt-growth" && typeof window !== "undefined") {
@@ -732,6 +795,7 @@ export function useKanban(userId?: string | null) {
 
   const archiveBoard = useCallback(
     (boardId: string) => {
+      markBoardArchived(boardId, userId);
       recentLocalEditsRef.current.set(boardId, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) => {
@@ -748,11 +812,12 @@ export function useKanban(userId?: string | null) {
         });
       }
     },
-    [updateBoards, syncBoardToCloud, activeBoardId, selectBoard, boards],
+    [updateBoards, syncBoardToCloud, activeBoardId, selectBoard, boards, userId],
   );
 
   const restoreBoard = useCallback(
     (boardId: string) => {
+      unmarkBoardArchived(boardId, userId);
       recentLocalEditsRef.current.set(boardId, Date.now());
       let updatedBoard: KanbanBoard | null = null;
       updateBoards((current) => {
@@ -763,7 +828,7 @@ export function useKanban(userId?: string | null) {
       if (updatedBoard) void syncBoardToCloud(updatedBoard);
       selectBoard(boardId);
     },
-    [updateBoards, syncBoardToCloud, selectBoard],
+    [updateBoards, syncBoardToCloud, selectBoard, userId],
   );
 
   const joinBoard = useCallback(

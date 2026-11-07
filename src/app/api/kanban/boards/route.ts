@@ -145,7 +145,7 @@ export async function POST(request: Request) {
       return apiJson({ ok: true, id: board.id }, { correlationId });
     }
 
-    const payload = {
+    const basePayload = {
       id: board.id,
       user_id: userId,
       title: board.title || "My Board",
@@ -156,38 +156,56 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     };
 
+    const payloadWithArchived = {
+      ...basePayload,
+      archived: Boolean(board.archived),
+      archived_at: board.archivedAt || (board.archived ? new Date().toISOString() : null),
+    };
+
     // 1. Direct upsert (atomic & standard)
-    const { error: upsertErr } = await supabase.from("kanban_boards").upsert(payload, { onConflict: "id" });
+    let upsertErr = (await supabase.from("kanban_boards").upsert(payloadWithArchived, { onConflict: "id" })).error;
+    if (upsertErr && (upsertErr.code === "42703" || upsertErr.message?.includes("archived"))) {
+      upsertErr = (await supabase.from("kanban_boards").upsert(basePayload, { onConflict: "id" })).error;
+    }
     if (!upsertErr) {
       return apiJson({ ok: true, id: board.id }, { correlationId });
     }
 
     // 2. Fallback: update if already exists
-    const { data: updateData, error: updateErr } = await supabase
+    let updateRes = await supabase
       .from("kanban_boards")
       .update({
-        title: payload.title,
-        description: payload.description,
-        background: payload.background,
-        lists: payload.lists,
-        starred: payload.starred,
-        updated_at: payload.updated_at,
+        ...basePayload,
+        archived: Boolean(board.archived),
+        archived_at: board.archivedAt || (board.archived ? new Date().toISOString() : null),
       })
       .eq("id", board.id)
       .eq("user_id", userId)
       .select("id");
 
-    if (!updateErr && updateData && updateData.length > 0) {
+    if (updateRes.error && (updateRes.error.code === "42703" || updateRes.error.message?.includes("archived"))) {
+      updateRes = await supabase
+        .from("kanban_boards")
+        .update(basePayload)
+        .eq("id", board.id)
+        .eq("user_id", userId)
+        .select("id");
+    }
+
+    if (!updateRes.error && updateRes.data && updateRes.data.length > 0) {
       return apiJson({ ok: true, id: board.id }, { correlationId });
     }
 
     // 3. Fallback: insert if not exists
-    const { error: insertErr } = await supabase.from("kanban_boards").insert(payload);
+    let insertErr = (await supabase.from("kanban_boards").insert(payloadWithArchived)).error;
+    if (insertErr && (insertErr.code === "42703" || insertErr.message?.includes("archived"))) {
+      insertErr = (await supabase.from("kanban_boards").insert(basePayload)).error;
+    }
     if (!insertErr) {
       return apiJson({ ok: true, id: board.id }, { correlationId });
     }
 
-    return apiJson({ error: upsertErr.message || insertErr.message }, { status: 500, correlationId });
+    return apiJson({ error: upsertErr?.message || insertErr?.message }, { status: 500, correlationId });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     return apiJson({ error: message }, { status: 500, correlationId });

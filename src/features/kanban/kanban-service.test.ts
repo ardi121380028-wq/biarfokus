@@ -422,6 +422,7 @@ describe("kanban-service", () => {
 
   it("archives and restores boards cleanly with archiveBoard and restoreBoard", () => {
     const b1 = createNewBoard("Zitline 2026");
+    b1.starred = true;
     const b2 = createNewBoard("DJA Consulting");
     const initial = [b1, b2];
 
@@ -429,9 +430,11 @@ describe("kanban-service", () => {
     const arcRes = archiveBoard(initial, b1.id);
     assert.ok(arcRes.updatedBoard);
     assert.equal(arcRes.updatedBoard.archived, true);
+    assert.equal(arcRes.updatedBoard.starred, false);
     assert.ok(arcRes.updatedBoard.archivedAt);
     const targetBoard = arcRes.boards.find((b) => b.id === b1.id);
     assert.equal(targetBoard?.archived, true);
+    assert.equal(targetBoard?.starred, false);
 
     // Restore b1
     const resRes = restoreBoard(arcRes.boards, b1.id);

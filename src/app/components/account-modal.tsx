@@ -181,215 +181,233 @@ export function AccountModal({
           </div>
         </div>
 
-        {/* Profile Card Summary Banner */}
-        <div className="account-identity-banner">
-          <div className="account-avatar-wrapper">
-            {avatar ? (
-              <Image src={avatar} alt="" width={68} height={68} className="account-avatar-img" unoptimized />
-            ) : (
-              <div className="account-avatar-placeholder">{userName.charAt(0).toUpperCase()}</div>
-            )}
-            <span className="account-avatar-status" title="Akun Aktif" />
-          </div>
+        {/* 2-Column Responsive Body */}
+        <div className="account-modal-scrollable-body">
+          <div className="account-modal-columns">
+            {/* Kolom Kiri: Profil & Identitas Dasar */}
+            <div className="account-col-left">
+              {/* Profile Card Summary Banner */}
+              <div className="account-identity-banner">
+                <div className="account-avatar-wrapper">
+                  {avatar ? (
+                    <Image src={avatar} alt="" width={60} height={60} className="account-avatar-img" unoptimized />
+                  ) : (
+                    <div className="account-avatar-placeholder">{userName.charAt(0).toUpperCase()}</div>
+                  )}
+                  <span className="account-avatar-status" title="Akun Aktif" />
+                </div>
 
-          <div className="account-identity-info">
-            <div className="account-identity-name-row">
-              <strong className="account-identity-name">{displayName || "Pengguna BiarFokus"}</strong>
-              {isPro ? (
-                <ProBadge size="md" />
-              ) : (
-                <span className="free-plan-badge">Free</span>
-              )}
-            </div>
-            {occupation && (
-              <span className="account-identity-role">💼 {occupation}</span>
-            )}
-            {statusBio && (
-              <p className="account-identity-status-bio">✨ &ldquo;{statusBio}&rdquo;</p>
-            )}
-            <p className="account-identity-email">
-              <span>📧</span> {user?.email || "Tidak ada email"}
-            </p>
-          </div>
-        </div>
-
-        {/* Edit Form */}
-        <div className="account-form-body">
-          <label className="account-field-label">
-            <span>Nama Tampilan (Display Name)</span>
-            <div className="account-input-wrap">
-              <input
-                type="text"
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                maxLength={80}
-                placeholder="Masukkan nama tampilan kamu..."
-                disabled={saving}
-                className="account-display-input"
-              />
-              <span className="account-char-count">{displayName.length}/80</span>
-            </div>
-            <span className="account-input-hint">
-              Nama ini akan ditampilkan pada Kalender, Catatan, dan Kartu Kanban kamu.
-            </span>
-          </label>
-
-          <div className="account-form-grid-row">
-            <label className="account-field-label">
-              <span>Pekerjaan / Profesi</span>
-              <div className="account-input-wrap">
-                <input
-                  type="text"
-                  value={occupation}
-                  onChange={(event) => setOccupation(event.target.value)}
-                  maxLength={60}
-                  placeholder="Misal: Software Engineer, Desainer, Mahasiswa..."
-                  disabled={saving}
-                  className="account-display-input"
-                />
+                <div className="account-identity-info">
+                  <div className="account-identity-name-row">
+                    <strong className="account-identity-name">{displayName || "Pengguna BiarFokus"}</strong>
+                    {isPro ? (
+                      <ProBadge size="md" />
+                    ) : (
+                      <span className="free-plan-badge">Free</span>
+                    )}
+                  </div>
+                  {occupation && (
+                    <span className="account-identity-role">💼 {occupation}</span>
+                  )}
+                  {statusBio && (
+                    <p className="account-identity-status-bio">✨ &ldquo;{statusBio}&rdquo;</p>
+                  )}
+                  <p className="account-identity-email">
+                    <span>📧</span> {user?.email || "Tidak ada email"}
+                  </p>
+                </div>
               </div>
-            </label>
 
-            <label className="account-field-label">
-              <span>Tanggal Lahir (Opsional)</span>
-              <div className="account-input-wrap">
-                <input
-                  type="date"
-                  value={birthDate}
-                  onChange={(event) => setBirthDate(event.target.value)}
-                  disabled={saving}
-                  className="account-display-input account-date-input"
-                />
+              {/* Display Name Input */}
+              <label className="account-field-label">
+                <span>Nama Tampilan (Display Name)</span>
+                <div className="account-input-wrap">
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    maxLength={80}
+                    placeholder="Masukkan nama tampilan kamu..."
+                    disabled={saving}
+                    className="account-display-input"
+                  />
+                  <span className="account-char-count">{displayName.length}/80</span>
+                </div>
+                <span className="account-input-hint">
+                  Nama ini akan ditampilkan pada Kalender, Catatan, dan Kartu Kanban kamu.
+                </span>
+              </label>
+
+              {/* Pekerjaan & Tanggal Lahir (Side-by-Side) */}
+              <div className="account-form-grid-row" style={{ marginTop: "2px" }}>
+                <label className="account-field-label">
+                  <span>Pekerjaan / Profesi</span>
+                  <div className="account-input-wrap">
+                    <input
+                      type="text"
+                      value={occupation}
+                      onChange={(event) => setOccupation(event.target.value)}
+                      maxLength={60}
+                      placeholder="Software Engineer, Mahasiswa..."
+                      disabled={saving}
+                      className="account-display-input"
+                    />
+                  </div>
+                </label>
+
+                <label className="account-field-label">
+                  <span>Tanggal Lahir (Opsional)</span>
+                  <div className="account-input-wrap">
+                    <input
+                      type="date"
+                      value={birthDate}
+                      onChange={(event) => setBirthDate(event.target.value)}
+                      disabled={saving}
+                      className="account-display-input account-date-input"
+                    />
+                  </div>
+                </label>
               </div>
-            </label>
+
+              {/* Status / Bio Fokus Singkat */}
+              <label className="account-field-label" style={{ marginTop: "4px" }}>
+                <span>Status / Bio Fokus Singkat</span>
+                <div className="account-input-wrap">
+                  <input
+                    type="text"
+                    value={statusBio}
+                    onChange={(event) => setStatusBio(event.target.value)}
+                    maxLength={100}
+                    placeholder="Misal: Sedang menyelesaikan skripsi 🚀 / Deep work jam 9-12"
+                    disabled={saving}
+                    className="account-display-input"
+                  />
+                  <span className="account-char-count">{statusBio.length}/100</span>
+                </div>
+                <span className="account-input-hint">
+                  Status motivasi yang muncul pada profil komunitas Anda.
+                </span>
+              </label>
+            </div>
+
+            {/* Kolom Kanan: Media Sosial & Privasi Komunitas */}
+            <div className="account-col-right">
+              {/* Media Sosial Section */}
+              <div className="account-socials-box">
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "1.1rem" }}>🌐</span>
+                  <strong style={{ fontSize: "0.9rem", color: "var(--ink)" }}>Media Sosial &amp; Portofolio</strong>
+                </div>
+                <p style={{ margin: "0 0 12px", fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.4 }}>
+                  Tautkan akun sosial media agar muncul saat profil kamu dilihat di Papan Peringkat / Komunitas.
+                </p>
+
+                <div className="account-socials-grid">
+                  <label className="account-field-label" style={{ margin: 0 }}>
+                    <span style={{ fontSize: "0.78rem" }}>📸 Instagram</span>
+                    <input
+                      type="text"
+                      value={instagram}
+                      onChange={(e) => setInstagram(e.target.value)}
+                      placeholder="@username atau url"
+                      disabled={saving}
+                      className="account-display-input"
+                      style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                    />
+                  </label>
+
+                  <label className="account-field-label" style={{ margin: 0 }}>
+                    <span style={{ fontSize: "0.78rem" }}>𝕏 Twitter / X</span>
+                    <input
+                      type="text"
+                      value={twitter}
+                      onChange={(e) => setTwitter(e.target.value)}
+                      placeholder="@username atau url"
+                      disabled={saving}
+                      className="account-display-input"
+                      style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                    />
+                  </label>
+
+                  <label className="account-field-label" style={{ margin: 0 }}>
+                    <span style={{ fontSize: "0.78rem" }}>🐙 GitHub</span>
+                    <input
+                      type="text"
+                      value={github}
+                      onChange={(e) => setGithub(e.target.value)}
+                      placeholder="username atau url"
+                      disabled={saving}
+                      className="account-display-input"
+                      style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                    />
+                  </label>
+
+                  <label className="account-field-label" style={{ margin: 0 }}>
+                    <span style={{ fontSize: "0.78rem" }}>💼 LinkedIn</span>
+                    <input
+                      type="text"
+                      value={linkedin}
+                      onChange={(e) => setLinkedin(e.target.value)}
+                      placeholder="linkedin.com/in/... atau url"
+                      disabled={saving}
+                      className="account-display-input"
+                      style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                    />
+                  </label>
+
+                  <label className="account-field-label" style={{ margin: 0, gridColumn: "1 / -1" }}>
+                    <span style={{ fontSize: "0.78rem" }}>🔗 Website / Portofolio</span>
+                    <input
+                      type="url"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                      placeholder="https://portofolio-kamu.com"
+                      disabled={saving}
+                      className="account-display-input"
+                      style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Privasi Komunitas Box */}
+              <div className="account-privacy-box">
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "10px",
+                    cursor: "pointer",
+                    fontSize: "0.84rem",
+                    fontWeight: 600,
+                    color: "var(--ink)",
+                    userSelect: "none",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={showOnLeaderboard}
+                    onChange={(e) => setShowOnLeaderboard(e.target.checked)}
+                    disabled={saving}
+                    style={{ width: "16px", height: "16px", marginTop: "2px", accentColor: "#f59e0b", cursor: "pointer", flexShrink: 0 }}
+                  />
+                  <div>
+                    <span>Tampilkan profil saya di Papan Peringkat (Leaderboard)</span>
+                    <p style={{ margin: "2px 0 0", fontSize: "0.74rem", fontWeight: 400, color: "var(--muted)", lineHeight: 1.35 }}>
+                      Jika dinonaktifkan, profil kamu disembunyikan sebagai Anonim pada daftar peringkat publik.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
 
-          <label className="account-field-label" style={{ marginTop: "14px" }}>
-            <span>Status / Bio Fokus Singkat</span>
-            <div className="account-input-wrap">
-              <input
-                type="text"
-                value={statusBio}
-                onChange={(event) => setStatusBio(event.target.value)}
-                maxLength={100}
-                placeholder="Misal: Sedang menyelesaikan skripsi 🚀 / Deep work jam 9-12"
-                disabled={saving}
-                className="account-display-input"
-              />
-              <span className="account-char-count">{statusBio.length}/100</span>
-            </div>
-            <span className="account-input-hint">
-              Status ini memberi motivasi personal pada dashboard profil kamu.
-            </span>
-          </label>
-
-          {/* Media Sosial & Komunitas */}
-          <div className="account-socials-section" style={{ marginTop: "18px", paddingTop: "14px", borderTop: "1px dashed var(--line)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-              <span style={{ fontSize: "1.1rem" }}>🌐</span>
-              <strong style={{ fontSize: "0.88rem", color: "var(--ink)" }}>Media Sosial &amp; Portofolio</strong>
-            </div>
-            <p style={{ margin: "0 0 12px", fontSize: "0.78rem", color: "var(--muted)" }}>
-              Tautkan akun sosial media agar muncul saat profil kamu dilihat di Papan Peringkat / Komunitas.
+          {error && (
+            <p className="task-error" role="alert" style={{ margin: "10px 0 0" }}>
+              {error}
             </p>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "10px" }}>
-              <label className="account-field-label" style={{ margin: 0 }}>
-                <span style={{ fontSize: "0.78rem" }}>📸 Instagram</span>
-                <input
-                  type="text"
-                  value={instagram}
-                  onChange={(e) => setInstagram(e.target.value)}
-                  placeholder="@username atau url"
-                  disabled={saving}
-                  className="account-display-input"
-                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
-                />
-              </label>
-
-              <label className="account-field-label" style={{ margin: 0 }}>
-                <span style={{ fontSize: "0.78rem" }}>𝕏 Twitter / X</span>
-                <input
-                  type="text"
-                  value={twitter}
-                  onChange={(e) => setTwitter(e.target.value)}
-                  placeholder="@username atau url"
-                  disabled={saving}
-                  className="account-display-input"
-                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
-                />
-              </label>
-
-              <label className="account-field-label" style={{ margin: 0 }}>
-                <span style={{ fontSize: "0.78rem" }}>🐙 GitHub</span>
-                <input
-                  type="text"
-                  value={github}
-                  onChange={(e) => setGithub(e.target.value)}
-                  placeholder="username atau url"
-                  disabled={saving}
-                  className="account-display-input"
-                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
-                />
-              </label>
-
-              <label className="account-field-label" style={{ margin: 0 }}>
-                <span style={{ fontSize: "0.78rem" }}>💼 LinkedIn</span>
-                <input
-                  type="text"
-                  value={linkedin}
-                  onChange={(e) => setLinkedin(e.target.value)}
-                  placeholder="linkedin.com/in/... atau url"
-                  disabled={saving}
-                  className="account-display-input"
-                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
-                />
-              </label>
-
-              <label className="account-field-label" style={{ margin: 0, gridColumn: "1 / -1" }}>
-                <span style={{ fontSize: "0.78rem" }}>🔗 Website / Portofolio</span>
-                <input
-                  type="url"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  placeholder="https://portofolio-kamu.com"
-                  disabled={saving}
-                  className="account-display-input"
-                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
-                />
-              </label>
-            </div>
-          </div>
+          )}
         </div>
-
-        {error && (
-          <p className="task-error" role="alert" style={{ margin: "0 24px 14px" }}>
-            {error}
-          </p>
-        )}
-
-        <label
-            style={{
-              marginTop: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              cursor: "pointer",
-              fontSize: "0.86rem",
-              fontWeight: 600,
-              color: "var(--ink)",
-              userSelect: "none",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={showOnLeaderboard}
-              onChange={(e) => setShowOnLeaderboard(e.target.checked)}
-              disabled={saving}
-              style={{ width: "16px", height: "16px", accentColor: "#f59e0b", cursor: "pointer" }}
-            />
-            <span>Tampilkan profil saya di Papan Peringkat (Leaderboard)</span>
-          </label>
 
         {/* Actions Footer */}
         <div className="account-card-footer">

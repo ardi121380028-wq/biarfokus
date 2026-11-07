@@ -82,9 +82,16 @@ create table if not exists public.kanban_boards (
   background text not null default 'wave-blue',
   lists jsonb not null default '[]'::jsonb,
   starred boolean not null default false,
+  archived boolean not null default false,
+  archived_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Idempotent column additions for existing installations
+alter table public.kanban_boards
+  add column if not exists archived boolean not null default false,
+  add column if not exists archived_at timestamptz;
 
 create index if not exists kanban_boards_user_id_idx
   on public.kanban_boards (user_id, updated_at desc);
