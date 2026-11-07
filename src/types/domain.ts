@@ -260,6 +260,8 @@ export type KanbanBoard = {
   lists: KanbanList[];
   labels?: KanbanLabel[]; // Custom label definitions for this board
   starred?: boolean;
+  archived?: boolean;
+  archivedAt?: string;
   role?: KanbanMemberRole;
   memberCount?: number;
   members?: KanbanBoardMember[];
@@ -309,6 +311,14 @@ export type LeaderboardPeriod = "daily" | "weekly" | "monthly" | "all_time";
 
 export type LeaderboardTier = "seed" | "consistent" | "master" | "legend";
 
+export type LeaderboardSocialLinks = {
+  instagram?: string;
+  twitter?: string;
+  github?: string;
+  linkedin?: string;
+  website?: string;
+};
+
 export type LeaderboardEntry = {
   rank: number;
   userId: string;
@@ -319,6 +329,10 @@ export type LeaderboardEntry = {
   isPro: boolean;
   isCurrentUser: boolean;
   tier: LeaderboardTier;
+  bio?: string;
+  occupation?: string;
+  currentStreak?: number;
+  socialLinks?: LeaderboardSocialLinks;
 };
 
 export type LeaderboardMyRank = {

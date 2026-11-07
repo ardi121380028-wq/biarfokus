@@ -7,6 +7,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   addCardToList as serviceAddCard,
   addList as serviceAddList,
+  archiveBoard as serviceArchiveBoard,
   archiveCard as serviceArchiveCard,
   createNewBoard,
   deleteCard as serviceDeleteCard,
@@ -19,6 +20,7 @@ import {
   moveList as serviceMoveList,
   parseStoredBoardId,
   parseStoredBoards,
+  restoreBoard as serviceRestoreBoard,
   restoreCard as serviceRestoreCard,
   toggleBoardStarred,
   updateCard as serviceUpdateCard,
@@ -80,10 +82,16 @@ export function useKanban(userId?: string | null) {
   const syncInProgressRef = useRef(false);
   const recentLocalEditsRef = useRef<Map<string, number>>(new Map());
 
+  const activeBoards = useMemo(() => boards.filter((b) => !b.archived), [boards]);
+  const archivedBoards = useMemo(() => boards.filter((b) => Boolean(b.archived)), [boards]);
+
   const activeBoardId = useMemo(() => {
     const clean = parseStoredBoardId(activeBoardIdRaw);
-    return clean || (boards[0]?.id ?? "");
-  }, [activeBoardIdRaw, boards]);
+    if (clean && activeBoards.some((b) => b.id === clean)) {
+      return clean;
+    }
+    return activeBoards[0]?.id ?? boards[0]?.id ?? "";
+  }, [activeBoardIdRaw, activeBoards, boards]);
 
   const selectBoard = useCallback(
     (target: string | ((prev: string) => string)) => {
@@ -722,6 +730,42 @@ export function useKanban(userId?: string | null) {
     [updateBoards, userId],
   );
 
+  const archiveBoard = useCallback(
+    (boardId: string) => {
+      recentLocalEditsRef.current.set(boardId, Date.now());
+      let updatedBoard: KanbanBoard | null = null;
+      updateBoards((current) => {
+        const res = serviceArchiveBoard(current, boardId);
+        updatedBoard = res.updatedBoard;
+        return res.boards;
+      });
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
+
+      if (activeBoardId === boardId) {
+        selectBoard(() => {
+          const remaining = boards.filter((b) => b.id !== boardId && !b.archived);
+          return remaining[0]?.id || "";
+        });
+      }
+    },
+    [updateBoards, syncBoardToCloud, activeBoardId, selectBoard, boards],
+  );
+
+  const restoreBoard = useCallback(
+    (boardId: string) => {
+      recentLocalEditsRef.current.set(boardId, Date.now());
+      let updatedBoard: KanbanBoard | null = null;
+      updateBoards((current) => {
+        const res = serviceRestoreBoard(current, boardId);
+        updatedBoard = res.updatedBoard;
+        return res.boards;
+      });
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
+      selectBoard(boardId);
+    },
+    [updateBoards, syncBoardToCloud, selectBoard],
+  );
+
   const joinBoard = useCallback(
     (newBoard: KanbanBoard) => {
       updateBoards((current) => {
@@ -747,7 +791,9 @@ export function useKanban(userId?: string | null) {
   );
 
   return {
-    boards,
+    boards: activeBoards,
+    allBoards: boards,
+    archivedBoards,
     activeBoard,
     activeBoardId,
     syncStatus,
@@ -757,6 +803,8 @@ export function useKanban(userId?: string | null) {
     createBoard,
     updateBoard,
     deleteBoard,
+    archiveBoard,
+    restoreBoard,
     toggleStarBoard,
     reorderBoards,
     moveBoard,

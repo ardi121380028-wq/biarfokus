@@ -48,6 +48,61 @@ export function AccountModal({
     }
     return "";
   });
+  const [instagram, setInstagram] = useState<string>(() => {
+    const raw = (user?.user_metadata?.social_links as Record<string, string>)?.instagram || user?.user_metadata?.instagram;
+    if (typeof raw === "string") return raw;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("biarfokus.profile.social_links") || "{}");
+        return stored.instagram || "";
+      } catch {}
+    }
+    return "";
+  });
+  const [twitter, setTwitter] = useState<string>(() => {
+    const raw = (user?.user_metadata?.social_links as Record<string, string>)?.twitter || user?.user_metadata?.twitter;
+    if (typeof raw === "string") return raw;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("biarfokus.profile.social_links") || "{}");
+        return stored.twitter || "";
+      } catch {}
+    }
+    return "";
+  });
+  const [github, setGithub] = useState<string>(() => {
+    const raw = (user?.user_metadata?.social_links as Record<string, string>)?.github || user?.user_metadata?.github;
+    if (typeof raw === "string") return raw;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("biarfokus.profile.social_links") || "{}");
+        return stored.github || "";
+      } catch {}
+    }
+    return "";
+  });
+  const [linkedin, setLinkedin] = useState<string>(() => {
+    const raw = (user?.user_metadata?.social_links as Record<string, string>)?.linkedin || user?.user_metadata?.linkedin;
+    if (typeof raw === "string") return raw;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("biarfokus.profile.social_links") || "{}");
+        return stored.linkedin || "";
+      } catch {}
+    }
+    return "";
+  });
+  const [website, setWebsite] = useState<string>(() => {
+    const raw = (user?.user_metadata?.social_links as Record<string, string>)?.website || user?.user_metadata?.website;
+    if (typeof raw === "string") return raw;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("biarfokus.profile.social_links") || "{}");
+        return stored.website || "";
+      } catch {}
+    }
+    return "";
+  });
   const [showOnLeaderboard, setShowOnLeaderboard] = useState<boolean>(() => {
     if (typeof user?.user_metadata?.show_on_leaderboard === "boolean") {
       return user.user_metadata.show_on_leaderboard;
@@ -65,10 +120,18 @@ export function AccountModal({
     setSaving(true);
     setError(null);
     try {
+      const socialLinksData = {
+        instagram: instagram.trim(),
+        twitter: twitter.trim(),
+        github: github.trim(),
+        linkedin: linkedin.trim(),
+        website: website.trim(),
+      };
       if (typeof window !== "undefined") {
         window.localStorage.setItem("biarfokus.profile.occupation", occupation.trim());
         window.localStorage.setItem("biarfokus.profile.status_bio", statusBio.trim());
         window.localStorage.setItem("biarfokus.profile.show_on_leaderboard", String(showOnLeaderboard));
+        window.localStorage.setItem("biarfokus.profile.social_links", JSON.stringify(socialLinksData));
       }
       if (user) {
         const savedName = await updateDisplayName(supabase, user.id, displayName);
@@ -79,6 +142,7 @@ export function AccountModal({
               occupation: occupation.trim(),
               status_bio: statusBio.trim(),
               show_on_leaderboard: showOnLeaderboard,
+              social_links: socialLinksData,
             },
           }),
           updateLeaderboardPrivacy(supabase, user.id, showOnLeaderboard),
@@ -218,6 +282,84 @@ export function AccountModal({
               Status ini memberi motivasi personal pada dashboard profil kamu.
             </span>
           </label>
+
+          {/* Media Sosial & Komunitas */}
+          <div className="account-socials-section" style={{ marginTop: "18px", paddingTop: "14px", borderTop: "1px dashed var(--line)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+              <span style={{ fontSize: "1.1rem" }}>🌐</span>
+              <strong style={{ fontSize: "0.88rem", color: "var(--ink)" }}>Media Sosial &amp; Portofolio</strong>
+            </div>
+            <p style={{ margin: "0 0 12px", fontSize: "0.78rem", color: "var(--muted)" }}>
+              Tautkan akun sosial media agar muncul saat profil kamu dilihat di Papan Peringkat / Komunitas.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "10px" }}>
+              <label className="account-field-label" style={{ margin: 0 }}>
+                <span style={{ fontSize: "0.78rem" }}>📸 Instagram</span>
+                <input
+                  type="text"
+                  value={instagram}
+                  onChange={(e) => setInstagram(e.target.value)}
+                  placeholder="@username atau url"
+                  disabled={saving}
+                  className="account-display-input"
+                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                />
+              </label>
+
+              <label className="account-field-label" style={{ margin: 0 }}>
+                <span style={{ fontSize: "0.78rem" }}>𝕏 Twitter / X</span>
+                <input
+                  type="text"
+                  value={twitter}
+                  onChange={(e) => setTwitter(e.target.value)}
+                  placeholder="@username atau url"
+                  disabled={saving}
+                  className="account-display-input"
+                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                />
+              </label>
+
+              <label className="account-field-label" style={{ margin: 0 }}>
+                <span style={{ fontSize: "0.78rem" }}>🐙 GitHub</span>
+                <input
+                  type="text"
+                  value={github}
+                  onChange={(e) => setGithub(e.target.value)}
+                  placeholder="username atau url"
+                  disabled={saving}
+                  className="account-display-input"
+                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                />
+              </label>
+
+              <label className="account-field-label" style={{ margin: 0 }}>
+                <span style={{ fontSize: "0.78rem" }}>💼 LinkedIn</span>
+                <input
+                  type="text"
+                  value={linkedin}
+                  onChange={(e) => setLinkedin(e.target.value)}
+                  placeholder="linkedin.com/in/... atau url"
+                  disabled={saving}
+                  className="account-display-input"
+                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                />
+              </label>
+
+              <label className="account-field-label" style={{ margin: 0, gridColumn: "1 / -1" }}>
+                <span style={{ fontSize: "0.78rem" }}>🔗 Website / Portofolio</span>
+                <input
+                  type="url"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="https://portofolio-kamu.com"
+                  disabled={saving}
+                  className="account-display-input"
+                  style={{ fontSize: "0.82rem", padding: "8px 10px" }}
+                />
+              </label>
+            </div>
+          </div>
         </div>
 
         {error && (

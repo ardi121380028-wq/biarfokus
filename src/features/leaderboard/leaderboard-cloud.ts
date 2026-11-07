@@ -65,6 +65,19 @@ export async function fetchLeaderboardEntries(
   if (currentUserId) {
     const mins = currentUserDetails?.minutes ?? 0;
     const poms = currentUserDetails?.pomodoros ?? 0;
+
+    let userSocials: LeaderboardEntry["socialLinks"] = undefined;
+    let userBio: string | undefined = undefined;
+    let userOccupation: string | undefined = undefined;
+    if (typeof window !== "undefined") {
+      try {
+        const rawSocials = window.localStorage.getItem("biarfokus.profile.social_links");
+        if (rawSocials) userSocials = JSON.parse(rawSocials);
+        userBio = window.localStorage.getItem("biarfokus.profile.status_bio") || undefined;
+        userOccupation = window.localStorage.getItem("biarfokus.profile.occupation") || undefined;
+      } catch {}
+    }
+
     return [
       {
         rank: 1,
@@ -76,6 +89,10 @@ export async function fetchLeaderboardEntries(
         isPro: Boolean(currentUserDetails?.isPro),
         isCurrentUser: true,
         tier: calculateTier(mins, period),
+        bio: userBio,
+        occupation: userOccupation,
+        currentStreak: 1,
+        socialLinks: userSocials,
       },
     ];
   }

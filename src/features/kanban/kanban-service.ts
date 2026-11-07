@@ -529,20 +529,634 @@ export function createScrumBoard(): KanbanBoard {
   const now = formatUpdatedAt(new Date());
   return {
     id: createId("board"),
-    title: "Project Management (Scrum)",
-    description: "Siklus sprint produk dari backlog hingga QA dan rilis.",
+    title: "Project Management (Agile & Scrum)",
+    description: "Siklus sprint produk terstruktur: Backlog, Sprint Planning, In Progress (Dev), Code Review & QA, hingga Rilis.",
     background: "purple-haze",
     starred: false,
     createdAt: now,
     updatedAt: now,
     lists: [
-      { id: createId("list"), title: "Backlog", order: 0, cards: [
-        { id: createId("card"), title: "Riset kebutuhan user", labels: [{ id: "l-1", name: "Dev / Tech", color: "#0079bf" }], checklists: [], comments: [], order: 0, createdAt: now, updatedAt: now },
-      ] },
-      { id: createId("list"), title: "Sprint To Do", order: 1, cards: [] },
-      { id: createId("list"), title: "In Progress", order: 2, cards: [] },
-      { id: createId("list"), title: "Code Review / QA", order: 3, cards: [] },
-      { id: createId("list"), title: "Done", order: 4, cards: [] },
+      {
+        id: createId("list"),
+        title: "Product Backlog",
+        order: 0,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Riset Kebutuhan Pengguna & Persona",
+            description: "Wawancara dengan 10 calon pengguna untuk memvalidasi alur onboarding dan dashboard utama.",
+            coverEmoji: "🎯",
+            labels: [{ id: "lbl-prod", name: "Product", color: "#61bd4f" }],
+            checklists: [
+              {
+                id: createId("chk"),
+                title: "Langkah Riset",
+                items: [
+                  { id: createId("item"), text: "Susun panduan wawancara", done: true },
+                  { id: createId("item"), text: "Transkrip hasil user interview", done: false },
+                  { id: createId("item"), text: "Identifikasi 3 pain point utama", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: createId("card"),
+            title: "Arsitektur Database & Relasi Skema",
+            description: "Desain model tabel relasional untuk workspace, boards, kartu kanban, dan log aktivitas audit.",
+            coverEmoji: "🗄️",
+            labels: [{ id: "lbl-backend", name: "Backend", color: "#0079bf" }],
+            checklists: [
+              {
+                id: createId("chk"),
+                title: "Kriteria Selesai",
+                items: [
+                  { id: createId("item"), text: "Diagram ERD lengkap", done: true },
+                  { id: createId("item"), text: "Index query untuk pencarian cepat", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            order: 1,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Sprint To Do",
+        order: 1,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Integrasi Payment Gateway & Webhook",
+            description: "Koneksi gateway pembayaran langganan Pro dengan verifikasi tanda tangan HMAC webhook.",
+            coverEmoji: "💳",
+            labels: [{ id: "lbl-backend", name: "Backend", color: "#0079bf" }, { id: "lbl-urgent", name: "Prioritas", color: "#eb5a46" }],
+            checklists: [
+              {
+                id: createId("chk"),
+                title: "Tugas Integrasi",
+                items: [
+                  { id: createId("item"), text: "Implementasi handler webhook", done: false },
+                  { id: createId("item"), text: "Tes payload transaksi sukses", done: false },
+                  { id: createId("item"), text: "Simulasi pembayaran gagal / expired", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: createId("card"),
+            title: "Setup Sentry Logging & Error Boundary",
+            description: "Pastikan semua uncaught error di frontend dan API tertangkap dengan correlation ID.",
+            coverEmoji: "🛡️",
+            labels: [{ id: "lbl-devops", name: "DevOps", color: "#ff9f1a" }],
+            checklists: [],
+            comments: [],
+            order: 1,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "In Progress (Dev)",
+        order: 2,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Pengembangan Komponen Dashboard Interaktif",
+            description: "Grafik visualisasi waktu fokus harian/mingguan dengan filter tanggal dan animasi interaktif.",
+            coverEmoji: "📊",
+            labels: [{ id: "lbl-front", name: "Frontend", color: "#00c2e0" }],
+            checklists: [
+              {
+                id: createId("chk"),
+                title: "Checklist Fitur",
+                items: [
+                  { id: createId("item"), text: "Widget ringkasan pomodoro", done: true },
+                  { id: createId("item"), text: "Dropdown pemilih rentang waktu", done: true },
+                  { id: createId("item"), text: "Tooltip hover detail sesi", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Code Review / QA",
+        order: 3,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Pengujian E2E & Validasi Form Checkout",
+            description: "Uji menyeluruh skenario checkout pengguna Free ke Pro pada mobile dan desktop browser.",
+            coverEmoji: "🧪",
+            labels: [{ id: "lbl-qa", name: "QA / Testing", color: "#ff78cb" }],
+            checklists: [
+              {
+                id: createId("chk"),
+                title: "Skenario Uji",
+                items: [
+                  { id: createId("item"), text: "Pengujian input nomor kartu tidak valid", done: true },
+                  { id: createId("item"), text: "Pengecekan aktivasi instan status Pro", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Done / Rilis",
+        order: 4,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Deployment Versi Staging & Update Docs",
+            description: "Versi 1.2 berhasil dideploy ke staging dan dokumentasi endpoint API selesai diperbarui.",
+            coverEmoji: "🚀",
+            labels: [{ id: "lbl-done", name: "Released", color: "#51e898" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function createAcademicBoard(): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    id: createId("board"),
+    title: "Skripsi & Riset Akademik",
+    description: "Panduan alur penyusunan skripsi, tesis, dan riset ilmiah terstruktur dari pengajuan judul hingga ujian sidang dan publikasi jurnal.",
+    background: "ocean-breeze",
+    starred: false,
+    createdAt: now,
+    updatedAt: now,
+    lists: [
+      {
+        id: createId("list"),
+        title: "Ide & Pengajuan Judul",
+        order: 0,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Studi Literatur & Pemetaan Research Gap",
+            description: "Kumpulkan 15 artikel jurnal bereputasi (Sinta / Scopus) 5 tahun terakhir untuk menemukan celah penelitian yang orisinal.",
+            coverEmoji: "📖",
+            labels: [{ id: "lbl-lit", name: "Literatur", color: "#0079bf" }],
+            checklists: [
+              {
+                id: createId("chk"),
+                title: "Langkah Literatur",
+                items: [
+                  { id: createId("item"), text: "Cari artikel di ScienceDirect & Google Scholar", done: true },
+                  { id: createId("item"), text: "Buat matriks perbandingan riset terdahulu", done: false },
+                  { id: createId("item"), text: "Rumuskan 3 pertanyaan penelitian kunci", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: createId("card"),
+            title: "Pengajuan Judul & Proposal Awal ke Dosen Wali",
+            description: "Susun sinopsis proposal skripsi 2 halaman berisi latar belakang masalah, metodologi, dan kontribusi riset.",
+            coverEmoji: "📝",
+            labels: [{ id: "lbl-adm", name: "Administrasi", color: "#ff9f1a" }],
+            checklists: [],
+            comments: [],
+            order: 1,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Bab 1-2: Landasan Teori",
+        order: 1,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Penyusunan Bab 1: Latar Belakang & Urgensi",
+            description: "Tuliskan fenomena riil di lapangan, data statistik pendukung, dan signifikansi penelitian bagi keilmuan serta praktisi.",
+            coverEmoji: "✍️",
+            labels: [{ id: "lbl-write", name: "Penulisan", color: "#61bd4f" }],
+            checklists: [
+              {
+                id: createId("chk"),
+                title: "Kelengkapan Bab 1",
+                items: [
+                  { id: createId("item"), text: "Latar Belakang & Fenomena Gap", done: true },
+                  { id: createId("item"), text: "Rumusan Masalah & Batasan Penelitian", done: false },
+                  { id: createId("item"), text: "Tujuan & Manfaat Teoretis/Praktis", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: createId("card"),
+            title: "Sintesis Teori Utama & Kerangka Konseptual",
+            description: "Uraikan grand theory, supporting theory, dan bangun bagan alur kerangka berpikir serta hipotesis penelitian.",
+            coverEmoji: "🧠",
+            labels: [{ id: "lbl-write", name: "Penulisan", color: "#61bd4f" }],
+            checklists: [],
+            comments: [],
+            order: 1,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Bab 3-4: Metodologi & Olah Data",
+        order: 2,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Desain Instrumen & Uji Validitas/Reliabilitas",
+            description: "Susun kuesioner atau protokol eksperimen, uji coba instrumen ke 30 responden awal untuk mengukur Cronbach Alpha.",
+            coverEmoji: "📊",
+            labels: [{ id: "lbl-stat", name: "Metodologi", color: "#c377e0" }],
+            checklists: [
+              {
+                id: createId("chk"),
+                title: "Tahapan Data",
+                items: [
+                  { id: createId("item"), text: "Sebar kuesioner ke 100+ sampel target", done: false },
+                  { id: createId("item"), text: "Tabulasi data di spreadsheet / database", done: false },
+                  { id: createId("item"), text: "Uji normalitas dan multikolinearitas", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: createId("card"),
+            title: "Analisis Statistik & Pembahasan Temuan",
+            description: "Lakukan analisis regresi / pengujian hipotesis, dan bandingkan temuan empiris dengan teori di Bab 2.",
+            coverEmoji: "📈",
+            labels: [{ id: "lbl-stat", name: "Metodologi", color: "#c377e0" }],
+            checklists: [],
+            comments: [],
+            order: 1,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Bimbingan & Revisi Dosen",
+        order: 3,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Bimbingan Rutin Dosen Pembimbing 1 & 2",
+            description: "Konsultasikan hasil analisis data Bab 4, catat poin arahan revisi di logbook bimbingan akademik.",
+            coverEmoji: "🤝",
+            labels: [{ id: "lbl-bim", name: "Bimbingan", color: "#ff9f1a" }, { id: "lbl-rev", name: "Revisi", color: "#eb5a46" }],
+            checklists: [
+              {
+                id: createId("chk"),
+                title: "Catatan Bimbingan",
+                items: [
+                  { id: createId("item"), text: "Perjelas implikasi praktis di Bab 5", done: false },
+                  { id: createId("item"), text: "Koreksi format kutipan APA 7th style", done: false },
+                  { id: createId("item"), text: "Minta tanda tangan persetujuan ujian", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Sidang & Publikasi",
+        order: 4,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Pembuatan Slide Sidang Skripsi (15 Menit)",
+            description: "Siapkan 12 slide visual yang tajam: Latar Belakang, Metodologi, Hasil Utama, dan Rekomendasi Solusi.",
+            coverEmoji: "🎓",
+            labels: [{ id: "lbl-sidang", name: "Sidang", color: "#51e898" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: createId("card"),
+            title: "Uji Turnitin & Submit Artikel Ilmiah",
+            description: "Pastikan skor plagiarisme Turnitin di bawah 20% dan submit naskah ringkas ke jurnal kampus / eksternal.",
+            coverEmoji: "🏆",
+            labels: [{ id: "lbl-pub", name: "Publikasi", color: "#00c2e0" }],
+            checklists: [],
+            comments: [],
+            order: 1,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function createProductLaunchBoard(): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    id: createId("board"),
+    title: "Product Launch & Go-To-Market",
+    description: "Strategi peluncuran produk dan kampanye pemasaran: Riset audiens, aset konten, teaser pre-launch, eksekusi hari H, dan evaluasi konversi.",
+    background: "sunset-glow",
+    starred: false,
+    createdAt: now,
+    updatedAt: now,
+    lists: [
+      {
+        id: createId("list"),
+        title: "Riset Pasar & Positioning",
+        order: 0,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Analisis Target Audiens & Profil ICP",
+            description: "Tentukan demografi, tujuan utama, dan hambatan terbesar yang dihadapi pelanggan ideal.",
+            coverEmoji: "🔍",
+            labels: [{ id: "lbl-mkt", name: "Strategi", color: "#0079bf" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: createId("card"),
+            title: "Rumusan Value Proposition & Tagline",
+            description: "Susun 1 pesan utama pembeda dari kompetitor yang langsung menonjolkan manfaat nyata.",
+            coverEmoji: "💡",
+            labels: [{ id: "lbl-copy", name: "Copywriting", color: "#c377e0" }],
+            checklists: [],
+            comments: [],
+            order: 1,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Aset Desain & Copywriting",
+        order: 1,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Produksi Video Demo Produk 45 Detik",
+            description: "Video demonstrasi alur fitur unggulan dengan motion graphic profesional dan audio suara jernih.",
+            coverEmoji: "🎬",
+            labels: [{ id: "lbl-cre", name: "Kreatif", color: "#ff9f1a" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: createId("card"),
+            title: "Desain Banner Promosi & Email Template",
+            description: "Aset banner sosial media untuk Twitter, Instagram, LinkedIn, serta email pengumuman peluncuran.",
+            coverEmoji: "🎨",
+            labels: [{ id: "lbl-cre", name: "Kreatif", color: "#ff9f1a" }],
+            checklists: [],
+            comments: [],
+            order: 1,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Pre-Launch & Waitlist",
+        order: 2,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Buka Akses Waitlist & Early Bird",
+            description: "Luncurkan landing page teaser untuk mengumpulkan 200 email pendaftar pertama dengan penawaran diskon spesial.",
+            coverEmoji: "⏳",
+            labels: [{ id: "lbl-camp", name: "Kampanye", color: "#00c2e0" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Hari Peluncuran (Launch Day)",
+        order: 3,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Publish ke Product Hunt & Media Sosial",
+            description: "Luncurkan tepat pukul 00:01 PST di Product Hunt, aktif balas feedback komunitas di kolom komentar sepanjang hari.",
+            coverEmoji: "🚀",
+            labels: [{ id: "lbl-exec", name: "Eksekusi", color: "#eb5a46" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Evaluasi & Retensi",
+        order: 4,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Analisis Rasio Konversi & Retensi User",
+            description: "Hitung CAC, rasio konversi pengunjung ke signup, serta kumpulkan feedback awal pengguna aktif.",
+            coverEmoji: "📊",
+            labels: [{ id: "lbl-ana", name: "Analitik", color: "#51e898" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function createAgencyBoard(): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    id: createId("board"),
+    title: "Proyek Klien & Freelance Agency",
+    description: "Alur manajemen proyek klien profesional dari onboarding, kesepakatan kontrak, desain, coding, revisi klien, hingga serah terima & pelunasan.",
+    background: "slate-clean",
+    starred: false,
+    createdAt: now,
+    updatedAt: now,
+    lists: [
+      {
+        id: createId("list"),
+        title: "Briefing & Kontrak",
+        order: 0,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Kickoff Meeting & Pengumpulan Brief Klien",
+            description: "Diskusi target pencapaian proyek, spesifikasi fitur, serta deadline final dengan tim manajerial klien.",
+            coverEmoji: "📋",
+            labels: [{ id: "lbl-cli", name: "Klien", color: "#0079bf" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: createId("card"),
+            title: "Persetujuan Kontrak SPK & DP 50%",
+            description: "Tanda tangan perjanjian kerja sama dan konfirmasi bukti transfer pembayaran uang muka sebelum pengerjaan.",
+            coverEmoji: "🖋️",
+            labels: [{ id: "lbl-fin", name: "Keuangan", color: "#51e898" }],
+            checklists: [],
+            comments: [],
+            order: 1,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Wireframing & UI/UX",
+        order: 1,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Desain High-Fidelity & Prototype Interaktif",
+            description: "Desain seluruh alur halaman di Figma sesuai pedoman identitas merek klien.",
+            coverEmoji: "🎨",
+            labels: [{ id: "lbl-des", name: "Design", color: "#c377e0" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Tahap Development",
+        order: 2,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Implementasi Frontend & Integrasi Backend",
+            description: "Pengembangan halaman responsif menggunakan Next.js dan koneksi database produksi.",
+            coverEmoji: "💻",
+            labels: [{ id: "lbl-dev", name: "Development", color: "#00c2e0" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Review & Revisi Klien",
+        order: 3,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Demo Staging & Notulensi Revisi Klien",
+            description: "Berikan tautan preview staging ke klien dan selesaikan poin revisi minor batch 1.",
+            coverEmoji: "🔄",
+            labels: [{ id: "lbl-rev", name: "Revisi", color: "#ff9f1a" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Serah Terima & Pelunasan",
+        order: 4,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Handoff Kredensial, Domain & Invoice Lunas",
+            description: "Serahkan hak akses sistem secara penuh dan terbitkan tanda terima pelunasan 100%.",
+            coverEmoji: "🤝",
+            labels: [{ id: "lbl-done", name: "Selesai", color: "#61bd4f" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
     ],
   };
 }
@@ -551,18 +1165,218 @@ export function createBugTrackingBoard(): KanbanBoard {
   const now = formatUpdatedAt(new Date());
   return {
     id: createId("board"),
-    title: "Bug Tracking & Issues",
-    description: "Pelacakan issue dan perbaikan bug sistem.",
+    title: "Bug Tracking & QA Engineering",
+    description: "Pelacakan isu kritis, triase bug, perbaikan sistem, dan verifikasi regression testing sebelum deployment patch.",
     background: "sunset-glow",
     starred: false,
     createdAt: now,
     updatedAt: now,
     lists: [
-      { id: createId("list"), title: "Reported Bugs", order: 0, cards: [] },
-      { id: createId("list"), title: "Triaged / Investigating", order: 1, cards: [] },
-      { id: createId("list"), title: "Fix in Progress", order: 2, cards: [] },
-      { id: createId("list"), title: "Testing / Verified", order: 3, cards: [] },
-      { id: createId("list"), title: "Resolved", order: 4, cards: [] },
+      {
+        id: createId("list"),
+        title: "Bug Baru Dilaporkan",
+        order: 0,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Crash saat Upload Avatar format PNG Transparan",
+            description: "Muncul error 500 dari modul image processing saat memproses PNG berukuran di atas 2MB.",
+            coverEmoji: "🐛",
+            labels: [{ id: "lbl-crit", name: "P0 - Kritis", color: "#eb5a46" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Triaged / Investigating",
+        order: 1,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Investigasi Memory Leak Timer Pomodoro di Tab Latar Belakang",
+            description: "Penggunaan memori browser meningkat drastis setelah 4 jam berjalan tanpa pause.",
+            coverEmoji: "🔬",
+            labels: [{ id: "lbl-tri", name: "Triaged", color: "#ff9f1a" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Sedang Diperbaiki",
+        order: 2,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Patch Regex Validasi Email & Sub-addressing",
+            description: "Dukungan alamat email dengan karakter plus (+) seperti user+test@domain.com.",
+            coverEmoji: "🔧",
+            labels: [{ id: "lbl-dev", name: "In Dev", color: "#0079bf" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Testing & Verifikasi QA",
+        order: 3,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Regression Test Fitur Audio Alert di Safari iOS",
+            description: "Pastikan suara notifikasi lonceng tetap berbunyi saat layar terkunci / minimised.",
+            coverEmoji: "🧪",
+            labels: [{ id: "lbl-qa", name: "QA Verified", color: "#c377e0" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Resolved & Deployed",
+        order: 4,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Release Hotfix v1.2.4 ke Production",
+            description: "Perbaikan berhasil di-merge ke branch main dan deployed tanpa kendala.",
+            coverEmoji: "✅",
+            labels: [{ id: "lbl-ok", name: "Resolved", color: "#61bd4f" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function createStudyBoard(): KanbanBoard {
+  const now = formatUpdatedAt(new Date());
+  return {
+    id: createId("board"),
+    title: "Rencana Belajar & Ujian Sertifikasi",
+    description: "Manajemen kurikulum belajar mandiri: Pemetaan silabus, pemahaman konsep dasar, latihan soal, flashcards rumus, hingga simulasi try out.",
+    background: "emerald-forest",
+    starred: false,
+    createdAt: now,
+    updatedAt: now,
+    lists: [
+      {
+        id: createId("list"),
+        title: "Silabus & Target Belajar",
+        order: 0,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Pemetaan Blueprint Ujian & Jadwal Belajar",
+            description: "Bagi silabus ke dalam 4 modul mingguan dan tentukan waktu fokus rutin 90 menit per hari.",
+            coverEmoji: "📚",
+            labels: [{ id: "lbl-plan", name: "Rencana", color: "#0079bf" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Materi Konsep Inti",
+        order: 1,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Ringkasan Modul Teori Fundamental (Bab 1-3)",
+            description: "Buat mind map dan catatan ringkas menggunakan metode Cornell Notes.",
+            coverEmoji: "💡",
+            labels: [{ id: "lbl-core", name: "Teori", color: "#61bd4f" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Latihan Soal Mandiri",
+        order: 2,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Pengerjaan 100 Soal Latihan & Pembahasan",
+            description: "Kerjakan bank soal tanpa membuka buku, tandai nomor yang salah untuk evaluasi ulang.",
+            coverEmoji: "📝",
+            labels: [{ id: "lbl-test", name: "Latihan", color: "#ff9f1a" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Review Catatan & Rumus",
+        order: 3,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Flashcards Anki & Spaced Repetition",
+            description: "Ulangi 40 kartu rumus cepat dan definisi konsep kunci setiap pagi.",
+            coverEmoji: "🃏",
+            labels: [{ id: "lbl-rev", name: "Review", color: "#c377e0" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Simulasi Try Out & Siap Ujian",
+        order: 4,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Simulasi Ujian Penuh dengan Timer Riil",
+            description: "Simulasi ujian 120 menit tanpa interupsi, evaluasi skor akhir dengan passing grade 80%.",
+            coverEmoji: "🏆",
+            labels: [{ id: "lbl-win", name: "Siap Ujian", color: "#51e898" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
     ],
   };
 }
@@ -571,49 +1385,149 @@ export function createPersonalKanbanBoard(): KanbanBoard {
   const now = formatUpdatedAt(new Date());
   return {
     id: createId("board"),
-    title: "Personal Focus Kanban",
-    description: "Manajemen prioritas pribadi harian dan mingguan.",
+    title: "Personal Focus & Produktivitas Harian",
+    description: "Alur prioritas harian yang sederhana dan efektif: Ide & Catatan Cepat, To Do Hari Ini, Sedang Dikerjakan, dan Selesai.",
     background: "emerald-forest",
     starred: false,
     createdAt: now,
     updatedAt: now,
     lists: [
-      { id: createId("list"), title: "Ide & Brainstorm", order: 0, cards: [] },
-      { id: createId("list"), title: "To Do Hari Ini", order: 1, cards: [] },
-      { id: createId("list"), title: "Sedang Dikerjakan", order: 2, cards: [] },
-      { id: createId("list"), title: "Selesai", order: 3, cards: [] },
+      {
+        id: createId("list"),
+        title: "Ide & Catatan Cepat",
+        order: 0,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Buku yang Ingin Dibaca Bulan Ini",
+            description: "Deep Work oleh Cal Newport dan Atomic Habits oleh James Clear.",
+            coverEmoji: "💡",
+            labels: [{ id: "lbl-idea", name: "Inspirasi", color: "#ff9f1a" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Prioritas Hari Ini",
+        order: 1,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Selesaikan 4 Sesi Pomodoro (100 Menit)",
+            description: "Fokus tanpa membuka tab sosial media atau notifikasi chat.",
+            coverEmoji: "🎯",
+            labels: [{ id: "lbl-focus", name: "Deep Work", color: "#eb5a46" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Sedang Dikerjakan",
+        order: 2,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Review Pengeluaran & Anggaran Bulanan",
+            description: "Catat pengeluaran rutin dan alokasikan dana tabungan.",
+            coverEmoji: "⚡",
+            labels: [{ id: "lbl-doing", name: "Fokus", color: "#0079bf" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
+      {
+        id: createId("list"),
+        title: "Selesai",
+        order: 3,
+        cards: [
+          {
+            id: createId("card"),
+            title: "Olahraga Pagi & Meditasi 15 Menit",
+            description: "Peregangan tubuh dan latihan pernapasan fokus sebelum mulai kerja.",
+            coverEmoji: "🧘",
+            labels: [{ id: "lbl-health", name: "Kebiasaan Sehat", color: "#61bd4f" }],
+            checklists: [],
+            comments: [],
+            order: 0,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      },
     ],
   };
 }
 
 export const TEMPLATES: { key: string; name: string; description: string; icon: string; builder: () => KanbanBoard }[] = [
   {
-    key: "growth",
-    name: "GT - Growth",
-    description: "Board pertumbuhan bisnis, manajemen klien, dan target 101 crucial.",
-    icon: "🚀",
-    builder: createDefaultGrowthBoard,
-  },
-  {
     key: "scrum",
-    name: "Project Management (Scrum)",
-    description: "Manajemen backlog, sprint aktif, code review, dan rilis.",
+    name: "Project Management (Agile & Scrum)",
+    description: "Siklus sprint produk terstruktur: Backlog, Sprint Planning, In Dev, Code Review & QA, hingga Rilis.",
     icon: "⚡",
     builder: createScrumBoard,
   },
   {
+    key: "academic",
+    name: "Skripsi & Riset Akademik (Pendidikan)",
+    description: "Manajemen skripsi, tesis, dan riset ilmiah dari ide judul, proposal, olah data, bimbingan, hingga sidang & jurnal.",
+    icon: "🎓",
+    builder: createAcademicBoard,
+  },
+  {
+    key: "marketing",
+    name: "Product Launch & Go-To-Market",
+    description: "Peluncuran produk dan kampanye pemasaran: Riset audiens, aset konten, teaser, eksekusi hari H, dan analitik.",
+    icon: "🚀",
+    builder: createProductLaunchBoard,
+  },
+  {
+    key: "agency",
+    name: "Proyek Klien & Freelance Agency",
+    description: "Alur agensi digital & freelancer: Briefing, wireframing, pengembangan, sesi revisi klien, hingga serah terima & pelunasan.",
+    icon: "💼",
+    builder: createAgencyBoard,
+  },
+  {
     key: "bugs",
-    name: "Bug Tracking",
-    description: "Pelacakan isu kritis, triase bug, dan verifikasi perbaikan.",
+    name: "Bug Tracking & QA Engineering",
+    description: "Pelacakan isu kritis, triase bug sistem, perbaikan teknis, dan verifikasi regression test.",
     icon: "🐛",
     builder: createBugTrackingBoard,
   },
   {
+    key: "study",
+    name: "Rencana Belajar & Ujian Sertifikasi",
+    description: "Manajemen kurikulum belajar terarah: Pemetaan silabus, latihan soal, flashcards rumus, hingga simulasi try out.",
+    icon: "📚",
+    builder: createStudyBoard,
+  },
+  {
     key: "personal",
-    name: "Personal Productivity",
-    description: "Alur fokus pribadi sederhana: Ide, To Do, Doing, Selesai.",
+    name: "Personal Focus & Harian",
+    description: "Alur produktivitas pribadi: Ide & Catatan Cepat, Prioritas Hari Ini, Sedang Dikerjakan, dan Selesai.",
     icon: "🎯",
     builder: createPersonalKanbanBoard,
+  },
+  {
+    key: "growth",
+    name: "GT - Growth & Bisnis",
+    description: "Board pertumbuhan bisnis, manajemen klien, dan target 101 crucial.",
+    icon: "📈",
+    builder: createDefaultGrowthBoard,
   },
 ];
 
@@ -727,6 +1641,8 @@ export function normalizeBoard(raw: unknown): KanbanBoard {
             : b.background)
         : "biarfokus-white",
     starred: Boolean(b.starred),
+    archived: Boolean(b.archived),
+    archivedAt: typeof b.archivedAt === "string" ? b.archivedAt : undefined,
     role: b.role,
     isShared: Boolean(b.isShared),
     labels: Array.isArray(b.labels) ? b.labels : undefined,
@@ -829,6 +1745,44 @@ export function toggleBoardStarred(
     }
   }
 
+  return { boards: nextBoards, updatedBoard };
+}
+
+export function archiveBoard(
+  boards: KanbanBoard[],
+  boardId: string,
+): { boards: KanbanBoard[]; updatedBoard: KanbanBoard | null } {
+  const target = boards.find((b) => b.id === boardId);
+  if (!target) return { boards, updatedBoard: null };
+
+  const now = formatUpdatedAt(new Date());
+  const updatedBoard: KanbanBoard = {
+    ...target,
+    archived: true,
+    archivedAt: now,
+    updatedAt: now,
+  };
+
+  const nextBoards = boards.map((b) => (b.id === boardId ? updatedBoard : b));
+  return { boards: nextBoards, updatedBoard };
+}
+
+export function restoreBoard(
+  boards: KanbanBoard[],
+  boardId: string,
+): { boards: KanbanBoard[]; updatedBoard: KanbanBoard | null } {
+  const target = boards.find((b) => b.id === boardId);
+  if (!target) return { boards, updatedBoard: null };
+
+  const now = formatUpdatedAt(new Date());
+  const updatedBoard: KanbanBoard = {
+    ...target,
+    archived: false,
+    archivedAt: undefined,
+    updatedAt: now,
+  };
+
+  const nextBoards = boards.map((b) => (b.id === boardId ? updatedBoard : b));
   return { boards: nextBoards, updatedBoard };
 }
 

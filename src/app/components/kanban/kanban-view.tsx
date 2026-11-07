@@ -56,6 +56,7 @@ export function KanbanView({
   const { isPro } = useAppContext();
   const {
     boards,
+    archivedBoards,
     activeBoard,
     activeBoardId,
     syncStatus,
@@ -64,6 +65,8 @@ export function KanbanView({
     createBoard,
     updateBoard,
     deleteBoard,
+    archiveBoard,
+    restoreBoard,
     toggleStarBoard,
     reorderBoards,
     moveBoard,
@@ -380,6 +383,47 @@ export function KanbanView({
     } catch {}
   }, []);
 
+  // Month & Year Filter for Kanban Cards
+  const MONTH_NAMES = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+  ];
+  const AVAILABLE_YEARS = [2024, 2025, 2026, 2027, 2028];
+
+  const [filterMonth, setFilterMonth] = useState<number | "all">("all");
+  const [filterYear, setFilterYear] = useState<number | "all">("all");
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
+  const dateFilterRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(dateFilterRef, () => setIsDateFilterOpen(false), isDateFilterOpen);
+
+  function cardMatchesDateFilter(card: KanbanCard): boolean {
+    if (filterMonth === "all" && filterYear === "all") return true;
+
+    const dates: Date[] = [];
+    if (card.dueDate) {
+      const d = new Date(card.dueDate.includes("T") ? card.dueDate : `${card.dueDate}T00:00:00`);
+      if (!isNaN(d.getTime())) dates.push(d);
+    }
+    if (card.startDate) {
+      const d = new Date(card.startDate.includes("T") ? card.startDate : `${card.startDate}T00:00:00`);
+      if (!isNaN(d.getTime())) dates.push(d);
+    }
+    if (card.createdAt) {
+      const d = new Date(card.createdAt);
+      if (!isNaN(d.getTime())) dates.push(d);
+    }
+
+    if (dates.length === 0) return false;
+
+    return dates.some((d) => {
+      const m = d.getMonth();
+      const y = d.getFullYear();
+      const matchM = filterMonth === "all" || m === filterMonth;
+      const matchY = filterYear === "all" || y === filterYear;
+      return matchM && matchY;
+    });
+  }
+
   const archivedCards: ArchivedCardItem[] = useMemo(() => {
     const items: ArchivedCardItem[] = [];
     currentBoard.lists.forEach((list: KanbanList) => {
@@ -417,22 +461,20 @@ export function KanbanView({
     return !currentBoard.isShared;
   }, [previewBoard, pendingInviteCode, isOwner, currentBoard.role, currentBoard.isShared]);
 
-  // Filtered lists if search query is active, strictly excluding archived cards
+  // Filtered lists if search query is active or date filter is active, strictly excluding archived cards
   const displayedLists = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    const isDateFiltering = filterMonth !== "all" || filterYear !== "all";
 
     return currentBoard.lists.map((list: KanbanList) => {
       const activeCards = (list.cards || []).filter((card) => !card.archived);
-      if (!q) {
-        return {
-          ...list,
-          cards: activeCards,
-        };
-      }
-
       return {
         ...list,
         cards: activeCards.filter((card) => {
+          if (isDateFiltering && !cardMatchesDateFilter(card)) {
+            return false;
+          }
+          if (!q) return true;
           const titleMatch = card.title.toLowerCase().includes(q);
           const descMatch = (card.description ?? "").toLowerCase().includes(q);
           const labelMatch = card.labels.some((l) => l.name.toLowerCase().includes(q));
@@ -444,7 +486,24 @@ export function KanbanView({
         }),
       };
     });
-  }, [currentBoard.lists, searchQuery]);
+  }, [currentBoard.lists, searchQuery, filterMonth, filterYear]);
+
+  const displayedCardsCount = useMemo(() => {
+    return displayedLists.reduce((sum, l) => sum + (l.cards?.length || 0), 0);
+  }, [displayedLists]);
+
+  const filterLabel = useMemo(() => {
+    if (filterMonth === "all" && filterYear === "all") {
+      return currentMonthYear;
+    }
+    if (filterMonth !== "all" && filterYear !== "all") {
+      return `${MONTH_NAMES[filterMonth]} ${filterYear}`;
+    }
+    if (filterMonth !== "all") {
+      return `${MONTH_NAMES[filterMonth]} (Semua Thn)`;
+    }
+    return `Tahun ${filterYear}`;
+  }, [filterMonth, filterYear, currentMonthYear]);
 
   function handleSaveBoardTitle() {
     const trimmed = boardTitleInput.trim();
@@ -646,6 +705,7 @@ export function KanbanView({
         onSelectBoard={selectBoard}
         onCreateBoardModalOpen={() => setBoardModalOpen(true)}
         onDeleteBoard={deleteBoard}
+        onArchiveBoard={archiveBoard}
         onToggleStarBoard={toggleStarBoard}
         onReorderBoards={reorderBoards}
         onMoveBoard={moveBoard}
@@ -655,6 +715,7 @@ export function KanbanView({
         onOpenSettings={onOpenSettings}
         onOpenShare={handleOpenShareModal}
         archivedCount={archivedCards.length}
+        archivedBoardsCount={archivedBoards.length}
         onOpenArchivedModal={() => setArchivedModalOpen(true)}
         dark={dark}
         onToggleDark={onToggleDark}
@@ -1211,14 +1272,143 @@ export function KanbanView({
                     )}
                   </div>
 
-                  {/* Subtitle / Month & Year Badge & Stats (Catatan / Notion style, single line) */}
+                  {/* Subtitle / Interactive Month & Year Filter Badge & Stats */}
                   <div className="kanban-headline-meta-pills">
-                    <span className="kanban-meta-pill date-pill">
-                      📅 {currentMonthYear}
-                    </span>
+                    <div className="kanban-date-filter-container" ref={dateFilterRef}>
+                      <button
+                        type="button"
+                        className={`kanban-meta-pill date-pill interactive ${filterMonth !== "all" || filterYear !== "all" ? "active-filter" : ""}`}
+                        onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
+                        title="Klik untuk filter kartu berdasarkan Bulan & Tahun"
+                      >
+                        <span>🗓️</span>
+                        <span>{filterLabel}</span>
+                        {(filterMonth !== "all" || filterYear !== "all") && (
+                          <span className="kanban-filter-dot" title="Filter aktif">●</span>
+                        )}
+                        <span className="kanban-filter-arrow">{isDateFilterOpen ? "▴" : "▾"}</span>
+                      </button>
+
+                      {isDateFilterOpen && (
+                        <div className="kanban-date-filter-dropdown" onClick={(e) => e.stopPropagation()}>
+                          <div className="date-filter-dropdown-head">
+                            <div className="filter-head-title">
+                              <span>🗓️</span>
+                              <strong>Filter Bulan &amp; Tahun</strong>
+                            </div>
+                            {(filterMonth !== "all" || filterYear !== "all") && (
+                              <button
+                                type="button"
+                                className="filter-reset-link"
+                                onClick={() => {
+                                  setFilterMonth("all");
+                                  setFilterYear("all");
+                                }}
+                              >
+                                ✕ Reset Filter
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Quick shortcuts */}
+                          <div className="date-filter-shortcuts">
+                            <button
+                              type="button"
+                              className={`date-filter-shortcut-btn ${filterMonth === "all" && filterYear === "all" ? "active" : ""}`}
+                              onClick={() => {
+                                setFilterMonth("all");
+                                setFilterYear("all");
+                              }}
+                            >
+                              Semua Waktu
+                            </button>
+                            <button
+                              type="button"
+                              className={`date-filter-shortcut-btn ${filterMonth === new Date().getMonth() && filterYear === new Date().getFullYear() ? "active" : ""}`}
+                              onClick={() => {
+                                setFilterMonth(new Date().getMonth());
+                                setFilterYear(new Date().getFullYear());
+                              }}
+                            >
+                              Bulan Ini
+                            </button>
+                          </div>
+
+                          {/* Year Selector */}
+                          <div className="date-filter-section-title">Pilih Tahun:</div>
+                          <div className="date-filter-years-row">
+                            <button
+                              type="button"
+                              className={`date-filter-chip ${filterYear === "all" ? "active" : ""}`}
+                              onClick={() => setFilterYear("all")}
+                            >
+                              Semua
+                            </button>
+                            {AVAILABLE_YEARS.map((y) => (
+                              <button
+                                key={y}
+                                type="button"
+                                className={`date-filter-chip ${filterYear === y ? "active" : ""}`}
+                                onClick={() => setFilterYear(y)}
+                              >
+                                {y}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Month Selector */}
+                          <div className="date-filter-section-title">Pilih Bulan:</div>
+                          <div className="date-filter-months-grid">
+                            <button
+                              type="button"
+                              className={`date-filter-chip ${filterMonth === "all" ? "active" : ""}`}
+                              onClick={() => setFilterMonth("all")}
+                            >
+                              Semua
+                            </button>
+                            {MONTH_NAMES.map((name, idx) => (
+                              <button
+                                key={name}
+                                type="button"
+                                className={`date-filter-chip ${filterMonth === idx ? "active" : ""}`}
+                                onClick={() => setFilterMonth(idx)}
+                              >
+                                {name.slice(0, 3)}
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="date-filter-dropdown-footer">
+                            <span>Menampilkan {displayedCardsCount} dari {totalCardsCount} kartu</span>
+                            <button
+                              type="button"
+                              className="date-filter-done-btn"
+                              onClick={() => setIsDateFilterOpen(false)}
+                            >
+                              Selesai
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <span className="kanban-meta-pill count-pill">
-                      📋 {currentBoard.lists.length} Kolom • 🗂️ {totalCardsCount} Kartu • 👥 {boardMembers.length > 0 ? boardMembers.length : 1} Anggota
+                      📋 {currentBoard.lists.length} Kolom • 🗂️ {displayedCardsCount} Kartu {totalCardsCount !== displayedCardsCount ? `(dari ${totalCardsCount})` : ""} • 👥 {boardMembers.length > 0 ? boardMembers.length : 1} Anggota
                     </span>
+
+                    {(filterMonth !== "all" || filterYear !== "all") && (
+                      <button
+                        type="button"
+                        className="kanban-clear-date-filter-pill"
+                        onClick={() => {
+                          setFilterMonth("all");
+                          setFilterYear("all");
+                        }}
+                        title="Hapus filter bulan & tahun"
+                      >
+                        ✕ Hapus Filter ({displayedCardsCount} kartu)
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1452,13 +1642,16 @@ export function KanbanView({
         />
       )}
 
-      {/* Archived Cards Modal */}
+      {/* Archived Items Modal (Cards & Boards) */}
       <KanbanArchivedModal
         isOpen={archivedModalOpen}
         onClose={() => setArchivedModalOpen(false)}
         archivedCards={archivedCards}
+        archivedBoards={archivedBoards}
         onRestoreCard={handleRestoreCard}
         onDeleteCard={(listId, cardId) => deleteCard(listId, cardId)}
+        onRestoreBoard={(boardId) => restoreBoard(boardId)}
+        onDeleteBoardPermanent={(boardId) => deleteBoard(boardId)}
         onOpenCardDetail={(card, listId) => {
           setArchivedModalOpen(false);
           setActiveCardData({ card, listId });

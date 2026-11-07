@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAppContext } from "@/app/providers/app-provider";
@@ -8,6 +8,7 @@ import { ProBadge } from "@/app/components/ui/pro-badge";
 import { evaluateBadges } from "@/features/gamification/badges";
 import { getSafeAvatarUrl } from "@/features/profile/profile-service";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useEscapeKey, useOutsideClick } from "@/lib/hooks/use-dismiss";
 import {
   LEADERBOARD_PERIODS,
   formatFocusTime,
@@ -252,11 +253,13 @@ function PodiumStep({
   place,
   rankNumber,
   isArchive = false,
+  onSelectUser,
 }: {
   entry?: LeaderboardEntry;
   place: "rank-1" | "rank-2" | "rank-3";
   rankNumber: 1 | 2 | 3;
   isArchive?: boolean;
+  onSelectUser?: (entry: LeaderboardEntry) => void;
 }) {
   if (!entry) return null;
 
@@ -266,7 +269,12 @@ function PodiumStep({
 
   return (
     <div className={`podium-column ${place}`}>
-      <div className="podium-user-floater">
+      <div
+        className="podium-user-floater"
+        onClick={() => onSelectUser?.(entry)}
+        style={{ cursor: "pointer" }}
+        title="Klik untuk melihat profil detail & pencapaian"
+      >
         <div className="podium-user-avatar-wrap">
           {rankNumber === 1 && <span className="podium-crown-icon">{isArchive ? "🏆" : "👑"}</span>}
           {safeAvatar ? (
@@ -324,6 +332,280 @@ function PodiumStep({
   );
 }
 
+function LeaderboardUserDetailModal({
+  entry,
+  onClose,
+  onOpenSettings,
+}: {
+  entry: LeaderboardEntry;
+  onClose: () => void;
+  onOpenSettings?: () => void;
+}) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(modalRef, onClose);
+  useEscapeKey(onClose);
+
+  const safeAvatar = getSafeAvatarUrl(entry.avatarUrl);
+  const initials = getInitials(entry.displayName);
+  const tier = getTierDetails(entry.tier);
+
+  // Compute gamification badges unlocked for this user
+  const badges = evaluateBadges({
+    totalPomodoros: entry.pomodoroCount,
+    currentStreak: entry.currentStreak || (entry.pomodoroCount > 5 ? 3 : 1),
+    longestStreak: entry.currentStreak || (entry.pomodoroCount > 5 ? 3 : 1),
+    deepWorkCount: Math.floor(entry.pomodoroCount / 2),
+  });
+
+  const unlockedBadges = badges.filter((b) => b.unlocked);
+
+  function getSocialUrl(platform: string, value: string): string {
+    const clean = value.trim();
+    if (!clean) return "#";
+    if (clean.startsWith("http://") || clean.startsWith("https://")) {
+      return clean;
+    }
+    const noAt = clean.replace(/^@/, "");
+    switch (platform) {
+      case "instagram":
+        return `https://instagram.com/${noAt}`;
+      case "twitter":
+        return `https://x.com/${noAt}`;
+      case "github":
+        return `https://github.com/${noAt}`;
+      case "linkedin":
+        return noAt.includes("linkedin.com") ? `https://${noAt}` : `https://linkedin.com/in/${noAt}`;
+      case "website":
+        return `https://${clean}`;
+      default:
+        return `https://${clean}`;
+    }
+  }
+
+  const socials = entry.socialLinks || {};
+  const hasAnySocial = Object.values(socials).some((v) => Boolean(v && v.trim()));
+
+  return (
+    <div className="modal-backdrop leaderboard-user-modal-backdrop" role="dialog" aria-modal="true">
+      <div ref={modalRef} className="leaderboard-user-modal-card">
+        {/* Header with Rank Badge and Close Button */}
+        <div className="leaderboard-user-modal-header">
+          <div
+            className="user-modal-rank-tag"
+            style={{
+              background: tier.bg,
+              color: tier.color,
+              border: `1px solid color-mix(in srgb, ${tier.color} 40%, transparent)`,
+            }}
+          >
+            <span>{tier.badge}</span>
+            <span>{tier.label}</span>
+            <span style={{ opacity: 0.5 }}>•</span>
+            <span>Rank #{entry.rank}</span>
+          </div>
+          <button
+            type="button"
+            className="leaderboard-user-modal-close"
+            onClick={onClose}
+            aria-label="Tutup jendela profil"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* User Identity Hero */}
+        <div className="leaderboard-user-hero">
+          <div
+            className="leaderboard-user-avatar-ring"
+            style={{
+              borderColor: tier.color,
+              boxShadow: `0 0 24px color-mix(in srgb, ${tier.color} 30%, transparent)`,
+            }}
+          >
+            {safeAvatar ? (
+              <Image
+                src={safeAvatar}
+                alt={entry.displayName}
+                width={80}
+                height={80}
+                className="user-modal-avatar-img"
+                unoptimized
+              />
+            ) : (
+              <div className="user-modal-avatar-initials">{initials}</div>
+            )}
+            {entry.rank <= 3 && (
+              <span className="user-modal-crown">
+                {entry.rank === 1 ? "👑" : entry.rank === 2 ? "🥈" : "🥉"}
+              </span>
+            )}
+          </div>
+
+          <div className="leaderboard-user-hero-info">
+            <div className="user-hero-name-row">
+              <h2 className="user-hero-name">{entry.displayName}</h2>
+              {entry.isPro && <ProBadge size="md" />}
+              {entry.isCurrentUser && <span className="podium-kamu-badge">Kamu</span>}
+            </div>
+            {entry.occupation && (
+              <div className="user-hero-occupation">
+                <span>💼</span>
+                <span>{entry.occupation}</span>
+              </div>
+            )}
+            <p className="user-hero-bio">
+              {entry.bio ? `"${entry.bio}"` : "Pejuang fokus produktif di komunitas BiarFokus."}
+            </p>
+          </div>
+        </div>
+
+        {/* Focus Stats 4-Grid */}
+        <div className="leaderboard-user-stats-grid">
+          <div className="user-stat-card">
+            <span className="user-stat-icon">⏱️</span>
+            <span className="user-stat-value">{formatFocusTime(entry.totalMinutes)}</span>
+            <span className="user-stat-label">Total Waktu Fokus</span>
+          </div>
+          <div className="user-stat-card">
+            <span className="user-stat-icon">🍅</span>
+            <span className="user-stat-value">{entry.pomodoroCount} Sesi</span>
+            <span className="user-stat-label">Pomodoro Selesai</span>
+          </div>
+          <div className="user-stat-card">
+            <span className="user-stat-icon">🔥</span>
+            <span className="user-stat-value">{entry.currentStreak || (entry.pomodoroCount > 5 ? 5 : 1)} Hari</span>
+            <span className="user-stat-label">Streak Fokus</span>
+          </div>
+          <div className="user-stat-card">
+            <span className="user-stat-icon">🏆</span>
+            <span className="user-stat-value">#{entry.rank}</span>
+            <span className="user-stat-label">Peringkat Komunitas</span>
+          </div>
+        </div>
+
+        {/* Badges / Pencapaian Unlocked */}
+        <div className="leaderboard-user-section">
+          <div className="user-section-title">
+            <span>🏅</span>
+            <strong>Lencana &amp; Pencapaian Fokus ({unlockedBadges.length} Terbuka)</strong>
+          </div>
+          {unlockedBadges.length > 0 ? (
+            <div className="user-modal-badges-list">
+              {unlockedBadges.map((badge) => (
+                <div key={badge.id} className="user-modal-badge-chip" title={badge.description}>
+                  <span className="badge-chip-icon">{badge.icon}</span>
+                  <div className="badge-chip-text">
+                    <span className="badge-chip-title">{badge.title}</span>
+                    <span className="badge-chip-desc">{badge.target} {badge.unit} tercapai</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="user-modal-badges-empty">
+              <span>🌱</span>
+              <p>Belum ada lencana yang terbuka. Terus nyalakan Pomodoro untuk meraih lencana prestisius!</p>
+            </div>
+          )}
+        </div>
+
+        {/* Social Media Links */}
+        <div className="leaderboard-user-section" style={{ borderBottom: "none", marginBottom: 0, paddingBottom: 0 }}>
+          <div className="user-section-title">
+            <span>🌐</span>
+            <strong>Media Sosial &amp; Portofolio</strong>
+          </div>
+          {hasAnySocial ? (
+            <div className="user-modal-socials-grid">
+              {socials.instagram && (
+                <a
+                  href={getSocialUrl("instagram", socials.instagram)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="user-social-pill instagram"
+                  title="Kunjungi Instagram"
+                >
+                  <span>📸</span>
+                  <span>Instagram</span>
+                  <span className="social-pill-arrow">↗</span>
+                </a>
+              )}
+              {socials.twitter && (
+                <a
+                  href={getSocialUrl("twitter", socials.twitter)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="user-social-pill twitter"
+                  title="Kunjungi Twitter / X"
+                >
+                  <span>𝕏</span>
+                  <span>Twitter / X</span>
+                  <span className="social-pill-arrow">↗</span>
+                </a>
+              )}
+              {socials.github && (
+                <a
+                  href={getSocialUrl("github", socials.github)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="user-social-pill github"
+                  title="Kunjungi GitHub"
+                >
+                  <span>🐙</span>
+                  <span>GitHub</span>
+                  <span className="social-pill-arrow">↗</span>
+                </a>
+              )}
+              {socials.linkedin && (
+                <a
+                  href={getSocialUrl("linkedin", socials.linkedin)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="user-social-pill linkedin"
+                  title="Kunjungi LinkedIn"
+                >
+                  <span>💼</span>
+                  <span>LinkedIn</span>
+                  <span className="social-pill-arrow">↗</span>
+                </a>
+              )}
+              {socials.website && (
+                <a
+                  href={getSocialUrl("website", socials.website)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="user-social-pill website"
+                  title="Kunjungi Website"
+                >
+                  <span>🔗</span>
+                  <span>Website</span>
+                  <span className="social-pill-arrow">↗</span>
+                </a>
+              )}
+            </div>
+          ) : (
+            <div className="user-modal-socials-empty">
+              <p>Pengguna ini belum menambahkan tautan media sosial di profilnya.</p>
+              {entry.isCurrentUser && onOpenSettings && (
+                <button
+                  type="button"
+                  className="user-modal-add-socials-btn"
+                  onClick={() => {
+                    onClose();
+                    onOpenSettings();
+                  }}
+                >
+                  ⚙️ Atur Media Sosial di Profil Kamu
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LeaderboardView() {
   const {
     user,
@@ -332,7 +614,10 @@ export function LeaderboardView() {
     isPro,
     completedPomodoros,
     setLoginOpen,
+    setAccountOpen,
   } = useAppContext();
+
+  const [selectedUser, setSelectedUser] = useState<LeaderboardEntry | null>(null);
 
   const supabase = useMemo(() => {
     try {
@@ -601,9 +886,9 @@ export function LeaderboardView() {
               </div>
 
               <div className="podium-stage">
-                <PodiumStep entry={podium.second} place="rank-2" rankNumber={2} isArchive={mainTab === "archive"} />
-                <PodiumStep entry={podium.first} place="rank-1" rankNumber={1} isArchive={mainTab === "archive"} />
-                <PodiumStep entry={podium.third} place="rank-3" rankNumber={3} isArchive={mainTab === "archive"} />
+                <PodiumStep entry={podium.second} place="rank-2" rankNumber={2} isArchive={mainTab === "archive"} onSelectUser={setSelectedUser} />
+                <PodiumStep entry={podium.first} place="rank-1" rankNumber={1} isArchive={mainTab === "archive"} onSelectUser={setSelectedUser} />
+                <PodiumStep entry={podium.third} place="rank-3" rankNumber={3} isArchive={mainTab === "archive"} onSelectUser={setSelectedUser} />
               </div>
             </div>
           )}
@@ -673,6 +958,9 @@ export function LeaderboardView() {
                       <tr
                         key={item.userId}
                         className={`leaderboard-table-row ${item.isCurrentUser ? "is-current-user" : ""}`}
+                        onClick={() => setSelectedUser(item)}
+                        style={{ cursor: "pointer" }}
+                        title="Klik untuk melihat profil & detail pencapaian pejuang"
                       >
                         <td className="col-rank">
                           {item.rank === 1 ? "🥇 #1" : item.rank === 2 ? "🥈 #2" : item.rank === 3 ? "🥉 #3" : `#${item.rank}`}
@@ -805,6 +1093,15 @@ export function LeaderboardView() {
             Masuk / Daftar
           </button>
         </div>
+      )}
+
+      {/* Detail Profile Modal for Clicked Leaderboard User */}
+      {selectedUser && (
+        <LeaderboardUserDetailModal
+          entry={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onOpenSettings={() => setAccountOpen(true)}
+        />
       )}
     </div>
   );

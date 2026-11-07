@@ -1470,3 +1470,403 @@
 .app.dark .achievement-icon {
   background: #141518;
 }
+
+/* ------------------------------------------------------------------ */
+/* Leaderboard User Profile Detail Modal (Game-Grade Luxury Pop-up)   */
+/* ------------------------------------------------------------------ */
+
+.leaderboard-user-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modal-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.leaderboard-user-modal-card {
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--paper);
+  border-radius: 24px;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+}
+
+.app.dark .leaderboard-user-modal-card {
+  background: #16171a;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.leaderboard-user-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-modal-rank-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+.leaderboard-user-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.leaderboard-user-modal-close:hover {
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+  transform: scale(1.08);
+}
+
+.leaderboard-user-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.leaderboard-user-avatar-ring {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  border: 3px solid;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--paper);
+}
+
+.user-modal-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-modal-avatar-initials {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-modal-crown {
+  position: absolute;
+  top: -10px;
+  right: -6px;
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.leaderboard-user-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.user-hero-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.user-hero-name {
+  font-size: 1.35rem;
+  font-weight: 850;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.user-hero-occupation {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.user-hero-bio {
+  font-size: 0.82rem;
+  color: var(--ink);
+  opacity: 0.85;
+  margin: 4px 0 0;
+  line-height: 1.45;
+  font-style: italic;
+}
+
+.leaderboard-user-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.user-stat-card {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 14px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  transition: transform 0.15s ease;
+}
+
+.app.dark .user-stat-card {
+  background: #1e1f24;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.user-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.user-stat-icon {
+  font-size: 1.25rem;
+}
+
+.user-stat-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.user-stat-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.leaderboard-user-section {
+  padding-top: 14px;
+  border-top: 1px dashed color-mix(in srgb, var(--ink) 12%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+
+.user-modal-badges-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-modal-badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 12px;
+  transition: transform 0.15s ease;
+}
+
+.app.dark .user-modal-badge-chip {
+  background: #1f2026;
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.user-modal-badge-chip:hover {
+  transform: translateY(-1px);
+  border-color: #f59e0b;
+}
+
+.badge-chip-icon {
+  font-size: 1.3rem;
+}
+
+.badge-chip-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.badge-chip-title {
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: var(--ink);
+}
+
+.badge-chip-desc {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.user-modal-badges-empty {
+  padding: 16px;
+  text-align: center;
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  border-radius: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.user-modal-socials-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-social-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-decoration: none;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  transition: all 0.15s ease;
+}
+
+.user-social-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-social-pill.instagram:hover {
+  border-color: #e1306c;
+  color: #e1306c;
+  background: rgba(225, 48, 108, 0.1);
+}
+
+.user-social-pill.twitter:hover {
+  border-color: #1da1f2;
+  color: #1da1f2;
+  background: rgba(29, 161, 242, 0.1);
+}
+
+.user-social-pill.github:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.user-social-pill.linkedin:hover {
+  border-color: #0a66c2;
+  color: #0a66c2;
+  background: rgba(10, 102, 194, 0.1);
+}
+
+.user-social-pill.website:hover {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.social-pill-arrow {
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+.user-modal-socials-empty {
+  font-size: 0.82rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-modal-add-socials-btn {
+  align-self: flex-start;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.user-modal-add-socials-btn:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 640px) {
+  .leaderboard-user-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .leaderboard-user-hero {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .user-hero-name-row {
+    justify-content: center;
+  }
+
+  .user-hero-occupation {
+    justify-content: center;
+  }
+}
+

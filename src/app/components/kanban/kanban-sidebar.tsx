@@ -15,6 +15,7 @@ type KanbanSidebarProps = {
   onSelectBoard: (boardId: string) => void;
   onCreateBoardModalOpen: () => void;
   onDeleteBoard: (boardId: string) => void;
+  onArchiveBoard?: (boardId: string) => void;
   onToggleStarBoard?: (boardId: string) => void;
   onReorderBoards?: (newBoards: KanbanBoard[]) => void;
   onMoveBoard?: (sourceIndex: number, destIndex: number) => void;
@@ -22,6 +23,7 @@ type KanbanSidebarProps = {
   onOpenSettings?: () => void;
   onOpenShare?: () => void;
   archivedCount?: number;
+  archivedBoardsCount?: number;
   onOpenArchivedModal?: () => void;
   dark?: boolean;
   onToggleDark?: () => void;
@@ -35,6 +37,7 @@ export function KanbanSidebar({
   onSelectBoard,
   onCreateBoardModalOpen,
   onDeleteBoard,
+  onArchiveBoard,
   onToggleStarBoard,
   onReorderBoards,
   onMoveBoard,
@@ -42,6 +45,7 @@ export function KanbanSidebar({
   onOpenSettings,
   onOpenShare,
   archivedCount,
+  archivedBoardsCount,
   onOpenArchivedModal,
   dark,
   onToggleDark,
@@ -241,6 +245,18 @@ export function KanbanSidebar({
               aria-label={b.starred ? "Hapus dari Favorit" : "Tambah ke Favorit"}
             >
               {b.starred ? "★" : "☆"}
+            </button>
+            <button
+              type="button"
+              className="kanban-board-archive-mini"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onArchiveBoard) onArchiveBoard(b.id);
+              }}
+              title="Arsipkan papan proyek ini"
+              aria-label="Arsipkan papan"
+            >
+              📦
             </button>
             {boards.length > 1 && (
               <button
@@ -512,9 +528,9 @@ export function KanbanSidebar({
                 Item Terarsip
               </span>
             </div>
-            {typeof archivedCount === "number" && archivedCount > 0 ? (
+            {((archivedCount || 0) + (archivedBoardsCount || 0)) > 0 ? (
               <span className="kanban-sidebar-count-badge" style={{ margin: 0 }}>
-                {archivedCount}
+                {(archivedCount || 0) + (archivedBoardsCount || 0)}
               </span>
             ) : (
               <span style={{ fontSize: 11, color: "var(--muted)" }}>0</span>
@@ -529,11 +545,11 @@ export function KanbanSidebar({
             type="button"
             className="kanban-sidebar-icon-only-btn"
             onClick={onOpenArchivedModal}
-            title={`Item Terarsip (${archivedCount || 0})`}
+            title={`Item Terarsip (${(archivedCount || 0) + (archivedBoardsCount || 0)})`}
             style={{ position: "relative" }}
           >
             🗃️
-            {typeof archivedCount === "number" && archivedCount > 0 && (
+            {((archivedCount || 0) + (archivedBoardsCount || 0)) > 0 && (
               <span
                 style={{
                   position: "absolute",

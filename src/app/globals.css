@@ -1215,6 +1215,33 @@ button:active:not(:disabled) {
   color: #f59e0b;
 }
 
+.kanban-board-archive-mini {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  opacity: 0;
+  transition: all 0.15s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kanban-sidebar-board-item:hover .kanban-board-archive-mini {
+  opacity: 0.7;
+}
+
+.kanban-board-archive-mini:hover {
+  opacity: 1;
+  transform: scale(1.18);
+  background: rgba(0, 0, 0, 0.08);
+}
+
 .kanban-board-drag-handle {
   opacity: 0;
   cursor: grab;
@@ -1593,6 +1620,213 @@ button:active:not(:disabled) {
   background: color-mix(in srgb, var(--blue) 25%, rgba(0, 0, 0, 0.25));
   border-color: color-mix(in srgb, var(--blue) 45%, transparent);
   color: #fff;
+}
+
+.kanban-date-filter-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.kanban-meta-pill.date-pill.interactive {
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--blue) 45%, transparent);
+  transition: all 0.15s ease, transform 0.15s ease;
+  user-select: none;
+}
+
+.kanban-meta-pill.date-pill.interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  border-color: color-mix(in srgb, var(--blue) 75%, transparent);
+}
+
+.kanban-meta-pill.date-pill.active-filter {
+  background: color-mix(in srgb, var(--blue) 40%, rgba(0, 0, 0, 0.45));
+  border-color: var(--blue);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+}
+
+.kanban-filter-dot {
+  color: #38bdf8;
+  font-size: 8px;
+  line-height: 1;
+}
+
+.kanban-filter-arrow {
+  font-size: 9px;
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+}
+
+.kanban-date-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 310px;
+  background: var(--paper);
+  border-radius: 18px;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  z-index: 1050;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--ink);
+  animation: modal-fade-in 0.15s ease-out;
+}
+
+.kanban-app-workspace.kanban-dark-theme .kanban-date-filter-dropdown {
+  background: #18191c;
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  color: #f8fafc;
+}
+
+.date-filter-dropdown-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-head-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.filter-reset-link {
+  border: none;
+  background: transparent;
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.filter-reset-link:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.date-filter-shortcuts {
+  display: flex;
+  gap: 8px;
+}
+
+.date-filter-shortcut-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.kanban-app-workspace.kanban-dark-theme .date-filter-shortcut-btn {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.date-filter-shortcut-btn.active,
+.date-filter-shortcut-btn:hover {
+  background: #0284c7;
+  color: #fff;
+  border-color: #0284c7;
+}
+
+.date-filter-section-title {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.date-filter-years-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.date-filter-months-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.date-filter-chip {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s ease;
+}
+
+.kanban-app-workspace.kanban-dark-theme .date-filter-chip {
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.date-filter-chip:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.date-filter-chip.active {
+  background: #0284c7;
+  color: #fff;
+  border-color: #0284c7;
+  font-weight: 750;
+}
+
+.date-filter-dropdown-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.date-filter-done-btn {
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.kanban-clear-date-filter-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.kanban-clear-date-filter-pill:hover {
+  background: rgba(239, 68, 68, 0.25);
+  transform: scale(1.05);
 }
 
 .kanban-left-controls {

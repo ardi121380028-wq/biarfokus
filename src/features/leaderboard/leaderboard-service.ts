@@ -180,6 +180,17 @@ export function mapDbLeaderboardRow(
   const isPro = Boolean(r.is_pro ?? r.user_is_pro ?? false);
   const isCurrentUser = Boolean(r.is_current_user ?? r.user_is_current ?? (currentUserId && userId === currentUserId));
 
+  const bio = typeof r.bio === "string" ? r.bio : typeof r.status_bio === "string" ? r.status_bio : undefined;
+  const occupation = typeof r.occupation === "string" ? r.occupation : undefined;
+  const currentStreak = typeof r.current_streak === "number" ? r.current_streak : typeof r.streak === "number" ? r.streak : undefined;
+
+  let socialLinks: LeaderboardEntry["socialLinks"] = undefined;
+  if (r.social_links && typeof r.social_links === "object") {
+    socialLinks = r.social_links as LeaderboardEntry["socialLinks"];
+  } else if (r.socialLinks && typeof r.socialLinks === "object") {
+    socialLinks = r.socialLinks as LeaderboardEntry["socialLinks"];
+  }
+
   return {
     rank,
     userId,
@@ -190,6 +201,10 @@ export function mapDbLeaderboardRow(
     isPro,
     isCurrentUser,
     tier: calculateTier(totalMinutes, period),
+    bio,
+    occupation,
+    currentStreak,
+    socialLinks,
   };
 }
 
@@ -231,6 +246,15 @@ export function generateSampleCommunityLeaderboard(
       minutes: Math.round(580 * scale),
       pomodoros: Math.round(23 * scale),
       isPro: true,
+      bio: "Software Engineer & Lifelong Learner. Konsistensi harian adalah kunci.",
+      occupation: "Full-Stack Developer",
+      currentStreak: 12,
+      socialLinks: {
+        instagram: "rian.pangestu",
+        twitter: "rianpangestu",
+        github: "rianpangestu",
+        linkedin: "rian-pangestu",
+      },
     },
     {
       name: "Sarah Wijaya",
@@ -238,6 +262,14 @@ export function generateSampleCommunityLeaderboard(
       minutes: Math.round(440 * scale),
       pomodoros: Math.round(18 * scale),
       isPro: true,
+      bio: "Product Designer & UI/UX Specialist. Berjuang fokus menyelesaikan skripsi & riset.",
+      occupation: "UI/UX Designer",
+      currentStreak: 8,
+      socialLinks: {
+        instagram: "sarah.wijaya",
+        linkedin: "sarah-wijaya-design",
+        website: "https://sarahwijaya.design",
+      },
     },
     {
       name: "Dimas Arya",
@@ -245,6 +277,13 @@ export function generateSampleCommunityLeaderboard(
       minutes: Math.round(390 * scale),
       pomodoros: Math.round(16 * scale),
       isPro: false,
+      bio: "Data Analyst Enthusiast. Belajar algoritma & machine learning setiap malam.",
+      occupation: "Data Analyst",
+      currentStreak: 6,
+      socialLinks: {
+        github: "dimasarya",
+        linkedin: "dimas-arya-data",
+      },
     },
     {
       name: "Nabila Zahra",
@@ -252,6 +291,13 @@ export function generateSampleCommunityLeaderboard(
       minutes: Math.round(320 * scale),
       pomodoros: Math.round(13 * scale),
       isPro: true,
+      bio: "Medical Student & Content Creator. Deep work 4 jam setiap hari untuk persiapan ujian.",
+      occupation: "Mahasiswa Kedokteran",
+      currentStreak: 10,
+      socialLinks: {
+        instagram: "nabilazahra.med",
+        twitter: "nabilazhr",
+      },
     },
     {
       name: "Kevin Ardiansyah",
@@ -259,6 +305,13 @@ export function generateSampleCommunityLeaderboard(
       minutes: Math.round(270 * scale),
       pomodoros: Math.round(11 * scale),
       isPro: false,
+      bio: "Freelance Copywriter & SEO Specialist.",
+      occupation: "Digital Marketer",
+      currentStreak: 4,
+      socialLinks: {
+        linkedin: "kevin-ardiansyah",
+        twitter: "kevinardi",
+      },
     },
     {
       name: "Citra Lestari",
@@ -266,6 +319,12 @@ export function generateSampleCommunityLeaderboard(
       minutes: Math.round(210 * scale),
       pomodoros: Math.round(8 * scale),
       isPro: false,
+      bio: "Graphic Designer & Illustrator.",
+      occupation: "Illustrator",
+      currentStreak: 3,
+      socialLinks: {
+        instagram: "citralestari.art",
+      },
     },
     {
       name: "Fajar Nugraha",
@@ -273,6 +332,9 @@ export function generateSampleCommunityLeaderboard(
       minutes: Math.round(160 * scale),
       pomodoros: Math.round(6 * scale),
       isPro: false,
+      bio: "Belajar coding pemula.",
+      occupation: "Student",
+      currentStreak: 2,
     },
     {
       name: "Aulia Rahma",
@@ -280,6 +342,9 @@ export function generateSampleCommunityLeaderboard(
       minutes: Math.round(110 * scale),
       pomodoros: Math.round(4 * scale),
       isPro: false,
+      bio: "Persiapan sertifikasi akuntansi.",
+      occupation: "Accountant",
+      currentStreak: 1,
     },
   ];
 
@@ -291,6 +356,10 @@ export function generateSampleCommunityLeaderboard(
     pomodoroCount: number;
     isPro: boolean;
     isCurrentUser: boolean;
+    bio?: string;
+    occupation?: string;
+    currentStreak?: number;
+    socialLinks?: LeaderboardEntry["socialLinks"];
   };
 
   const candidates: Candidate[] = mockPeers.map((peer, idx) => ({
@@ -301,12 +370,29 @@ export function generateSampleCommunityLeaderboard(
     pomodoroCount: peer.pomodoros,
     isPro: peer.isPro,
     isCurrentUser: false,
+    bio: peer.bio,
+    occupation: peer.occupation,
+    currentStreak: peer.currentStreak,
+    socialLinks: peer.socialLinks,
   }));
 
   // If user has focused time, insert them into the candidate pool
   if (currentUser?.id) {
     const userMins = currentUser.minutes ?? 125;
     const userPoms = currentUser.pomodoros ?? Math.max(1, Math.round(userMins / 25));
+
+    let userSocials: LeaderboardEntry["socialLinks"] = undefined;
+    let userBio: string | undefined = undefined;
+    let userOccupation: string | undefined = undefined;
+    if (typeof window !== "undefined") {
+      try {
+        const rawSocials = window.localStorage.getItem("biarfokus.profile.social_links");
+        if (rawSocials) userSocials = JSON.parse(rawSocials);
+        userBio = window.localStorage.getItem("biarfokus.profile.status_bio") || undefined;
+        userOccupation = window.localStorage.getItem("biarfokus.profile.occupation") || undefined;
+      } catch {}
+    }
+
     candidates.push({
       userId: currentUser.id,
       displayName: currentUser.name?.trim() || "Kamu (Akun Saya)",
@@ -315,6 +401,10 @@ export function generateSampleCommunityLeaderboard(
       pomodoroCount: userPoms,
       isPro: Boolean(currentUser.isPro),
       isCurrentUser: true,
+      bio: userBio,
+      occupation: userOccupation,
+      currentStreak: 5,
+      socialLinks: userSocials,
     });
   }
 
