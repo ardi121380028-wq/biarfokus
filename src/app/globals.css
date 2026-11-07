@@ -10632,6 +10632,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   position: relative;
   isolation: isolate;
   background: linear-gradient(90deg, #ec4899 0%, #a855f7 48%, #4f46e5 100%);

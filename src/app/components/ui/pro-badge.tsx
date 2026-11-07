@@ -22,6 +22,7 @@ export function ProBadge({
   return (
     <span
       className={`pro-vip-badge badge-${size} ${className}`}
+      style={{ flexShrink: 0 }}
       title="BiarFokus Pro Member"
       aria-label="Akun Pro"
     >

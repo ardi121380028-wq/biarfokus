@@ -27,9 +27,9 @@ function getInitials(name: string): string {
 /* Luxury Game-Grade 3D SVG Badges (Matching User Design Ref)         */
 /* ------------------------------------------------------------------ */
 
-function BronzeEmeraldCrest() {
+function BronzeEmeraldCrest({ size = 34 }: { size?: number }) {
   return (
-    <svg width="58" height="58" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="bronzeShieldGrad" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#d97706" />
@@ -73,9 +73,9 @@ function BronzeEmeraldCrest() {
   );
 }
 
-function SilverCobaltCrest() {
+function SilverCobaltCrest({ size = 34 }: { size?: number }) {
   return (
-    <svg width="58" height="58" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="silverShieldGrad" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#f8fafc" />
@@ -119,9 +119,9 @@ function SilverCobaltCrest() {
   );
 }
 
-function ImperialGoldCrest() {
+function ImperialGoldCrest({ size = 34 }: { size?: number }) {
   return (
-    <svg width="58" height="58" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="goldOuterGrad" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#fef08a" />
@@ -162,9 +162,9 @@ function ImperialGoldCrest() {
   );
 }
 
-function DiamondAstralCrest() {
+function DiamondAstralCrest({ size = 34 }: { size?: number }) {
   return (
-    <svg width="58" height="58" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="astralShieldGrad" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#c084fc" />
@@ -214,28 +214,28 @@ const LUXURY_LEAGUES = [
     tag: "TIER I",
     title: "Bibit Fokus",
     sub: "0 – 3 Jam",
-    renderCrest: () => <BronzeEmeraldCrest />,
+    renderCrest: (size?: number) => <BronzeEmeraldCrest size={size} />,
   },
   {
     tier: "silver",
     tag: "TIER II",
     title: "Pejuang Konsisten",
     sub: "3 – 10 Jam",
-    renderCrest: () => <SilverCobaltCrest />,
+    renderCrest: (size?: number) => <SilverCobaltCrest size={size} />,
   },
   {
     tier: "gold",
     tag: "TIER III",
     title: "Master Deep Work",
     sub: "10 – 20 Jam",
-    renderCrest: () => <ImperialGoldCrest />,
+    renderCrest: (size?: number) => <ImperialGoldCrest size={size} />,
   },
   {
     tier: "legend",
     tag: "TIER IV",
     title: "Zen Legend",
     sub: "20+ Jam",
-    renderCrest: () => <DiamondAstralCrest />,
+    renderCrest: (size?: number) => <DiamondAstralCrest size={size} />,
   },
 ] as const;
 
@@ -263,8 +263,8 @@ function PodiumStep({
             <Image
               src={safeAvatar}
               alt={entry.displayName}
-              width={rankNumber === 1 ? 84 : 68}
-              height={rankNumber === 1 ? 84 : 68}
+              width={rankNumber === 1 ? 74 : 60}
+              height={rankNumber === 1 ? 74 : 60}
               className="podium-img-avatar"
               unoptimized
             />
@@ -274,21 +274,10 @@ function PodiumStep({
         </div>
 
         <div className="podium-user-name" title={entry.displayName}>
-          <span>{entry.displayName}</span>
-          {entry.isPro && <ProBadge />}
+          <span className="podium-name-text">{entry.displayName}</span>
+          {entry.isPro && <ProBadge size="sm" />}
           {entry.isCurrentUser && (
-            <span
-              style={{
-                fontSize: "0.68rem",
-                background: "#f59e0b",
-                color: "#fff",
-                padding: "1px 6px",
-                borderRadius: "9999px",
-                fontWeight: 800,
-              }}
-            >
-              Kamu
-            </span>
+            <span className="podium-kamu-badge">Kamu</span>
           )}
         </div>
 
@@ -300,10 +289,14 @@ function PodiumStep({
             fontSize: "0.72rem",
             fontWeight: 700,
             color: tier.color,
-            marginTop: "4px",
+            marginTop: "3px",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
           }}
         >
-          {tier.badge} {tier.label}
+          <span>{tier.badge}</span>
+          <span>{tier.label}</span>
         </div>
       </div>
 
@@ -359,60 +352,68 @@ export function LeaderboardView() {
 
   return (
     <div className="leaderboard-workspace">
-      {/* 1. Hero Banner with Luxury League Badges (Matching User Image) */}
+      {/* 1. Sleek Compact Hero Banner (Header + Period Tabs + 4 Luxury League Badges) */}
       <div className="leaderboard-hero-banner">
-        <div className="leaderboard-hero-tag">
-          <span>🏆</span>
-          <span>KOMUNITAS BIARFOKUS</span>
-        </div>
-        <h1 className="leaderboard-hero-title">Papan Peringkat Fokus</h1>
-        <p className="leaderboard-hero-sub">
-          Bersaing dalam hening, buktikan lewat konsistensi. Akumulasi jam fokus nyata dari seluruh pejuang produktivitas.
-        </p>
+        <div className="leaderboard-hero-header-row">
+          <div className="leaderboard-hero-left">
+            <div className="leaderboard-hero-tag">
+              <span>🏆</span>
+              <span>KOMUNITAS BIARFOKUS</span>
+            </div>
+            <h1 className="leaderboard-hero-title">Papan Peringkat Fokus</h1>
+            <p className="leaderboard-hero-sub">
+              Bersaing dalam hening, buktikan lewat konsistensi. Akumulasi jam fokus nyata pejuang produktivitas.
+            </p>
+          </div>
 
-        {/* 4 Luxury League Crests */}
+          {/* Period Switcher & Refresh Button (Side-by-side with header on desktop) */}
+          <div className="leaderboard-period-controls">
+            <div className="leaderboard-period-tabs" role="tablist">
+              {LEADERBOARD_PERIODS.map((p) => {
+                const isActive = period === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`leaderboard-period-btn ${isActive ? "active" : ""}`}
+                    onClick={() => setPeriod(p.id)}
+                  >
+                    <span>{p.icon}</span>
+                    <span>{p.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              className="leaderboard-refresh-btn"
+              onClick={() => void refresh()}
+              disabled={loading}
+              title="Perbarui data peringkat"
+            >
+              <span>↻</span>
+              <span>{loading ? "Memuat..." : "Segarkan"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 4 Luxury League Crests in Sleek Horizontal Row */}
         <div className="leaderboard-leagues-bar" aria-label="Tingkatan Liga Fokus">
           {LUXURY_LEAGUES.map((league) => (
             <div key={league.title} className={`league-badge-card ${league.tier}`}>
               <div className="league-crest-container">
-                {league.renderCrest()}
+                {league.renderCrest(34)}
               </div>
-              <span className="league-tier-tag">{league.tag}</span>
-              <span className="league-card-title">{league.title}</span>
-              <span className="league-card-sub">{league.sub}</span>
+              <div className="league-card-info">
+                <div className="league-card-header">
+                  <span className="league-card-title">{league.title}</span>
+                  <span className="league-tier-tag">{league.tag}</span>
+                </div>
+                <span className="league-card-sub">{league.sub}</span>
+              </div>
             </div>
           ))}
-        </div>
-
-        {/* Period Switcher & Refresh Button */}
-        <div className="leaderboard-period-controls">
-          <div className="leaderboard-period-tabs" role="tablist">
-            {LEADERBOARD_PERIODS.map((p) => {
-              const isActive = period === p.id;
-              return (
-                <button
-                  key={p.id}
-                  role="tab"
-                  aria-selected={isActive}
-                  className={`leaderboard-period-btn ${isActive ? "active" : ""}`}
-                  onClick={() => setPeriod(p.id)}
-                >
-                  <span>{p.icon}</span>
-                  <span>{p.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            className="leaderboard-refresh-btn"
-            onClick={() => void refresh()}
-            disabled={loading}
-            title="Perbarui data peringkat"
-          >
-            <span>↻</span>
-            <span>{loading ? "Memuat..." : "Segarkan"}</span>
-          </button>
         </div>
       </div>
 
@@ -515,21 +516,10 @@ export function LeaderboardView() {
 
                         <div>
                           <div className="table-user-name">
-                            <span>{item.displayName}</span>
-                            {item.isPro && <ProBadge />}
+                            <span className="table-name-text">{item.displayName}</span>
+                            {item.isPro && <ProBadge size="sm" />}
                             {item.isCurrentUser && (
-                              <span
-                                style={{
-                                  fontSize: "0.68rem",
-                                  background: "#f59e0b",
-                                  color: "#fff",
-                                  padding: "1px 6px",
-                                  borderRadius: "9999px",
-                                  fontWeight: 800,
-                                }}
-                              >
-                                Kamu
-                              </span>
+                              <span className="podium-kamu-badge">Kamu</span>
                             )}
                           </div>
                         </div>
