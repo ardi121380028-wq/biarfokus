@@ -1202,6 +1202,12 @@ export function LandingSection() {
                     <td>— Tidak Ada</td>
                   </tr>
                   <tr>
+                    <td><strong>Papan Peringkat Fokus &amp; Lencana</strong></td>
+                    <td className="highlight">✓ Podium 3D, Liga &amp; Badges</td>
+                    <td>— Tidak Ada</td>
+                    <td>— Tidak Ada</td>
+                  </tr>
+                  <tr>
                     <td><strong>Audio Alam Binaural Ambient</strong></td>
                     <td className="highlight">✓ Gratis Langsung Pakai</td>
                     <td>— Tidak Ada</td>

@@ -11,6 +11,8 @@ type FeatureCategory =
   | "catatan"
   | "kebiasaan"
   | "statistik"
+  | "leaderboard"
+  | "badges"
   | "pro"
   | "guide";
 
@@ -81,6 +83,20 @@ export default function FiturPage() {
             onClick={() => setActiveTab("statistik")}
           >
             📊 Statistik
+          </button>
+          <button
+            type="button"
+            className={`fitur-filter-btn ${activeTab === "leaderboard" ? "active" : ""}`}
+            onClick={() => setActiveTab("leaderboard")}
+          >
+            🏆 Papan Peringkat
+          </button>
+          <button
+            type="button"
+            className={`fitur-filter-btn ${activeTab === "badges" ? "active" : ""}`}
+            onClick={() => setActiveTab("badges")}
+          >
+            🎖️ Lencana &amp; Gamifikasi
           </button>
           <button
             type="button"
@@ -428,6 +444,132 @@ export default function FiturPage() {
         </section>
       )}
 
+      {/* CATEGORY: PAPAN PERINGKAT FOKUS (LEADERBOARD) */}
+      {(activeTab === "all" || activeTab === "leaderboard") && (
+        <section className="fitur-category-card" id="leaderboard">
+          <div className="fitur-category-head">
+            <div className="fitur-category-icon-box leaderboard-accent">
+              <span>🏆</span>
+            </div>
+            <div>
+              <span className="fitur-category-kicker">COMMUNITY &amp; FOCUS LEADERBOARD</span>
+              <h2>Papan Peringkat Fokus &amp; Komunitas Suportif</h2>
+              <p>Bersaing sehat dalam hening, buktikan lewat konsistensi nyata. Akumulasi jam fokus bersama pejuang produktivitas lainnya se-Indonesia.</p>
+            </div>
+          </div>
+
+          <div className="fitur-grid-3">
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🥇</span>
+              <h3>Podium 3D Stadium Tiga Teratas</h3>
+              <p>Visualisasi podium 3D eksklusif tiga pejuang teratas berhiaskan medali emas, perak, dan perunggu dengan mahkota visual.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🛡️</span>
+              <h3>4 Tingkat Kasta Liga Eksklusif</h3>
+              <p>Promosi otomatis berjenjang: <strong>Bibit Fokus</strong> (0–3j), <strong>Pejuang Konsisten</strong> (3–10j), <strong>Master Deep Work</strong> (10–20j), hingga <strong>Zen Legend</strong> (20+j).</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🗓️</span>
+              <h3>Filter Waktu Multi-Periode</h3>
+              <p>Pilihan periode fleksibel: <strong>Minggu Ini</strong> (reset tiap Senin 00:00 WIB), <strong>Hari Ini</strong>, <strong>Bulan Ini</strong>, dan <strong>Sepanjang Masa</strong>.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🏛️</span>
+              <h3>Arsip Juara Bulanan (Hall of Fame)</h3>
+              <p>Telusuri rekam jejak juara bulanan (November, Oktober, dll.) untuk menghormati dan mengabadikan dedikasi fokus terbaik para pejuang.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">📍</span>
+              <h3>Sticky Live Rank Bar</h3>
+              <p>Bilah pintar mengambang di bawah layar yang memperlihatkan peringkatmu secara real-time dan selisih menit untuk menyalip peringkat di atasmu.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🔒</span>
+              <h3>Privasi Penuh di Tanganmu</h3>
+              <p>Ingin fokus secara hening tanpa kompetisi publik? Kamu bisa menyembunyikan profil dari papan peringkat kapan pun melalui menu Pengaturan.</p>
+            </div>
+          </div>
+
+          <div className="fitur-guide-box">
+            <h4>💡 Cara Berpartisipasi di Papan Peringkat:</h4>
+            <ol>
+              <li>Masuk (login) dengan akun Google atau email BiarFokus kamu.</li>
+              <li>Nyalakan Timer Pomodoro dan tuntaskan setiap sesi fokus tanpa membatalkannya di tengah jalan.</li>
+              <li>Menit fokus nyata otomatis diakumulasi dan peringkatmu langsung terbarui di tabel klasemen real-time.</li>
+            </ol>
+          </div>
+
+          <div className="fitur-category-cta">
+            <Link href="/peringkat" className="fitur-action-btn leaderboard">
+              🏆 Buka Papan Peringkat Fokus Sekarang →
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* CATEGORY: LENCANA & PENCAPAIAN KEAKTIFAN (BADGES) */}
+      {(activeTab === "all" || activeTab === "badges") && (
+        <section className="fitur-category-card" id="badges">
+          <div className="fitur-category-head">
+            <div className="fitur-category-icon-box badges-accent">
+              <span>🎖️</span>
+            </div>
+            <div>
+              <span className="fitur-category-kicker">GAMIFICATION &amp; ACHIEVEMENTS</span>
+              <h2>Sistem Lencana &amp; Pencapaian Keaktifan</h2>
+              <p>Setiap menit perjuangan dan konsistensi hari berturut-turut diapresiasi dengan lencana reputasi yang otomatis terbuka.</p>
+            </div>
+          </div>
+
+          <div className="fitur-grid-3">
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🚀</span>
+              <h3>Fokus Perdana</h3>
+              <p>Lencana selamat datang yang otomatis terbuka begitu kamu sukses menyelesaikan sesi pomodoro pertamamu.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">⚡</span>
+              <h3>Konsistensi 3 Hari</h3>
+              <p>Bukti komitmen menjaga streak fokus selama 3 hari berturut-turut tanpa pernah putus.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🏆</span>
+              <h3>Juara 7 Hari (Streak Legendaris)</h3>
+              <p>Penghargaan satu pekan penuh disiplin produktif yang tak tergoyahkan bagi pejuang sejati.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">🎯</span>
+              <h3>Fokus Mantap (5 Jam Kerja)</h3>
+              <p>Akumulasi 5 jam fokus murni yang membuktikan ketekunan dan keseriusanmu menghasilkan karya.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">💎</span>
+              <h3>Master Produktif (25 Jam Deep Work)</h3>
+              <p>Tonggak pencapaian 25 jam fokus mendalam pada proyek pentingmu yang diakui komunitas.</p>
+            </div>
+            <div className="fitur-item-box">
+              <span className="fitur-item-icon">👑</span>
+              <h3>Century Club (100 Sesi Fokus)</h3>
+              <p>Lencana prestisius elit bagi pejuang fokus yang telah menuntaskan 100 sesi pomodoro nyata.</p>
+            </div>
+          </div>
+
+          <div className="fitur-guide-box">
+            <h4>🌌 Bonus Lencana: Sesi Deep Work</h4>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
+              Selesaikan sesi fokus marathon 45 menit atau lebih tanpa henti untuk mengoleksi lencana <strong>Sesi Deep Work</strong>. Seluruh lencana yang kamu raih akan otomatis menghiasi profil, tabel peringkat, dan podium juara!
+            </p>
+          </div>
+
+          <div className="fitur-category-cta">
+            <Link href="/peringkat" className="fitur-action-btn badges">
+              🎖️ Lihat Koleksi Lencana &amp; Peringkat →
+            </Link>
+          </div>
+        </section>
+      )}
+
       {/* CATEGORY 6: PRO BENEFITS */}
       {(activeTab === "all" || activeTab === "pro") && (
         <section className="fitur-category-card pro-card" id="pro">
@@ -543,6 +685,14 @@ export default function FiturPage() {
               <div className="fitur-step-text">
                 <h3>Kanban: Khusus Proyek Besar &amp; Kolaborasi Satu Tim</h3>
                 <p>Gunakan papan <strong>Kanban Proyek</strong> ketika menangani proyek besar bertahap, roadmap multi-fase, atau pekerjaan yang membutuhkan tracking progres bersama rekan tim dan klien.</p>
+              </div>
+            </div>
+
+            <div className="fitur-step-item">
+              <div className="fitur-step-badge">7</div>
+              <div className="fitur-step-text">
+                <h3>Rayakan Progres di Papan Peringkat &amp; Koleksi Lencana</h3>
+                <p>Setiap sesi fokus yang kamu selesaikan otomatis diakumulasi ke <strong>Papan Peringkat Fokus</strong>. Pantau posisimu di antara sesama pejuang fokus, naikkan kasta liga dari Bibit Fokus menuju Zen Legend, raih 7 lencana pencapaian, dan ukir namamu di Hall of Fame bulanan!</p>
               </div>
             </div>
           </div>

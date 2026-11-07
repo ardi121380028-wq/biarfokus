@@ -6,7 +6,7 @@ import Link from "next/link";
 type FaqItem = {
   question: string;
   answer: string;
-  category: "umum" | "sinkronisasi" | "pro" | "teknis";
+  category: "umum" | "sinkronisasi" | "pro" | "teknis" | "komunitas";
 };
 
 const FAQ_LIST: FaqItem[] = [
@@ -14,19 +14,61 @@ const FAQ_LIST: FaqItem[] = [
     category: "umum",
     question: "Apa itu BiarFokus dan bagaimana cara kerjanya?",
     answer:
-      "BiarFokus adalah ekosistem produktivitas all-in-one yang menggabungkan teknik Pomodoro Timer (25 menit fokus, 5 menit istirahat), Catatan Cepat (Keep), Kalender Time-blocking, dan Papan Kanban Project. Semua alat ini dirancang dalam satu tampilan minimalis dan bebas distraksi agar kamu dapat menyelesaikan tugas tanpa terpecah fokus.",
+      "BiarFokus adalah ekosistem produktivitas all-in-one yang menyatukan teknik Pomodoro Timer saintifik, Catatan Cepat (Keep) dengan live markdown, Kalender Time-blocking, Project Kanban, Pelacak Kebiasaan Atomic Habits, dan Papan Peringkat Fokus. Semua alat ini dirancang dalam satu ruang kerja yang tenang, cepat, dan 100% bebas distraksi iklan agar kamu dapat menuntaskan karya terbaikmu.",
+  },
+  {
+    category: "komunitas",
+    question: "Bagaimana cara kerja Papan Peringkat Fokus (Leaderboard) dan kapan di-reset?",
+    answer:
+      "Papan Peringkat Fokus mengakumulasi total menit fokus nyata dari setiap sesi Pomodoro yang kamu selesaikan hingga alarm berbunyi (sesi yang dibatalkan di tengah jalan tidak dihitung). Peringkat mingguan diperbarui secara real-time dan di-reset otomatis setiap hari Senin pukul 00:00 WIB. Kamu juga dapat memfilter klasemen berdasarkan Hari Ini, Bulan Ini, dan Sepanjang Masa (All-Time).",
+  },
+  {
+    category: "komunitas",
+    question: "Apakah saya bisa menyembunyikan profil dari Papan Peringkat jika ingin fokus privat?",
+    answer:
+      "Tentu saja! Privasi adalah prioritas utama kami. Jika kamu lebih nyaman fokus secara pribadi tanpa berkompetisi di klasemen publik, kamu bisa mematikan opsi 'Tampilkan di Papan Peringkat' kapan saja melalui menu Pengaturan Akun. Namamu tidak akan muncul di tabel leaderboard publik.",
+  },
+  {
+    category: "komunitas",
+    question: "Apa saja 4 Kasta Liga di Papan Peringkat Fokus?",
+    answer:
+      "Papan Peringkat BiarFokus memiliki 4 tingkat liga eksklusif: Bibit Fokus (0–3 jam), Pejuang Konsisten (3–10 jam), Master Deep Work (10–20 jam), dan kasta tertinggi Zen Legend (20+ jam). Promosi tingkat liga terjadi secara otomatis begitu total jam fokusmu pada periode berjalan melampaui batas minimum kasta tersebut.",
+  },
+  {
+    category: "komunitas",
+    question: "Bagaimana cara membuka Lencana (Badges) & Pencapaian Keaktifan?",
+    answer:
+      "BiarFokus memiliki 7 Lencana Keaktifan Gamifikasi: (1) 🚀 Fokus Perdana untuk sesi pomodoro pertama, (2) ⚡ Konsistensi 3 Hari untuk streak 3 hari beruntun, (3) 🏆 Juara 7 Hari untuk streak sepekan penuh, (4) 🎯 Fokus Mantap untuk akumulasi 5 jam kerja, (5) 💎 Master Produktif untuk 25 jam fokus nyata, (6) 👑 Century Club untuk 100 sesi pomodoro tuntas, dan (7) 🌌 Sesi Deep Work untuk sesi maraton 45+ menit. Begitu syarat terpenuhi, lencana otomatis aktif dan menghiasi profil serta posisimu di leaderboard!",
+  },
+  {
+    category: "komunitas",
+    question: "Apa itu Arsip Pemenang Bulanan (Hall of Fame)?",
+    answer:
+      "Arsip Pemenang Bulanan adalah galeri penghormatan permanen bagi podium 3 besar pejuang fokus di setiap penutupan bulan kalender (November, Oktober, September, dll.). Fitur ini mengabadikan dedikasi dan konsistensi luar biasa para juara komunitas BiarFokus.",
+  },
+  {
+    category: "umum",
+    question: "Siapa pendiri (Founder) di balik platform BiarFokus?",
+    answer:
+      "BiarFokus didirikan dan dikembangkan oleh Ardi Kharisma. Berawal dari keresahan pribadi karena sulit fokus di era banjir notifikasi dan lelahnya berpindah antar puluhan aplikasi terpisah, Ardi membangun BiarFokus sebagai ruang kerja digital yang tenang, privat, bebas iklan, dan menyatukan seluruh alur produktivitas untuk masyarakat Indonesia dan dunia.",
+  },
+  {
+    category: "umum",
+    question: "Apa perbedaan Pelacak Kebiasaan (Habits) dengan Project Kanban?",
+    answer:
+      "Pelacak Kebiasaan berakar pada filosofi Atomic Habits dari James Clear untuk membangun rutinitas berulang harian (morning routine, membaca buku, olahraga, minum 2L air) dengan visualisasi streak dan heatmap 90 hari. Sementara itu, Project Kanban difokuskan untuk alur kerja proyek bertahap (To Do, In Progress, Done) dengan pembagian tugas, checklist, dan kolaborasi tim.",
   },
   {
     category: "sinkronisasi",
     question: "Apakah data saya tersinkron otomatis antar HP dan Laptop?",
     answer:
-      "Ya, 100%! Begitu kamu masuk (login) dengan akun Google atau email yang sama, seluruh task, catatan, acara kalender, dan kartu Kanban langsung tersinkronisasi secara real-time di semua perangkat (Desktop, Laptop, Tablet, maupun aplikasi PWA di ponsel kamu).",
+      "Ya, 100%! Begitu kamu masuk (login) dengan akun Google atau email yang sama, seluruh task, catatan, acara kalender, papan kanban, kebiasaan, dan riwayat fokus langsung tersinkronisasi secara real-time di semua perangkat (Desktop, Laptop, Tablet, maupun aplikasi PWA di ponsel kamu).",
   },
   {
     category: "pro",
     question: "Apa perbedaan antara Paket Gratis (Free) dan BiarFokus Pro?",
     answer:
-      "Paket Gratis memberikan akses penuh ke Timer Pomodoro, Kalender, Catatan, 1 Kanban Board utama, dan hingga 5 task aktif sekaligus. Paket Pro (Rp 29.000/bln) membuka kuota task tanpa batas, unlimited Kanban boards & kolaborasi tim, statistik produktivitas lengkap seumur hidup, audio suasana fokus premium (White noise, Rain, Forest), serta tema warna eksklusif.",
+      "Paket Gratis memberikan akses penuh ke Timer Pomodoro, Kalender, Catatan, 1 Kanban Board utama, dan hingga 5 task aktif sekaligus. Paket Pro (Rp 29.000/bln) membuka kuota task tanpa batas, unlimited Kanban boards & kolaborasi tim, statistik produktivitas lengkap seumur hidup, audio suasana fokus premium (White noise, Rain, Forest), serta badge Pro eksklusif.",
   },
   {
     category: "pro",
@@ -172,6 +214,7 @@ export default function FaqPage() {
             {[
               { id: "all", label: "Semua Topik" },
               { id: "umum", label: "Umum & Timer" },
+              { id: "komunitas", label: "🏆 Papan Peringkat & Lencana" },
               { id: "sinkronisasi", label: "Sinkronisasi" },
               { id: "pro", label: "Langganan Pro" },
               { id: "teknis", label: "PWA & Keamanan" },

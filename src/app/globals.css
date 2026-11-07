@@ -11712,6 +11712,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .fitur-category-icon-box.kanban-accent { background: rgba(14, 165, 233, 0.18); }
 .fitur-category-icon-box.notes-accent { background: rgba(234, 179, 8, 0.18); }
 .fitur-category-icon-box.stats-accent { background: rgba(16, 185, 129, 0.18); }
+.fitur-category-icon-box.leaderboard-accent { background: rgba(245, 158, 11, 0.2); }
+.fitur-category-icon-box.badges-accent { background: rgba(139, 92, 246, 0.2); }
 .fitur-category-icon-box.pro-accent { background: rgba(245, 158, 11, 0.22); }
 .fitur-category-icon-box.guide-accent { background: rgba(168, 85, 247, 0.18); }
 
@@ -11960,6 +11962,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .fitur-action-btn.stats:hover {
   box-shadow: 0 6px 18px rgba(5, 150, 105, 0.4);
+}
+
+.fitur-action-btn.leaderboard {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.32);
+}
+
+.fitur-action-btn.leaderboard:hover {
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.45);
+}
+
+.fitur-action-btn.badges {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.32);
+}
+
+.fitur-action-btn.badges:hover {
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.45);
 }
 
 /* ========================================================================== */

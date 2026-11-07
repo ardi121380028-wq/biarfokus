@@ -17,7 +17,17 @@ const FAQ_LIST: FaqItem[] = [
   {
     question: "Apa itu BiarFokus dan bagaimana cara kerjanya?",
     answer:
-      "BiarFokus adalah ekosistem produktivitas all-in-one yang menggabungkan teknik Pomodoro Timer (25 menit fokus, 5 menit istirahat), Catatan Cepat (Keep), Kalender Time-blocking, dan Papan Kanban Project. Semua alat ini dirancang dalam satu tampilan minimalis dan bebas distraksi agar kamu dapat menyelesaikan tugas tanpa terpecah fokus.",
+      "BiarFokus adalah ekosistem produktivitas all-in-one yang menggabungkan teknik Pomodoro Timer saintifik, Catatan Cepat (Keep), Kalender Time-blocking, Project Kanban, Pelacak Kebiasaan Atomic Habits, dan Papan Peringkat Fokus. Semua alat ini dirancang dalam satu ruang kerja yang tenang dan bebas distraksi agar kamu dapat menuntaskan tugas tanpa terpecah fokus.",
+  },
+  {
+    question: "Bagaimana cara kerja Papan Peringkat Fokus dan apa bisa disembunyikan?",
+    answer:
+      "Papan Peringkat mengakumulasi jam fokus nyata dari sesi Pomodoro yang kamu tuntaskan. Klasemen mingguan di-reset tiap Senin 00:00 WIB. Terdapat 4 kasta liga: Bibit Fokus, Pejuang Konsisten, Master Deep Work, dan Zen Legend. Jika ingin fokus privat tanpa berkompetisi, kamu bisa mematikan opsi 'Tampilkan di Papan Peringkat' di Pengaturan Akun kapan saja.",
+  },
+  {
+    question: "Bagaimana cara mendapatkan Lencana (Badges) & Pencapaian?",
+    answer:
+      "Terdapat 7 Lencana Keaktifan Gamifikasi: Fokus Perdana (sesi ke-1), Konsistensi 3 Hari, Juara 7 Hari, Fokus Mantap (5 jam), Master Produktif (25 jam), Century Club (100 sesi), dan Sesi Deep Work (45+ menit). Lencana otomatis aktif dan menghiasi profil serta posisimu di leaderboard!",
   },
   {
     question: "Apakah data saya tersinkron otomatis antar HP dan Laptop?",

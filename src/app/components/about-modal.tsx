@@ -75,12 +75,12 @@ export function AboutModal({ onClose }: AboutModalProps) {
           </div>
 
           <div className="info-pillars-section">
-            <h3 className="info-section-heading">4 Pilar Terintegrasi BiarFokus:</h3>
+            <h3 className="info-section-heading">Ekosistem Terpadu BiarFokus:</h3>
             <div className="info-pillars-grid">
               <div className="info-pillar-card">
                 <span className="info-pillar-icon">🍅</span>
                 <div>
-                  <strong>Pomodoro Timer Akurat</strong>
+                  <strong>Pomodoro Saintifik</strong>
                   <p>Ritme 25 menit fokus mendalam & 5 menit jeda istirahat dengan audio ambient penenang.</p>
                 </div>
               </div>
@@ -96,8 +96,8 @@ export function AboutModal({ onClose }: AboutModalProps) {
               <div className="info-pillar-card">
                 <span className="info-pillar-icon">📝</span>
                 <div>
-                  <strong>Catatan & Todo Terhubung</strong>
-                  <p>Catat checklist ide instan ala Google Keep yang otomatis sinkron dengan kalender.</p>
+                  <strong>Catatan Model Keep</strong>
+                  <p>Catat checklist ide instan ala Google Keep dengan live markdown yang otomatis sinkron.</p>
                 </div>
               </div>
 
@@ -105,9 +105,51 @@ export function AboutModal({ onClose }: AboutModalProps) {
                 <span className="info-pillar-icon">📅</span>
                 <div>
                   <strong>Time-Blocking Kalender</strong>
-                  <p>Kunci waktu nyata di kalender Google-style dengan drag & drop dan handle durasi.</p>
+                  <p>Kunci waktu nyata di kalender multi-tampilan dengan sinkronisasi tugas otomatis.</p>
                 </div>
               </div>
+
+              <div className="info-pillar-card">
+                <span className="info-pillar-icon">📋</span>
+                <div>
+                  <strong>Project Kanban</strong>
+                  <p>Kelola alur kerja proyek besar multi-kolom bersama rekan kerja atau tim.</p>
+                </div>
+              </div>
+
+              <div className="info-pillar-card">
+                <span className="info-pillar-icon">⚡</span>
+                <div>
+                  <strong>Pelacak Kebiasaan</strong>
+                  <p>Bangun rutinitas konsisten dengan prinsip Atomic Habits dan heatmap 90 hari.</p>
+                </div>
+              </div>
+
+              <div className="info-pillar-card">
+                <span className="info-pillar-icon">🏆</span>
+                <div>
+                  <strong>Papan Peringkat & Lencana</strong>
+                  <p>Podium 3D, promosi liga Bibit hingga Zen Legend, dan 7 lencana pencapaian.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 20,
+              padding: "14px 18px",
+              borderRadius: 14,
+              background: "color-mix(in srgb, var(--ink) 4%, transparent)",
+              border: "1px dashed color-mix(in srgb, var(--ink) 12%, transparent)",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <span style={{ fontSize: 24 }}>👑</span>
+            <div style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--muted)" }}>
+              Dikonsep dan dibangun dengan dedikasi penuh oleh <strong>Ardi Kharisma</strong> (Founder &amp; Creator BiarFokus) untuk mendukung produktivitas pejuang fokus di Indonesia.
             </div>
           </div>
         </div>
