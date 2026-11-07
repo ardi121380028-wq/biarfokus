@@ -15,6 +15,9 @@ type KanbanSidebarProps = {
   onSelectBoard: (boardId: string) => void;
   onCreateBoardModalOpen: () => void;
   onDeleteBoard: (boardId: string) => void;
+  onToggleStarBoard?: (boardId: string) => void;
+  onReorderBoards?: (newBoards: KanbanBoard[]) => void;
+  onMoveBoard?: (sourceIndex: number, destIndex: number) => void;
   onNavigate: (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => void;
   onOpenSettings?: () => void;
   onOpenShare?: () => void;
@@ -32,6 +35,9 @@ export function KanbanSidebar({
   onSelectBoard,
   onCreateBoardModalOpen,
   onDeleteBoard,
+  onToggleStarBoard,
+  onReorderBoards,
+  onMoveBoard,
   onNavigate,
   onOpenSettings,
   onOpenShare,
@@ -43,10 +49,217 @@ export function KanbanSidebar({
   const { isPro, user, userRole, setLoginOpen } = useAppContext();
   const [searchBoard, setSearchBoard] = useState("");
   const [deletingBoard, setDeletingBoard] = useState<KanbanBoard | null>(null);
+  const [draggingBoardId, setDraggingBoardId] = useState<string | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<{ id: string; position: "top" | "bottom" } | null>(null);
 
   const filteredBoards = boards.filter((b) =>
     b.title.toLowerCase().includes(searchBoard.trim().toLowerCase()),
   );
+
+  const starredBoards = filteredBoards.filter((b) => Boolean(b.starred));
+  const regularBoards = filteredBoards.filter((b) => !b.starred);
+
+  function handleDragStart(e: React.DragEvent<HTMLDivElement>, boardId: string) {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", boardId);
+    setDraggingBoardId(boardId);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>, targetId: string) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (draggingBoardId === targetId) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isTop = e.clientY - rect.top < rect.height / 2;
+    const pos = isTop ? "top" : "bottom";
+
+    if (!dragOverTarget || dragOverTarget.id !== targetId || dragOverTarget.position !== pos) {
+      setDragOverTarget({ id: targetId, position: pos });
+    }
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    const related = e.relatedTarget as Node | null;
+    if (!related || !e.currentTarget.contains(related)) {
+      setDragOverTarget(null);
+    }
+  }
+
+  function handleDragEnd() {
+    setDraggingBoardId(null);
+    setDragOverTarget(null);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>, targetId: string) {
+    e.preventDefault();
+    if (!draggingBoardId || draggingBoardId === targetId) {
+      setDraggingBoardId(null);
+      setDragOverTarget(null);
+      return;
+    }
+
+    const currentBoards = [...boards];
+    const sourceIdx = currentBoards.findIndex((b) => b.id === draggingBoardId);
+    const targetIdx = currentBoards.findIndex((b) => b.id === targetId);
+
+    if (sourceIdx === -1 || targetIdx === -1) {
+      setDraggingBoardId(null);
+      setDragOverTarget(null);
+      return;
+    }
+
+    const sourceBoard = currentBoards[sourceIdx];
+    const targetBoard = currentBoards[targetIdx];
+
+    const targetStarred = Boolean(targetBoard.starred);
+    const updatedSource =
+      sourceBoard.starred !== targetStarred
+        ? { ...sourceBoard, starred: targetStarred }
+        : sourceBoard;
+
+    currentBoards.splice(sourceIdx, 1);
+
+    let insertIdx = currentBoards.findIndex((b) => b.id === targetId);
+    if (dragOverTarget?.position === "bottom") {
+      insertIdx += 1;
+    }
+
+    currentBoards.splice(insertIdx, 0, updatedSource);
+
+    if (onReorderBoards) {
+      onReorderBoards(currentBoards);
+    }
+
+    setDraggingBoardId(null);
+    setDragOverTarget(null);
+  }
+
+  function handleSectionDrop(e: React.DragEvent<HTMLDivElement>, makeStarred: boolean) {
+    e.preventDefault();
+    if (!draggingBoardId) return;
+
+    const currentBoards = [...boards];
+    const sourceIdx = currentBoards.findIndex((b) => b.id === draggingBoardId);
+    if (sourceIdx === -1) return;
+
+    const sourceBoard = currentBoards[sourceIdx];
+    const updatedSource = { ...sourceBoard, starred: makeStarred };
+    currentBoards.splice(sourceIdx, 1);
+
+    if (makeStarred) {
+      currentBoards.unshift(updatedSource);
+    } else {
+      const firstUnstarredIdx = currentBoards.findIndex((b) => !b.starred);
+      if (firstUnstarredIdx === -1) {
+        currentBoards.push(updatedSource);
+      } else {
+        currentBoards.splice(firstUnstarredIdx, 0, updatedSource);
+      }
+    }
+
+    if (onReorderBoards) {
+      onReorderBoards(currentBoards);
+    }
+
+    setDraggingBoardId(null);
+    setDragOverTarget(null);
+  }
+
+  function renderBoardItem(b: KanbanBoard) {
+    const isActive = b.id === activeBoardId;
+    const isDragging = draggingBoardId === b.id;
+    const isDragOverTop = dragOverTarget?.id === b.id && dragOverTarget.position === "top";
+    const isDragOverBottom = dragOverTarget?.id === b.id && dragOverTarget.position === "bottom";
+
+    return (
+      <div
+        key={b.id}
+        draggable={!searchBoard.trim()}
+        onDragStart={(e) => handleDragStart(e, b.id)}
+        onDragOver={(e) => handleDragOver(e, b.id)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, b.id)}
+        onDragEnd={handleDragEnd}
+        className={`kanban-sidebar-board-item ${isActive ? "active" : ""} ${isDragging ? "is-dragging" : ""} ${
+          isDragOverTop ? "is-drag-over-top" : ""
+        } ${isDragOverBottom ? "is-drag-over-bottom" : ""}`}
+        onClick={() => handleSelectBoard(b.id)}
+        role="button"
+        tabIndex={0}
+        title={b.title + (b.starred ? " (⭐ Favorit/Dipin)" : "")}
+      >
+        {!isCollapsed && !searchBoard.trim() && (
+          <span className="kanban-board-drag-handle" title="Tarik untuk geser posisi papan" aria-hidden="true">
+            ⋮⋮
+          </span>
+        )}
+        <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+          <span
+            className="kanban-board-swatch"
+            style={{
+              background:
+                b.background?.startsWith("#")
+                  ? b.background
+                  : b.background === "biarfokus-white"
+                  ? "#e2e8f0"
+                  : "#3b82f6",
+            }}
+          />
+          {isCollapsed && b.starred && (
+            <span
+              style={{
+                position: "absolute",
+                top: -5,
+                right: -5,
+                fontSize: 9,
+                color: "#f59e0b",
+                lineHeight: 1,
+                pointerEvents: "none",
+              }}
+            >
+              ★
+            </span>
+          )}
+        </div>
+        {!isCollapsed && (
+          <>
+            <span className="kanban-board-item-title">{b.title}</span>
+            {b.isShared && (
+              <span className="kanban-board-item-shared" title="Papan Tim">
+                👥
+              </span>
+            )}
+            <button
+              type="button"
+              className={`kanban-board-star-btn ${b.starred ? "is-starred" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onToggleStarBoard) onToggleStarBoard(b.id);
+              }}
+              title={b.starred ? "Hapus dari Favorit (Lepas pin)" : "Tambah ke Favorit (Pin di atas)"}
+              aria-label={b.starred ? "Hapus dari Favorit" : "Tambah ke Favorit"}
+            >
+              {b.starred ? "★" : "☆"}
+            </button>
+            {boards.length > 1 && (
+              <button
+                type="button"
+                className="kanban-board-delete-mini"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeletingBoard(b);
+                }}
+                title="Hapus papan"
+              >
+                ✕
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
 
   function handleNavigate(view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -228,54 +441,34 @@ export function KanbanSidebar({
         )}
 
         <div className="kanban-sidebar-boards-list">
-          {filteredBoards.map((b) => {
-            const isActive = b.id === activeBoardId;
-            return (
+          {/* If any boards are starred/favorited, display distinct sections */}
+          {!isCollapsed && starredBoards.length > 0 ? (
+            <>
               <div
-                key={b.id}
-                className={`kanban-sidebar-board-item ${isActive ? "active" : ""}`}
-                onClick={() => handleSelectBoard(b.id)}
-                role="button"
-                tabIndex={0}
-                title={b.title}
+                className="kanban-sidebar-subgroup-title"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleSectionDrop(e, true)}
+                title="Tarik papan ke sini untuk menandai sebagai favorit"
               >
-                <span
-                  className="kanban-board-swatch"
-                  style={{
-                    background:
-                      b.background?.startsWith("#")
-                        ? b.background
-                        : b.background === "biarfokus-white"
-                        ? "#e2e8f0"
-                        : "#3b82f6",
-                  }}
-                />
-                {!isCollapsed && (
-                  <>
-                    <span className="kanban-board-item-title">{b.title}</span>
-                    {b.isShared && (
-                      <span className="kanban-board-item-shared" title="Papan Tim">
-                        👥
-                      </span>
-                    )}
-                    {boards.length > 1 && (
-                      <button
-                        type="button"
-                        className="kanban-board-delete-mini"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingBoard(b);
-                        }}
-                        title="Hapus papan"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </>
-                )}
+                <span>⭐ Favorit ({starredBoards.length})</span>
               </div>
-            );
-          })}
+              {starredBoards.map((b) => renderBoardItem(b))}
+
+              {regularBoards.length > 0 && (
+                <div
+                  className="kanban-sidebar-subgroup-title"
+                  style={{ marginTop: 10 }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleSectionDrop(e, false)}
+                >
+                  <span>Papan Proyek ({regularBoards.length})</span>
+                </div>
+              )}
+              {regularBoards.map((b) => renderBoardItem(b))}
+            </>
+          ) : (
+            filteredBoards.map((b) => renderBoardItem(b))
+          )}
 
           {filteredBoards.length === 0 && !isCollapsed && (
             <div className="kanban-empty-sidebar-boards">

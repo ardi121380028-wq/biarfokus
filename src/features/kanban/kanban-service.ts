@@ -775,6 +775,63 @@ export function parseStoredBoards(raw: string | null | unknown): KanbanBoard[] {
 /* Immutable Pure Board Operations                                     */
 /* ------------------------------------------------------------------ */
 
+export function moveBoardItem(
+  boards: KanbanBoard[],
+  sourceIndex: number,
+  destIndex: number,
+): KanbanBoard[] {
+  if (sourceIndex < 0 || sourceIndex >= boards.length) return boards;
+  if (destIndex < 0 || destIndex >= boards.length) return boards;
+  if (sourceIndex === destIndex) return boards;
+
+  const result = [...boards];
+  const [removed] = result.splice(sourceIndex, 1);
+  if (!removed) return boards;
+  result.splice(destIndex, 0, removed);
+  return result;
+}
+
+export function toggleBoardStarred(
+  boards: KanbanBoard[],
+  boardId: string,
+): { boards: KanbanBoard[]; updatedBoard: KanbanBoard | null } {
+  const target = boards.find((b) => b.id === boardId);
+  if (!target) return { boards, updatedBoard: null };
+
+  const nextStarred = !target.starred;
+  const now = formatUpdatedAt(new Date());
+  const updatedBoard: KanbanBoard = {
+    ...target,
+    starred: nextStarred,
+    updatedAt: now,
+  };
+
+  const others = boards.filter((b) => b.id !== boardId);
+  let nextBoards: KanbanBoard[];
+
+  if (nextStarred) {
+    // Pin to top: place after other starred boards (or very first if none)
+    const lastStarredIdx = others.findLastIndex((b) => Boolean(b.starred));
+    if (lastStarredIdx === -1) {
+      nextBoards = [updatedBoard, ...others];
+    } else {
+      nextBoards = [...others];
+      nextBoards.splice(lastStarredIdx + 1, 0, updatedBoard);
+    }
+  } else {
+    // Unpin: place at the start of unstarred boards
+    const firstUnstarredIdx = others.findIndex((b) => !b.starred);
+    if (firstUnstarredIdx === -1) {
+      nextBoards = [...others, updatedBoard];
+    } else {
+      nextBoards = [...others];
+      nextBoards.splice(firstUnstarredIdx, 0, updatedBoard);
+    }
+  }
+
+  return { boards: nextBoards, updatedBoard };
+}
+
 export function moveCard(
   board: KanbanBoard,
   sourceListId: string,

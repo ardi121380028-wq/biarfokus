@@ -10,6 +10,7 @@ import {
   deleteCard,
   deleteList,
   LABEL_PALETTE,
+  moveBoardItem,
   moveCard,
   moveList,
   normalizeBoard,
@@ -18,6 +19,7 @@ import {
   resolveBoardAvailableLabels,
   restoreCard,
   TEMPLATES,
+  toggleBoardStarred,
   updateCard,
   updateListTitle,
 } from "./kanban-service.ts";
@@ -358,6 +360,62 @@ describe("kanban-service", () => {
     const cleanedDefault = deleteBoardLabel(cleaned, "lbl-default-6", "Trello Tip");
     const availableAfterDefault = resolveBoardAvailableLabels(cleanedDefault);
     assert.equal(availableAfterDefault.some((l) => l.name.toLowerCase() === "trello tip"), false);
+  });
+
+  it("reorders boards with moveBoardItem correctly", () => {
+    const b1 = createNewBoard("Board 1");
+    const b2 = createNewBoard("Board 2");
+    const b3 = createNewBoard("Board 3");
+    const initial = [b1, b2, b3];
+
+    // Move index 2 to 0 (move Board 3 to top)
+    const movedToTop = moveBoardItem(initial, 2, 0);
+    assert.equal(movedToTop[0].id, b3.id);
+    assert.equal(movedToTop[1].id, b1.id);
+    assert.equal(movedToTop[2].id, b2.id);
+
+    // Move index 0 to 1 (move Board 1 down)
+    const movedDown = moveBoardItem(initial, 0, 1);
+    assert.equal(movedDown[0].id, b2.id);
+    assert.equal(movedDown[1].id, b1.id);
+    assert.equal(movedDown[2].id, b3.id);
+
+    // Out-of-bounds guards
+    assert.deepEqual(moveBoardItem(initial, -1, 1), initial);
+    assert.deepEqual(moveBoardItem(initial, 0, 99), initial);
+    assert.deepEqual(moveBoardItem(initial, 1, 1), initial);
+  });
+
+  it("toggles board starred and pins it to the top with toggleBoardStarred", () => {
+    const b1 = createNewBoard("DJA Consulting");
+    const b2 = createNewBoard("Zefflow");
+    const b3 = createNewBoard("Zitline 2026");
+    const initial = [b1, b2, b3];
+
+    // 1. Star Zitline 2026 (should be pinned to top)
+    const res1 = toggleBoardStarred(initial, b3.id);
+    assert.ok(res1.updatedBoard);
+    assert.equal(res1.updatedBoard.starred, true);
+    assert.equal(res1.boards[0].id, b3.id);
+    assert.equal(res1.boards[0].starred, true);
+    assert.equal(res1.boards[1].id, b1.id);
+    assert.equal(res1.boards[2].id, b2.id);
+
+    // 2. Star Zefflow (should be added after existing starred boards)
+    const res2 = toggleBoardStarred(res1.boards, b2.id);
+    assert.ok(res2.updatedBoard);
+    assert.equal(res2.updatedBoard.starred, true);
+    assert.equal(res2.boards[0].id, b3.id);
+    assert.equal(res2.boards[1].id, b2.id);
+    assert.equal(res2.boards[2].id, b1.id);
+
+    // 3. Unstar Zitline 2026 (should be unpinned and moved after starred boards)
+    const res3 = toggleBoardStarred(res2.boards, b3.id);
+    assert.ok(res3.updatedBoard);
+    assert.equal(res3.updatedBoard.starred, false);
+    assert.equal(res3.boards[0].id, b2.id); // Zefflow remains starred at top
+    assert.equal(res3.boards[1].id, b3.id);
+    assert.equal(res3.boards[2].id, b1.id);
   });
 });
 

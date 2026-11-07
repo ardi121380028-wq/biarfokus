@@ -1183,6 +1183,89 @@ button:active:not(:disabled) {
   color: #ef4444;
 }
 
+.kanban-board-star-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  opacity: 0;
+  transition: all 0.15s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kanban-sidebar-board-item:hover .kanban-board-star-btn,
+.kanban-board-star-btn.is-starred {
+  opacity: 1;
+}
+
+.kanban-board-star-btn.is-starred {
+  color: #f59e0b;
+  text-shadow: 0 0 6px rgba(245, 158, 11, 0.35);
+}
+
+.kanban-board-star-btn:hover {
+  transform: scale(1.25);
+  color: #f59e0b;
+}
+
+.kanban-board-drag-handle {
+  opacity: 0;
+  cursor: grab;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  user-select: none;
+  transition: opacity 0.15s ease;
+  margin-right: -4px;
+  display: flex;
+  align-items: center;
+}
+
+.kanban-sidebar-board-item:hover .kanban-board-drag-handle {
+  opacity: 0.6;
+}
+
+.kanban-board-drag-handle:active {
+  cursor: grabbing;
+}
+
+.kanban-sidebar-board-item.is-dragging {
+  opacity: 0.35;
+  background: color-mix(in srgb, var(--blue) 8%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--blue) 40%, transparent);
+}
+
+.kanban-sidebar-board-item.is-drag-over-top {
+  border-top: 2px solid var(--blue) !important;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+
+.kanban-sidebar-board-item.is-drag-over-bottom {
+  border-bottom: 2px solid var(--blue) !important;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.kanban-sidebar-subgroup-title {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 /* Quick Invite Card */
 .kanban-sidebar-invite-card {
   margin: 6px 10px 8px;

@@ -64,6 +64,9 @@ export function KanbanView({
     createBoard,
     updateBoard,
     deleteBoard,
+    toggleStarBoard,
+    reorderBoards,
+    moveBoard,
     addCard,
     updateCard,
     archiveCard,
@@ -643,6 +646,9 @@ export function KanbanView({
         onSelectBoard={selectBoard}
         onCreateBoardModalOpen={() => setBoardModalOpen(true)}
         onDeleteBoard={deleteBoard}
+        onToggleStarBoard={toggleStarBoard}
+        onReorderBoards={reorderBoards}
+        onMoveBoard={moveBoard}
         onNavigate={(view) => {
           if (onNavigate) onNavigate(view);
         }}

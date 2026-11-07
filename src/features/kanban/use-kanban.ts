@@ -14,11 +14,13 @@ import {
   getActiveBoardStorageKey,
   getStorageKey,
   INITIAL_BOARDS,
+  moveBoardItem,
   moveCard as serviceMoveCard,
   moveList as serviceMoveList,
   parseStoredBoardId,
   parseStoredBoards,
   restoreCard as serviceRestoreCard,
+  toggleBoardStarred,
   updateCard as serviceUpdateCard,
   updateListTitle as serviceUpdateListTitle,
 } from "./kanban-service";
@@ -241,6 +243,38 @@ export function useKanban(userId?: string | null) {
       }
 
       const merged = Array.from(boardMap.values());
+      let orderIds: string[] = [];
+      if (typeof window !== "undefined") {
+        try {
+          const rawOrder = window.localStorage.getItem(`biarfokus.kanban.boards_order.${userId || "guest"}`);
+          if (rawOrder) {
+            const parsed = JSON.parse(rawOrder);
+            if (Array.isArray(parsed)) orderIds = parsed;
+          }
+        } catch {}
+      }
+
+      if (orderIds.length > 0) {
+        merged.sort((a, b) => {
+          if (Boolean(a.starred) !== Boolean(b.starred)) {
+            return a.starred ? -1 : 1;
+          }
+          const idxA = orderIds.indexOf(a.id);
+          const idxB = orderIds.indexOf(b.id);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          return 0;
+        });
+      } else {
+        merged.sort((a, b) => {
+          if (Boolean(a.starred) !== Boolean(b.starred)) {
+            return a.starred ? -1 : 1;
+          }
+          return 0;
+        });
+      }
+
       updateBoards(() => merged);
       setSyncStatus("synced");
     };
@@ -639,6 +673,55 @@ export function useKanban(userId?: string | null) {
     [activeBoard.id, updateBoards, syncBoardToCloud],
   );
 
+  const toggleStarBoard = useCallback(
+    (boardId: string) => {
+      recentLocalEditsRef.current.set(boardId, Date.now());
+      let updatedBoard: KanbanBoard | null = null;
+      updateBoards((current) => {
+        const res = toggleBoardStarred(current, boardId);
+        updatedBoard = res.updatedBoard;
+        if (typeof window !== "undefined") {
+          try {
+            const orderKey = `biarfokus.kanban.boards_order.${userId || "guest"}`;
+            window.localStorage.setItem(orderKey, JSON.stringify(res.boards.map((b) => b.id)));
+          } catch {}
+        }
+        return res.boards;
+      });
+      if (updatedBoard) void syncBoardToCloud(updatedBoard);
+    },
+    [updateBoards, syncBoardToCloud, userId],
+  );
+
+  const reorderBoards = useCallback(
+    (newBoards: KanbanBoard[]) => {
+      updateBoards(() => newBoards);
+      if (typeof window !== "undefined") {
+        try {
+          const orderKey = `biarfokus.kanban.boards_order.${userId || "guest"}`;
+          window.localStorage.setItem(orderKey, JSON.stringify(newBoards.map((b) => b.id)));
+        } catch {}
+      }
+    },
+    [updateBoards, userId],
+  );
+
+  const moveBoard = useCallback(
+    (sourceIndex: number, destIndex: number) => {
+      updateBoards((current) => {
+        const next = moveBoardItem(current, sourceIndex, destIndex);
+        if (typeof window !== "undefined") {
+          try {
+            const orderKey = `biarfokus.kanban.boards_order.${userId || "guest"}`;
+            window.localStorage.setItem(orderKey, JSON.stringify(next.map((b) => b.id)));
+          } catch {}
+        }
+        return next;
+      });
+    },
+    [updateBoards, userId],
+  );
+
   const joinBoard = useCallback(
     (newBoard: KanbanBoard) => {
       updateBoards((current) => {
@@ -674,6 +757,9 @@ export function useKanban(userId?: string | null) {
     createBoard,
     updateBoard,
     deleteBoard,
+    toggleStarBoard,
+    reorderBoards,
+    moveBoard,
     addCard,
     updateCard,
     archiveCard,
