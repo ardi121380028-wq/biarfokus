@@ -23,11 +23,220 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase() || "BF";
 }
 
-const LEAGUE_SHOWCASE = [
-  { icon: "🌱", title: "Bibit Fokus", sub: "0 - 3 Jam" },
-  { icon: "⚡", title: "Pejuang Konsisten", sub: "3 - 10 Jam" },
-  { icon: "🏆", title: "Master Deep Work", sub: "10 - 20 Jam" },
-  { icon: "👑", title: "Zen Legend", sub: "20+ Jam" },
+/* ------------------------------------------------------------------ */
+/* Luxury Game-Grade 3D SVG Badges (Matching User Design Ref)         */
+/* ------------------------------------------------------------------ */
+
+function BronzeEmeraldCrest() {
+  return (
+    <svg width="58" height="58" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bronzeShieldGrad" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#d97706" />
+          <stop offset="40%" stopColor="#b45309" />
+          <stop offset="100%" stopColor="#78350f" />
+        </linearGradient>
+        <linearGradient id="emeraldInnerGrad" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#10b981" />
+          <stop offset="100%" stopColor="#047857" />
+        </linearGradient>
+        <filter id="badgeShadow" x="0" y="2" width="64" height="62" filterUnits="userSpaceOnUse">
+          <feDropShadow dx="0" dy="4" stdDeviation="3" floodOpacity="0.35" />
+        </filter>
+      </defs>
+      <g filter="url(#badgeShadow)">
+        {/* Outer Pentagon Shield */}
+        <path
+          d="M32 4L54 14V32C54 45 44 55 32 60C20 55 10 45 10 32V14L32 4Z"
+          fill="url(#bronzeShieldGrad)"
+          stroke="#fef3c7"
+          strokeWidth="1.5"
+        />
+        {/* Inner Facet Shield */}
+        <path
+          d="M32 10L47 18V31C47 41 39 49 32 53C25 49 17 41 17 31V18L32 10Z"
+          fill="url(#emeraldInnerGrad)"
+          stroke="#34d399"
+          strokeWidth="1"
+        />
+        {/* Sprout Emblem with Golden Aura */}
+        <path
+          d="M32 42V25M32 25C32 20 23 19 23 27C23 32 30 33 32 33M32 25C32 20 41 19 41 27C41 32 34 33 32 33"
+          stroke="#fef3c7"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="32" cy="18" r="2.5" fill="#fde68a" />
+      </g>
+    </svg>
+  );
+}
+
+function SilverCobaltCrest() {
+  return (
+    <svg width="58" height="58" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="silverShieldGrad" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#f8fafc" />
+          <stop offset="45%" stopColor="#cbd5e1" />
+          <stop offset="100%" stopColor="#64748b" />
+        </linearGradient>
+        <linearGradient id="cobaltInnerGrad" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#1d4ed8" />
+        </linearGradient>
+        <linearGradient id="lightningGrad" x1="24" y1="14" x2="40" y2="48" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#93c5fd" />
+        </linearGradient>
+      </defs>
+      <g filter="url(#badgeShadow)">
+        {/* Outer Silver Crest */}
+        <path
+          d="M32 4L54 14V32C54 45 44 55 32 60C20 55 10 45 10 32V14L32 4Z"
+          fill="url(#silverShieldGrad)"
+          stroke="#ffffff"
+          strokeWidth="1.5"
+        />
+        {/* Inner Sapphire Blue Shield */}
+        <path
+          d="M32 10L47 18V31C47 41 39 49 32 53C25 49 17 41 17 31V18L32 10Z"
+          fill="url(#cobaltInnerGrad)"
+          stroke="#93c5fd"
+          strokeWidth="1"
+        />
+        {/* 3D Lightning Bolt */}
+        <path
+          d="M34 16L24 31H33L30 46L41 29H32L34 16Z"
+          fill="url(#lightningGrad)"
+          stroke="#ffffff"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      </g>
+    </svg>
+  );
+}
+
+function ImperialGoldCrest() {
+  return (
+    <svg width="58" height="58" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="goldOuterGrad" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef08a" />
+          <stop offset="35%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+        <linearGradient id="goldInnerGrad" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#92400e" />
+        </linearGradient>
+      </defs>
+      <g filter="url(#badgeShadow)">
+        {/* Outer Golden Crest */}
+        <path
+          d="M32 4L54 14V32C54 45 44 55 32 60C20 55 10 45 10 32V14L32 4Z"
+          fill="url(#goldOuterGrad)"
+          stroke="#ffffff"
+          strokeWidth="1.5"
+        />
+        {/* Inner Gold Shield */}
+        <path
+          d="M32 10L47 18V31C47 41 39 49 32 53C25 49 17 41 17 31V18L32 10Z"
+          fill="url(#goldInnerGrad)"
+          stroke="#fef08a"
+          strokeWidth="1"
+        />
+        {/* Gold Trophy Chalice */}
+        <path
+          d="M24 20H40V28C40 33 36 37 32 37C28 37 24 33 24 28V20ZM32 37V44M26 44H38M20 22C18 22 17 24 17 26C17 29 20 31 24 31M44 22C46 22 47 24 47 26C47 29 44 31 40 31"
+          stroke="#ffffff"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <polygon points="32,15 33.5,18.5 37,18.5 34.2,20.8 35.2,24 32,22 28.8,24 29.8,20.8 27,18.5 30.5,18.5" fill="#ffffff" />
+      </g>
+    </svg>
+  );
+}
+
+function DiamondAstralCrest() {
+  return (
+    <svg width="58" height="58" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="astralShieldGrad" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#c084fc" />
+          <stop offset="50%" stopColor="#8b5cf6" />
+          <stop offset="100%" stopColor="#4c1d95" />
+        </linearGradient>
+        <linearGradient id="diamondCoreGrad" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#22d3ee" />
+          <stop offset="50%" stopColor="#818cf8" />
+          <stop offset="100%" stopColor="#6366f1" />
+        </linearGradient>
+      </defs>
+      <g filter="url(#badgeShadow)">
+        {/* Outer Astral Crest */}
+        <path
+          d="M32 4L54 14V32C54 45 44 55 32 60C20 55 10 45 10 32V14L32 4Z"
+          fill="url(#astralShieldGrad)"
+          stroke="#fdf4ff"
+          strokeWidth="1.5"
+        />
+        {/* Inner Diamond Core Shield */}
+        <path
+          d="M32 10L47 18V31C47 41 39 49 32 53C25 49 17 41 17 31V18L32 10Z"
+          fill="url(#diamondCoreGrad)"
+          stroke="#a5f3fc"
+          strokeWidth="1"
+        />
+        {/* Royal Crown Emblem with Gemstones */}
+        <path
+          d="M21 38L23 23L29 30L32 20L35 30L41 23L43 38H21Z"
+          fill="#ffffff"
+          stroke="#ffffff"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        <circle cx="23" cy="21" r="1.8" fill="#f43f5e" />
+        <circle cx="32" cy="18" r="2.2" fill="#38bdf8" />
+        <circle cx="41" cy="21" r="1.8" fill="#f43f5e" />
+      </g>
+    </svg>
+  );
+}
+
+const LUXURY_LEAGUES = [
+  {
+    tier: "bronze",
+    tag: "TIER I",
+    title: "Bibit Fokus",
+    sub: "0 – 3 Jam",
+    renderCrest: () => <BronzeEmeraldCrest />,
+  },
+  {
+    tier: "silver",
+    tag: "TIER II",
+    title: "Pejuang Konsisten",
+    sub: "3 – 10 Jam",
+    renderCrest: () => <SilverCobaltCrest />,
+  },
+  {
+    tier: "gold",
+    tag: "TIER III",
+    title: "Master Deep Work",
+    sub: "10 – 20 Jam",
+    renderCrest: () => <ImperialGoldCrest />,
+  },
+  {
+    tier: "legend",
+    tag: "TIER IV",
+    title: "Zen Legend",
+    sub: "20+ Jam",
+    renderCrest: () => <DiamondAstralCrest />,
+  },
 ] as const;
 
 function PodiumStep({
@@ -47,7 +256,6 @@ function PodiumStep({
 
   return (
     <div className={`podium-column ${place}`}>
-      {/* Floating Info Above Step */}
       <div className="podium-user-floater">
         <div className="podium-user-avatar-wrap">
           {rankNumber === 1 && <span className="podium-crown-icon">👑</span>}
@@ -99,7 +307,6 @@ function PodiumStep({
         </div>
       </div>
 
-      {/* 3D Physical Step Pillar */}
       <div className="podium-step-pillar">
         <span className="podium-step-number">{rankNumber}</span>
       </div>
@@ -135,7 +342,6 @@ export function LeaderboardView() {
     refresh,
     currentUserEntry,
     podium,
-    otherEntries,
     surpassInfo,
   } = useLeaderboard({
     supabase,
@@ -153,7 +359,7 @@ export function LeaderboardView() {
 
   return (
     <div className="leaderboard-workspace">
-      {/* 1. Hero Banner with League Tiers Row (Inspired by User Images 3 & 4) */}
+      {/* 1. Hero Banner with Luxury League Badges (Matching User Image) */}
       <div className="leaderboard-hero-banner">
         <div className="leaderboard-hero-tag">
           <span>🏆</span>
@@ -164,18 +370,21 @@ export function LeaderboardView() {
           Bersaing dalam hening, buktikan lewat konsistensi. Akumulasi jam fokus nyata dari seluruh pejuang produktivitas.
         </p>
 
-        {/* League Badges Showcase */}
+        {/* 4 Luxury League Crests */}
         <div className="leaderboard-leagues-bar" aria-label="Tingkatan Liga Fokus">
-          {LEAGUE_SHOWCASE.map((league) => (
-            <div key={league.title} className="league-badge-card">
-              <span className="league-card-icon">{league.icon}</span>
+          {LUXURY_LEAGUES.map((league) => (
+            <div key={league.title} className={`league-badge-card ${league.tier}`}>
+              <div className="league-crest-container">
+                {league.renderCrest()}
+              </div>
+              <span className="league-tier-tag">{league.tag}</span>
               <span className="league-card-title">{league.title}</span>
               <span className="league-card-sub">{league.sub}</span>
             </div>
           ))}
         </div>
 
-        {/* Period Switcher & Refresh */}
+        {/* Period Switcher & Refresh Button */}
         <div className="leaderboard-period-controls">
           <div className="leaderboard-period-tabs" role="tablist">
             {LEADERBOARD_PERIODS.map((p) => {
@@ -207,7 +416,7 @@ export function LeaderboardView() {
         </div>
       </div>
 
-      {/* 2. Podium Arena (Top 3 3D Stadium Steps) */}
+      {/* 2. 3D Stadium Pedestal Podium */}
       {entries.length > 0 && (
         <div className="podium-arena-wrapper">
           <div className="podium-arena-title">
@@ -228,7 +437,7 @@ export function LeaderboardView() {
         <div className="leaderboard-table-header-bar">
           <div className="leaderboard-table-title">
             <span>📊</span>
-            <span>Semua Peringkat ({entries.length} Pejuang)</span>
+            <span>Semua Peringkat ({entries.length} Pejuang Terdaftar)</span>
           </div>
           <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
             {activePeriodInfo.description}
@@ -237,7 +446,7 @@ export function LeaderboardView() {
 
         {loading && entries.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
-            Memuat data pengguna asli...
+            Memuat data pengguna dari database...
           </div>
         ) : entries.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>

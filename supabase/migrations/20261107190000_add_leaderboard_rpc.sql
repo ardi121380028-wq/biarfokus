@@ -5,11 +5,18 @@
 alter table public.profiles
   add column if not exists show_on_leaderboard boolean not null default true;
 
--- 2. Indexes for fast leaderboard aggregation
+-- 2. Allow authenticated users to view public profile info (display name & avatar)
+drop policy if exists "Public profiles are viewable by authenticated users" on public.profiles;
+create policy "Public profiles are viewable by authenticated users"
+  on public.profiles for select
+  to authenticated
+  using (coalesce(show_on_leaderboard, true) = true);
+
+-- 3. Indexes for fast leaderboard aggregation
 create index if not exists pomodoro_sessions_leaderboard_idx
   on public.pomodoro_sessions (mode, completed_at desc, duration_seconds);
 
--- 3. Leaderboard retrieval RPC function
+-- 4. Leaderboard retrieval RPC function (Security Definer to aggregate across all users)
 create or replace function public.get_leaderboard(
   p_period text default 'weekly',
   p_limit integer default 50
@@ -56,21 +63,23 @@ begin
   ),
   ranked_users as (
     select
-      row_number() over (order by a.agg_minutes desc, a.agg_count desc) as user_rank,
-      a.agg_user_id,
+      row_number() over (
+        order by coalesce(a.agg_minutes, 0) desc, coalesce(a.agg_count, 0) desc, p.created_at asc
+      ) as user_rank,
+      p.id as agg_user_id,
       coalesce(
         nullif(trim(p.display_name), ''),
         nullif(trim(p.username), ''),
-        'Pejuang Fokus #' || right(a.agg_user_id::text, 4)
+        'Pejuang Fokus #' || right(p.id::text, 4)
       ) as user_name,
       p.avatar_url as user_avatar,
-      a.agg_minutes,
-      a.agg_count,
+      coalesce(a.agg_minutes, 0)::bigint as agg_minutes,
+      coalesce(a.agg_count, 0)::bigint as agg_count,
       coalesce(sub.plan = 'pro' and sub.status in ('active', 'trialing') and (sub.current_period_end is null or sub.current_period_end > now()), false) as user_is_pro,
-      (a.agg_user_id = v_current_user) as user_is_current
-    from user_aggregates a
-    join public.profiles p on p.id = a.agg_user_id
-    left join public.subscriptions sub on sub.user_id = a.agg_user_id
+      (p.id = v_current_user) as user_is_current
+    from public.profiles p
+    left join user_aggregates a on a.agg_user_id = p.id
+    left join public.subscriptions sub on sub.user_id = p.id
     where coalesce(p.show_on_leaderboard, true) = true
   )
   select
@@ -88,7 +97,7 @@ begin
 end;
 $$;
 
--- 4. Single user rank retrieval helper (for sticky rank bar when outside top N)
+-- 5. Single user rank retrieval helper (for sticky rank bar when outside top N)
 create or replace function public.get_my_leaderboard_rank(
   p_period text default 'weekly'
 )
@@ -133,12 +142,14 @@ begin
   ),
   ranked_users as (
     select
-      row_number() over (order by a.agg_minutes desc, a.agg_count desc) as user_rank,
-      a.agg_user_id,
-      a.agg_minutes,
-      a.agg_count
-    from user_aggregates a
-    join public.profiles p on p.id = a.agg_user_id
+      row_number() over (
+        order by coalesce(a.agg_minutes, 0) desc, coalesce(a.agg_count, 0) desc, p.created_at asc
+      ) as user_rank,
+      p.id as agg_user_id,
+      coalesce(a.agg_minutes, 0)::bigint as agg_minutes,
+      coalesce(a.agg_count, 0)::bigint as agg_count
+    from public.profiles p
+    left join user_aggregates a on a.agg_user_id = p.id
     where coalesce(p.show_on_leaderboard, true) = true
   ),
   total_count as (
@@ -160,4 +171,3 @@ grant execute on function public.get_leaderboard(text, integer) to anon, authent
 
 revoke all on function public.get_my_leaderboard_rank(text) from public;
 grant execute on function public.get_my_leaderboard_rank(text) to authenticated;
-
