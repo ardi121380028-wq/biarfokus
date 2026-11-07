@@ -24,6 +24,8 @@ type UseLeaderboardOptions = {
   isPro?: boolean;
   totalFocusSeconds?: number;
   completedPomodoros?: number;
+  initialPeriod?: LeaderboardPeriod;
+  initialMonth?: string | null;
 };
 
 export function useLeaderboard({
@@ -34,8 +36,11 @@ export function useLeaderboard({
   isPro,
   totalFocusSeconds = 0,
   completedPomodoros = 0,
+  initialPeriod = "weekly",
+  initialMonth = null,
 }: UseLeaderboardOptions) {
-  const [period, setPeriod] = useState<LeaderboardPeriod>("weekly");
+  const [period, setPeriod] = useState<LeaderboardPeriod>(initialPeriod);
+  const [month, setMonth] = useState<string | null>(initialMonth);
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [myRank, setMyRank] = useState<LeaderboardMyRank | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +50,13 @@ export function useLeaderboard({
 
   const handlePeriodChange = useCallback((newPeriod: LeaderboardPeriod) => {
     setPeriod(newPeriod);
+    setMonth(null);
+    setLoading(true);
+  }, []);
+
+  const handleMonthChange = useCallback((newMonth: string | null) => {
+    setMonth(newMonth);
+    setPeriod("monthly");
     setLoading(true);
   }, []);
 
@@ -70,7 +82,7 @@ export function useLeaderboard({
 
       try {
         const [loadedEntries, loadedMyRank] = await Promise.all([
-          fetchLeaderboardEntries(supabase, period, userId, currentUserPayload),
+          fetchLeaderboardEntries(supabase, period, userId, currentUserPayload, month),
           fetchMyLeaderboardRank(supabase, period, userId),
         ]);
 
@@ -93,6 +105,7 @@ export function useLeaderboard({
   }, [
     supabase,
     period,
+    month,
     userId,
     userName,
     userAvatar,
@@ -127,6 +140,8 @@ export function useLeaderboard({
   return {
     period,
     setPeriod: handlePeriodChange,
+    month,
+    setMonth: handleMonthChange,
     entries,
     myRank,
     loading,

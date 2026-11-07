@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAppContext } from "@/app/providers/app-provider";
 import { ProBadge } from "@/app/components/ui/pro-badge";
+import { evaluateBadges } from "@/features/gamification/badges";
 import { getSafeAvatarUrl } from "@/features/profile/profile-service";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
@@ -208,6 +209,13 @@ function DiamondAstralCrest({ size = 34 }: { size?: number }) {
   );
 }
 
+export const ARCHIVED_MONTHS = [
+  { id: "2026-11", label: "November 2026", status: "Bulan Berjalan" },
+  { id: "2026-10", label: "Oktober 2026", status: "Resmi Selesai" },
+  { id: "2026-09", label: "September 2026", status: "Resmi Selesai" },
+  { id: "2026-08", label: "Agustus 2026", status: "Resmi Selesai" },
+] as const;
+
 const LUXURY_LEAGUES = [
   {
     tier: "bronze",
@@ -243,10 +251,12 @@ function PodiumStep({
   entry,
   place,
   rankNumber,
+  isArchive = false,
 }: {
   entry?: LeaderboardEntry;
   place: "rank-1" | "rank-2" | "rank-3";
   rankNumber: 1 | 2 | 3;
+  isArchive?: boolean;
 }) {
   if (!entry) return null;
 
@@ -258,7 +268,7 @@ function PodiumStep({
     <div className={`podium-column ${place}`}>
       <div className="podium-user-floater">
         <div className="podium-user-avatar-wrap">
-          {rankNumber === 1 && <span className="podium-crown-icon">👑</span>}
+          {rankNumber === 1 && <span className="podium-crown-icon">{isArchive ? "🏆" : "👑"}</span>}
           {safeAvatar ? (
             <Image
               src={safeAvatar}
@@ -282,7 +292,14 @@ function PodiumStep({
         </div>
 
         <div className="podium-user-time">{formatFocusTime(entry.totalMinutes)}</div>
-        <div className="podium-user-poms">{entry.pomodoroCount} sesi 🍅</div>
+        <div className="podium-user-poms">
+          {entry.pomodoroCount} sesi 🍅
+          {entry.pomodoroCount >= 50 ? (
+            <span className="table-achievement-tag" style={{ marginLeft: "4px" }} title="Master Produktif">🏆 Master</span>
+          ) : entry.pomodoroCount >= 10 ? (
+            <span className="table-achievement-tag" style={{ marginLeft: "4px" }} title="Fokus Mantap">🍅 Aktif</span>
+          ) : null}
+        </div>
 
         <div
           style={{
@@ -296,7 +313,7 @@ function PodiumStep({
           }}
         >
           <span>{tier.badge}</span>
-          <span>{tier.label}</span>
+          <span>{isArchive ? `Juara ${rankNumber} Resmi` : tier.label}</span>
         </div>
       </div>
 
@@ -326,10 +343,14 @@ export function LeaderboardView() {
   }, []);
 
   const totalSeconds = completedPomodoros * 25 * 60;
+  const [mainTab, setMainTab] = useState<"ranking" | "archive" | "achievements">("ranking");
+  const [selectedArchiveMonth, setSelectedArchiveMonth] = useState<string>("2026-11");
 
   const {
     period,
     setPeriod,
+    month,
+    setMonth,
     entries,
     loading,
     refresh,
@@ -346,6 +367,23 @@ export function LeaderboardView() {
     completedPomodoros,
   });
 
+  const userBadges = useMemo(() => {
+    return evaluateBadges({
+      totalPomodoros: completedPomodoros,
+      currentStreak: 1,
+      longestStreak: 1,
+      deepWorkCount: Math.floor(completedPomodoros / 2),
+    });
+  }, [completedPomodoros]);
+
+  const unlockedCount = useMemo(() => {
+    return userBadges.filter((b) => b.unlocked).length;
+  }, [userBadges]);
+
+  const currentArchiveDetails = useMemo(() => {
+    return ARCHIVED_MONTHS.find((m) => m.id === selectedArchiveMonth) || ARCHIVED_MONTHS[0];
+  }, [selectedArchiveMonth]);
+
   const activePeriodInfo = useMemo(() => {
     return LEADERBOARD_PERIODS.find((p) => p.id === period) || LEADERBOARD_PERIODS[0];
   }, [period]);
@@ -357,199 +395,351 @@ export function LeaderboardView() {
         <div className="leaderboard-hero-header-row">
           <div className="leaderboard-hero-left">
             <div className="leaderboard-hero-tag">
-              <span>🏆</span>
-              <span>KOMUNITAS BIARFOKUS</span>
+              <span>{mainTab === "archive" ? "🏛️" : mainTab === "achievements" ? "🏅" : "🏆"}</span>
+              <span>
+                {mainTab === "archive"
+                  ? "HALL OF FAME BIARFOKUS"
+                  : mainTab === "achievements"
+                  ? "SISTEM PENCAPAIAN BIARFOKUS"
+                  : "KOMUNITAS BIARFOKUS"}
+              </span>
             </div>
-            <h1 className="leaderboard-hero-title">Papan Peringkat Fokus</h1>
+            <h1 className="leaderboard-hero-title">
+              {mainTab === "archive"
+                ? `Arsip Juara: ${currentArchiveDetails.label}`
+                : mainTab === "achievements"
+                ? "Lencana & Pencapaian Pejuang"
+                : "Papan Peringkat Fokus"}
+            </h1>
             <p className="leaderboard-hero-sub">
-              Bersaing dalam hening, buktikan lewat konsistensi. Akumulasi jam fokus nyata pejuang produktivitas.
+              {mainTab === "archive"
+                ? `Arsip pemenang resmi dan peraih podium BiarFokus pada ${currentArchiveDetails.label}.`
+                : mainTab === "achievements"
+                ? "Kumpulkan lencana kehormatan dengan aktif menyelesaikan Pomodoro dan konsisten setiap hari!"
+                : "Bersaing dalam hening, buktikan lewat konsistensi. Akumulasi jam fokus nyata pejuang produktivitas."}
             </p>
           </div>
 
-          {/* Period Switcher & Refresh Button (Side-by-side with header on desktop) */}
+          {/* Period Switcher & View Tabs (Side-by-side with header on desktop) */}
           <div className="leaderboard-period-controls">
             <div className="leaderboard-period-tabs" role="tablist">
               {LEADERBOARD_PERIODS.map((p) => {
-                const isActive = period === p.id;
+                const isActive = mainTab === "ranking" && period === p.id;
                 return (
                   <button
                     key={p.id}
                     role="tab"
                     aria-selected={isActive}
                     className={`leaderboard-period-btn ${isActive ? "active" : ""}`}
-                    onClick={() => setPeriod(p.id)}
+                    onClick={() => {
+                      setMainTab("ranking");
+                      setMonth(null);
+                      setPeriod(p.id);
+                    }}
                   >
                     <span>{p.icon}</span>
                     <span>{p.label}</span>
                   </button>
                 );
               })}
+
+              {/* Archive Tab (Hall of Fame) */}
+              <button
+                role="tab"
+                aria-selected={mainTab === "archive"}
+                className={`leaderboard-period-btn ${mainTab === "archive" ? "active" : ""}`}
+                onClick={() => {
+                  setMainTab("archive");
+                  setMonth(selectedArchiveMonth);
+                }}
+              >
+                <span>🏛️</span>
+                <span>Arsip Juara</span>
+              </button>
+
+              {/* Achievements Tab */}
+              <button
+                role="tab"
+                aria-selected={mainTab === "achievements"}
+                className={`leaderboard-period-btn ${mainTab === "achievements" ? "active" : ""}`}
+                onClick={() => {
+                  setMainTab("achievements");
+                }}
+              >
+                <span>🏅</span>
+                <span>Pencapaian ({unlockedCount}/7)</span>
+              </button>
             </div>
 
-            <button
-              className="leaderboard-refresh-btn"
-              onClick={() => void refresh()}
-              disabled={loading}
-              title="Perbarui data peringkat"
-            >
-              <span>↻</span>
-              <span>{loading ? "Memuat..." : "Segarkan"}</span>
-            </button>
+            {mainTab !== "achievements" && (
+              <button
+                className="leaderboard-refresh-btn"
+                onClick={() => void refresh()}
+                disabled={loading}
+                title="Perbarui data peringkat"
+              >
+                <span>↻</span>
+                <span>{loading ? "Memuat..." : "Segarkan"}</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* 4 Luxury League Crests in Sleek Horizontal Row */}
-        <div className="leaderboard-leagues-bar" aria-label="Tingkatan Liga Fokus">
-          {LUXURY_LEAGUES.map((league) => (
-            <div key={league.title} className={`league-badge-card ${league.tier}`}>
-              <div className="league-crest-container">
-                {league.renderCrest(34)}
-              </div>
-              <div className="league-card-info">
-                <div className="league-card-header">
-                  <span className="league-card-title">{league.title}</span>
-                  <span className="league-tier-tag">{league.tag}</span>
-                </div>
-                <span className="league-card-sub">{league.sub}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 2. 3D Stadium Pedestal Podium */}
-      {entries.length > 0 && (
-        <div className="podium-arena-wrapper">
-          <div className="podium-arena-title">
-            <span>👑</span>
-            <span>Podium 3 Pejuang Fokus Teratas ({activePeriodInfo.label})</span>
-          </div>
-
-          <div className="podium-stage">
-            <PodiumStep entry={podium.second} place="rank-2" rankNumber={2} />
-            <PodiumStep entry={podium.first} place="rank-1" rankNumber={1} />
-            <PodiumStep entry={podium.third} place="rank-3" rankNumber={3} />
-          </div>
-        </div>
-      )}
-
-      {/* 3. 100% Full-Width Ranked List Table (Matching User Image 4) */}
-      <div className="leaderboard-table-section">
-        <div className="leaderboard-table-header-bar">
-          <div className="leaderboard-table-title">
-            <span>📊</span>
-            <span>Semua Peringkat ({entries.length} Pejuang Terdaftar)</span>
-          </div>
-          <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
-            {activePeriodInfo.description}
-          </span>
-        </div>
-
-        {loading && entries.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
-            Memuat data pengguna dari database...
-          </div>
-        ) : entries.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
-            <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>🌱</div>
-            <h3>Belum Ada Sesi untuk Periode Ini</h3>
-            <p>Jadilah yang pertama mencatatkan rekor fokus dengan menyalakan Pomodoro!</p>
-            <Link
-              href="/"
-              style={{
-                display: "inline-block",
-                marginTop: "12px",
-                padding: "8px 20px",
-                borderRadius: "9999px",
-                background: "var(--ink)",
-                color: "var(--paper)",
-                textDecoration: "none",
-                fontWeight: 700,
-                fontSize: "0.85rem",
-              }}
-            >
-              Mulai Fokus Sekarang ⏱️
-            </Link>
-          </div>
-        ) : (
-          <table className="leaderboard-full-table">
-            <thead>
-              <tr>
-                <th className="col-rank">Rank</th>
-                <th className="col-user">Pejuang Fokus</th>
-                <th className="col-tier">Tingkat Liga</th>
-                <th className="col-sessions">Sesi Selesai</th>
-                <th className="col-time">Total Waktu</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((item) => {
-                const safeAvatar = getSafeAvatarUrl(item.avatarUrl);
-                const initials = getInitials(item.displayName);
-                const tier = getTierDetails(item.tier);
-
+        {/* Month Selector if in Archive Mode */}
+        {mainTab === "archive" && (
+          <div className="archive-selector-row">
+            <span className="archive-selector-label">
+              <span>🏛️</span>
+              <span>Pilih Periode Arsip:</span>
+            </span>
+            <div className="archive-month-tabs">
+              {ARCHIVED_MONTHS.map((m) => {
+                const isSelected = selectedArchiveMonth === m.id;
                 return (
-                  <tr
-                    key={item.userId}
-                    className={`leaderboard-table-row ${item.isCurrentUser ? "is-current-user" : ""}`}
+                  <button
+                    key={m.id}
+                    className={`archive-month-chip ${isSelected ? "active" : ""}`}
+                    onClick={() => {
+                      setSelectedArchiveMonth(m.id);
+                      setMonth(m.id);
+                    }}
                   >
-                    <td className="col-rank">
-                      {item.rank === 1 ? "🥇 #1" : item.rank === 2 ? "🥈 #2" : item.rank === 3 ? "🥉 #3" : `#${item.rank}`}
-                    </td>
-
-                    <td className="col-user">
-                      <div className="table-user-cell">
-                        {safeAvatar ? (
-                          <Image
-                            src={safeAvatar}
-                            alt={item.displayName}
-                            width={42}
-                            height={42}
-                            className="table-avatar"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="table-avatar-placeholder">
-                            {initials}
-                          </div>
-                        )}
-
-                        <div>
-                          <div className="table-user-name">
-                            <span className="table-name-text">{item.displayName}</span>
-                            {item.isPro && <ProBadge size="sm" />}
-                            {item.isCurrentUser && (
-                              <span className="podium-kamu-badge">Kamu</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="col-tier">
-                      <span
-                        className="table-tier-pill"
-                        style={{
-                          background: tier.bg,
-                          color: tier.color,
-                          border: `1px solid color-mix(in srgb, ${tier.color} 30%, transparent)`,
-                        }}
-                      >
-                        <span>{tier.badge}</span>
-                        <span>{tier.label}</span>
-                      </span>
-                    </td>
-
-                    <td className="col-sessions">{item.pomodoroCount} sesi 🍅</td>
-
-                    <td className="col-time">{formatFocusTime(item.totalMinutes)}</td>
-                  </tr>
+                    <span>🗓️</span>
+                    <span>{m.label}</span>
+                    <span style={{ fontSize: "0.65rem", opacity: 0.85 }}>({m.status})</span>
+                  </button>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </div>
+        )}
+
+        {/* 4 Luxury League Crests in Sleek Horizontal Row (Visible on ranking/archive) */}
+        {mainTab !== "achievements" && (
+          <div className="leaderboard-leagues-bar" aria-label="Tingkatan Liga Fokus">
+            {LUXURY_LEAGUES.map((league) => (
+              <div key={league.title} className={`league-badge-card ${league.tier}`}>
+                <div className="league-crest-container">
+                  {league.renderCrest(34)}
+                </div>
+                <div className="league-card-info">
+                  <div className="league-card-header">
+                    <span className="league-card-title">{league.title}</span>
+                    <span className="league-tier-tag">{league.tag}</span>
+                  </div>
+                  <span className="league-card-sub">{league.sub}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
+
+      {mainTab === "achievements" ? (
+        /* Achievements Dashboard Showcase */
+        <div className="achievements-section">
+          <div className="achievements-header">
+            <div className="achievements-header-left">
+              <h2 className="achievements-title">
+                <span>🏅</span>
+                <span>Lencana &amp; Pencapaian Pejuang Aktif</span>
+              </h2>
+              <p className="achievements-sub">
+                Buktikan konsistensimu! Selesaikan sesi fokus harian untuk membuka lencana kehormatan dan tampil terdepan di komunitas.
+              </p>
+            </div>
+            <div className="achievements-progress-pill">
+              ⭐ {unlockedCount} / {userBadges.length} Lencana Terbuka
+            </div>
+          </div>
+
+          <div className="achievements-grid">
+            {userBadges.map((badge) => (
+              <div
+                key={badge.id}
+                className={`achievement-card ${badge.unlocked ? "unlocked" : "locked"}`}
+              >
+                <div className="achievement-icon">{badge.icon}</div>
+                <div className="achievement-info">
+                  <div className="achievement-top">
+                    <span className="achievement-title">{badge.title}</span>
+                    <span
+                      className={`achievement-status-badge ${badge.unlocked ? "unlocked" : "locked"}`}
+                    >
+                      {badge.unlocked ? "✓ Terbuka" : "Terkunci"}
+                    </span>
+                  </div>
+                  <p className="achievement-desc">{badge.description}</p>
+                  <div className="achievement-progress-wrap">
+                    <div className="achievement-progress-bar-bg">
+                      <div
+                        className="achievement-progress-bar-fill"
+                        style={{ width: `${badge.progressPercent}%` }}
+                      />
+                    </div>
+                    <span className="achievement-progress-text">
+                      {badge.current} / {badge.target} {badge.unit}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* 2. 3D Stadium Pedestal Podium */}
+          {entries.length > 0 && (
+            <div className="podium-arena-wrapper">
+              <div className="podium-arena-title">
+                <span>{mainTab === "archive" ? "🏆" : "👑"}</span>
+                <span>
+                  {mainTab === "archive"
+                    ? `Hall of Fame Juara Fokus Bulan ${currentArchiveDetails.label}`
+                    : `Podium 3 Pejuang Fokus Teratas (${activePeriodInfo.label})`}
+                </span>
+              </div>
+
+              <div className="podium-stage">
+                <PodiumStep entry={podium.second} place="rank-2" rankNumber={2} isArchive={mainTab === "archive"} />
+                <PodiumStep entry={podium.first} place="rank-1" rankNumber={1} isArchive={mainTab === "archive"} />
+                <PodiumStep entry={podium.third} place="rank-3" rankNumber={3} isArchive={mainTab === "archive"} />
+              </div>
+            </div>
+          )}
+
+          {/* 3. 100% Full-Width Ranked List Table (Matching User Image 4) */}
+          <div className="leaderboard-table-section">
+            <div className="leaderboard-table-header-bar">
+              <div className="leaderboard-table-title">
+                <span>📊</span>
+                <span>
+                  {mainTab === "archive"
+                    ? `Hasil Akhir Peringkat ${currentArchiveDetails.label} (${entries.length} Pejuang)`
+                    : `Semua Peringkat (${entries.length} Pejuang Terdaftar)`}
+                </span>
+              </div>
+              <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                {mainTab === "archive"
+                  ? `Arsip rekor resmi yang tercatat di BiarFokus (${currentArchiveDetails.status})`
+                  : activePeriodInfo.description}
+              </span>
+            </div>
+
+            {loading && entries.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
+                Memuat data pengguna dari database...
+              </div>
+            ) : entries.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
+                <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>🌱</div>
+                <h3>Belum Ada Sesi untuk Periode Ini</h3>
+                <p>Jadilah yang pertama mencatatkan rekor fokus dengan menyalakan Pomodoro!</p>
+                <Link
+                  href="/"
+                  style={{
+                    display: "inline-block",
+                    marginTop: "12px",
+                    padding: "8px 20px",
+                    borderRadius: "9999px",
+                    background: "var(--ink)",
+                    color: "var(--paper)",
+                    textDecoration: "none",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  Mulai Fokus Sekarang ⏱️
+                </Link>
+              </div>
+            ) : (
+              <table className="leaderboard-full-table">
+                <thead>
+                  <tr>
+                    <th className="col-rank">Rank</th>
+                    <th className="col-user">Pejuang Fokus</th>
+                    <th className="col-tier">Tingkat Liga</th>
+                    <th className="col-sessions">Sesi Selesai</th>
+                    <th className="col-time">Total Waktu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((item) => {
+                    const safeAvatar = getSafeAvatarUrl(item.avatarUrl);
+                    const initials = getInitials(item.displayName);
+                    const tier = getTierDetails(item.tier);
+
+                    return (
+                      <tr
+                        key={item.userId}
+                        className={`leaderboard-table-row ${item.isCurrentUser ? "is-current-user" : ""}`}
+                      >
+                        <td className="col-rank">
+                          {item.rank === 1 ? "🥇 #1" : item.rank === 2 ? "🥈 #2" : item.rank === 3 ? "🥉 #3" : `#${item.rank}`}
+                        </td>
+
+                        <td className="col-user">
+                          <div className="table-user-cell">
+                            {safeAvatar ? (
+                              <Image
+                                src={safeAvatar}
+                                alt={item.displayName}
+                                width={42}
+                                height={42}
+                                className="table-avatar"
+                                unoptimized
+                              />
+                            ) : (
+                              <div className="table-avatar-placeholder">
+                                {initials}
+                              </div>
+                            )}
+
+                            <div>
+                              <div className="table-user-name">
+                                <span className="table-name-text">{item.displayName}</span>
+                                {item.isPro && <ProBadge size="sm" />}
+                                {item.isCurrentUser && (
+                                  <span className="podium-kamu-badge">Kamu</span>
+                                )}
+                                {item.pomodoroCount >= 50 ? (
+                                  <span className="table-achievement-tag" title="Master Produktif (50+ sesi)">🏆 Master</span>
+                                ) : item.pomodoroCount >= 10 ? (
+                                  <span className="table-achievement-tag" title="Fokus Mantap (10+ sesi)">🍅 Aktif</span>
+                                ) : item.pomodoroCount >= 1 ? (
+                                  <span className="table-achievement-tag" title="Pejuang Fokus">🌱 Pejuang</span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="col-tier">
+                          <span
+                            className="table-tier-pill"
+                            style={{
+                              background: tier.bg,
+                              color: tier.color,
+                              border: `1px solid color-mix(in srgb, ${tier.color} 30%, transparent)`,
+                            }}
+                          >
+                            <span>{tier.badge}</span>
+                            <span>{tier.label}</span>
+                          </span>
+                        </td>
+
+                        <td className="col-sessions">{item.pomodoroCount} sesi 🍅</td>
+
+                        <td className="col-time">{formatFocusTime(item.totalMinutes)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
 
       {/* 4. Sticky Bottom Rank Bar */}
       {user ? (

@@ -21,10 +21,12 @@ export async function fetchLeaderboardEntries(
     minutes?: number;
     pomodoros?: number;
   } | null,
+  month?: string | null,
 ): Promise<LeaderboardEntry[]> {
   // 1. Fetch real user data from our server API endpoint
   try {
-    const res = await fetch(`/api/leaderboard?period=${period}&limit=50`, {
+    const monthQuery = month ? `&month=${encodeURIComponent(month)}` : "";
+    const res = await fetch(`/api/leaderboard?period=${period}${monthQuery}&limit=50`, {
       method: "GET",
       headers: { Accept: "application/json" },
     });
