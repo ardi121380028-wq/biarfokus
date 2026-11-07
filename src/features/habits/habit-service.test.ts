@@ -12,6 +12,7 @@ import {
   reorderHabitsList,
   buildHabitCalendarEvent,
   buildHabitFrogTask,
+  mergeHabits,
 } from "./habit-service.ts";
 import type { Habit } from "./habit-types.ts";
 
@@ -168,5 +169,55 @@ describe("Habit Tracker Service & Behavioral Logic", () => {
     assert.equal(task.title, "Deep Work Penting");
     assert.equal(task.done, false);
     assert.equal(task.pomodoros, 2); // 50 / 25 = 2 pomodoros
+  });
+
+  it("merges habits across devices safely without losing check-ins or custom habits", () => {
+    const local = [
+      {
+        ...DEFAULT_HABITS[0],
+        id: "habit-1",
+        title: "Teori",
+        completedDates: ["2026-11-05", "2026-11-07"],
+        streakCurrent: 1,
+        streakBest: 2,
+      },
+      {
+        ...DEFAULT_HABITS[1],
+        id: "habit-local-only",
+        title: "Tugas Baru di Android",
+        completedDates: ["2026-11-07"],
+      },
+    ];
+
+    const cloud = [
+      {
+        ...DEFAULT_HABITS[0],
+        id: "habit-1",
+        title: "Teori",
+        completedDates: ["2026-11-06"], // Checked from PC
+        streakCurrent: 1,
+        streakBest: 1,
+      },
+      {
+        ...DEFAULT_HABITS[2],
+        id: "habit-cloud-only",
+        title: "Habit dari PC",
+        completedDates: ["2026-11-05"],
+      },
+    ];
+
+    const merged = mergeHabits(local, cloud);
+    assert.equal(merged.length, 3); // habit-1, habit-local-only, habit-cloud-only
+
+    const h1 = merged.find((h: any) => h.id === "habit-1");
+    assert.ok(h1);
+    // Should have union of dates: 2026-11-05, 2026-11-06, 2026-11-07 (3 consecutive days!)
+    assert.deepEqual(h1.completedDates, ["2026-11-05", "2026-11-06", "2026-11-07"]);
+
+    const localOnly = merged.find((h: any) => h.id === "habit-local-only");
+    assert.ok(localOnly);
+
+    const cloudOnly = merged.find((h: any) => h.id === "habit-cloud-only");
+    assert.ok(cloudOnly);
   });
 });

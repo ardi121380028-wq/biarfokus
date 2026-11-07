@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { Habit } from "@/features/habits/habit-types";
-import { getTodayKey, calculateStreak } from "@/features/habits/habit-service";
+import { getTodayKey, formatDateKey, calculateStreak } from "@/features/habits/habit-service";
 import { ConfirmModal } from "@/app/components/ui/confirm-modal";
 
 interface HabitsMatrixViewProps {
@@ -14,6 +14,8 @@ interface HabitsMatrixViewProps {
   onReorderHabits?: (fromIndex: number, toIndex: number, currentList?: Habit[]) => void;
   onAddToFrog?: (habit: Habit) => void;
   onAddToCalendar?: (habit: Habit) => void;
+  isSyncing?: boolean;
+  onSyncWithCloud?: () => void;
 }
 
 function getWeekDays(offsetWeeks = 0): { date: string; dayName: string; dayNumber: number; isToday: boolean }[] {
@@ -29,7 +31,7 @@ function getWeekDays(offsetWeeks = 0): { date: string; dayName: string; dayNumbe
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const dateKey = d.toISOString().slice(0, 10);
+    const dateKey = formatDateKey(d);
     days.push({
       date: dateKey,
       dayName: dayNames[i],
@@ -50,6 +52,8 @@ export function HabitsMatrixView({
   onReorderHabits,
   onAddToFrog,
   onAddToCalendar,
+  isSyncing,
+  onSyncWithCloud,
 }: HabitsMatrixViewProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [deletingHabit, setDeletingHabit] = useState<Habit | null>(null);
@@ -160,11 +164,13 @@ export function HabitsMatrixView({
   // Week range label (e.g. "20 Okt - 26 Okt 2026")
   const weekRangeLabel = useMemo(() => {
     if (weekDays.length === 0) return "";
-    const first = new Date(weekDays[0].date);
-    const last = new Date(weekDays[6].date);
-    const m1 = first.toLocaleDateString("id-ID", { month: "short", day: "numeric" });
-    const m2 = last.toLocaleDateString("id-ID", { month: "short", day: "numeric", year: "numeric" });
-    return `${m1} — ${m2}`;
+    const [y1, m1, d1] = weekDays[0].date.split("-").map(Number);
+    const [y2, m2, d2] = weekDays[6].date.split("-").map(Number);
+    const first = new Date(y1, m1 - 1, d1);
+    const last = new Date(y2, m2 - 1, d2);
+    const label1 = first.toLocaleDateString("id-ID", { month: "short", day: "numeric" });
+    const label2 = last.toLocaleDateString("id-ID", { month: "short", day: "numeric", year: "numeric" });
+    return `${label1} — ${label2}`;
   }, [weekDays]);
 
   if (habits.length === 0) {
@@ -189,7 +195,21 @@ export function HabitsMatrixView({
       {/* Matrix Header & Navigation */}
       <div className="habits-matrix-nav-bar">
         <div className="matrix-title-col">
-          <h2 className="matrix-heading">Matriks Konsistensi Mingguan</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <h2 className="matrix-heading">Matriks Konsistensi Mingguan</h2>
+            {onSyncWithCloud && (
+              <button
+                type="button"
+                className={`habits-cloud-sync-pill ${isSyncing ? "is-syncing" : ""}`}
+                onClick={onSyncWithCloud}
+                disabled={isSyncing}
+                title={isSyncing ? "Sedang menyinkronkan data..." : "Klik untuk sinkronisasi cloud sekarang"}
+              >
+                <span className={`sync-icon ${isSyncing ? "is-spinning" : ""}`}>☁️</span>
+                <span>{isSyncing ? "Menyinkronkan..." : "Cloud Tersinkron"}</span>
+              </button>
+            )}
+          </div>
           <span className="matrix-sub">Tandai dan evaluasi komitmen 7 hari secara visual.</span>
         </div>
 

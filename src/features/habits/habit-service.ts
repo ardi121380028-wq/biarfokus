@@ -380,6 +380,55 @@ export function reorderHabitsList(habits: Habit[], fromIndex: number, toIndex: n
   return clone;
 }
 
+/**
+ * Safely merges local and cloud habits without losing check-ins or custom habits across devices.
+ * Uses the union of completedDates for matching IDs and recalculates streaks.
+ */
+export function mergeHabits(localHabits: Habit[], cloudHabits: Habit[]): Habit[] {
+  if (!cloudHabits || cloudHabits.length === 0) return localHabits || [];
+  if (!localHabits || localHabits.length === 0) return cloudHabits || [];
+
+  const mergedMap = new Map<string, Habit>();
+
+  // 1. Seed with cloud habits
+  for (const cloud of cloudHabits) {
+    if (!cloud || !cloud.id) continue;
+    mergedMap.set(cloud.id, {
+      ...cloud,
+      completedDates: Array.from(new Set(cloud.completedDates || [])).sort(),
+    });
+  }
+
+  // 2. Merge local habits into cloud
+  for (const local of localHabits) {
+    if (!local || !local.id) continue;
+    const existing = mergedMap.get(local.id);
+    if (!existing) {
+      // Local habit doesn't exist in cloud yet: keep it
+      mergedMap.set(local.id, {
+        ...local,
+        completedDates: Array.from(new Set(local.completedDates || [])).sort(),
+      });
+    } else {
+      // Union of check-ins from both devices (guarantees zero data loss across mobile & PC)
+      const mergedDates = Array.from(
+        new Set([...(existing.completedDates || []), ...(local.completedDates || [])])
+      ).sort();
+      const streaks = calculateStreak(mergedDates);
+
+      mergedMap.set(local.id, {
+        ...existing,
+        title: existing.title || local.title,
+        completedDates: mergedDates,
+        streakCurrent: streaks.current,
+        streakBest: Math.max(existing.streakBest || 0, local.streakBest || 0, streaks.best),
+      });
+    }
+  }
+
+  return Array.from(mergedMap.values());
+}
+
 
 /**
  * Maps a habit into a CalendarEvent draft for today

@@ -28,6 +28,8 @@ interface HabitsTopbarProps {
   userAvatar?: string | null;
   onRequireLogin?: () => void;
   onNavigate?: (view: "timer" | "notes" | "calendar" | "kanban" | "habits" | "stats" | "pricing" | "admin") => void;
+  isSyncing?: boolean;
+  onSyncWithCloud?: () => void;
 }
 
 export function HabitsTopbar({
@@ -47,6 +49,8 @@ export function HabitsTopbar({
   userAvatar,
   onRequireLogin,
   onNavigate,
+  isSyncing,
+  onSyncWithCloud,
 }: HabitsTopbarProps) {
   const { isPro, userRole, user, setAppError } = useAppContext();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -116,6 +120,21 @@ export function HabitsTopbar({
 
       {/* Right controls: Search, Theme, Settings, Profile */}
       <div className="cal-topbar-right">
+
+        {/* Cloud Sync Status */}
+        {user && onSyncWithCloud && (
+          <button
+            type="button"
+            className={`habits-cloud-sync-pill ${isSyncing ? "is-syncing" : ""}`}
+            onClick={onSyncWithCloud}
+            disabled={isSyncing}
+            aria-label={isSyncing ? "Sedang menyinkronkan data..." : "Sinkronkan dengan cloud"}
+            title={isSyncing ? "Sedang menyinkronkan data ke Cloud..." : "Data tersinkron otomatis ke Cloud. Klik untuk sinkronisasi manual."}
+          >
+            <span className={`sync-icon ${isSyncing ? "is-spinning" : ""}`}>☁️</span>
+            <span className="sync-text">{isSyncing ? "Sync..." : "Tersinkron"}</span>
+          </button>
+        )}
 
         {/* Search input / toggle */}
         <div className={`cal-topbar-search-box ${searchOpen || searchQuery ? "is-open" : ""}`}>

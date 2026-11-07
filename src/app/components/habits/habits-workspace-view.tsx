@@ -45,6 +45,8 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
     updateHabit,
     deleteHabit,
     reorderHabits,
+    isSyncing,
+    syncWithCloud,
   } = useHabits(userId);
 
   // View Mode: matrix (default weekly view), checklist, heatmap
@@ -214,6 +216,8 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
           userAvatar={userAvatar}
           onRequireLogin={() => setLoginOpen(true)}
           onNavigate={handleNavigate}
+          isSyncing={isSyncing}
+          onSyncWithCloud={syncWithCloud}
         />
 
         {/* Content View Switcher */}
@@ -242,6 +246,8 @@ export function HabitsWorkspaceView({ userId }: HabitsWorkspaceViewProps) {
                 onReorderHabits={reorderHabits}
                 onAddToFrog={handleAddToFrog}
                 onAddToCalendar={handleAddToCalendar}
+                isSyncing={isSyncing}
+                onSyncWithCloud={syncWithCloud}
               />
             )}
 

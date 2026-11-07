@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Habit, HabitFilter } from "@/features/habits/habit-types";
 import Link from "next/link";
 import { useAppContext } from "@/app/providers/app-provider";
+import { getTodayKey } from "@/features/habits/habit-service";
 
 export type HabitViewMode = "checklist" | "matrix" | "heatmap";
 
@@ -63,7 +64,7 @@ export function HabitsSidebar({
 
   // Today progress
   const todayProgress = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayKey();
     const total = habits.length;
     const completed = habits.filter((h) => h.completedDates.includes(today)).length;
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;

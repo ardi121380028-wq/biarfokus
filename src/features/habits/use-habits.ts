@@ -12,6 +12,7 @@ import {
   buildConsistencyHeatmap,
   getTodayKey,
   reorderHabitsList,
+  mergeHabits,
 } from "./habit-service";
 
 export function useHabits(userId?: string | null) {
@@ -19,7 +20,9 @@ export function useHabits(userId?: string | null) {
   const [filter, setFilter] = useState<HabitFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
+  const initialSyncDoneRef = useRef(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize habits from local storage and sync with Supabase cloud
@@ -27,28 +30,42 @@ export function useHabits(userId?: string | null) {
     let isCancelled = false;
     const local = loadLocalHabits();
     setHabits(local);
-    setIsLoaded(true);
 
-    if (!userId) return;
+    if (!userId) {
+      setIsLoaded(true);
+      initialSyncDoneRef.current = true;
+      setIsSyncing(false);
+      return;
+    }
 
-    // Load from Supabase cloud
+    setIsSyncing(true);
+
+    // Load from Supabase cloud and safely merge with local check-ins
     (async () => {
       try {
         const supabase = getSupabaseBrowserClient();
         const cloud = await loadCloudHabits(supabase, userId);
         if (isCancelled) return;
-        if (cloud && cloud.length > 0) {
-          setHabits(cloud);
-          saveLocalHabits(cloud);
-        } else if (local && local.length > 0) {
-          await saveCloudHabits(supabase, userId, local);
-        }
+
+        // Safely merge local and cloud habits (union of checkins, preserve both devices)
+        const merged = mergeHabits(local, cloud || []);
+        setHabits(merged);
+        saveLocalHabits(merged);
+
+        // Upload merged result so both PC and Android stay synchronized
+        await saveCloudHabits(supabase, userId, merged);
       } catch (err) {
         console.warn("[BiarFokus Habits] Cloud sync init failed:", err);
+      } finally {
+        if (!isCancelled) {
+          initialSyncDoneRef.current = true;
+          setIsLoaded(true);
+          setIsSyncing(false);
+        }
       }
     })();
 
-    // Realtime Supabase subscription on profiles
+    // Realtime Supabase subscription on profiles table
     let channel: any = null;
     try {
       const supabase = getSupabaseBrowserClient();
@@ -66,8 +83,11 @@ export function useHabits(userId?: string | null) {
             if (isCancelled) return;
             const updatedHabits = payload.new?.settings?.habits;
             if (Array.isArray(updatedHabits) && updatedHabits.length > 0) {
-              setHabits(updatedHabits);
-              saveLocalHabits(updatedHabits);
+              setHabits((prev) => {
+                const merged = mergeHabits(prev, updatedHabits);
+                saveLocalHabits(merged);
+                return merged;
+              });
             }
           }
         )
@@ -76,15 +96,22 @@ export function useHabits(userId?: string | null) {
 
     // Tab visibility and focus change (e.g. mobile returns from background or desktop window focused)
     const handleVisibilityOrFocus = async () => {
-      if (document.visibilityState === "visible" && !isCancelled) {
+      if (document.visibilityState === "visible" && !isCancelled && userId) {
         try {
+          setIsSyncing(true);
           const supabase = getSupabaseBrowserClient();
           const cloud = await loadCloudHabits(supabase, userId);
-          if (cloud && cloud.length > 0) {
-            setHabits(cloud);
-            saveLocalHabits(cloud);
+          if (cloud && cloud.length > 0 && !isCancelled) {
+            setHabits((prev) => {
+              const merged = mergeHabits(prev, cloud);
+              saveLocalHabits(merged);
+              return merged;
+            });
           }
-        } catch {}
+        } catch {
+        } finally {
+          if (!isCancelled) setIsSyncing(false);
+        }
       }
     };
 
@@ -99,9 +126,9 @@ export function useHabits(userId?: string | null) {
     };
   }, [userId]);
 
-  // Save to localStorage and cloud whenever habits change after initial load
+  // Save to localStorage and cloud whenever habits change after initial sync completes
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !initialSyncDoneRef.current) return;
     saveLocalHabits(habits);
 
     if (!userId) return;
@@ -119,6 +146,26 @@ export function useHabits(userId?: string | null) {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, [habits, isLoaded, userId]);
+
+  // Explicit manual sync button callback
+  const syncWithCloud = useCallback(async () => {
+    if (!userId) return;
+    try {
+      setIsSyncing(true);
+      const supabase = getSupabaseBrowserClient();
+      const cloud = await loadCloudHabits(supabase, userId);
+      setHabits((prev) => {
+        const merged = mergeHabits(prev, cloud || []);
+        saveLocalHabits(merged);
+        void saveCloudHabits(supabase, userId, merged).catch(() => {});
+        return merged;
+      });
+    } catch (err) {
+      console.warn("[BiarFokus Habits] Manual sync failed:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [userId]);
 
   // Audio feedback on habit check-in
   const playCheckinSound = useCallback(() => {
@@ -179,7 +226,7 @@ export function useHabits(userId?: string | null) {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...updates } : h)));
   }, []);
 
-    const deleteHabit = useCallback((id: string) => {
+  const deleteHabit = useCallback((id: string) => {
     setHabits((prev) => prev.filter((h) => h.id !== id));
   }, []);
 
@@ -249,5 +296,7 @@ export function useHabits(userId?: string | null) {
     deleteHabit,
     reorderHabits,
     isLoaded,
+    isSyncing,
+    syncWithCloud,
   };
 }
