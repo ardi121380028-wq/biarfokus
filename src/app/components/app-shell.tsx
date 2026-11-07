@@ -31,7 +31,6 @@ const NAV_LINKS = [
   { href: "/kalender", label: "Kalender" },
   { href: "/kanban", label: "Project Kanban" },
   { href: "/kebiasaan", label: "Kebiasaan" },
-  { href: "/peringkat", label: "Peringkat" },
   { href: "/upgrade", label: "Price" },
 ] as const;
 
@@ -173,7 +172,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith("/kalender") ||
     pathname.startsWith("/catatan") ||
     pathname.startsWith("/kebiasaan") ||
-    pathname.startsWith("/peringkat") ||
     pathname.startsWith("/habits") ||
     pathname.startsWith("/pengaturan") ||
     pathname.startsWith("/admin");
@@ -276,6 +274,32 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="top-actions">
+            <Link
+              href="/peringkat"
+              className={`icon-button modern-topbar-icon topbar-desktop-only ${pathname === "/peringkat" ? "active" : ""}`}
+              aria-label="Papan Peringkat Fokus"
+              title="Papan Peringkat Fokus (🏆)"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                <path d="M4 22h16" />
+                <path d="M10 14.66V17c0 .55-.45 1-1 1H7v2h10v-2h-2c-.55 0-1-.45-1-1v-2.34" />
+                <path d="M6 4h12v6a6 6 0 0 1-12 0V4z" />
+              </svg>
+            </Link>
+            <Link
+              href="/statistik"
+              className={`icon-button modern-topbar-icon topbar-desktop-only ${pathname === "/statistik" ? "active" : ""}`}
+              aria-label="Statistik Fokus"
+              title="Statistik Fokus (📊)"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </Link>
             <button
               className="icon-button modern-theme-btn topbar-desktop-only"
               onClick={() => setDark(!dark)}

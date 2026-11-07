@@ -23,12 +23,21 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase() || "BF";
 }
 
-function PodiumItem({
+const LEAGUE_SHOWCASE = [
+  { icon: "🌱", title: "Bibit Fokus", sub: "0 - 3 Jam" },
+  { icon: "⚡", title: "Pejuang Konsisten", sub: "3 - 10 Jam" },
+  { icon: "🏆", title: "Master Deep Work", sub: "10 - 20 Jam" },
+  { icon: "👑", title: "Zen Legend", sub: "20+ Jam" },
+] as const;
+
+function PodiumStep({
   entry,
   place,
+  rankNumber,
 }: {
   entry?: LeaderboardEntry;
-  place: "first" | "second" | "third";
+  place: "rank-1" | "rank-2" | "rank-3";
+  rankNumber: 1 | 2 | 3;
 }) {
   if (!entry) return null;
 
@@ -36,63 +45,63 @@ function PodiumItem({
   const initials = getInitials(entry.displayName);
   const tier = getTierDetails(entry.tier);
 
-  const medal = place === "first" ? "🥇" : place === "second" ? "🥈" : "🥉";
-
   return (
-    <div className={`podium-card ${place}`}>
-      <div className="podium-rank-badge" title={`Peringkat #${entry.rank}`}>
-        {medal}
+    <div className={`podium-column ${place}`}>
+      {/* Floating Info Above Step */}
+      <div className="podium-user-floater">
+        <div className="podium-user-avatar-wrap">
+          {rankNumber === 1 && <span className="podium-crown-icon">👑</span>}
+          {safeAvatar ? (
+            <Image
+              src={safeAvatar}
+              alt={entry.displayName}
+              width={rankNumber === 1 ? 84 : 68}
+              height={rankNumber === 1 ? 84 : 68}
+              className="podium-img-avatar"
+              unoptimized
+            />
+          ) : (
+            <div className="podium-avatar-initials">{initials}</div>
+          )}
+        </div>
+
+        <div className="podium-user-name" title={entry.displayName}>
+          <span>{entry.displayName}</span>
+          {entry.isPro && <ProBadge />}
+          {entry.isCurrentUser && (
+            <span
+              style={{
+                fontSize: "0.68rem",
+                background: "#f59e0b",
+                color: "#fff",
+                padding: "1px 6px",
+                borderRadius: "9999px",
+                fontWeight: 800,
+              }}
+            >
+              Kamu
+            </span>
+          )}
+        </div>
+
+        <div className="podium-user-time">{formatFocusTime(entry.totalMinutes)}</div>
+        <div className="podium-user-poms">{entry.pomodoroCount} sesi 🍅</div>
+
+        <div
+          style={{
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            color: tier.color,
+            marginTop: "4px",
+          }}
+        >
+          {tier.badge} {tier.label}
+        </div>
       </div>
 
-      <div className="podium-avatar-wrapper">
-        {place === "first" && <span className="podium-crown">👑</span>}
-        {safeAvatar ? (
-          <Image
-            src={safeAvatar}
-            alt={entry.displayName}
-            width={place === "first" ? 76 : 64}
-            height={place === "first" ? 76 : 64}
-            className="podium-avatar"
-            unoptimized
-          />
-        ) : (
-          <div className="podium-avatar-placeholder">{initials}</div>
-        )}
-      </div>
-
-      <div className="podium-name" title={entry.displayName}>
-        <span>{entry.displayName}</span>
-        {entry.isPro && <ProBadge />}
-        {entry.isCurrentUser && (
-          <span
-            style={{
-              fontSize: "0.68rem",
-              background: "#f59e0b",
-              color: "#fff",
-              padding: "1px 6px",
-              borderRadius: "9999px",
-              fontWeight: 800,
-            }}
-          >
-            Kamu
-          </span>
-        )}
-      </div>
-
-      <div className="podium-minutes">{formatFocusTime(entry.totalMinutes)}</div>
-      <div className="podium-sessions">{entry.pomodoroCount} sesi 🍅</div>
-
-      <div
-        className="podium-tier-pill"
-        style={{
-          background: tier.bg,
-          color: tier.color,
-          border: `1px solid color-mix(in srgb, ${tier.color} 30%, transparent)`,
-        }}
-        title={`Liga: ${tier.label}`}
-      >
-        <span>{tier.badge}</span>
-        <span>{tier.label}</span>
+      {/* 3D Physical Step Pillar */}
+      <div className="podium-step-pillar">
+        <span className="podium-step-number">{rankNumber}</span>
       </div>
     </div>
   );
@@ -116,7 +125,6 @@ export function LeaderboardView() {
     }
   }, []);
 
-  // Estimate total focus seconds from completed pomodoros
   const totalSeconds = completedPomodoros * 25 * 60;
 
   const {
@@ -144,236 +152,207 @@ export function LeaderboardView() {
   }, [period]);
 
   return (
-    <div className="leaderboard-container">
-      {/* Header Banner */}
-      <div className="leaderboard-header">
-        <div className="leaderboard-badge">
+    <div className="leaderboard-workspace">
+      {/* 1. Hero Banner with League Tiers Row (Inspired by User Images 3 & 4) */}
+      <div className="leaderboard-hero-banner">
+        <div className="leaderboard-hero-tag">
           <span>🏆</span>
           <span>KOMUNITAS BIARFOKUS</span>
         </div>
-        <h1 className="leaderboard-title">Papan Peringkat Fokus</h1>
-        <p className="leaderboard-subtitle">
-          Bersaing dalam hening, buktikan lewat konsistensi. Lihat siapa pejuang fokus yang paling berdedikasi!
+        <h1 className="leaderboard-hero-title">Papan Peringkat Fokus</h1>
+        <p className="leaderboard-hero-sub">
+          Bersaing dalam hening, buktikan lewat konsistensi. Akumulasi jam fokus nyata dari seluruh pejuang produktivitas.
         </p>
-      </div>
 
-      {/* Period Tabs */}
-      <div className="leaderboard-tabs" role="tablist" aria-label="Periode Leaderboard">
-        {LEADERBOARD_PERIODS.map((p) => {
-          const isActive = period === p.id;
-          return (
-            <button
-              key={p.id}
-              role="tab"
-              aria-selected={isActive}
-              className={`leaderboard-tab-btn ${isActive ? "active" : ""}`}
-              onClick={() => setPeriod(p.id)}
-            >
-              <span>{p.icon}</span>
-              <span>{p.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Period Description & Refresh */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 8px",
-          marginTop: "-10px",
-          color: "var(--muted)",
-          fontSize: "0.82rem",
-        }}
-      >
-        <span>
-          <strong>{activePeriodInfo.label}:</strong> {activePeriodInfo.description}
-        </span>
-        <button
-          onClick={() => void refresh()}
-          disabled={loading}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--muted)",
-            fontSize: "0.8rem",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px",
-            fontWeight: 600,
-          }}
-          title="Perbarui data peringkat"
-        >
-          <span>↻</span>
-          <span>{loading ? "Memuat..." : "Segarkan"}</span>
-        </button>
-      </div>
-
-      {/* Loading Indicator */}
-      {loading && entries.length === 0 ? (
-        <div className="leaderboard-loading">
-          <div className="leaderboard-spinner" />
-          <span>Memuat data peringkat fokus...</span>
-        </div>
-      ) : (
-        <>
-          {/* Top 3 Podium (Always displayed when entries exist) */}
-          {entries.length > 0 && (
-            <div className="leaderboard-podium">
-              <PodiumItem entry={podium.second} place="second" />
-              <PodiumItem entry={podium.first} place="first" />
-              <PodiumItem entry={podium.third} place="third" />
+        {/* League Badges Showcase */}
+        <div className="leaderboard-leagues-bar" aria-label="Tingkatan Liga Fokus">
+          {LEAGUE_SHOWCASE.map((league) => (
+            <div key={league.title} className="league-badge-card">
+              <span className="league-card-icon">{league.icon}</span>
+              <span className="league-card-title">{league.title}</span>
+              <span className="league-card-sub">{league.sub}</span>
             </div>
-          )}
+          ))}
+        </div>
 
-          {/* Ranked List for Rank 4+ */}
-          {otherEntries.length > 0 ? (
-            <div className="leaderboard-list">
-              <div className="leaderboard-list-header">
-                <div style={{ display: "flex", gap: "24px" }}>
-                  <span style={{ width: "28px", textAlign: "center" }}>Rank</span>
-                  <span>Pejuang Fokus</span>
-                </div>
-                <span>Waktu Fokus</span>
-              </div>
+        {/* Period Switcher & Refresh */}
+        <div className="leaderboard-period-controls">
+          <div className="leaderboard-period-tabs" role="tablist">
+            {LEADERBOARD_PERIODS.map((p) => {
+              const isActive = period === p.id;
+              return (
+                <button
+                  key={p.id}
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`leaderboard-period-btn ${isActive ? "active" : ""}`}
+                  onClick={() => setPeriod(p.id)}
+                >
+                  <span>{p.icon}</span>
+                  <span>{p.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-              {otherEntries.map((item) => {
+          <button
+            className="leaderboard-refresh-btn"
+            onClick={() => void refresh()}
+            disabled={loading}
+            title="Perbarui data peringkat"
+          >
+            <span>↻</span>
+            <span>{loading ? "Memuat..." : "Segarkan"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Podium Arena (Top 3 3D Stadium Steps) */}
+      {entries.length > 0 && (
+        <div className="podium-arena-wrapper">
+          <div className="podium-arena-title">
+            <span>👑</span>
+            <span>Podium 3 Pejuang Fokus Teratas ({activePeriodInfo.label})</span>
+          </div>
+
+          <div className="podium-stage">
+            <PodiumStep entry={podium.second} place="rank-2" rankNumber={2} />
+            <PodiumStep entry={podium.first} place="rank-1" rankNumber={1} />
+            <PodiumStep entry={podium.third} place="rank-3" rankNumber={3} />
+          </div>
+        </div>
+      )}
+
+      {/* 3. 100% Full-Width Ranked List Table (Matching User Image 4) */}
+      <div className="leaderboard-table-section">
+        <div className="leaderboard-table-header-bar">
+          <div className="leaderboard-table-title">
+            <span>📊</span>
+            <span>Semua Peringkat ({entries.length} Pejuang)</span>
+          </div>
+          <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+            {activePeriodInfo.description}
+          </span>
+        </div>
+
+        {loading && entries.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
+            Memuat data pengguna asli...
+          </div>
+        ) : entries.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
+            <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>🌱</div>
+            <h3>Belum Ada Sesi untuk Periode Ini</h3>
+            <p>Jadilah yang pertama mencatatkan rekor fokus dengan menyalakan Pomodoro!</p>
+            <Link
+              href="/"
+              style={{
+                display: "inline-block",
+                marginTop: "12px",
+                padding: "8px 20px",
+                borderRadius: "9999px",
+                background: "var(--ink)",
+                color: "var(--paper)",
+                textDecoration: "none",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}
+            >
+              Mulai Fokus Sekarang ⏱️
+            </Link>
+          </div>
+        ) : (
+          <table className="leaderboard-full-table">
+            <thead>
+              <tr>
+                <th className="col-rank">Rank</th>
+                <th className="col-user">Pejuang Fokus</th>
+                <th className="col-tier">Tingkat Liga</th>
+                <th className="col-sessions">Sesi Selesai</th>
+                <th className="col-time">Total Waktu</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((item) => {
                 const safeAvatar = getSafeAvatarUrl(item.avatarUrl);
                 const initials = getInitials(item.displayName);
                 const tier = getTierDetails(item.tier);
 
                 return (
-                  <div
+                  <tr
                     key={item.userId}
-                    className={`leaderboard-row ${item.isCurrentUser ? "is-current-user" : ""}`}
+                    className={`leaderboard-table-row ${item.isCurrentUser ? "is-current-user" : ""}`}
                   >
-                    <div className="leaderboard-row-left">
-                      <span className="leaderboard-rank-num">#{item.rank}</span>
+                    <td className="col-rank">
+                      {item.rank === 1 ? "🥇 #1" : item.rank === 2 ? "🥈 #2" : item.rank === 3 ? "🥉 #3" : `#${item.rank}`}
+                    </td>
 
-                      {safeAvatar ? (
-                        <Image
-                          src={safeAvatar}
-                          alt={item.displayName}
-                          width={40}
-                          height={40}
-                          className="leaderboard-user-avatar"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="leaderboard-user-avatar-placeholder">
-                          {initials}
-                        </div>
-                      )}
+                    <td className="col-user">
+                      <div className="table-user-cell">
+                        {safeAvatar ? (
+                          <Image
+                            src={safeAvatar}
+                            alt={item.displayName}
+                            width={42}
+                            height={42}
+                            className="table-avatar"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="table-avatar-placeholder">
+                            {initials}
+                          </div>
+                        )}
 
-                      <div className="leaderboard-user-info">
-                        <div className="leaderboard-user-name-line">
-                          <span className="leaderboard-user-name">
-                            {item.displayName}
-                          </span>
-                          {item.isPro && <ProBadge />}
-                          {item.isCurrentUser && (
-                            <span
-                              style={{
-                                fontSize: "0.68rem",
-                                background: "#f59e0b",
-                                color: "#fff",
-                                padding: "1px 6px",
-                                borderRadius: "9999px",
-                                fontWeight: 800,
-                              }}
-                            >
-                              Kamu
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="leaderboard-user-meta">
-                          <span
-                            style={{
-                              fontSize: "0.72rem",
-                              fontWeight: 700,
-                              color: tier.color,
-                            }}
-                          >
-                            {tier.badge} {tier.label}
-                          </span>
+                        <div>
+                          <div className="table-user-name">
+                            <span>{item.displayName}</span>
+                            {item.isPro && <ProBadge />}
+                            {item.isCurrentUser && (
+                              <span
+                                style={{
+                                  fontSize: "0.68rem",
+                                  background: "#f59e0b",
+                                  color: "#fff",
+                                  padding: "1px 6px",
+                                  borderRadius: "9999px",
+                                  fontWeight: 800,
+                                }}
+                              >
+                                Kamu
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </td>
 
-                    <div className="leaderboard-row-right">
-                      <span className="leaderboard-row-time">
-                        {formatFocusTime(item.totalMinutes)}
+                    <td className="col-tier">
+                      <span
+                        className="table-tier-pill"
+                        style={{
+                          background: tier.bg,
+                          color: tier.color,
+                          border: `1px solid color-mix(in srgb, ${tier.color} 30%, transparent)`,
+                        }}
+                      >
+                        <span>{tier.badge}</span>
+                        <span>{tier.label}</span>
                       </span>
-                      <span className="leaderboard-row-poms">
-                        {item.pomodoroCount} sesi 🍅
-                      </span>
-                    </div>
-                  </div>
+                    </td>
+
+                    <td className="col-sessions">{item.pomodoroCount} sesi 🍅</td>
+
+                    <td className="col-time">{formatFocusTime(item.totalMinutes)}</td>
+                  </tr>
                 );
               })}
-            </div>
-          ) : entries.length === 0 ? (
-            <div className="leaderboard-empty">
-              <div className="leaderboard-empty-icon">🌱</div>
-              <h3>Belum Ada Sesi untuk Periode Ini</h3>
-              <p>Jadilah yang pertama mencatatkan rekor fokus dengan menyalakan Pomodoro!</p>
-              <Link
-                href="/"
-                style={{
-                  display: "inline-block",
-                  marginTop: "14px",
-                  padding: "8px 20px",
-                  borderRadius: "9999px",
-                  background: "var(--ink)",
-                  color: "var(--paper)",
-                  textDecoration: "none",
-                  fontWeight: 700,
-                  fontSize: "0.85rem",
-                }}
-              >
-                Mulai Fokus Sekarang ⏱️
-              </Link>
-            </div>
-          ) : null}
-        </>
-      )}
-
-      {/* Gamification Info Card */}
-      <div
-        style={{
-          background: "var(--paper)",
-          borderRadius: "20px",
-          padding: "18px 20px",
-          border: "1px solid color-mix(in srgb, var(--ink) 8%, transparent)",
-          fontSize: "0.85rem",
-          color: "var(--muted)",
-          lineHeight: 1.6,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            fontWeight: 700,
-            color: "var(--ink)",
-            marginBottom: "6px",
-          }}
-        >
-          <span>💡</span>
-          <span>Sistem Penghitungan &amp; Fair Play</span>
-        </div>
-        <p style={{ margin: 0 }}>
-          Peringkat dihitung secara otomatis berdasarkan akumulasi waktu sesi Pomodoro yang selesai tuntas (minimal 1 menit). 
-          Semua sesi tersinkronisasi aman ke database Supabase. Privasi akun terjaga; hanya nama tampilan dan avatar yang diperlihatkan kepada komunitas.
-        </p>
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* Sticky Bottom Rank Bar */}
+      {/* 4. Sticky Bottom Rank Bar */}
       {user ? (
         currentUserEntry ? (
           <div className="leaderboard-sticky-bar">

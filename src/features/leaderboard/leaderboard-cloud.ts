@@ -5,7 +5,7 @@ import type {
   LeaderboardPeriod,
 } from "@/types/domain";
 import {
-  generateSampleCommunityLeaderboard,
+  calculateTier,
   mapDbLeaderboardRow,
   mapDbMyRankRow,
 } from "./leaderboard-service";
@@ -22,37 +22,63 @@ export async function fetchLeaderboardEntries(
     pomodoros?: number;
   } | null,
 ): Promise<LeaderboardEntry[]> {
-  if (!supabase) {
-    return generateSampleCommunityLeaderboard(period, currentUserId ? {
-      id: currentUserId,
-      ...currentUserDetails,
-    } : null);
-  }
-
+  // 1. Fetch real user data from our server API endpoint
   try {
-    const { data, error } = await supabase.rpc("get_leaderboard", {
-      p_period: period,
-      p_limit: 50,
+    const res = await fetch(`/api/leaderboard?period=${period}&limit=50`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
     });
 
-    if (error || !data || !Array.isArray(data) || data.length === 0) {
-      // Fallback: If RPC is not yet created or returns empty, provide lively community leaderboard
-      return generateSampleCommunityLeaderboard(period, currentUserId ? {
-        id: currentUserId,
-        ...currentUserDetails,
-      } : null);
+    if (res.ok) {
+      const payload = (await res.json()) as { data?: unknown[] };
+      if (payload.data && Array.isArray(payload.data) && payload.data.length > 0) {
+        return payload.data.map((row) =>
+          mapDbLeaderboardRow(row, currentUserId, period)
+        );
+      }
     }
-
-    return (data as unknown[]).map((row) =>
-      mapDbLeaderboardRow(row, currentUserId, period)
-    );
-  } catch (err) {
-    console.warn("[BiarFokus Leaderboard] Fallback to community sample:", err);
-    return generateSampleCommunityLeaderboard(period, currentUserId ? {
-      id: currentUserId,
-      ...currentUserDetails,
-    } : null);
+  } catch (apiErr) {
+    console.warn("[BiarFokus Leaderboard] API route fetch failed, trying direct RPC:", apiErr);
   }
+
+  // 2. Direct RPC fallback if client has direct supabase connection
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.rpc("get_leaderboard", {
+        p_period: period,
+        p_limit: 50,
+      });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return (data as unknown[]).map((row) =>
+          mapDbLeaderboardRow(row, currentUserId, period)
+        );
+      }
+    } catch {
+      // RPC not yet configured in remote SQL
+    }
+  }
+
+  // 3. If there is a current user, return current user with their real stats
+  if (currentUserId) {
+    const mins = currentUserDetails?.minutes ?? 0;
+    const poms = currentUserDetails?.pomodoros ?? 0;
+    return [
+      {
+        rank: 1,
+        userId: currentUserId,
+        displayName: currentUserDetails?.name?.trim() || "Kamu (Akun Saya)",
+        avatarUrl: currentUserDetails?.avatarUrl ?? null,
+        totalMinutes: mins,
+        pomodoroCount: poms,
+        isPro: Boolean(currentUserDetails?.isPro),
+        isCurrentUser: true,
+        tier: calculateTier(mins, period),
+      },
+    ];
+  }
+
+  return [];
 }
 
 export async function fetchMyLeaderboardRank(
@@ -95,4 +121,3 @@ export async function updateLeaderboardPrivacy(
     console.warn("[BiarFokus Leaderboard] Privacy update error:", err);
   }
 }
-
