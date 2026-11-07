@@ -101,12 +101,6 @@
   }
 }
 
-@media (max-width: 520px) {
-  .leaderboard-leagues-bar {
-    grid-template-columns: 1fr;
-  }
-}
-
 .league-badge-card {
   display: flex;
   align-items: center;
@@ -338,12 +332,6 @@
   padding-bottom: 4px;
 }
 
-@media (max-width: 640px) {
-  .podium-stage {
-    gap: 8px;
-  }
-}
-
 .podium-column {
   flex: 1;
   max-width: 220px;
@@ -468,6 +456,13 @@
   font-weight: 800;
   letter-spacing: 0.02em;
   box-shadow: 0 1px 4px rgba(245, 158, 11, 0.35);
+}
+
+.podium-badges-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .podium-user-time {
@@ -1120,6 +1115,12 @@
 /* ------------------------------------------------------------------ */
 
 @media (max-width: 768px) {
+  .leaderboard-workspace {
+    width: 100% !important;
+    padding: 10px 12px 150px 12px !important;
+    gap: 14px !important;
+  }
+
   .leaderboard-hero-banner {
     padding: 14px 14px 12px 14px;
     border-radius: 18px;
@@ -1144,40 +1145,45 @@
   }
 
   .leaderboard-period-controls {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
   }
 
   .leaderboard-period-tabs {
-    width: 100%;
-    display: flex;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding: 3px;
-    gap: 3px;
-    box-sizing: border-box;
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
   }
 
   .leaderboard-period-tabs::-webkit-scrollbar {
-    display: none;
+    display: none !important;
   }
 
   .leaderboard-period-btn {
-    padding: 6px 12px;
-    font-size: 0.76rem;
-    white-space: nowrap;
-    flex-shrink: 0;
-    justify-content: center;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    padding: 6px 12px !important;
+    font-size: 0.78rem !important;
+    border-radius: 10px !important;
+    justify-content: center !important;
   }
 
   .leaderboard-refresh-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 6px 12px;
-    font-size: 0.78rem;
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 7px 12px !important;
+    font-size: 0.78rem !important;
+    border-radius: 12px !important;
   }
 
   .archive-selector-row {
@@ -1206,144 +1212,284 @@
   .achievements-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Fixed Sticky User Bar sitting cleanly above the 60px Mobile Bottom Navigation */
+  .leaderboard-sticky-bar {
+    position: fixed !important;
+    bottom: calc(68px + env(safe-area-inset-bottom, 8px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: calc(100% - 24px) !important;
+    max-width: 480px !important;
+    padding: 8px 14px !important;
+    border-radius: 16px !important;
+    gap: 10px !important;
+    z-index: 100000 !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+  }
+
+  .sticky-bar-left {
+    gap: 8px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  .sticky-bar-rank-badge {
+    padding: 4px 8px !important;
+    font-size: 0.78rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .sticky-bar-title {
+    font-size: 0.78rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 145px !important;
+    line-height: 1.2 !important;
+  }
+
+  .sticky-bar-sub {
+    display: none !important;
+  }
+
+  .sticky-bar-action {
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+    flex-shrink: 0 !important;
+  }
 }
 
 @media (max-width: 640px) {
   .leaderboard-leagues-bar {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+    width: 100% !important;
   }
 
   .league-badge-card {
-    padding: 6px 8px;
-    gap: 6px;
-    border-radius: 12px;
+    padding: 6px 8px !important;
+    gap: 6px !important;
+    border-radius: 12px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
   }
 
   .league-crest-container {
-    width: 28px;
-    height: 28px;
+    width: 26px !important;
+    height: 26px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .league-card-info {
+    min-width: 0 !important;
+    flex: 1 !important;
+    overflow: hidden !important;
   }
 
   .league-card-title {
-    font-size: 0.74rem;
+    font-size: 0.72rem !important;
+    font-weight: 750 !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+    word-break: break-word !important;
   }
 
   .league-tier-tag {
-    display: none;
+    display: none !important;
   }
 
   .league-card-sub {
-    font-size: 0.68rem;
+    font-size: 0.65rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
   .podium-arena-wrapper {
-    padding: 14px 10px 10px 10px;
-    border-radius: 18px;
+    padding: 14px 8px 10px 8px !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
   }
 
   .podium-arena-title {
-    font-size: 0.85rem;
-    margin-bottom: 10px;
-    text-align: center;
-    justify-content: center;
+    font-size: 0.85rem !important;
+    margin-bottom: 10px !important;
+    text-align: center !important;
+    justify-content: center !important;
   }
 
+  /* 3-Column Pedestal Arena without horizontal spill or collision */
   .podium-stage {
-    gap: 6px;
-    max-width: 100%;
-    padding: 0;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
   }
 
   .podium-column {
-    max-width: 33.33%;
+    flex: 1 1 33.33% !important;
+    width: 33.33% !important;
+    max-width: 33.33% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
   }
 
   .podium-user-floater {
-    margin-bottom: 6px;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    margin-bottom: 6px !important;
+    box-sizing: border-box !important;
   }
 
   .podium-crown-icon {
-    font-size: 1.1rem;
-    top: -13px;
+    font-size: 1.05rem !important;
+    top: -12px !important;
   }
 
   .podium-img-avatar,
   .podium-avatar-initials {
-    width: 44px;
-    height: 44px;
-    border-width: 2px;
+    width: 44px !important;
+    height: 44px !important;
+    border-width: 2px !important;
   }
 
   .podium-avatar-initials {
-    font-size: 0.95rem;
+    font-size: 0.95rem !important;
   }
 
   .podium-column.rank-1 .podium-img-avatar,
   .podium-column.rank-1 .podium-avatar-initials {
-    width: 56px;
-    height: 56px;
+    width: 54px !important;
+    height: 54px !important;
   }
 
   .podium-column.rank-1 .podium-avatar-initials {
-    font-size: 1.15rem;
+    font-size: 1.1rem !important;
   }
 
+  /* Stack User Name above Badges Row on Mobile for Zero Collision */
   .podium-user-name {
-    gap: 3px;
-    max-width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 2px !important;
   }
 
   .podium-name-text {
-    max-width: 62px;
-    font-size: 0.72rem;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    font-size: 0.72rem !important;
+    font-weight: 750 !important;
+    line-height: 1.2 !important;
   }
 
   .podium-column.rank-1 .podium-name-text {
-    max-width: 78px;
-    font-size: 0.78rem;
+    font-size: 0.78rem !important;
+  }
+
+  .podium-badges-row {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    transform: scale(0.82) !important;
+    transform-origin: center !important;
+    max-width: 100% !important;
   }
 
   .podium-kamu-badge {
-    font-size: 0.58rem;
-    padding: 1px 4.5px;
+    font-size: 0.55rem !important;
+    padding: 1px 4.5px !important;
+    line-height: 1.2 !important;
   }
 
   .podium-user-time {
-    font-size: 0.95rem;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    margin-top: 2px !important;
   }
 
   .podium-column.rank-1 .podium-user-time {
-    font-size: 1.1rem;
+    font-size: 1.05rem !important;
   }
 
   .podium-user-poms {
-    font-size: 0.65rem;
+    font-size: 0.65rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    line-height: 1.2 !important;
+  }
+
+  .podium-user-poms .table-achievement-tag {
+    display: none !important;
+  }
+
+  .podium-tier-pill {
+    font-size: 0.65rem !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+  }
+
+  .podium-tier-pill .podium-tier-text {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 
   .podium-step-pillar {
-    border-radius: 12px 12px 6px 6px;
-    padding-top: 6px;
+    border-radius: 12px 12px 6px 6px !important;
+    padding-top: 6px !important;
   }
 
   .podium-column.rank-1 .podium-step-pillar {
-    height: 85px;
+    height: 75px !important;
   }
 
   .podium-column.rank-2 .podium-step-pillar {
-    height: 60px;
+    height: 52px !important;
   }
 
   .podium-column.rank-3 .podium-step-pillar {
-    height: 45px;
+    height: 38px !important;
   }
 
   .podium-step-number {
-    font-size: 1.6rem;
+    font-size: 1.5rem !important;
   }
 
   .podium-column.rank-1 .podium-step-number {
-    font-size: 2.1rem;
+    font-size: 2rem !important;
   }
 
   .leaderboard-table-section {
@@ -1393,46 +1539,6 @@
 
   .col-time {
     font-size: 0.92rem;
-  }
-
-  .leaderboard-sticky-bar {
-    width: calc(100% - 20px);
-    padding: 8px 12px;
-    bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
-    border-radius: 16px;
-    gap: 8px;
-    z-index: 9999;
-  }
-
-  .sticky-bar-left {
-    gap: 8px;
-    min-width: 0;
-  }
-
-  .sticky-bar-rank-badge {
-    padding: 4px 8px;
-    font-size: 0.78rem;
-  }
-
-  .sticky-bar-title {
-    font-size: 0.8rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 140px;
-  }
-
-  .sticky-bar-sub {
-    font-size: 0.68rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .sticky-bar-action {
-    padding: 6px 12px;
-    font-size: 0.76rem;
   }
 }
 

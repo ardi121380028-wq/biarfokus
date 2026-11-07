@@ -704,7 +704,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </nav>
 
       {/* Quick Notes Floating Action Button (Bottom-Right, 3D Glowing Orb) */}
-      {!isWorkspaceView && (
+      {!isWorkspaceView && !pathname.startsWith("/peringkat") && !pathname.startsWith("/leaderboard") && (
         <button
           type="button"
           className="notes-fab"

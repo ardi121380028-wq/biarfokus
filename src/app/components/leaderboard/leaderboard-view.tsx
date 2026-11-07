@@ -293,15 +293,19 @@ function PodiumStep({
 
         <div className="podium-user-name" title={entry.displayName}>
           <span className="podium-name-text">{entry.displayName}</span>
-          {entry.isPro && <ProBadge size="sm" />}
-          {entry.isCurrentUser && (
-            <span className="podium-kamu-badge">Kamu</span>
+          {(entry.isPro || entry.isCurrentUser) && (
+            <span className="podium-badges-row">
+              {entry.isPro && <ProBadge size="sm" />}
+              {entry.isCurrentUser && (
+                <span className="podium-kamu-badge">Kamu</span>
+              )}
+            </span>
           )}
         </div>
 
         <div className="podium-user-time">{formatFocusTime(entry.totalMinutes)}</div>
         <div className="podium-user-poms">
-          {entry.pomodoroCount} sesi 🍅
+          <span>{entry.pomodoroCount} sesi 🍅</span>
           {entry.pomodoroCount >= 50 ? (
             <span className="table-achievement-tag" style={{ marginLeft: "4px" }} title="Master Produktif">🏆 Master</span>
           ) : entry.pomodoroCount >= 10 ? (
@@ -310,6 +314,7 @@ function PodiumStep({
         </div>
 
         <div
+          className="podium-tier-pill"
           style={{
             fontSize: "0.72rem",
             fontWeight: 700,
@@ -320,8 +325,8 @@ function PodiumStep({
             gap: "4px",
           }}
         >
-          <span>{tier.badge}</span>
-          <span>{isArchive ? `Juara ${rankNumber} Resmi` : tier.label}</span>
+          <span className="podium-tier-icon">{tier.badge}</span>
+          <span className="podium-tier-text">{isArchive ? `Juara ${rankNumber} Resmi` : tier.label}</span>
         </div>
       </div>
 
