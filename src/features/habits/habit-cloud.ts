@@ -29,6 +29,9 @@ export async function loadCloudHabits(
 
 /**
  * Saves habits to Supabase profiles.settings.habits
+ * Implements strict anti-data-loss protections:
+ * 1. Refuses to overwrite non-empty cloud habits with an empty array.
+ * 2. Unions completedDates so check-in history is never lost across multiple devices/updates.
  */
 export async function saveCloudHabits(
   supabase: SupabaseClient,
@@ -36,6 +39,8 @@ export async function saveCloudHabits(
   habits: Habit[]
 ): Promise<void> {
   try {
+    if (!userId) return;
+
     const { data: existing } = await supabase
       .from("profiles")
       .select("settings")
@@ -49,9 +54,30 @@ export async function saveCloudHabits(
         ? (existing.settings as Record<string, unknown>)
         : {};
 
+    const cloudExistingHabits = Array.isArray(prev.habits) ? (prev.habits as Habit[]) : [];
+
+    // CRITICAL SAFETY GUARD: Never overwrite an existing user's cloud habits with an empty array.
+    if ((!habits || habits.length === 0) && cloudExistingHabits.length > 0) {
+      console.warn("[BiarFokus Habits] Refusing to overwrite non-empty cloud habits with empty array.");
+      return;
+    }
+
+    // Safety union: ensure no check-in dates already saved in cloud are lost
+    const safeHabits = (habits || []).map((h) => {
+      const cloudMatch = cloudExistingHabits.find((c) => c.id === h.id);
+      if (!cloudMatch || !cloudMatch.completedDates || cloudMatch.completedDates.length === 0) {
+        return h;
+      }
+      const unionDates = Array.from(new Set([...cloudMatch.completedDates, ...(h.completedDates || [])])).sort();
+      return {
+        ...h,
+        completedDates: unionDates,
+      };
+    });
+
     const { error } = await supabase
       .from("profiles")
-      .update({ settings: { ...prev, habits } })
+      .update({ settings: { ...prev, habits: safeHabits } })
       .eq("id", userId);
 
     if (error) {

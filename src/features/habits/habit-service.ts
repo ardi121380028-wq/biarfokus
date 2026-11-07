@@ -404,7 +404,17 @@ export function mergeHabits(localHabits: Habit[], cloudHabits: Habit[]): Habit[]
     if (!local || !local.id) continue;
     const existing = mergedMap.get(local.id);
     if (!existing) {
-      // Local habit doesn't exist in cloud yet: keep it
+      // If it's an untouched starter template (0 checkins) and cloud already has user habits,
+      // don't resurrect a deleted starter habit into an established user profile
+      const isUntouchedDefault =
+        DEFAULT_HABITS.some((d) => d.id === local.id) &&
+        (!local.completedDates || local.completedDates.length === 0);
+
+      if (isUntouchedDefault && cloudHabits.length > 0) {
+        continue;
+      }
+
+      // Local custom habit or habit with checkins: keep it!
       mergedMap.set(local.id, {
         ...local,
         completedDates: Array.from(new Set(local.completedDates || [])).sort(),

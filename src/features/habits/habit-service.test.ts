@@ -220,4 +220,34 @@ describe("Habit Tracker Service & Behavioral Logic", () => {
     const cloudOnly = merged.find((h: any) => h.id === "habit-cloud-only");
     assert.ok(cloudOnly);
   });
+
+  it("does not resurrect deleted default starter habits when local is untouched, but keeps user custom habits", () => {
+    // Cloud has only user's custom habit (user intentionally deleted default starter habits)
+    const cloud = [
+      {
+        ...DEFAULT_HABITS[0],
+        id: "habit-custom-coding",
+        title: "Coding 1 Jam",
+        completedDates: ["2026-11-01"],
+      },
+    ];
+
+    // Local device has fresh DEFAULT_HABITS (0 checkins) and another custom habit
+    const local = [
+      ...DEFAULT_HABITS.map((d) => ({ ...d, completedDates: [] })),
+      {
+        ...DEFAULT_HABITS[0],
+        id: "habit-custom-math",
+        title: "Belajar Matematika",
+        completedDates: ["2026-11-02"],
+      },
+    ];
+
+    const merged = mergeHabits(local, cloud);
+    // Should contain habit-custom-coding and habit-custom-math, but NOT the untouched DEFAULT_HABITS!
+    assert.equal(merged.length, 2);
+    assert.ok(merged.some((h) => h.id === "habit-custom-coding"));
+    assert.ok(merged.some((h) => h.id === "habit-custom-math"));
+    assert.ok(!merged.some((h) => h.id === "habit-pomodoro"));
+  });
 });
