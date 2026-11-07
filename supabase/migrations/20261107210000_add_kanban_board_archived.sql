@@ -7,3 +7,4 @@ alter table public.kanban_boards
 
 create index if not exists kanban_boards_archived_idx
   on public.kanban_boards (user_id, archived);
+

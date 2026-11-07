@@ -276,7 +276,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="top-actions">
             <Link
               href="/peringkat"
-              className={`icon-button modern-topbar-icon topbar-desktop-only ${pathname === "/peringkat" ? "active" : ""}`}
+              className={`icon-button modern-topbar-icon ${pathname === "/peringkat" ? "active" : ""}`}
               aria-label="Papan Peringkat Fokus"
               title="Papan Peringkat Fokus (🏆)"
             >
@@ -289,7 +289,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </svg>
             </Link>
             <button
-              className="icon-button modern-theme-btn topbar-desktop-only"
+              className="icon-button modern-theme-btn"
               onClick={() => setDark(!dark)}
               aria-label="Ganti tema"
               title={dark ? "Mode Terang" : "Mode Gelap"}

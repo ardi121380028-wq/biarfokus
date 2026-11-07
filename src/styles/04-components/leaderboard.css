@@ -1398,9 +1398,10 @@
   .leaderboard-sticky-bar {
     width: calc(100% - 20px);
     padding: 8px 12px;
-    bottom: 12px;
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
     border-radius: 16px;
     gap: 8px;
+    z-index: 9999;
   }
 
   .sticky-bar-left {
@@ -1852,6 +1853,41 @@
 }
 
 @media (max-width: 640px) {
+  .leaderboard-user-modal-card {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    padding: 18px 14px !important;
+    max-height: calc(100dvh - 32px) !important;
+    border-radius: 20px !important;
+    gap: 14px !important;
+  }
+
+  .user-hero-name {
+    font-size: 1.15rem !important;
+  }
+
+  .leaderboard-user-avatar-ring {
+    width: 68px !important;
+    height: 68px !important;
+  }
+
+  .user-modal-socials-grid {
+    gap: 6px !important;
+  }
+
+  .user-social-pill {
+    padding: 6px 11px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .user-modal-badges-list {
+    gap: 6px !important;
+  }
+
+  .user-modal-badge-chip {
+    padding: 6px 10px !important;
+  }
+
   .leaderboard-user-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
