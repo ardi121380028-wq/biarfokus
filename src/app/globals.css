@@ -11324,11 +11324,60 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   line-height: 1.2;
 }
 
-/* Hide desktop-only controls on mobile (theme, shortcut, settings in topbars) */
+/* ==========================================================================
+   Mobile Topbar Precision Responsiveness (Zero Collisions for HP Kecil)
+   ========================================================================== */
 @media (max-width: 768px) {
   .topbar-desktop-only,
   .kanban-desktop-only-btn {
     display: none !important;
+  }
+
+  .topbar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    min-height: 56px !important;
+    padding: 8px 12px !important;
+  }
+
+  .brand {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    min-width: 0 !important;
+  }
+
+  .brand-logo-img {
+    height: 21px !important;
+    max-width: 105px !important;
+    width: auto !important;
+    object-fit: contain !important;
+  }
+
+  .top-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .icon-button {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .icon-button svg {
+    width: 17px !important;
+    height: 17px !important;
   }
 
   .profile-button-wrap {
@@ -11380,6 +11429,143 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .profile-button-wrap .profile-free-pill {
     font-size: 7.5px !important;
     padding: 0.5px 4px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    min-height: 52px !important;
+    padding: 6px 10px !important;
+    border-radius: 24px !important;
+    gap: 6px !important;
+  }
+
+  .brand-logo-img {
+    height: 19px !important;
+    max-width: 90px !important;
+  }
+
+  .top-actions {
+    gap: 5px !important;
+  }
+
+  .icon-button {
+    width: 31px !important;
+    height: 31px !important;
+    min-width: 31px !important;
+    min-height: 31px !important;
+  }
+
+  .icon-button svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  .profile-button-wrap {
+    max-width: 110px !important;
+    padding: 2px 6px 2px 2px !important;
+    gap: 4px !important;
+  }
+
+  .profile-button {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+  }
+
+  .profile-user-col {
+    max-width: 60px !important;
+  }
+
+  .profile-user-name {
+    max-width: 52px !important;
+    font-size: 9.5px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .app {
+    padding: 8px 8px 35px !important;
+  }
+
+  .topbar {
+    min-height: 48px !important;
+    padding: 5px 8px !important;
+    border-radius: 20px !important;
+    gap: 5px !important;
+  }
+
+  .brand-logo-img {
+    height: 17px !important;
+    max-width: 78px !important;
+  }
+
+  .top-actions {
+    gap: 4px !important;
+  }
+
+  .icon-button {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+  }
+
+  .icon-button svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .profile-button {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+  }
+
+  /* On extra-small phones, hide text username to prevent horizontal squeeze */
+  .profile-user-name {
+    display: none !important;
+  }
+
+  .profile-user-col {
+    max-width: fit-content !important;
+  }
+
+  .profile-button-wrap {
+    padding: 2px 5px 2px 2px !important;
+    gap: 3px !important;
+    max-width: fit-content !important;
+  }
+
+  .profile-button-wrap .pro-vip-badge.badge-sm {
+    height: 13px !important;
+    padding: 0 4px !important;
+    font-size: 7.5px !important;
+  }
+}
+
+@media (max-width: 330px) {
+  .brand-logo-img {
+    height: 15px !important;
+    max-width: 68px !important;
+  }
+
+  .icon-button {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+  }
+
+  .icon-button svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+
+  .profile-button {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
   }
 }
 
