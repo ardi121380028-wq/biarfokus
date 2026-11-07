@@ -74,6 +74,13 @@ function HomeContent() {
         router.replace("/upgrade");
         return;
       }
+      if (
+        url.searchParams.get("view") === "leaderboard" ||
+        url.searchParams.get("view") === "peringkat"
+      ) {
+        router.replace("/peringkat");
+        return;
+      }
     } catch {}
   }, [router]);
 

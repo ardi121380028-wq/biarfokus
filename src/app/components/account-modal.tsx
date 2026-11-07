@@ -6,6 +6,7 @@ import { useState } from "react";
 import { getSafeAvatarUrl, updateDisplayName } from "@/features/profile/profile-service";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ProBadge } from "@/app/components/ui/pro-badge";
+import { updateLeaderboardPrivacy } from "@/features/leaderboard/leaderboard-cloud";
 
 type AccountModalProps = {
   user: User | null;
@@ -47,6 +48,16 @@ export function AccountModal({
     }
     return "";
   });
+  const [showOnLeaderboard, setShowOnLeaderboard] = useState<boolean>(() => {
+    if (typeof user?.user_metadata?.show_on_leaderboard === "boolean") {
+      return user.user_metadata.show_on_leaderboard;
+    }
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage.getItem("biarfokus.profile.show_on_leaderboard");
+      if (stored !== null) return stored === "true";
+    }
+    return true;
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,16 +68,21 @@ export function AccountModal({
       if (typeof window !== "undefined") {
         window.localStorage.setItem("biarfokus.profile.occupation", occupation.trim());
         window.localStorage.setItem("biarfokus.profile.status_bio", statusBio.trim());
+        window.localStorage.setItem("biarfokus.profile.show_on_leaderboard", String(showOnLeaderboard));
       }
       if (user) {
         const savedName = await updateDisplayName(supabase, user.id, displayName);
-        await supabase.auth.updateUser({
-          data: {
-            birth_date: birthDate.trim(),
-            occupation: occupation.trim(),
-            status_bio: statusBio.trim(),
-          },
-        });
+        await Promise.all([
+          supabase.auth.updateUser({
+            data: {
+              birth_date: birthDate.trim(),
+              occupation: occupation.trim(),
+              status_bio: statusBio.trim(),
+              show_on_leaderboard: showOnLeaderboard,
+            },
+          }),
+          updateLeaderboardPrivacy(supabase, user.id, showOnLeaderboard),
+        ]);
         onSaved(savedName);
       } else {
         onSaved(displayName);
@@ -209,6 +225,29 @@ export function AccountModal({
             {error}
           </p>
         )}
+
+        <label
+            style={{
+              marginTop: "16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              cursor: "pointer",
+              fontSize: "0.86rem",
+              fontWeight: 600,
+              color: "var(--ink)",
+              userSelect: "none",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showOnLeaderboard}
+              onChange={(e) => setShowOnLeaderboard(e.target.checked)}
+              disabled={saving}
+              style={{ width: "16px", height: "16px", accentColor: "#f59e0b", cursor: "pointer" }}
+            />
+            <span>Tampilkan profil saya di Papan Peringkat (Leaderboard)</span>
+          </label>
 
         {/* Actions Footer */}
         <div className="account-card-footer">

@@ -300,3 +300,30 @@ export type DbKanbanInvite = {
   expires_at: string | null;
   created_at: string;
 };
+
+/* ------------------------------------------------------------------ */
+/* Leaderboard domain types                                           */
+/* ------------------------------------------------------------------ */
+
+export type LeaderboardPeriod = "daily" | "weekly" | "monthly" | "all_time";
+
+export type LeaderboardTier = "seed" | "consistent" | "master" | "legend";
+
+export type LeaderboardEntry = {
+  rank: number;
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  totalMinutes: number;
+  pomodoroCount: number;
+  isPro: boolean;
+  isCurrentUser: boolean;
+  tier: LeaderboardTier;
+};
+
+export type LeaderboardMyRank = {
+  rank: number;
+  totalMinutes: number;
+  pomodoroCount: number;
+  totalParticipants: number;
+};

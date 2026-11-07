@@ -54,6 +54,18 @@ export function ProfileMenu({
         </button>
       )}
 
+      <Link
+        href="/peringkat"
+        className="cal-profile-menu-item"
+        role="menuitem"
+        onClick={() => {
+          if (onClose) onClose();
+        }}
+        style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}
+      >
+        🏆 Papan Peringkat
+      </Link>
+
       {onSettings && (
         <button
           type="button"

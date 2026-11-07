@@ -1,0 +1,583 @@
+/* ==============================================================================
+   BIARFOKUS LEADERBOARD (PAPAN PERINGKAT FOKUS)
+   Clean, modern, rounded aesthetic with Olympic podium and sticky rank bar
+   ============================================================================== */
+
+.leaderboard-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 18px 16px 120px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Header & Subtitle                                                  */
+/* ------------------------------------------------------------------ */
+
+.leaderboard-header {
+  text-align: center;
+  padding: 24px 20px;
+  background: var(--paper);
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.leaderboard-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  color: #b45309;
+  margin-bottom: 10px;
+}
+
+.leaderboard-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 8px 0;
+  color: var(--ink);
+}
+
+.leaderboard-subtitle {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin: 0 auto;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------------ */
+/* Period Tabs Switcher                                               */
+/* ------------------------------------------------------------------ */
+
+.leaderboard-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px;
+  background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  width: fit-content;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.leaderboard-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.leaderboard-tab-btn:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.leaderboard-tab-btn.active {
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+/* ------------------------------------------------------------------ */
+/* Olympic Podium Section (Top 3)                                     */
+/* ------------------------------------------------------------------ */
+
+.leaderboard-podium {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  align-items: flex-end;
+  margin-top: 10px;
+}
+
+@media (max-width: 640px) {
+  .leaderboard-podium {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.podium-card {
+  background: var(--paper);
+  border-radius: 24px;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 4%, transparent);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.podium-card:hover {
+  transform: translateY(-3px);
+}
+
+.podium-card.first {
+  order: 2;
+  border-color: #f59e0b;
+  box-shadow: 0 8px 28px rgba(245, 158, 11, 0.16);
+  padding: 26px 14px 22px;
+  z-index: 2;
+}
+
+.podium-card.second {
+  order: 1;
+  border-color: #94a3b8;
+  padding: 20px 14px 18px;
+}
+
+.podium-card.third {
+  order: 3;
+  border-color: #d97706;
+  padding: 18px 14px 16px;
+}
+
+@media (max-width: 640px) {
+  .podium-card.first { order: 1; }
+  .podium-card.second { order: 2; }
+  .podium-card.third { order: 3; }
+}
+
+.podium-rank-badge {
+  position: absolute;
+  top: -12px;
+  font-size: 1.25rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid transparent;
+}
+
+.podium-card.first .podium-rank-badge {
+  border-color: #f59e0b;
+}
+.podium-card.second .podium-rank-badge {
+  border-color: #94a3b8;
+}
+.podium-card.third .podium-rank-badge {
+  border-color: #d97706;
+}
+
+.podium-avatar-wrapper {
+  position: relative;
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+
+.podium-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 3px solid var(--paper);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.podium-card.first .podium-avatar {
+  width: 76px;
+  height: 76px;
+  border-color: #fef3c7;
+}
+
+.podium-crown {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.4rem;
+  animation: crown-float 2s ease-in-out infinite;
+}
+
+@keyframes crown-float {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
+}
+
+.podium-avatar-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+  color: var(--ink);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 3px solid var(--paper);
+}
+
+.podium-card.first .podium-avatar-placeholder {
+  width: 76px;
+  height: 76px;
+  font-size: 1.4rem;
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.podium-name {
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--ink);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-minutes {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.podium-card.first .podium-minutes {
+  color: #b45309;
+  font-size: 1.4rem;
+}
+
+.podium-sessions {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.podium-tier-pill {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Ranked List Section (Rank 4+)                                      */
+/* ------------------------------------------------------------------ */
+
+.leaderboard-list {
+  background: var(--paper);
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--ink) 4%, transparent);
+  overflow: hidden;
+}
+
+.leaderboard-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
+  transition: background 0.15s ease;
+}
+
+.leaderboard-row:last-child {
+  border-bottom: none;
+}
+
+.leaderboard-row:hover {
+  background: color-mix(in srgb, var(--ink) 2%, transparent);
+}
+
+.leaderboard-row.is-current-user {
+  background: color-mix(in srgb, #f59e0b 8%, var(--paper));
+  border-left: 4px solid #f59e0b;
+  font-weight: 600;
+}
+
+.leaderboard-row-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.leaderboard-rank-num {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--muted);
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.leaderboard-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.leaderboard-user-avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.leaderboard-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.leaderboard-user-name-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.leaderboard-user-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderboard-user-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.leaderboard-row-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.leaderboard-row-time {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.leaderboard-row-poms {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sticky Bottom Rank Bar ("Posisi Kamu")                             */
+/* ------------------------------------------------------------------ */
+
+.leaderboard-sticky-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 720px;
+  background: var(--paper);
+  border-radius: 9999px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1.5px solid color-mix(in srgb, #f59e0b 45%, var(--ink));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  z-index: 950;
+  backdrop-filter: blur(12px);
+  animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.sticky-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sticky-bar-rank-badge {
+  background: #f59e0b;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.9rem;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sticky-bar-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.sticky-bar-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sticky-bar-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.sticky-bar-action {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Empty & Loading States                                             */
+/* ------------------------------------------------------------------ */
+
+.leaderboard-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+
+.leaderboard-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.leaderboard-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  gap: 10px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.leaderboard-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Dark Mode Refinements                                              */
+/* ------------------------------------------------------------------ */
+
+.app.dark .leaderboard-header,
+.app.dark .podium-card,
+.app.dark .leaderboard-list,
+.app.dark .leaderboard-sticky-bar {
+  background: #18191c;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.app.dark .podium-card.first {
+  border-color: rgba(245, 158, 11, 0.6);
+  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.2);
+}
+
+.app.dark .podium-avatar-placeholder {
+  background: #2a2c31;
+}
+
+.app.dark .podium-card.first .podium-avatar-placeholder {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.app.dark .leaderboard-tabs {
+  background: #141518;
+}
+
+.app.dark .leaderboard-tab-btn.active {
+  background: #242529;
+}
+
+.app.dark .leaderboard-row.is-current-user {
+  background: rgba(245, 158, 11, 0.12);
+}
+

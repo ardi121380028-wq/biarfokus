@@ -31,6 +31,7 @@ const NAV_LINKS = [
   { href: "/kalender", label: "Kalender" },
   { href: "/kanban", label: "Project Kanban" },
   { href: "/kebiasaan", label: "Kebiasaan" },
+  { href: "/peringkat", label: "Peringkat" },
   { href: "/upgrade", label: "Price" },
 ] as const;
 
@@ -172,6 +173,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith("/kalender") ||
     pathname.startsWith("/catatan") ||
     pathname.startsWith("/kebiasaan") ||
+    pathname.startsWith("/peringkat") ||
     pathname.startsWith("/habits") ||
     pathname.startsWith("/pengaturan") ||
     pathname.startsWith("/admin");
@@ -193,7 +195,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const handleNavClick = (e: React.MouseEvent, href: string) => {
     // If logged in, or navigating to home or pricing, allow default navigation
-    if (user || href === "/" || href === "/upgrade") {
+    if (user || href === "/" || href === "/upgrade" || href === "/peringkat") {
       if (href === "/" && pathname === "/") {
         e.preventDefault();
         window.scrollTo({ top: 0, behavior: "smooth" });

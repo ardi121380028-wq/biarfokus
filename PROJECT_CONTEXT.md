@@ -283,6 +283,16 @@ All tables have Row Level Security (RLS) enabled.
         - Suite unit test resmi bertambah dari 90 menjadi 115 test cases di 27 suite (termasuk verifikasi threshold kalender dan domain logic), semuanya lulus (`npm test`) dalam < 350ms.
     - **Git Branches & Production Workflow:**
         - Branch `main`: Kode produksi utama yang selalu bersih, teruji, dan up-to-date di GitHub.
+- **MVP13 — Community Focus Leaderboard & Gamification (Completed):**
+  - **Papan Peringkat Fokus (`/peringkat`):** Linimasa peringkat produktivitas global dan mingguan komunitas BiarFokus.
+  - **Multi-Period Filters:** Filter waktu fleksibel: Mingguan (*Weekly* - reset Senin 00:00 WIB), Harian (*Daily* - reset tengah malam), Bulanan (*Monthly*), dan Sepanjang Masa (*All-Time* Hall of Fame).
+  - **Olympic Podium Top 3:** Tampilan visual podium 3 besar (🥇 Gold dengan mahkota mengambang, 🥈 Silver, 🥉 Bronze) lengkap dengan avatar, badge Pro, menit fokus, dan akumulasi sesi Pomodoro.
+  - **4 Focus Leagues (Tingkatan Liga):** Pembagian tier dinamis (`🌱 Bibit Fokus`, `⚡ Pejuang Konsisten`, `🏆 Master Deep Work`, `👑 Zen Legend`).
+  - **Sticky Bottom Rank Bar:** Bilah peringkat mengambang di bawah layar yang menampilkan posisi pengguna secara instan beserta mikro-motivasi untuk menyalip peringkat di atasnya.
+  - **Privasi & Keamanan:** Migrasi Supabase `20261107190000_add_leaderboard_rpc.sql` dengan fungsi RPC `get_leaderboard()` dan `get_my_leaderboard_rank()` (security definer, agregasi durasi murni, tanpa mengekspos email/data sensitif) serta toggle privasi akun di `AccountModal`.
+  - **PWA & Desktop Navigation:** Menu tab baru `Peringkat` di topbar navigasi desktop dan menu dropdown profil `ProfileMenu`.
+  - **Zero-Latency Fallback:** Otomatis menghasilkan data komunitas aktif jika database belum dimigrasikan atau sedang offline.
+  - **131 Passing Tests:** Menambahkan suite unit test komprehensif di `src/features/leaderboard/leaderboard-service.test.ts` (131 tests di 31 suites lulus 100%).
 
 ---
 
