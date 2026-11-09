@@ -186,6 +186,7 @@ describe("Habit Tracker Service & Behavioral Logic", () => {
         id: "habit-local-only",
         title: "Tugas Baru di Android",
         completedDates: ["2026-11-07"],
+        _isLocalDraft: true,
       },
     ];
 
@@ -240,6 +241,7 @@ describe("Habit Tracker Service & Behavioral Logic", () => {
         id: "habit-custom-math",
         title: "Belajar Matematika",
         completedDates: ["2026-11-02"],
+        _isLocalDraft: true,
       },
     ];
 
@@ -248,6 +250,35 @@ describe("Habit Tracker Service & Behavioral Logic", () => {
     assert.equal(merged.length, 2);
     assert.ok(merged.some((h) => h.id === "habit-custom-coding"));
     assert.ok(merged.some((h) => h.id === "habit-custom-math"));
+    assert.ok(!merged.some((h) => h.id === "habit-pomodoro"));
+  });
+
+  it("purges habits deleted on mobile from desktop and never resurrects them", () => {
+    // Mobile deleted "cek-da", "sgdg", and "habit-pomodoro"
+    // Cloud now only has the 4 active habits
+    const cloud = [
+      { ...DEFAULT_HABITS[2], id: "habit-buku", title: "Membaca Buku" },
+      { ...DEFAULT_HABITS[0], id: "habit-english", title: "English everyday" },
+      { ...DEFAULT_HABITS[1], id: "habit-public-speaking", title: "Learning Public Speaking" },
+      { ...DEFAULT_HABITS[0], id: "habit-workout", title: "Workout, Ucikomi" },
+    ];
+
+    // Desktop's stale local storage still has the deleted habits
+    const desktopLocal = [
+      ...cloud,
+      { ...DEFAULT_HABITS[0], id: "habit-cek-da", title: "cek da" },
+      { ...DEFAULT_HABITS[0], id: "habit-sgdg", title: "sgdg" },
+      { ...DEFAULT_HABITS[0], id: "habit-pomodoro", title: "Fokus 1 Sesi Pomodoro" },
+    ];
+
+    const deletedIds = ["habit-cek-da", "habit-sgdg", "habit-pomodoro"];
+
+    const merged = mergeHabits(desktopLocal, cloud, deletedIds);
+
+    // Desktop MUST only have the 4 active habits, and NONE of the deleted ones!
+    assert.equal(merged.length, 4);
+    assert.ok(!merged.some((h) => h.id === "habit-cek-da"));
+    assert.ok(!merged.some((h) => h.id === "habit-sgdg"));
     assert.ok(!merged.some((h) => h.id === "habit-pomodoro"));
   });
 });

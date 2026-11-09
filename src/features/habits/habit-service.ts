@@ -352,6 +352,37 @@ export function loadLocalHabits(): Habit[] {
   }
 }
 
+export const DELETED_HABITS_PREFIX = "biarfokus.habits.deleted_ids";
+
+export function getDeletedHabitIds(userId?: string | null): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const key = `${DELETED_HABITS_PREFIX}.${userId || "guest"}`;
+    const raw = window.localStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+export function saveDeletedHabitIds(ids: string[], userId?: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    const key = `${DELETED_HABITS_PREFIX}.${userId || "guest"}`;
+    const unique = Array.from(new Set(ids)).slice(-200);
+    window.localStorage.setItem(key, JSON.stringify(unique));
+  } catch {}
+}
+
+export function recordDeletedHabitId(id: string, userId?: string | null): string[] {
+  const current = getDeletedHabitIds(userId);
+  const next = Array.from(new Set([...current, id]));
+  saveDeletedHabitIds(next, userId);
+  return next;
+}
+
 export function saveLocalHabits(habits: Habit[]): void {
   if (typeof window === "undefined") return;
   try {
@@ -384,15 +415,25 @@ export function reorderHabitsList(habits: Habit[], fromIndex: number, toIndex: n
  * Safely merges local and cloud habits without losing check-ins or custom habits across devices.
  * Uses the union of completedDates for matching IDs and recalculates streaks.
  */
-export function mergeHabits(localHabits: Habit[], cloudHabits: Habit[]): Habit[] {
-  if (!cloudHabits || cloudHabits.length === 0) return localHabits || [];
-  if (!localHabits || localHabits.length === 0) return cloudHabits || [];
+export function mergeHabits(
+  localHabits: Habit[],
+  cloudHabits: Habit[],
+  deletedHabitIds?: string[] | Set<string>
+): Habit[] {
+  const deletedSet = deletedHabitIds instanceof Set
+    ? deletedHabitIds
+    : new Set(deletedHabitIds || []);
+
+  const cleanCloud = (cloudHabits || []).filter((h) => h && h.id && !deletedSet.has(h.id));
+  const cleanLocal = (localHabits || []).filter((h) => h && h.id && !deletedSet.has(h.id));
+
+  if (cleanCloud.length === 0) return cleanLocal;
+  if (cleanLocal.length === 0) return cleanCloud;
 
   const mergedMap = new Map<string, Habit>();
 
-  // 1. Seed with cloud habits
-  for (const cloud of cloudHabits) {
-    if (!cloud || !cloud.id) continue;
+  // 1. Seed with authoritative cloud habits
+  for (const cloud of cleanCloud) {
     mergedMap.set(cloud.id, {
       ...cloud,
       completedDates: Array.from(new Set(cloud.completedDates || [])).sort(),
@@ -400,21 +441,26 @@ export function mergeHabits(localHabits: Habit[], cloudHabits: Habit[]): Habit[]
   }
 
   // 2. Merge local habits into cloud
-  for (const local of localHabits) {
-    if (!local || !local.id) continue;
+  for (const local of cleanLocal) {
     const existing = mergedMap.get(local.id);
     if (!existing) {
-      // If it's an untouched starter template (0 checkins) and cloud already has user habits,
-      // don't resurrect a deleted starter habit into an established user profile
+      // Local habit does NOT exist in cloud.
+      // If cloud already has established habits, any habit not in cloud was deleted on another device,
+      // UNLESS it is an un-synced local draft explicitly created offline by the user (_isLocalDraft: true)!
+      if (cleanCloud.length > 0 && !(local as any)._isLocalDraft) {
+        // Do NOT resurrect deleted habits!
+        continue;
+      }
+
+      // Untouched starter template with 0 checkins: don't resurrect
       const isUntouchedDefault =
         DEFAULT_HABITS.some((d) => d.id === local.id) &&
         (!local.completedDates || local.completedDates.length === 0);
 
-      if (isUntouchedDefault && cloudHabits.length > 0) {
+      if (isUntouchedDefault && cleanCloud.length > 0) {
         continue;
       }
 
-      // Local custom habit or habit with checkins: keep it!
       mergedMap.set(local.id, {
         ...local,
         completedDates: Array.from(new Set(local.completedDates || [])).sort(),

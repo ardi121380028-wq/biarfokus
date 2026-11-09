@@ -23,6 +23,7 @@ export interface Habit {
   streakBest: number;
   createdAt: string;
   archived?: boolean;
+  _isLocalDraft?: boolean;
 }
 
 export interface DayCheckin {

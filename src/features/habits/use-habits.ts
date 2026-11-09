@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { loadCloudHabits, saveCloudHabits } from "./habit-cloud";
+import { loadCloudHabitsData, saveCloudHabits } from "./habit-cloud";
 import type { Habit, HabitFilter, HabitStats, HeatmapDay } from "./habit-types";
 import {
   loadLocalHabits,
@@ -13,6 +13,9 @@ import {
   getTodayKey,
   reorderHabitsList,
   mergeHabits,
+  getDeletedHabitIds,
+  saveDeletedHabitIds,
+  recordDeletedHabitId,
 } from "./habit-service";
 
 export function useHabits(userId?: string | null) {
@@ -29,7 +32,9 @@ export function useHabits(userId?: string | null) {
   useEffect(() => {
     let isCancelled = false;
     const local = loadLocalHabits();
-    setHabits(local);
+    const localDeletedIds = getDeletedHabitIds(userId);
+    const cleanLocal = local.filter((h) => !localDeletedIds.includes(h.id));
+    setHabits(cleanLocal);
 
     if (!userId) {
       setIsLoaded(true);
@@ -40,20 +45,37 @@ export function useHabits(userId?: string | null) {
 
     setIsSyncing(true);
 
-    // Load from Supabase cloud and safely merge with local check-ins
+    // Load from Supabase cloud and safely merge
     (async () => {
       try {
         const supabase = getSupabaseBrowserClient();
-        const cloud = await loadCloudHabits(supabase, userId);
+        const cloudData = await loadCloudHabitsData(supabase, userId);
         if (isCancelled) return;
 
-        // Safely merge local and cloud habits (union of checkins, preserve both devices)
-        const merged = mergeHabits(local, cloud || []);
-        setHabits(merged);
-        saveLocalHabits(merged);
+        const cloudHabits = cloudData?.habits || [];
+        const cloudDeletedIds = cloudData?.deletedHabitIds || [];
+        const allDeletedIds = Array.from(new Set([...cloudDeletedIds, ...localDeletedIds]));
+        saveDeletedHabitIds(allDeletedIds, userId);
 
-        // Upload merged result so both PC and Android stay synchronized
-        await saveCloudHabits(supabase, userId, merged);
+        if (cloudHabits.length > 0) {
+          // Cloud has established habits: Authoritative list comes from cloud
+          const merged = mergeHabits(cleanLocal, cloudHabits, allDeletedIds);
+          setHabits(merged);
+          saveLocalHabits(merged);
+
+          // ONLY upload if local had genuine unsynced offline drafts
+          const hasLocalDrafts = cleanLocal.some(
+            (l) => Boolean(l._isLocalDraft) && !allDeletedIds.includes(l.id)
+          );
+          if (hasLocalDrafts) {
+            await saveCloudHabits(supabase, userId, merged);
+          }
+        } else if (cleanLocal.length > 0) {
+          // First-time guest migration to cloud
+          setHabits(cleanLocal);
+          saveLocalHabits(cleanLocal);
+          await saveCloudHabits(supabase, userId, cleanLocal);
+        }
       } catch (err) {
         console.warn("[BiarFokus Habits] Cloud sync init failed:", err);
       } finally {
@@ -82,9 +104,16 @@ export function useHabits(userId?: string | null) {
           (payload: any) => {
             if (isCancelled) return;
             const updatedHabits = payload.new?.settings?.habits;
-            if (Array.isArray(updatedHabits) && updatedHabits.length > 0) {
+            const updatedDeletedIds = payload.new?.settings?.deletedHabitIds;
+            const currentDeleted = getDeletedHabitIds(userId);
+            const combinedDeleted = Array.from(
+              new Set([...currentDeleted, ...(Array.isArray(updatedDeletedIds) ? updatedDeletedIds : [])])
+            );
+            saveDeletedHabitIds(combinedDeleted, userId);
+
+            if (Array.isArray(updatedHabits)) {
               setHabits((prev) => {
-                const merged = mergeHabits(prev, updatedHabits);
+                const merged = mergeHabits(prev, updatedHabits, combinedDeleted);
                 saveLocalHabits(merged);
                 return merged;
               });
@@ -100,10 +129,14 @@ export function useHabits(userId?: string | null) {
         try {
           setIsSyncing(true);
           const supabase = getSupabaseBrowserClient();
-          const cloud = await loadCloudHabits(supabase, userId);
-          if (cloud && cloud.length > 0 && !isCancelled) {
+          const cloudData = await loadCloudHabitsData(supabase, userId);
+          if (cloudData && !isCancelled) {
+            const currentDeleted = getDeletedHabitIds(userId);
+            const allDeleted = Array.from(new Set([...currentDeleted, ...(cloudData.deletedHabitIds || [])]));
+            saveDeletedHabitIds(allDeleted, userId);
+
             setHabits((prev) => {
-              const merged = mergeHabits(prev, cloud);
+              const merged = mergeHabits(prev, cloudData.habits, allDeleted);
               saveLocalHabits(merged);
               return merged;
             });
@@ -153,13 +186,18 @@ export function useHabits(userId?: string | null) {
     try {
       setIsSyncing(true);
       const supabase = getSupabaseBrowserClient();
-      const cloud = await loadCloudHabits(supabase, userId);
-      setHabits((prev) => {
-        const merged = mergeHabits(prev, cloud || []);
-        saveLocalHabits(merged);
-        void saveCloudHabits(supabase, userId, merged).catch(() => {});
-        return merged;
-      });
+      const cloudData = await loadCloudHabitsData(supabase, userId);
+      if (cloudData) {
+        const currentDeleted = getDeletedHabitIds(userId);
+        const allDeleted = Array.from(new Set([...currentDeleted, ...(cloudData.deletedHabitIds || [])]));
+        saveDeletedHabitIds(allDeleted, userId);
+
+        setHabits((prev) => {
+          const merged = mergeHabits(prev, cloudData.habits, allDeleted);
+          saveLocalHabits(merged);
+          return merged;
+        });
+      }
     } catch (err) {
       console.warn("[BiarFokus Habits] Manual sync failed:", err);
     } finally {
@@ -217,6 +255,7 @@ export function useHabits(userId?: string | null) {
       streakCurrent: 0,
       streakBest: 0,
       createdAt: new Date().toISOString(),
+      _isLocalDraft: true,
     };
     setHabits((prev) => [newHabit, ...prev]);
     return newHabit;
@@ -226,9 +265,32 @@ export function useHabits(userId?: string | null) {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...updates } : h)));
   }, []);
 
-  const deleteHabit = useCallback((id: string) => {
-    setHabits((prev) => prev.filter((h) => h.id !== id));
-  }, []);
+  const deleteHabit = useCallback(
+    (id: string) => {
+      recordDeletedHabitId(id, userId);
+      setHabits((prev) => {
+        const next = prev.filter((h) => h.id !== id);
+        saveLocalHabits(next);
+        return next;
+      });
+
+      if (userId) {
+        // Immediately persist deletion to cloud with tombstone
+        try {
+          const supabase = getSupabaseBrowserClient();
+          void saveCloudHabits(
+            supabase,
+            userId,
+            habits.filter((h) => h.id !== id),
+            id
+          );
+        } catch (err) {
+          console.warn("[BiarFokus Habits] Instant cloud delete failed:", err);
+        }
+      }
+    },
+    [habits, userId]
+  );
 
   const reorderHabits = useCallback(
     (fromIndex: number, toIndex: number, currentList?: Habit[]) => {
