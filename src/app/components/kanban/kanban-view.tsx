@@ -24,6 +24,23 @@ import { KanbanJoinModal } from "./kanban-join-modal";
 import { KanbanArchivedModal, type ArchivedCardItem } from "./kanban-archived-modal";
 import { useAppContext } from "@/app/providers/app-provider";
 import { ProBadge } from "@/app/components/ui/pro-badge";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+
+interface KanbanOnlineUser {
+  userId: string;
+  name: string;
+  avatarUrl?: string | null;
+  email?: string | null;
+  onlineAt: string;
+  isCurrent?: boolean;
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 type KanbanViewProps = {
   userId?: string | null;
@@ -423,6 +440,136 @@ export function KanbanView({
       return matchM && matchY;
     });
   }
+
+  // Realtime Active Presence on this specific Kanban Board
+  const [onlineUsers, setOnlineUsers] = useState<KanbanOnlineUser[]>([]);
+  const [isPresenceOpen, setIsPresenceOpen] = useState(false);
+  const presencePopoverRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(presencePopoverRef, () => setIsPresenceOpen(false), isPresenceOpen);
+
+  useEffect(() => {
+    if (!currentBoard?.id) return;
+
+    // Resolve current user identity
+    const currentUserId =
+      userId ||
+      user?.id ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("kanban_temp_presence_id") ||
+          (() => {
+            const id = "guest_" + Math.random().toString(36).substring(2, 9);
+            sessionStorage.setItem("kanban_temp_presence_id", id);
+            return id;
+          })()
+        : "user");
+
+    const effectiveName =
+      userName ||
+      user?.user_metadata?.name ||
+      user?.user_metadata?.full_name ||
+      (user?.email ? user.email.split("@")[0] : "Kamu");
+
+    const effectiveAvatar = userAvatar || user?.user_metadata?.avatar_url || null;
+
+    const selfUser: KanbanOnlineUser = {
+      userId: currentUserId,
+      name: effectiveName,
+      avatarUrl: effectiveAvatar,
+      email: user?.email || null,
+      onlineAt: new Date().toISOString(),
+      isCurrent: true,
+    };
+
+    // Instant local presence so UI renders immediately without roundtrip latency
+    setOnlineUsers([selfUser]);
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    let isSubscribed = true;
+    const channelName = `kanban-presence-${currentBoard.id}`;
+
+    const channel = supabase.channel(channelName, {
+      config: {
+        presence: {
+          key: currentUserId,
+        },
+      },
+    });
+
+    const updatePresenceUsers = () => {
+      if (!isSubscribed) return;
+      type TrackedPresence = {
+        userId?: string;
+        userName?: string;
+        avatarUrl?: string | null;
+        email?: string | null;
+        onlineAt?: string;
+      };
+      const rawState = channel.presenceState() as Record<string, TrackedPresence[]>;
+
+      const userMap = new Map<string, KanbanOnlineUser>();
+
+      // Ensure self is always present
+      userMap.set(currentUserId, selfUser);
+
+      // Collect peers
+      Object.entries(rawState || {}).forEach(([key, presences]) => {
+        if (!Array.isArray(presences) || presences.length === 0) return;
+        presences.forEach((p) => {
+          const uid = p.userId || key;
+          if (!uid) return;
+          const isMe = uid === currentUserId;
+          userMap.set(uid, {
+            userId: uid,
+            name: isMe ? effectiveName : p.userName || "Rekan Tim",
+            avatarUrl: isMe ? effectiveAvatar : p.avatarUrl || null,
+            email: isMe ? user?.email || null : p.email || null,
+            onlineAt: p.onlineAt || new Date().toISOString(),
+            isCurrent: isMe,
+          });
+        });
+      });
+
+      const list = Array.from(userMap.values()).sort((a, b) => {
+        if (a.isCurrent) return -1;
+        if (b.isCurrent) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      setOnlineUsers(list);
+    };
+
+    channel
+      .on("presence", { event: "sync" }, updatePresenceUsers)
+      .on("presence", { event: "join" }, updatePresenceUsers)
+      .on("presence", { event: "leave" }, updatePresenceUsers)
+      .subscribe(async (status: string) => {
+        if (status === "SUBSCRIBED" && isSubscribed) {
+          try {
+            await channel.track({
+              userId: currentUserId,
+              userName: effectiveName,
+              avatarUrl: effectiveAvatar,
+              email: user?.email || null,
+              onlineAt: new Date().toISOString(),
+            });
+          } catch {
+            // Silently ignore temporary network errors
+          }
+        }
+      });
+
+    return () => {
+      isSubscribed = false;
+      try {
+        void channel.untrack();
+      } catch {}
+      try {
+        void supabase.removeChannel(channel);
+      } catch {}
+    };
+  }, [currentBoard?.id, userId, user, userName, userAvatar]);
 
   const archivedCards: ArchivedCardItem[] = useMemo(() => {
     const items: ArchivedCardItem[] = [];
@@ -1395,6 +1542,88 @@ export function KanbanView({
                     <span className="kanban-meta-pill count-pill">
                       📋 {currentBoard.lists.length} Kolom • 🗂️ {displayedCardsCount} Kartu {totalCardsCount !== displayedCardsCount ? `(dari ${totalCardsCount})` : ""} • 👥 {boardMembers.length > 0 ? boardMembers.length : 1} Anggota
                     </span>
+
+                    {/* Online Presence Indicator */}
+                    <div className="kanban-presence-wrap" ref={presencePopoverRef}>
+                      <button
+                        type="button"
+                        className="kanban-meta-pill presence-pill"
+                        onClick={() => setIsPresenceOpen((prev) => !prev)}
+                        title={
+                          onlineUsers.length <= 1
+                            ? "Kamu sedang aktif di papan ini (Klik untuk melihat siapa yang online)"
+                            : `${onlineUsers.length} pengguna sedang aktif di papan ini (Klik untuk melihat)`
+                        }
+                        aria-label="Pengguna online di papan ini"
+                        aria-expanded={isPresenceOpen}
+                      >
+                        <div className="kanban-presence-avatars-stack">
+                          {onlineUsers.slice(0, 3).map((u) => (
+                            <span key={u.userId} className="kanban-presence-avatar-item">
+                              {u.avatarUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={u.avatarUrl}
+                                  alt={u.name}
+                                  className="kanban-presence-avatar-img"
+                                />
+                              ) : (
+                                <span className="kanban-presence-avatar-initial">
+                                  {getInitials(u.name)}
+                                </span>
+                              )}
+                              <span className="kanban-presence-online-dot" aria-hidden="true" />
+                            </span>
+                          ))}
+                        </div>
+                        <span className="kanban-presence-label">
+                          {onlineUsers.length <= 1
+                            ? (onlineUsers[0]?.isCurrent ? "Kamu online" : `${onlineUsers[0]?.name.split(" ")[0]} online`)
+                            : `${onlineUsers.length} online`}
+                        </span>
+                      </button>
+
+                      {isPresenceOpen && (
+                        <div className="kanban-presence-popover" role="dialog" aria-label="Daftar Pengguna Online">
+                          <div className="kanban-presence-popover-head">
+                            <span className="presence-live-dot" />
+                            <span>Sedang Membuka Papan Ini ({onlineUsers.length})</span>
+                          </div>
+                          <div className="kanban-presence-popover-list">
+                            {onlineUsers.map((u) => (
+                              <div key={u.userId} className="kanban-presence-user-row">
+                                <div className="kanban-presence-avatar-wrap">
+                                  {u.avatarUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={u.avatarUrl}
+                                      alt={u.name}
+                                      className="presence-popover-img"
+                                    />
+                                  ) : (
+                                    <div className="presence-popover-initial">
+                                      {getInitials(u.name)}
+                                    </div>
+                                  )}
+                                  <span className="kanban-presence-online-dot" aria-hidden="true" />
+                                </div>
+                                <div className="presence-user-info">
+                                  <span className="presence-user-name">
+                                    {u.name}
+                                    {u.isCurrent && (
+                                      <span className="presence-you-badge">Kamu</span>
+                                    )}
+                                  </span>
+                                  <span className="presence-status-text">
+                                    Sedang aktif di kanban ini
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {(filterMonth !== "all" || filterYear !== "all") && (
                       <button
